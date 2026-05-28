@@ -1,106 +1,193 @@
-# Talentum — Hệ Thống Giáo Dục Học Đường Kết Nối (Connected Classroom Platform)
+# Talentum — Connected Learning Management System (LMS)
 
-Talentum (tên cũ: *School World*) là một hệ sinh thái giáo dục đa nền tảng hiện đại được thiết kế để thu hẹp khoảng cách giao tiếp và quản lý giữa **Giáo viên**, **Học sinh** và **Phụ huynh**. Dự án kết hợp các tính năng giao tiếp thời gian thực, quản lý bài tập về nhà, số điểm và bảng thống kê học tập thành một trải nghiệm liền mạch, có tính thẩm mỹ và hiệu năng cao.
+Talentum (formerly *School World*) is a cross-platform educational ecosystem designed to seamlessly bridge the gap between **Teachers**, **Students**, and **Parents**. It integrates real-time communication, assignment management, grade books, and statistics into a high-performance, responsive, and visually stunning modern interface.
 
-Ứng dụng được triển khai thử nghiệm trực tiếp tại: **[talentum.web.app](https://talentum.web.app)**
+### 🌐 Live Demo: **[talentum.web.app](https://talentum.web.app)**
 
 ---
 
-## 📸 Giao Diện Ứng Dụng (Screenshots)
+## 📸 Screenshots / Галерея / Giao Diện Ứng Dụng
 
 <p align="center">
-  <img src="./screenshots/media__1780005847303.png" width="32%" alt="Trò Chuyện Lớp Học - Mobile" />
-  <img src="./screenshots/media__1780002409355.png" width="32%" alt="Bảng Điều Khiển Giáo Viên" />
-  <img src="./screenshots/media__1779971203614.png" width="32%" alt="Quản Lý Học Tập" />
+  <img src="./screenshots/Screenshot%202026-05-29%20at%2001.27.48.png" width="32%" alt="Screen 1" />
+  <img src="./screenshots/Screenshot%202026-05-29%20at%2001.28.31.png" width="32%" alt="Screen 2" />
+  <img src="./screenshots/Screenshot%202026-05-29%20at%2001.29.23.png" width="32%" alt="Screen 3" />
 </p>
 
----
-
-## 🚀 Tính Năng Nổi Bật (Key Features)
-
-### 👨‍🏫 Dành Cho Giáo Viên (For Teachers)
-*   **Bảng Điều Khiển Tổng Quan (Teacher Today):** Quản lý lịch dạy trong ngày, thống kê nhanh, xem hồ sơ cá nhân và các hoạt động lớp học.
-*   **Quản Lý Lớp Học & Thành Viên:** Tạo các lớp học trực tuyến, tạo mã mời học sinh và phụ huynh tham gia dễ dàng.
-*   **Sổ Điểm & Chủ Đề (Журнал):** Quản lý danh sách điểm số theo từng môn học (Предметы), cập nhật tiến trình giảng dạy thời gian thực.
-*   **Giao Bài Tập & Phản Hồi:** Tạo bài tập với hạn chót, đính kèm tệp tin đa phương tiện và chấm điểm trực tiếp cho học sinh.
-
-### 🎓 Dành Cho Học Học Sinh (For Students)
-*   **Trò Chuyện Nhóm Lớp Học (Class Chat):** Kênh giao tiếp cực đẹp sử dụng cơ chế Glassmorphism. Hỗ trợ tin nhắn thoại, đính kèm ảnh/tệp tin, thả cảm xúc emoji tương tác và tìm kiếm tin nhắn không chặn màn hình (inline search).
-*   **Cổng Bài Tập (Homework Portal):** Theo dõi danh sách bài tập sắp đến hạn, xem hướng dẫn chi tiết và nộp bài trực tiếp từ điện thoại.
-*   **Báo Cáo Điểm Số:** Xem điểm số thời gian thực và nhận phản hồi chi tiết từ giáo viên ngay lập tức.
-
-### 👪 Dành Cho Phụ Huynh (For Parents)
-*   **Giám Sát Tiến Độ:** Theo dõi việc nộp bài và bảng điểm của con em mình trên các lớp học khác nhau.
-*   **Nhận Thông Báo:** Luôn cập nhật các thông báo mới từ nhà trường và giáo viên chủ nhiệm.
 
 ---
 
-## 🛠 Công Nghệ Sử Dụng (Tech Stack)
+## 🌐 Language Selector / Выберите язык / Chọn ngôn ngữ
+* [🇷🇺 Русский (Russian)](#-русский)
+* [🇺🇸 English](#-english)
+* [🇻🇳 Tiếng Việt (Vietnamese)](#-tiếng-việt)
 
-*   **Frontend (Ứng Dụng Chính):** **Flutter (Dart 3+)** — Đảm bảo hiệu năng mượt mà 60fps trên Web, iOS, Android, macOS và Windows.
-*   **UI/UX Design:** Phong cách thiết kế **Glassmorphism** cao cấp, chuyển động mượt mà, tối ưu hóa kích thước màn hình responsive trên thiết bị di động.
+---
+
+## 🇷🇺 Русский
+
+### 🚀 Ключевые возможности
+
+#### 👨‍🏫 Для учителей
+*   **Панель управления (Teacher Today):** Интуитивный дашборд с расписанием уроков на сегодня, быстрыми действиями и персональной статистикой.
+*   **Управление классами:** Создание учебных групп с уникальными кодами для быстрого входа учеников и родителей.
+*   **Электронный журнал (Журнал):** Заполнение тем уроков, выставление оценок по предметам (Предметы) и удобная навигация по списку класса.
+*   **Домашние задания:** Публикация заданий с дедлайнами, вложениями, проверка и выставление обратной связи.
+
+#### 🎓 Для учеников
+*   **Интерактивный чат класса:** Чат в современном стиле *Glassmorphism*. Поддержка голосовых сообщений, вложений изображений и файлов, реакций эмодзи и быстрого поиска сообщений без перекрытия экрана.
+*   **Портал домашних заданий:** Просмотр активных заданий, инструкций и отправка решений прямо со смартфона.
+*   **Мониторинг успеваемости:** Мгновенный доступ к оценкам и подробным комментариям учителя.
+
+#### 👪 Для родителей
+*   **Родительский контроль:** Отслеживание статуса домашних заданий и оценок всех детей в разных классах.
+*   **Информированность:** Лента школьных объявлений и прямой доступ к сообщениям от учителей.
+
+---
+
+### 🛠 Стек технологий
+*   **Фронтенд:** **Flutter (Dart 3+)** — Кроссплатформенный интерфейс с поддержкой Web, Android, iOS, macOS.
+*   **Дизайн:** Ультрасовременный стиль **Glassmorphism**, отзывчивые сетки (Responsive Grid) для идеального отображения на любых размерах экранов, плавная микроанимация.
+*   **Бэкенд:** **Firebase**
+    *   **Firebase Authentication:** Авторизация по номеру телефона и Email.
+    *   **Cloud Firestore:** База данных реального времени NoSQL для чатов, оценок и контента.
+    *   **Firebase Hosting:** Быстрый хостинг с настроенными правилами кэширования заголовков.
+    *   **Firebase Storage / Teldrive:** Облачное хранилище учебных материалов и интеграция с безлимитным Telegram Cloud Storage (Teldrive) для больших файлов.
+
+---
+
+### 🚦 Запуск проекта
+
+1. Перейдите в папку проекта:
+   ```bash
+   cd school_world
+   ```
+2. Установите зависимости:
+   ```bash
+   flutter pub get
+   ```
+3. Сгенерируйте локализацию:
+   ```bash
+   flutter gen-l10n
+   ```
+4. Запустите приложение:
+   ```bash
+   flutter run -d chrome  # Для Web
+   # или
+   flutter run            # Для мобильного/эмулятора
+   ```
+
+---
+
+## 🇺🇸 English
+
+### 🚀 Key Features
+
+#### 👨‍🏫 For Teachers
+*   **Teacher Workspace (Teacher Today):** View today's teaching schedule, access quick actions, and track overall class progress from a responsive dashboard.
+*   **Classroom Roster:** Easily manage classrooms, generate invite codes, and add students/parents.
+*   **Digital Grade Book (Journal):** Streamlined entry for subject lessons (Предметы), grading grids, and interactive student lists.
+*   **Assignment Workflow:** Distribute homework with deadlines, attach files, review submissions, and provide structured feedback.
+
+#### 🎓 For Students
+*   **Interactive Class Chat:** Glassmorphism-style chat UI. Supports voice notes, file/image uploads, interactive emoji reactions, and non-blocking inline search.
+*   **Homework Portal:** Keep track of upcoming due dates, view teacher instructions, and submit work directly from a mobile device.
+*   **Grade Book:** Stay updated with real-time academic progress and personal feedback.
+
+#### 👪 For Parents
+*   **Parent Dashboard:** Monitor multiple children across different classes in a consolidated view.
+*   **Academic Progress:** Real-time visibility into assignment statuses, marks, and announcements.
+
+---
+
+### 🛠 Tech Stack
+*   **Frontend:** **Flutter (Dart 3+)** — High-performance cross-platform application for Web, iOS, Android, and macOS.
+*   **UI/UX:** Premium Glassmorphism visual styles, fluid layouts that adapt down to small mobile viewports, and custom widgets.
 *   **Backend & Cloud Services:** **Firebase**
-    *   **Firebase Authentication:** Xác thực an toàn qua Số điện thoại và Email/Mật khẩu.
-    *   **Cloud Firestore:** Cơ sở dữ liệu NoSQL thời gian thực để lưu trữ tin nhắn, điểm số, bài tập.
-    *   **Firebase Hosting:** Triển khai ứng dụng web tốc độ cao với các cấu hình Cache tối ưu.
-    *   **Firebase Storage:** Quản lý tài liệu lớp học và bài tập của học sinh.
-*   **Telegram Cloud Storage (Teldrive):** Giải pháp lưu trữ đám mây dung lượng lớn tối ưu cho tài liệu giảng dạy nặng và đa phương tiện.
+    *   **Firebase Authentication:** Phone & Email-based secure logins.
+    *   **Cloud Firestore:** Real-time NoSQL database for messages, homework, and grade sheets.
+    *   **Firebase Hosting:** Production-ready web distribution with custom headers for security and speed.
+    *   **Firebase Storage:** Secure media and file uploads.
+*   **Telegram Cloud Storage (Teldrive):** High-capacity external file server optimized for large classroom materials.
 
 ---
 
-## 📂 Cấu Trúc Thư Mục (Folder Structure)
+### 🚦 Getting Started
 
-```text
-.
-├── school_world/            # Mã nguồn chính ứng dụng Flutter
-│   ├── lib/src/             # Source code nghiệp vụ & giao diện
-│   │   ├── features/        # Phân chia Module theo Feature-First (Chat, Journal, Grades, Settings...)
-│   │   ├── firebase/        # Repository tích hợp Firebase Services
-│   │   └── widgets/         # Thư viện UI components dùng chung
-│   └── l10n/                # Đa ngôn ngữ (English, Russian, Vietnamese)
-├── Realtime Chat app/       # Bản mẫu thiết kế UI/UX dạng React Prototype
-└── functions/               # Firebase Cloud Functions (Node.js) để chạy tác vụ ngầm
-```
-
----
-
-## 🚦 Hướng Dẫn Cài Đặt (Getting Started)
-
-### Yêu Cầu Hệ Thống
-*   Đã cài đặt **Flutter SDK (phiên bản 3.19.0 trở lên)**
-*   Đã cài đặt **Dart SDK**
-*   Trình duyệt Google Chrome hoặc giả lập Android/iOS.
-
-### Các Bước Thực Hiện
-
-1.  **Di chuyển vào thư mục ứng dụng:**
-    ```bash
-    cd school_world
-    ```
-
-2.  **Cài đặt các gói phụ thuộc:**
-    ```bash
-    flutter pub get
-    ```
-
-3.  **Tạo file đa ngôn ngữ tự động:**
-    ```bash
-    flutter gen-l10n
-    ```
-
-4.  **Chạy ứng dụng chế độ Debug:**
-    ```bash
-    flutter run -d chrome  # Chạy trên trình duyệt Web
-    # HOẶC
-    flutter run            # Chạy trên thiết bị di động / máy ảo
-    ```
+1. Navigate to the project directory:
+   ```bash
+   cd school_world
+   ```
+2. Install external pub dependencies:
+   ```bash
+   flutter pub get
+   ```
+3. Generate localized assets:
+   ```bash
+   flutter gen-l10n
+   ```
+4. Run the debug build:
+   ```bash
+   flutter run -d chrome  # For Web browsers
+   # OR
+   flutter run            # For mobile/desktop native devices
+   ```
 
 ---
 
-## 🌟 Các Cải Tiến Gần Đây (Recent Updates)
-*   **Inline Chat Search:** Sửa lỗi giao diện tìm kiếm tin nhắn trên di động. Thay thế cửa sổ đè màn hình bằng thanh SearchBar tích hợp trực tiếp trên Header cực kỳ mượt mà.
-*   **Firebase Hosting & Custom Domain:** Đã cấu hình và chuyển đổi tên miền chính thức sang **talentum.web.app** với cấu hình Cache-Control tối ưu hiệu năng tải trang.
-*   **Responsive Layouts:** Tối ưu kích thước Padding, Grid, và các Thẻ Thống Kê (Stats) tự động co giãn hoàn hảo trên màn hình điện thoại siêu nhỏ.
+## 🇻🇳 Tiếng Việt
+
+### 🚀 Tính Năng Nổi Bật
+
+#### 👨‍🏫 Dành Cho Giáo Viên
+*   **Bảng điều khiển (Teacher Today):** Tổng hợp lịch dạy học trong ngày, phím tắt thao tác nhanh, số liệu thống kê sinh động.
+*   **Quản lý Lớp Học:** Tạo lớp, cấp mã tham gia và quản lý học sinh & phụ huynh trực quan.
+*   **Sổ Điểm & Chủ Đề (Журнал):** Quản lý tiến độ bài dạy theo Môn học (Предметы), bảng nhập điểm tiện lợi và danh sách lớp học thông minh.
+*   **Giao Bài Tập:** Soạn bài tập đính kèm tệp tin đa phương tiện, theo dõi tiến độ nộp bài và nhận xét điểm số trực tiếp.
+
+#### 🎓 Dành Cho Học Sinh
+*   **Trò Chuyện Lớp Học:** Kênh chat nhóm phong cách *Glassmorphism* sang trọng. Hỗ trợ tin nhắn thoại, đính kèm tệp, thả cảm xúc tương tác và tìm kiếm tin nhắn tích hợp sẵn trên Header không gây che khuất màn hình.
+*   **Cổng Nộp Bài:** Theo dõi thời hạn bài tập về nhà, xem hướng dẫn chi tiết và gửi bài làm chỉ với vài lượt chạm.
+*   **Theo Dõi Kết Quả:** Cập nhật điểm số nhanh chóng cùng nhận xét từ giáo viên ngay khi có kết quả.
+
+#### 👪 Dành Cho Phụ Huynh
+*   **Bảng Điều Khiển Tổng Hợp:** Theo dõi sát sao việc học tập, lịch nộp bài và điểm số của tất cả các con trên một giao diện thống nhất.
+*   **Kênh Thông Tin:** Nhận thông báo mới nhất từ giáo viên chủ nhiệm và nhà trường.
 
 ---
-Phát triển với ❤️ bởi **Do Quoc Chi** (@gookjiii) và đội ngũ Talentum.
+
+### 🛠 Công Nghệ Sử Dụng
+*   **Frontend:** **Flutter (Dart 3+)** — Chạy mượt mà, đồng bộ trên Web, iOS, Android và macOS.
+*   **Giao Diện UI/UX:** Phong cách thiết kế **Glassmorphism** cao cấp, các thành phần UI (Stats, Action Tiles) co giãn linh hoạt trên mọi kích thước màn hình responsive.
+*   **Hạ Tầng Backend:** **Firebase**
+    *   **Firebase Auth:** Xác thực qua Số điện thoại hoặc Email bảo mật.
+    *   **Cloud Firestore:** Đồng bộ tin nhắn thời gian thực và dữ liệu bảng điểm.
+    *   **Firebase Hosting:** Triển khai Web hiệu năng cao, tối ưu hóa các quy tắc Cache.
+    *   **Firebase Storage:** Quản lý tài liệu và bài làm trực tiếp.
+*   **Telegram Cloud Storage (Teldrive):** Lưu trữ không giới hạn tài liệu học tập dung lượng nặng tối ưu băng thông.
+
+---
+
+### 🚦 Hướng Dẫn Cài Đặt
+
+1. Di chuyển vào thư mục:
+   ```bash
+   cd school_world
+   ```
+2. Cài đặt thư viện:
+   ```bash
+   flutter pub get
+   ```
+3. Biên dịch đa ngôn ngữ:
+   ```bash
+   flutter gen-l10n
+   ```
+4. Khởi chạy dự án:
+   ```bash
+   flutter run -d chrome  # Chạy trên trình duyệt Web
+   # HOẶC
+   flutter run            # Chạy trên thiết bị di động / giả lập
+   ```
+
+---
+Developed with ❤️ by **Do Quoc Chi** (@gookjiii) and the Talentum Team.
