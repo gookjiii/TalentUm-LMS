@@ -31,20 +31,20 @@ class SchoolColors {
   static const purpleContainer = Color(0xFFEDE9FE);
 
   // ── Light-mode Neutrals ───────────────────────────────────────
-  static const bg = Color(0xFFFAF5FF);
+  static const bg = Color(0xFFF9FAFC);
   static const surface = Color(0xFFFFFFFF);
-  static const surfaceElevated = Color(0xFFF3E8FF);
+  static const surfaceElevated = Color(0xFFF1F5F9);
   static const text = Color(0xFF0F172A);
   static const textSecondary = Color(0xFF475569);
   static const muted = Color(0xFF64748B);
-  static const border = Color(0xFFEFE7FC);
+  static const border = Color(0xFFECEBF3);
   static const borderFocus = Color(0xFFC4B5FD);
 
   // ── Dark-mode Palette ─────────────────────────────────────────
-  static const darkBg = Color(0xFF0F172A);
-  static const darkSurface = Color(0xFF1E293B);
-  static const darkSurfaceElevated = Color(0xFF334155);
-  static const darkBorder = Color(0xFF334155);
+  static const darkBg = Color(0xFF080C1E);
+  static const darkSurface = Color(0xFF11152D);
+  static const darkSurfaceElevated = Color(0xFF1B1E3B);
+  static const darkBorder = Color(0xFF222648);
   static const darkText = Color(0xFFF8FAFC);
   static const darkTextSecondary = Color(0xFF94A3B8);
   static const darkMuted = Color(0xFF64748B);
@@ -166,7 +166,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       shadowColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: SchoolColors.border, width: 1),
+        side: const BorderSide(color: SchoolColors.border, width: 1.2),
       ),
     ),
 
@@ -222,27 +222,27 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
 
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: const Color(0xFFF8FAFC),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: SchoolColors.border),
+        borderSide: const BorderSide(color: SchoolColors.border, width: 1),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: SchoolColors.border),
+        borderSide: const BorderSide(color: SchoolColors.border, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: SchoolColors.primary, width: 2),
+        borderSide: BorderSide(color: primaryColor, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: SchoolColors.red, width: 1.5),
+        borderSide: const BorderSide(color: SchoolColors.red, width: 1.2),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: SchoolColors.red, width: 2),
+        borderSide: const BorderSide(color: SchoolColors.red, width: 1.5),
       ),
       labelStyle: GoogleFonts.inter(
         color: SchoolColors.muted,
@@ -253,7 +253,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
         fontWeight: FontWeight.w400,
       ),
       floatingLabelStyle: GoogleFonts.inter(
-        color: SchoolColors.primary,
+        color: primaryColor,
         fontWeight: FontWeight.w700,
         fontSize: 13,
       ),
@@ -265,7 +265,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       height: 68,
-      indicatorColor: SchoolColors.primaryContainer,
+      indicatorColor: primaryColor.withValues(alpha: 0.08),
       indicatorShape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -273,7 +273,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return GoogleFonts.inter(
-            color: SchoolColors.primary,
+            color: primaryColor,
             fontWeight: FontWeight.w700,
             fontSize: 11,
           );
@@ -286,7 +286,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(color: SchoolColors.primary, size: 22);
+          return IconThemeData(color: primaryColor, size: 22);
         }
         return const IconThemeData(color: SchoolColors.muted, size: 22);
       }),
@@ -323,17 +323,17 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       elevation: 24,
-      shadowColor: Colors.black26,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       titleTextStyle: GoogleFonts.inter(
         color: SchoolColors.text,
         fontSize: 20,
-        fontWeight: FontWeight.w900,
+        fontWeight: FontWeight.w800,
       ),
       contentTextStyle: GoogleFonts.inter(
         color: SchoolColors.textSecondary,
         fontSize: 14,
-        height: 1.5,
+        height: 1.55,
       ),
     ),
 
@@ -366,7 +366,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       elevation: 16,
       shadowColor: Colors.black.withValues(alpha: 0.08),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       showDragHandle: true,
       dragHandleColor: SchoolColors.border,
@@ -376,7 +376,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
     tabBarTheme: TabBarThemeData(
       indicatorSize: TabBarIndicatorSize.tab,
       dividerColor: Colors.transparent,
-      labelColor: SchoolColors.primary,
+      labelColor: primaryColor,
       unselectedLabelColor: SchoolColors.muted,
       labelStyle: GoogleFonts.inter(
         fontWeight: FontWeight.w700,
@@ -388,7 +388,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       ),
       indicator: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: SchoolColors.primaryContainer,
+        color: primaryColor.withValues(alpha: 0.08),
       ),
     ),
 
@@ -407,14 +407,14 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
     ),
 
     searchBarTheme: SearchBarThemeData(
-      backgroundColor: WidgetStatePropertyAll(SchoolColors.surfaceElevated),
+      backgroundColor: const WidgetStatePropertyAll(Color(0xFFF1F5F9)),
       shadowColor: const WidgetStatePropertyAll(Colors.transparent),
       surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
       elevation: const WidgetStatePropertyAll(0),
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: SchoolColors.border),
+          side: const BorderSide(color: SchoolColors.border, width: 1),
         ),
       ),
       padding: const WidgetStatePropertyAll(
@@ -508,7 +508,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       shadowColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: SchoolColors.darkBorder, width: 1),
+        side: const BorderSide(color: SchoolColors.darkBorder, width: 1.2),
       ),
     ),
 
@@ -564,30 +564,27 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
 
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: SchoolColors.darkSurfaceElevated,
+      fillColor: SchoolColors.darkSurface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: SchoolColors.darkBorder),
+        borderSide: const BorderSide(color: SchoolColors.darkBorder, width: 1),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: SchoolColors.darkBorder),
+        borderSide: const BorderSide(color: SchoolColors.darkBorder, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: SchoolColors.primaryLight,
-          width: 2,
-        ),
+        borderSide: BorderSide(color: primaryColor, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFFF6B6B), width: 1.5),
+        borderSide: const BorderSide(color: Color(0xFFFF6B6B), width: 1.2),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFFF6B6B), width: 2),
+        borderSide: const BorderSide(color: Color(0xFFFF6B6B), width: 1.5),
       ),
       labelStyle: GoogleFonts.inter(
         color: SchoolColors.darkMuted,
@@ -598,7 +595,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
         fontWeight: FontWeight.w400,
       ),
       floatingLabelStyle: GoogleFonts.inter(
-        color: SchoolColors.primaryLight,
+        color: primaryColor,
         fontWeight: FontWeight.w700,
         fontSize: 13,
       ),
@@ -610,7 +607,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       height: 68,
-      indicatorColor: const Color(0xFF1A3260),
+      indicatorColor: primaryColor.withValues(alpha: 0.12),
       indicatorShape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -618,7 +615,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return GoogleFonts.inter(
-            color: SchoolColors.primaryLight,
+            color: primaryColor,
             fontWeight: FontWeight.w700,
             fontSize: 11,
           );
@@ -631,8 +628,8 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(
-            color: SchoolColors.primaryLight,
+          return IconThemeData(
+            color: primaryColor,
             size: 22,
           );
         }
@@ -662,17 +659,17 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       backgroundColor: SchoolColors.darkSurface,
       surfaceTintColor: Colors.transparent,
       elevation: 24,
-      shadowColor: Colors.black54,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shadowColor: Colors.black38,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       titleTextStyle: GoogleFonts.inter(
         color: SchoolColors.darkText,
         fontSize: 20,
-        fontWeight: FontWeight.w900,
+        fontWeight: FontWeight.w800,
       ),
       contentTextStyle: GoogleFonts.inter(
         color: SchoolColors.darkTextSecondary,
         fontSize: 14,
-        height: 1.5,
+        height: 1.55,
       ),
     ),
 
@@ -705,7 +702,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       elevation: 16,
       shadowColor: Colors.black.withValues(alpha: 0.3),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       showDragHandle: true,
       dragHandleColor: SchoolColors.darkBorder,
@@ -715,7 +712,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
     tabBarTheme: TabBarThemeData(
       indicatorSize: TabBarIndicatorSize.tab,
       dividerColor: Colors.transparent,
-      labelColor: SchoolColors.primaryLight,
+      labelColor: primaryColor,
       unselectedLabelColor: SchoolColors.darkMuted,
       labelStyle: GoogleFonts.inter(
         fontWeight: FontWeight.w700,
@@ -727,7 +724,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       ),
       indicator: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: const Color(0xFF1A3260),
+        color: primaryColor.withValues(alpha: 0.12),
       ),
     ),
 
@@ -746,14 +743,14 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
     ),
 
     searchBarTheme: SearchBarThemeData(
-      backgroundColor: WidgetStatePropertyAll(SchoolColors.darkSurfaceElevated),
+      backgroundColor: WidgetStatePropertyAll(SchoolColors.darkSurface),
       shadowColor: const WidgetStatePropertyAll(Colors.transparent),
       surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
       elevation: const WidgetStatePropertyAll(0),
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: SchoolColors.darkBorder),
+          side: const BorderSide(color: SchoolColors.darkBorder, width: 1),
         ),
       ),
       padding: const WidgetStatePropertyAll(
