@@ -35,15 +35,146 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
+  String _getAccentColorName(Color color, bool isRu) {
+    final val = color.value;
+    if (val == const Color(0xFF7C3AED).value) {
+      return isRu ? 'Фиолетовый' : 'Purple';
+    } else if (val == const Color(0xFF059669).value) {
+      return isRu ? 'Изумрудный' : 'Emerald';
+    } else if (val == const Color(0xFFF59E0B).value) {
+      return isRu ? 'Янтарный' : 'Amber';
+    } else if (val == const Color(0xFFDC2626).value) {
+      return isRu ? 'Алый' : 'Crimson';
+    }
+    return isRu ? 'Школьный синий' : 'School Blue';
+  }
+
+  Widget _buildColorDot(Color color, bool isDark) {
+    final isSelected = widget.appState.accentColor.value == color.value;
+    return GestureDetector(
+      onTap: () => widget.appState.setAccentColor(color),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: isSelected
+              ? Border.all(
+                  color: isDark ? Colors.white : Colors.black87,
+                  width: 2,
+                )
+              : Border.all(
+                  color: Colors.transparent,
+                  width: 0,
+                ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.4),
+                    blurRadius: 6,
+                    spreadRadius: 1,
+                  )
+                ]
+              : [],
+        ),
+        child: isSelected
+            ? const Icon(
+                Icons.check_rounded,
+                color: Colors.white,
+                size: 14,
+              )
+            : null,
+      ),
+    );
+  }
+
+  void _showLanguagePicker(BuildContext context, AppLocalizations l10n) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  l10n.language,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              Divider(color: isDark ? SchoolColors.darkBorder : SchoolColors.border),
+              _LanguageTile(
+                flag: '🇬🇧',
+                label: l10n.english,
+                sublabel: 'English',
+                selected: widget.appState.locale?.languageCode == 'en' ||
+                    (widget.appState.locale == null &&
+                        Localizations.localeOf(context).languageCode == 'en'),
+                onTap: () {
+                  widget.appState.setLocale(const Locale('en'));
+                  Navigator.pop(context);
+                },
+              ),
+              Divider(
+                color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                indent: 56,
+              ),
+              _LanguageTile(
+                flag: '🇷🇺',
+                label: l10n.russian,
+                sublabel: 'Русский',
+                selected: widget.appState.locale?.languageCode == 'ru' ||
+                    (widget.appState.locale == null &&
+                        Localizations.localeOf(context).languageCode == 'ru'),
+                onTap: () {
+                  widget.appState.setLocale(const Locale('ru'));
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isRu = Localizations.localeOf(context).languageCode == 'ru';
+
+    // Localized labels matching screenshot
+    final notificationsLabel = isRu ? 'Уведомления' : 'Notifications';
+    final pushNotificationsLabel = isRu ? 'Push-уведомления' : 'Push notifications';
+    final pushNotificationsSub = isRu ? 'Разрешены для чата и заданий' : 'Allowed for chat and assignments';
+    final newMessagesLabel = isRu ? 'Новые сообщения' : 'New messages';
+    final newMessagesSub = isRu ? 'Звук + вибрация' : 'Sound + vibration';
+    final updatesLabel = isRu ? 'Обновления' : 'Updates';
+    final updatesSub = isRu ? 'Тихий режим: 22:00–07:00' : 'Quiet mode: 22:00–07:00';
+
+    final appearanceLabel = isRu ? 'Оформление' : 'Appearance';
+    final darkThemeLabel = isRu ? 'Тёмная тема' : 'Dark theme';
+    final darkThemeSub = isRu ? 'Системная' : 'System';
+    final accentColorLabel = isRu ? 'Акцентный цвет' : 'Accent color';
+    final languageLabel = isRu ? 'Язык' : 'Language';
+    final activeLanguageSub = widget.appState.locale?.languageCode == 'en'
+        ? 'English (en)'
+        : 'Русский (ru)';
 
     return Scaffold(
-      appBar: MediaQuery.sizeOf(context).width < 720
-          ? AppBar(title: Text(l10n.settings))
-          : AppBar(title: Text(l10n.settings)),
+      appBar: AppBar(
+        title: Text(l10n.settings),
+        centerTitle: false,
+      ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         children: [
@@ -71,22 +202,66 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 28),
 
-          // ── Appearance section ──────────────────────────────
-          _SectionLabel(label: 'Внешний вид'),
+          // ── Notifications section ───────────────────────────
+          _SectionLabel(label: notificationsLabel),
           SchoolCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: [
-                _ToggleTile(
-                  icon: isDark
-                      ? Icons.nightlight_rounded
-                      : Icons.wb_sunny_rounded,
-                  label: 'Тёмная тема',
-                  value: isDark,
-                  onChanged: (_) => widget.appState.toggleDarkMode(),
-                  iconColor: isDark
-                      ? const Color(0xFF818CF8)
-                      : const Color(0xFFF59E0B),
+                _ModernSettingTile(
+                  icon: Icons.notifications_active_rounded,
+                  iconColor: const Color(0xFFEF4444),
+                  iconBgColor: const Color(0xFFFEE2E2),
+                  title: pushNotificationsLabel,
+                  subtitle: pushNotificationsSub,
+                  trailing: Switch.adaptive(
+                    value: widget.appState.pushNotifications,
+                    onChanged: (val) => widget.appState.setPushNotifications(val),
+                    activeColor: widget.appState.accentColor,
+                  ),
+                  onTap: () => widget.appState.setPushNotifications(
+                    !widget.appState.pushNotifications,
+                  ),
+                ),
+                Divider(
+                  height: 1,
+                  color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                  indent: 68,
+                ),
+                _ModernSettingTile(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  iconColor: const Color(0xFF8B5CF6),
+                  iconBgColor: const Color(0xFFF5F3FF),
+                  title: newMessagesLabel,
+                  subtitle: newMessagesSub,
+                  trailing: Switch.adaptive(
+                    value: widget.appState.soundAndVibe,
+                    onChanged: (val) => widget.appState.setSoundAndVibe(val),
+                    activeColor: widget.appState.accentColor,
+                  ),
+                  onTap: () => widget.appState.setSoundAndVibe(
+                    !widget.appState.soundAndVibe,
+                  ),
+                ),
+                Divider(
+                  height: 1,
+                  color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                  indent: 68,
+                ),
+                _ModernSettingTile(
+                  icon: Icons.push_pin_outlined,
+                  iconColor: const Color(0xFFF59E0B),
+                  iconBgColor: const Color(0xFFFFEDD5),
+                  title: updatesLabel,
+                  subtitle: updatesSub,
+                  trailing: Switch.adaptive(
+                    value: widget.appState.quietModeUpdates,
+                    onChanged: (val) => widget.appState.setQuietModeUpdates(val),
+                    activeColor: widget.appState.accentColor,
+                  ),
+                  onTap: () => widget.appState.setQuietModeUpdates(
+                    !widget.appState.quietModeUpdates,
+                  ),
                 ),
               ],
             ),
@@ -94,36 +269,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 28),
 
-          // ── Language section ────────────────────────────────
-          _SectionLabel(label: l10n.language),
+          // ── Appearance section ──────────────────────────────
+          _SectionLabel(label: appearanceLabel),
           SchoolCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: [
-                _LanguageTile(
-                  flag: '🇬🇧',
-                  label: l10n.english,
-                  sublabel: 'English',
-                  selected:
-                      widget.appState.locale?.languageCode == 'en' ||
-                      (widget.appState.locale == null &&
-                          Localizations.localeOf(context).languageCode == 'en'),
-                  onTap: () => widget.appState.setLocale(const Locale('en')),
+                _ModernSettingTile(
+                  icon: Icons.dark_mode_outlined,
+                  iconColor: const Color(0xFF059669),
+                  iconBgColor: const Color(0xFFD1FAE5),
+                  title: darkThemeLabel,
+                  subtitle: darkThemeSub,
+                  trailing: Switch.adaptive(
+                    value: isDark,
+                    onChanged: (_) => widget.appState.toggleDarkMode(),
+                    activeColor: widget.appState.accentColor,
+                  ),
+                  onTap: () => widget.appState.toggleDarkMode(),
                 ),
                 Divider(
                   height: 1,
                   color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
-                  indent: 56,
+                  indent: 68,
                 ),
-                _LanguageTile(
-                  flag: '🇷🇺',
-                  label: l10n.russian,
-                  sublabel: 'Русский',
-                  selected:
-                      widget.appState.locale?.languageCode == 'ru' ||
-                      (widget.appState.locale == null &&
-                          Localizations.localeOf(context).languageCode == 'ru'),
-                  onTap: () => widget.appState.setLocale(const Locale('ru')),
+                _ModernSettingTile(
+                  icon: Icons.palette_outlined,
+                  iconColor: const Color(0xFF6366F1),
+                  iconBgColor: const Color(0xFFEDE9FE),
+                  title: accentColorLabel,
+                  subtitle: _getAccentColorName(widget.appState.accentColor, isRu),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildColorDot(const Color(0xFF7C3AED), isDark),
+                      const SizedBox(width: 8),
+                      _buildColorDot(const Color(0xFF059669), isDark),
+                      const SizedBox(width: 8),
+                      _buildColorDot(const Color(0xFFF59E0B), isDark),
+                      const SizedBox(width: 8),
+                      _buildColorDot(const Color(0xFFDC2626), isDark),
+                    ],
+                  ),
+                ),
+                Divider(
+                  height: 1,
+                  color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                  indent: 68,
+                ),
+                _ModernSettingTile(
+                  icon: Icons.language_rounded,
+                  iconColor: const Color(0xFF0E7490),
+                  iconBgColor: const Color(0xFFE0F2FE),
+                  title: languageLabel,
+                  subtitle: activeLanguageSub,
+                  trailing: Icon(
+                    Icons.chevron_right_rounded,
+                    color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                  ),
+                  onTap: () => _showLanguagePicker(context, l10n),
                 ),
               ],
             ),
@@ -132,14 +336,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 28),
 
           // ── About section ───────────────────────────────────
-          _SectionLabel(label: 'О приложении'),
+          _SectionLabel(label: isRu ? 'О приложении' : 'About'),
           SchoolCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: [
                 _InfoTile(
                   icon: Icons.info_outline_rounded,
-                  label: 'Версия',
+                  label: isRu ? 'Версия' : 'Version',
                   trailing: '1.0.0',
                 ),
                 Divider(
@@ -159,7 +363,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 28),
 
           // ── Danger zone ─────────────────────────────────────
-          _SectionLabel(label: 'Опасная зона', color: SchoolColors.red),
+          _SectionLabel(label: isRu ? 'Опасная зона' : 'Danger Zone', color: SchoolColors.red),
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
@@ -197,7 +401,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   subtitle: Text(
-                    'Вы будете перенаправлены на экран входа',
+                    isRu
+                        ? 'Вы будете перенаправлены на экран входа'
+                        : 'You will be redirected to the sign in screen',
                     style: TextStyle(
                       color: SchoolColors.red.withValues(alpha: 0.65),
                       fontSize: 12,
@@ -296,67 +502,86 @@ class _SectionLabel extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// TOGGLE TILE (for dark mode)
+// MODERN SETTING TILE
 // ─────────────────────────────────────────────────────────────────
-class _ToggleTile extends StatelessWidget {
-  const _ToggleTile({
+class _ModernSettingTile extends StatelessWidget {
+  const _ModernSettingTile({
     required this.icon,
-    required this.label,
-    required this.value,
-    required this.onChanged,
-    this.iconColor,
+    required this.iconColor,
+    required this.iconBgColor,
+    required this.title,
+    required this.subtitle,
+    required this.trailing,
+    this.onTap,
   });
 
   final IconData icon;
-  final String label;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final Color? iconColor;
+  final Color iconColor;
+  final Color iconBgColor;
+  final String title;
+  final String subtitle;
+  final Widget trailing;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final c =
-        iconColor ?? (isDark ? SchoolColors.darkMuted : SchoolColors.muted);
-
-    return ListTile(
-      leading: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 400),
-        transitionBuilder: (child, anim) => RotationTransition(
-          turns: Tween<double>(
-            begin: 0.4,
-            end: 0.0,
-          ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic)),
-          child: FadeTransition(opacity: anim, child: child),
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            trailing,
+          ],
         ),
-        child: Container(
-          key: ValueKey(value),
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: c.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, size: 18, color: c),
-        ),
       ),
-      title: Text(
-        label,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-      ),
-      trailing: Switch.adaptive(
-        value: value,
-        onChanged: onChanged,
-        activeColor: SchoolColors.primary,
-      ),
-      onTap: () => onChanged(!value),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────
-// LANGUAGE TILE
+// LANGUAGE TILE (For Bottom Sheet)
 // ─────────────────────────────────────────────────────────────────
 class _LanguageTile extends StatelessWidget {
   const _LanguageTile({

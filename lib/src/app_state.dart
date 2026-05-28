@@ -11,6 +11,9 @@ class SchoolAppState extends ChangeNotifier {
     _accentColorValue = box.get('accentColor') as int?;
     final localeCode = box.get('locale') as String?;
     _locale = localeCode != null ? Locale(localeCode) : const Locale('ru');
+    _pushNotifications = box.get('pushNotifications', defaultValue: true) as bool;
+    _soundAndVibe = box.get('soundAndVibe', defaultValue: true) as bool;
+    _quietModeUpdates = box.get('quietModeUpdates', defaultValue: true) as bool;
   }
 
   String? currentRole;
@@ -23,6 +26,9 @@ class SchoolAppState extends ChangeNotifier {
   bool joinedClassRecently = false;
   Locale? _locale;
   bool _isDarkMode = false;
+  bool _pushNotifications = true;
+  bool _soundAndVibe = true;
+  bool _quietModeUpdates = true;
 
   String? get role => currentRole;
   bool get isLeadTeacher =>
@@ -122,6 +128,31 @@ class SchoolAppState extends ChangeNotifier {
     if (color.value == _accentColorValue) return;
     _accentColorValue = color.value;
     Hive.box('app_settings').put('accentColor', color.value);
+    notifyListeners();
+  }
+
+  bool get pushNotifications => _pushNotifications;
+  bool get soundAndVibe => _soundAndVibe;
+  bool get quietModeUpdates => _quietModeUpdates;
+
+  void setPushNotifications(bool value) {
+    if (_pushNotifications == value) return;
+    _pushNotifications = value;
+    Hive.box('app_settings').put('pushNotifications', value);
+    notifyListeners();
+  }
+
+  void setSoundAndVibe(bool value) {
+    if (_soundAndVibe == value) return;
+    _soundAndVibe = value;
+    Hive.box('app_settings').put('soundAndVibe', value);
+    notifyListeners();
+  }
+
+  void setQuietModeUpdates(bool value) {
+    if (_quietModeUpdates == value) return;
+    _quietModeUpdates = value;
+    Hive.box('app_settings').put('quietModeUpdates', value);
     notifyListeners();
   }
 }
