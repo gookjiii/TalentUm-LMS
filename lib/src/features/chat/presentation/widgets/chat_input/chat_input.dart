@@ -439,9 +439,12 @@ class _ChatInputState extends State<ChatInput> {
                           ? GestureDetector(
                               key: const ValueKey('mic'),
                               onLongPress: isEditing ? null : _startRecording,
-                              onLongPressUp: isEditing
+                              onLongPressEnd: isEditing
                                   ? null
-                                  : () => _stopRecording(),
+                                  : (details) => _stopRecording(),
+                              onLongPressCancel: isEditing
+                                  ? null
+                                  : () => _stopRecording(cancel: true),
                               child: IconButton(
                                 onPressed: () {
                                   ScaffoldMessenger.of(context).showSnackBar(

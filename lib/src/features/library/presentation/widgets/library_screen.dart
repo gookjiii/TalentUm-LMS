@@ -85,14 +85,6 @@ class LibraryScreen extends ConsumerWidget {
               ),
             ],
           ),
-          floatingActionButton: isTeacher
-              ? FloatingActionButton.extended(
-                  heroTag: 'library_fab_tag',
-                  onPressed: () => _showUploadDialog(context, ref),
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text('Добавить материал'),
-                )
-              : null,
         );
       },
     );

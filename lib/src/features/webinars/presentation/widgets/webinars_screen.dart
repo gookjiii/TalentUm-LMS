@@ -82,14 +82,6 @@ class WebinarsScreen extends ConsumerWidget {
               ),
             ],
           ),
-          floatingActionButton: isTeacher
-              ? FloatingActionButton.extended(
-                  heroTag: 'webinars_fab_tag',
-                  onPressed: () => _showAddDialog(context, ref),
-                  icon: const Icon(Icons.video_call_rounded),
-                  label: const Text('Добавить вебинар'),
-                )
-              : null,
         );
       },
     );
