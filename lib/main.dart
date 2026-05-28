@@ -127,6 +127,9 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
     final isDarkMode = ref.watch(
       schoolAppStateProvider.select((state) => state.isDarkMode),
     );
+    final activeLocale = ref.watch(
+      schoolAppStateProvider.select((state) => state.locale),
+    );
     final appState = ref.read(schoolAppStateProvider);
     final repository = ref.watch(repositoryProvider);
     final guestParams = getGuestInviteParams();
@@ -173,11 +176,18 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
             theme: schoolTheme(primaryColor: appState.accentColor),
             darkTheme: schoolDarkTheme(primaryColor: appState.accentColor),
             themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
-            locale: const Locale('ru'),
+            locale: activeLocale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            localeResolutionCallback: (locale, supportedLocales) =>
-                const Locale('ru'),
+            localeResolutionCallback: (locale, supportedLocales) {
+              if (activeLocale != null) return activeLocale;
+              for (var supportedLocale in supportedLocales) {
+                if (supportedLocale.languageCode == locale?.languageCode) {
+                  return supportedLocale;
+                }
+              }
+              return const Locale('ru');
+            },
             builder: (context, child) {
               // Force a directionality and default text style to prevent crashes in sub-widgets
               return Directionality(
