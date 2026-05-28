@@ -494,6 +494,8 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
     if (d['text'] != null) meta['text'] = d['text'];
 
     final type = d['type'] as String? ?? 'text';
+    if (type == 'audio') meta['type'] = 'audio';
+    
     final statusStr = (meta['status'] as String?) ?? (d['status'] as String?);
     final status = switch (statusStr) {
       'sending' => MessageStatus.sending,
@@ -515,6 +517,7 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
           metadata: meta,
           status: status,
         );
+      case 'audio':
       case 'file':
       case 'video':
         return Message.file(
@@ -847,6 +850,7 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
       }
     }
     finalMetadata['durationMs'] = duration.inMilliseconds;
+    finalMetadata['type'] = 'audio';
 
     // 1. Optimistic Update
     final optimisticMessage = Message.file(

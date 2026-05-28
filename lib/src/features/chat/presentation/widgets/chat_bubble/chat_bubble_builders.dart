@@ -1545,6 +1545,14 @@ class _AudioBubbleState extends State<_AudioBubble>
     _player.onDurationChanged.listen((d) {
       if (mounted) setState(() => _totalDuration = d);
     });
+    _player.onPlayerComplete.listen((_) {
+      if (mounted) {
+        setState(() {
+          _position = Duration.zero;
+          _playerState = PlayerState.stopped;
+        });
+      }
+    });
   }
 
   @override
