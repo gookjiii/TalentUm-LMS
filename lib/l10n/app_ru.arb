@@ -1,0 +1,322 @@
+{
+  "@@locale": "ru",
+  "yourClassroomConnected": "Твой класс,\nвсегда на связи.",
+  "onboardingWelcomeDesc": "School World объединяет чат, домашние задания и объявления, чтобы вы не пропустили ничего важного от учителей.",
+  "getStarted": "Начать",
+  "whoIsJoining": "Кто присоединяется сегодня?",
+  "pickRoleDesc": "Выберите свою роль. Мы адаптируем приложение под ваши задачи.",
+  "student": "Ученик",
+  "studentDesc": "Вступайте в классы, общайтесь, сдавайте задания",
+  "teacher": "Учитель",
+  "teacherDesc": "Управляйте классами, публикуйте материалы",
+  "parent": "Родитель",
+  "parentDesc": "Следите за успехами и оценками вашего ребенка",
+  "continueAs": "Продолжить как {role}",
+  "@continueAs": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseYourClasses": "Выберите ваши классы",
+  "inviteCodeDesc": "Введите код приглашения, чтобы просмотреть и вступить в класс.",
+  "inviteCode": "Код приглашения",
+  "previewClass": "Просмотр класса",
+  "joinClass": "Вступить в класс",
+  "cancel": "Отмена",
+  "join": "Вступить",
+  "signOut": "Выйти",
+  "today": "Сегодня",
+  "chat": "Чат",
+  "feed": "Лента",
+  "homework": "Задания",
+  "profile": "Профиль",
+  "phone": "Телефон",
+  "email": "Эл. почта",
+  "sendCode": "Отправить код",
+  "verify": "Проверить",
+  "signIn": "Войти",
+  "createAccount": "Создать аккаунт",
+  "otp": "Код из СМС",
+  "password": "Пароль",
+  "enterPhoneError": "Пожалуйста, введите номер телефона.",
+  "enterOtpError": "Введите 6-значный код.",
+  "teacherWorkspace": "Рабочая область учителя",
+  "createClass": "Создать класс",
+  "settings": "Настройки",
+  "language": "Язык",
+  "english": "Английский",
+  "russian": "Русский",
+  "joinAClass": "Вступить в класс",
+  "inviteCodeNotFound": "Код приглашения не найден.",
+  "hiName": "Привет, {name}",
+  "@hiName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todaysClasses": "Занятия на сегодня",
+  "quickLinks": "Быстрые ссылки",
+  "homeworkPortal": "Портал заданий",
+  "myGrades": "Мои оценки",
+  "notifications": "Уведомления",
+  "classRoster": "Список класса",
+  "learningStreak": "Ударный режим: {count} дн.",
+  "@learningStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeworksDone": "Выполнено: {done} из {total}",
+  "@homeworksDone": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "selected": "Выбрано",
+  "pickClassToChat": "Выберите класс для общения.",
+  "noMessagesYet": "Сообщений пока нет.",
+  "messageYourClass": "Напишите классу",
+  "send": "Отправить",
+  "classChat": "Чат класса",
+  "classRoom": "Классная комната",
+  "studentsCount": "Учеников: {count}",
+  "@studentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchMessages": "Поиск сообщений",
+  "you": "Вы",
+  "classmate": "Одноклассник",
+  "pickClassToReadAnnouncements": "Выберите класс для просмотра объявлений.",
+  "noAnnouncementsYet": "Объявлений пока нет.",
+  "teacherUpdate": "Обновление учителя",
+  "announcement": "Объявление",
+  "pinned": "Закреплено",
+  "commentsSoon": "Комментарии скоро появятся",
+  "pickClassToViewHomework": "Выберите класс для просмотра заданий.",
+  "noHomeworkAssigned": "Заданий пока нет.",
+  "assignment": "Задание",
+  "submit": "Сдать",
+  "studentAccount": "Аккаунт ученика",
+  "joinAnotherClass": "Вступить в другой класс",
+  "inviteCodeFromTeacher": "Используйте код приглашения от учителя",
+  "unreadUpdates": "Непрочитанные обновления и напоминания",
+  "privacyAndSafety": "Приватность и безопасность",
+  "protectedFiles": "Обмен сообщениями и защищенные файлы",
+  "submitHomework": "Сдать задание",
+  "notes": "Заметки",
+  "addNoteForTeacher": "Добавьте короткую заметку для учителя",
+  "joinYourFirstClass": "Вступите в свой первый класс",
+  "joinFirstClassDesc": "Используйте код приглашения, чтобы открыть чат, ленту и задания.",
+  "noDueDate": "Срок сдачи не установлен",
+  "due": "Срок: {date}",
+  "@due": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "justNow": "Только что",
+  "post": "Пост",
+  "work": "Работа",
+  "createPost": "Создать пост",
+  "createAssignment": "Создать задание",
+  "noClassMessages": "Сообщений в классе пока нет.",
+  "messageThisClass": "Напишите этому классу",
+  "noPostsYet": "Постов пока нет.",
+  "unpin": "Открепить",
+  "pin": "Закрепить",
+  "noAssignmentsYet": "Заданий пока нет.",
+  "createYourFirstClass": "Создайте свой первый класс",
+  "teacherEmptyDesc": "Классы включают коды приглашения для учеников и родителей.",
+  "className": "Название класса",
+  "subject": "Предмет",
+  "create": "Создать",
+  "title": "Заголовок",
+  "instructions": "Инструкции",
+  "dueDate": "Срок сдачи",
+  "parentDashboard": "Панель родителя",
+  "noClassesLinked": "Нет связанных классов.",
+  "teacherLabel": "Учитель: {name}",
+  "@teacherLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "grade": "Оценка",
+  "submitted": "Сдано",
+  "notSubmitted": "Не сдано",
+  "noGradesYet": "Оценок пока нет.",
+  "noSubmissionsYet": "Пока нет сданных работ.",
+  "ungraded": "Не оценено",
+  "gradeSubmission": "Оценить работу",
+  "feedback": "Отзыв",
+  "save": "Сохранить",
+  "name": "Имя",
+  "overdue": "Просрочено",
+  "classStatistics": "Статистика класса",
+  "totalStudents": "Всего студентов",
+  "avgGrade": "Средний балл",
+  "profileUpdated": "Профиль обновлен",
+  "noStudentsInClass": "В этом классе пока нет студентов.",
+  "assignments": "Задания",
+  "errorGeneric": "Произошла ошибка. Повторите попытку.",
+  "recurring": "Повторяющийся",
+  "oneOff": "Разовый",
+  "monday": "Понедельник",
+  "tuesday": "Вторник",
+  "wednesday": "Среда",
+  "thursday": "Четверг",
+  "friday": "Пятница",
+  "saturday": "Суббота",
+  "sunday": "Воскресенье",
+  "savedSchedule": "Расписание сохранено!",
+  "deleteSchedule": "Удалить расписание?",
+  "deleteScheduleDesc": "Это удалит слот и его переопределения.",
+  "deletedSchedule": "Расписание удалено",
+  "saveChanges": "Сохранить изменения",
+  "avatarUpdated": "Аватар успешно обновлен",
+  "failedToUploadAvatar": "Не удалось загрузить аватар: {error}",
+  "nameEmptyError": "Имя не может быть пустым",
+  "profileUpdatedDesc": "Профиль успешно обновлен",
+  "failedToUpdateProfile": "Не удалось обновить профиль: {error}",
+  "confirmSignOut": "Вы уверены, что хотите выйти?",
+  "previewClassAction": "Предварительный просмотр",
+  "skipOnboardingTeacher": "Я учитель, пропустить этот шаг",
+  "needsReviewToday": "Нужно проверить сегодня",
+  "studentSubmissions": "Сдано работ: {count}",
+  "@studentSubmissions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noClassesScheduled": "На сегодня занятий не запланировано",
+  "openWeeklySchedule": "Открыть недельное расписание",
+  "quickActions": "БЫСТРЫЕ ДЕЙСТВИЯ",
+  "postAnnouncement": "Опубликовать объявление",
+  "pinWorksheet": "Закрепить материал",
+  "takeAttendance": "Отметить посещаемость",
+  "gradeSubmissions": "Оценить работы",
+  "copyGuestChatLink": "Копировать гостевую ссылку",
+  "deleteClass": "Удалить класс",
+  "unpinPost": "Открепить пост",
+  "pinPost": "Закрепить пост",
+  "deletePost": "Удалить пост",
+  "deletePostDesc": "Этот пост и комментарии к нему будут удалены навсегда.",
+  "publishPost": "Опубликовать пост",
+  "copiedToClipboard": "Скопировано в буфер обмена",
+  "couldNotOpenAttachment": "Не удалось открыть вложение.",
+  "tryAgain": "Попробовать снова",
+  "assignmentNotFound": "Задание не найдено",
+  "submissionFailed": "Ошибка сдачи: {error}",
+  "@submissionFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "submitting": "Отправка...",
+  "editProfile": "Редактировать профиль",
+  "helpCenter": "Справочный центр",
+  "darkMode": "Темная тема",
+  "studentPortalTerm3": "Портал ученика · 3 четверть",
+  "generalSettings": "ОБЩИЕ НАСТРОЙКИ",
+  "accountAndClasses": "АККАУНТ И КЛАССЫ",
+  "helpAndAbout": "ПОМОЩЬ И О ПРИЛОЖЕНИИ",
+  "addNote": "Добавить новый код класса",
+  "viewAll": "Смотреть все",
+  "live": "В ЭФИРЕ",
+  "done": "ЗАВЕРШЕНО",
+  "upcoming": "ПРЕДСТОЯЩИЕ",
+  "inMin": "ЧЕРЕЗ {min} МИН",
+  "@inMin": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "cancelled": "ОТМЕНЕНО",
+  "goodMorning": "Доброе утро",
+  "goodAfternoon": "Добрый день",
+  "goodEvening": "Добрый вечер",
+  "teacherAttachments": "Вложения учителя",
+  "reply": "Ответить",
+  "copyText": "Копировать текст",
+  "delete": "Удалить",
+  "freePlan": "Бесплатный",
+  "currentPlan": "Ваш текущий план",
+  "upgrade": "Улучшить",
+  "soonAvailable": "Скоро доступно",
+  "contactSupportForEmail": "Для смены email обратитесь в поддержку",
+  "noConnection": "Нет подключения",
+  "newTopic": "Новая тема",
+  "joinLessonSoon": "Вход в урок скоро будет доступен",
+  "now": "СЕЙЧАС",
+  "later": "ПОЗЖЕ",
+  "allChecked": "Всё проверено!",
+  "selectClassFirst": "Сначала выберите класс.",
+  "classNotFound": "Класс не найден.",
+  "removeFromClass": "Удалить из класса?",
+  "removeFromClassDesc": "Ученик потеряет доступ к материалам и чату этого класса.",
+  "badges": "Значков",
+  "copyInviteLink": "Скопировать ссылку",
+  "clearChat": "Очистить чат",
+  "teacherBadge": "ПРЕПОДАВАТЕЛЬ",
+  "totalParticipants": "{count} участников всего",
+  "@totalParticipants": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "active": "АКТИВНО",
+  "publishedAt": "Опубликовано: {date}",
+  "@publishedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "submittedAtLabel": "Сдано: {date}",
+  "@submittedAtLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAssignment": "Удалить задание?",
+  "deleteAssignmentDesc": "Все сданные работы этого задания также будут удалены.",
+  "editAssignment": "Редактировать задание",
+  "bookmarksSoon": "Закладки появятся в следующем обновлении",
+  "initializationFailed": "Ошибка инициализации.",
+  "topics": "Темы",
+  "mainChat": "Общий чат",
+  "createTopic": "Создать тему",
+  "myClasses": "МОИ КЛАССЫ",
+  "teacherConsole": "Панель учителя",
+  "clearChat": "Очистить чат"
+}

@@ -1,0 +1,23 @@
+name: sw_core
+description: Core utilities, errors, theme, router primitives for School World.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  go_router: ^14.6.2
+  logger: ^2.4.0
+  fpdart: ^1.1.0
+  sw_validation:
+    path: ../validation
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^6.0.0

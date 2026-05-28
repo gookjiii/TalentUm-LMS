@@ -1,0 +1,27 @@
+name: sw_firebase_api
+description: Firebase data access and DTO mapping for School World.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cloud_firestore: ^5.4.0
+  firebase_auth: ^5.2.0
+  firebase_storage: ^12.2.0
+  firebase_messaging: ^15.1.0
+  cloud_functions: ^5.1.0
+  flutter_riverpod: ^2.6.1
+  sw_shared_models:
+    path: ../shared_models
+  sw_validation:
+    path: ../validation
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^6.0.0

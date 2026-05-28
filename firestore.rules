@@ -1,0 +1,219 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // --- Helper Functions ---
+    function signedIn() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    
+    function userExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isTeacher() {
+      return signedIn() && 
+             userExists() && 
+             (getUserData().data.get('role', '') in ['teacher', 'leadTeacher', 'admin']);
+    }
+
+    function isStudent() {
+      return signedIn() && 
+             userExists() && 
+             getUserData().data.get('role', '') == 'student';
+    }
+
+    function isParent() {
+      return signedIn() && 
+             userExists() && 
+             getUserData().data.get('role', '') == 'parent';
+    }
+
+    function belongsToClass(classId) {
+      return signedIn() && 
+             userExists() && 
+             (classId in getUserData().data.get('classIds', []));
+    }
+
+    // --- Collection Rules ---
+
+    match /users/{userId} {
+      // Allow any signed-in user to read profiles (needed for resolving names/avatars in chat and class lists)
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow update: if signedIn() && (request.auth.uid == userId || isTeacher());
+      allow delete: if false;
+    }
+
+    match /classes/{classId} {
+      // Query-compatible read rules for students, teachers, and parents
+      allow get: if signedIn() && (
+        isTeacher() || 
+        belongsToClass(classId) || 
+        (resource != null && (
+          request.auth.uid in resource.data.get('studentIds', []) ||
+          request.auth.uid in resource.data.get('parentIds', []) ||
+          request.auth.uid == resource.data.get('teacherId', '')
+        ))
+      );
+      
+      // Allow query-compatible lists
+      allow list: if signedIn() && isTeacher();
+      allow list: if signedIn() && (resource != null && request.auth.uid in resource.data.get('studentIds', []));
+      allow list: if signedIn() && (resource != null && request.auth.uid in resource.data.get('parentIds', []));
+      allow list: if signedIn() && (resource != null && request.auth.uid == resource.data.get('teacherId', ''));
+      allow create, update: if isTeacher();
+      allow delete: if isTeacher() && (
+        resource.data.teacherId == request.auth.uid || 
+        getUserData().data.get('role', '') in ['admin', 'leadTeacher']
+      );
+
+      match /journal_columns/{columnId} {
+        allow read: if signedIn() && (isTeacher() || belongsToClass(classId));
+        allow create, update, delete: if isTeacher();
+      }
+
+      match /journal_marks/{studentId} {
+        allow read: if signedIn() && (
+          isTeacher() || 
+          isParent() ||
+          (belongsToClass(classId) && request.auth.uid == studentId)
+        );
+        allow create, update, delete: if isTeacher();
+      }
+    }
+
+    match /rooms/{roomId} {
+      // Query-compatible read rules for rooms
+      allow read: if signedIn() && (
+        isTeacher() || 
+        (resource != null && request.auth.uid in resource.data.get('userIds', [])) ||
+        (resource != null && belongsToClass(resource.data.metadata.get('classId', '')))
+      );
+      
+      // Teachers can create/update all rooms, students can update rooms they are in (e.g. for membership)
+      allow create, update: if signedIn() && (
+        isTeacher() || 
+        (request.resource != null && (
+          request.auth.uid in request.resource.data.get('userIds', []) || 
+          belongsToClass(request.resource.data.metadata.get('classId', ''))
+        ))
+      );
+      
+      allow delete: if isTeacher();
+
+      match /topics/{topicId} {
+        // Anyone who can read the room can read topics
+        allow read: if signedIn(); 
+        
+        // ONLY Teachers can create, edit, or delete topics
+        allow create, update, delete: if isTeacher();
+      }
+
+      match /messages/{messageId} {
+        // Anyone who can read the room can read messages
+        allow read: if signedIn();
+        
+        allow create: if signedIn() 
+          && request.resource.data.authorId == request.auth.uid;
+        
+        allow update: if signedIn() && (
+          request.auth.uid == resource.data.authorId || 
+          isTeacher() ||
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['metadata']) &&
+           (!('metadata' in resource.data) || request.resource.data.metadata.diff(resource.data.metadata).affectedKeys().hasOnly(['seenBy'])))
+        );
+          
+        allow delete: if isTeacher();
+      }
+
+      match /polls/{pollId} {
+        allow read: if signedIn();
+        allow create, delete: if isTeacher();
+        allow update: if signedIn(); // students vote via update
+      }
+
+      match /typing/{userId} {
+        allow read: if signedIn();
+        allow write, delete: if signedIn() && request.auth.uid == userId;
+      }
+    }
+
+    match /settings/{settingsId} {
+      allow read: if true;
+      allow write: if isTeacher();
+    }
+
+    match /assignments/{assignmentId} {
+      allow read: if signedIn(); // Simplified for query compatibility
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /submissions/{submissionId} {
+      allow read: if signedIn() && (
+        resource.data.studentId == request.auth.uid || 
+        isTeacher()
+      );
+      allow create: if signedIn() && request.resource.data.studentId == request.auth.uid;
+      allow update: if signedIn() && (
+        resource.data.studentId == request.auth.uid || 
+        isTeacher()
+      );
+      allow delete: if false;
+    }
+
+    match /grades/{gradeId} {
+      allow read: if signedIn() && (
+        resource.data.studentId == request.auth.uid || 
+        isTeacher() || 
+        isParent()
+      );
+      allow write: if isTeacher();
+    }
+
+    match /notifications/{notificationId} {
+      allow read, update: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isTeacher();
+      allow delete: if false;
+    }
+
+    match /schedules/{scheduleId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /schedule_overrides/{overrideId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if isTeacher();
+      allow update: if isTeacher() || (
+        signedIn() && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['comments', 'likes'])
+      );
+      allow delete: if isTeacher();
+    }
+
+    match /library_materials/{materialId} {
+      allow read: if signedIn() && (isTeacher() || belongsToClass(resource.data.classId));
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /webinars/{webinarId} {
+      allow read: if signedIn() && (isTeacher() || belongsToClass(resource.data.classId));
+      allow create, update, delete: if isTeacher();
+    }
+
+    match /teacher_requests/{requestId} {
+      allow read: if signedIn() && (request.auth.uid == requestId || getUserData().data.get('role', '') in ['admin', 'leadTeacher']);
+      allow create: if signedIn() && request.auth.uid == requestId;
+      allow update, delete: if signedIn() && (request.auth.uid == requestId || getUserData().data.get('role', '') in ['admin', 'leadTeacher']);
+    }
+  }
+}

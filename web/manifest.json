@@ -1,0 +1,56 @@
+{
+    "name": "School World",
+    "short_name": "School World",
+    "description": "Платформа для учителей и учеников: лента, домашние задания, расписание и чат класса.",
+    "start_url": "/",
+    "display": "standalone",
+    "display_override": ["standalone", "minimal-ui"],
+    "background_color": "#F5F5FA",
+    "theme_color": "#6C5CE7",
+    "orientation": "portrait-primary",
+    "lang": "ru",
+    "categories": ["education", "productivity"],
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Лента",
+            "short_name": "Лента",
+            "description": "Объявления и новости классов",
+            "url": "/?tab=feed",
+            "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "Задания",
+            "short_name": "Задания",
+            "description": "Домашние задания",
+            "url": "/?tab=homework",
+            "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }]
+        }
+    ]
+}

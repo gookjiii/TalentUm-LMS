@@ -1,0 +1,322 @@
+{
+  "@@locale": "en",
+  "yourClassroomConnected": "Your classroom,\nconnected.",
+  "onboardingWelcomeDesc": "School World brings together chat, homework, and announcements so you never miss a thing your teachers post.",
+  "getStarted": "Get started",
+  "whoIsJoining": "Who's joining today?",
+  "pickRoleDesc": "Pick your role. We will tailor the app to what you do most.",
+  "student": "Student",
+  "studentDesc": "Join classes, chat, submit homework",
+  "teacher": "Teacher",
+  "teacherDesc": "Manage classes, post and pin materials",
+  "parent": "Parent / Guardian",
+  "parentDesc": "Follow your child's progress and grades",
+  "continueAs": "Continue as {role}",
+  "@continueAs": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseYourClasses": "Choose your classes",
+  "inviteCodeDesc": "Enter your school invite code to preview and join your class.",
+  "inviteCode": "Invite code",
+  "previewClass": "Preview class",
+  "joinClass": "Join class",
+  "cancel": "Cancel",
+  "join": "Join",
+  "signOut": "Sign out",
+  "today": "Today",
+  "chat": "Chat",
+  "feed": "Feed",
+  "homework": "Homework",
+  "profile": "Profile",
+  "phone": "Phone",
+  "email": "Email",
+  "sendCode": "Send Code",
+  "verify": "Verify",
+  "signIn": "Sign in",
+  "createAccount": "Create an account",
+  "otp": "OTP",
+  "password": "Password",
+  "enterPhoneError": "Please enter your phone number.",
+  "enterOtpError": "Enter the 6-digit code.",
+  "teacherWorkspace": "Teacher workspace",
+  "createClass": "Create class",
+  "settings": "Settings",
+  "language": "Language",
+  "english": "English",
+  "russian": "Russian",
+  "joinAClass": "Join a class",
+  "inviteCodeNotFound": "Invite code not found.",
+  "hiName": "Hi, {name}",
+  "@hiName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "todaysClasses": "Today's classes",
+  "quickLinks": "Quick links",
+  "homeworkPortal": "Homework Portal",
+  "myGrades": "My Grades",
+  "notifications": "Notifications",
+  "classRoster": "Class roster",
+  "learningStreak": "{count}-day learning streak",
+  "@learningStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeworksDone": "{done} of {total} homeworks done today",
+  "@homeworksDone": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "selected": "Selected",
+  "pickClassToChat": "Pick a class to chat.",
+  "noMessagesYet": "No messages yet.",
+  "messageYourClass": "Message your class",
+  "send": "Send",
+  "classChat": "Class chat",
+  "classRoom": "Class room",
+  "studentsCount": "{count} students",
+  "@studentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchMessages": "Search messages",
+  "you": "You",
+  "classmate": "Classmate",
+  "pickClassToReadAnnouncements": "Pick a class to read announcements.",
+  "noAnnouncementsYet": "No announcements yet.",
+  "teacherUpdate": "Teacher update",
+  "announcement": "Announcement",
+  "pinned": "Pinned",
+  "commentsSoon": "Comments soon",
+  "pickClassToViewHomework": "Pick a class to view homework.",
+  "noHomeworkAssigned": "No homework assigned.",
+  "assignment": "Assignment",
+  "submit": "Submit",
+  "studentAccount": "Student account",
+  "joinAnotherClass": "Join another class",
+  "inviteCodeFromTeacher": "Use an invite code from a teacher",
+  "unreadUpdates": "Unread class updates and reminders",
+  "privacyAndSafety": "Privacy and safety",
+  "protectedFiles": "Class-only messaging and protected files",
+  "submitHomework": "Submit homework",
+  "notes": "Notes",
+  "addNoteForTeacher": "Add a short note for your teacher",
+  "joinYourFirstClass": "Join your first class",
+  "joinFirstClassDesc": "Use a teacher invite code to unlock chat, feed, and homework.",
+  "noDueDate": "No due date",
+  "due": "Due {date}",
+  "@due": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "justNow": "Just now",
+  "post": "Post",
+  "work": "Work",
+  "createPost": "Create post",
+  "createAssignment": "Create assignment",
+  "noClassMessages": "No class messages yet.",
+  "messageThisClass": "Message this class",
+  "noPostsYet": "No posts yet.",
+  "unpin": "Unpin",
+  "pin": "Pin",
+  "noAssignmentsYet": "No assignments yet.",
+  "createYourFirstClass": "Create your first class",
+  "teacherEmptyDesc": "Classes include invite codes for student and parent onboarding.",
+  "className": "Class name",
+  "subject": "Subject",
+  "create": "Create",
+  "title": "Title",
+  "instructions": "Instructions",
+  "dueDate": "Due date",
+  "parentDashboard": "Parent Dashboard",
+  "noClassesLinked": "No classes linked.",
+  "teacherLabel": "Teacher: {name}",
+  "@teacherLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "grade": "Grade",
+  "submitted": "Submitted",
+  "notSubmitted": "Not submitted",
+  "noGradesYet": "No grades yet.",
+  "noSubmissionsYet": "No submissions yet.",
+  "ungraded": "Ungraded",
+  "gradeSubmission": "Grade submission",
+  "feedback": "Feedback",
+  "save": "Save",
+  "name": "Name",
+  "overdue": "Overdue",
+  "classStatistics": "Class Statistics",
+  "totalStudents": "Total Students",
+  "avgGrade": "Avg. Grade",
+  "profileUpdated": "Profile updated",
+  "noStudentsInClass": "No students in this class yet.",
+  "assignments": "Assignments",
+  "errorGeneric": "An error occurred. Please try again.",
+  "recurring": "Recurring",
+  "oneOff": "One-off",
+  "monday": "Monday",
+  "tuesday": "Tuesday",
+  "wednesday": "Wednesday",
+  "thursday": "Thursday",
+  "friday": "Friday",
+  "saturday": "Saturday",
+  "sunday": "Sunday",
+  "savedSchedule": "Saved schedule!",
+  "deleteSchedule": "Delete schedule?",
+  "deleteScheduleDesc": "This will remove the slot and its overrides.",
+  "deletedSchedule": "Deleted schedule",
+  "saveChanges": "Save Changes",
+  "avatarUpdated": "Avatar updated successfully",
+  "failedToUploadAvatar": "Failed to upload avatar: {error}",
+  "nameEmptyError": "Name cannot be empty",
+  "profileUpdatedDesc": "Profile updated successfully",
+  "failedToUpdateProfile": "Failed to update profile: {error}",
+  "confirmSignOut": "Are you sure you want to sign out?",
+  "previewClassAction": "Preview Class",
+  "skipOnboardingTeacher": "I'm a teacher, skip this step",
+  "needsReviewToday": "Needs review today",
+  "studentSubmissions": "{count} student submissions",
+  "@studentSubmissions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noClassesScheduled": "No classes scheduled for today",
+  "openWeeklySchedule": "Open weekly schedule",
+  "quickActions": "QUICK ACTIONS",
+  "postAnnouncement": "Post announcement",
+  "pinWorksheet": "Pin worksheet",
+  "takeAttendance": "Take attendance",
+  "gradeSubmissions": "Grade submissions",
+  "copyGuestChatLink": "Copy guest chat link",
+  "deleteClass": "Delete class",
+  "unpinPost": "Unpin post",
+  "pinPost": "Pin post",
+  "deletePost": "Delete post",
+  "deletePostDesc": "This post and its comments will be permanently removed.",
+  "publishPost": "Publish post",
+  "copiedToClipboard": "Copied to clipboard",
+  "couldNotOpenAttachment": "Could not open attachment.",
+  "tryAgain": "Try Again",
+  "assignmentNotFound": "Assignment not found",
+  "submissionFailed": "Submission failed: {error}",
+  "@submissionFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "submitting": "Submitting...",
+  "editProfile": "Edit Profile",
+  "helpCenter": "Help Center",
+  "darkMode": "Dark Mode",
+  "studentPortalTerm3": "Student Portal · Term 3",
+  "generalSettings": "GENERAL SETTINGS",
+  "accountAndClasses": "ACCOUNT & CLASSES",
+  "helpAndAbout": "HELP & ABOUT",
+  "addNote": "Add a new classroom code",
+  "viewAll": "View all",
+  "live": "LIVE",
+  "done": "DONE",
+  "upcoming": "UPCOMING",
+  "inMin": "IN {min} MIN",
+  "@inMin": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "cancelled": "CANCELLED",
+  "goodMorning": "Good morning",
+  "goodAfternoon": "Good afternoon",
+  "goodEvening": "Good evening",
+  "teacherAttachments": "Teacher attachments",
+  "reply": "Reply",
+  "copyText": "Copy Text",
+  "delete": "Delete",
+  "freePlan": "Free",
+  "currentPlan": "Your current plan",
+  "upgrade": "Upgrade",
+  "soonAvailable": "Coming soon",
+  "contactSupportForEmail": "To change email, contact support",
+  "noConnection": "No connection",
+  "newTopic": "New topic",
+  "joinLessonSoon": "Join lesson will be available soon",
+  "now": "NOW",
+  "later": "LATER",
+  "allChecked": "All checked!",
+  "selectClassFirst": "Select a class first.",
+  "classNotFound": "Class not found.",
+  "removeFromClass": "Remove from class?",
+  "removeFromClassDesc": "The student will lose access to materials and chat of this class.",
+  "badges": "Badges",
+  "copyInviteLink": "Copy invite link",
+  "clearChat": "Clear chat",
+  "teacherBadge": "TEACHER",
+  "totalParticipants": "{count} total participants",
+  "@totalParticipants": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "active": "ACTIVE",
+  "publishedAt": "Published: {date}",
+  "@publishedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "submittedAtLabel": "Submitted: {date}",
+  "@submittedAtLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAssignment": "Delete assignment?",
+  "deleteAssignmentDesc": "All submitted works for this assignment will also be removed.",
+  "editAssignment": "Edit assignment",
+  "bookmarksSoon": "Bookmarks will appear in the next update",
+  "initializationFailed": "Initialization failed.",
+  "topics": "Topics",
+  "mainChat": "General Chat",
+  "createTopic": "Create Topic",
+  "myClasses": "MY CLASSES",
+  "teacherConsole": "Teacher Console",
+  "clearChat": "Clear Chat"
+}

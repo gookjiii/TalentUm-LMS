@@ -1,0 +1,11 @@
+name: school_world
+
+packages:
+  - .
+  - packages/**
+
+scripts:
+  analyze:
+    run: melos exec -- "dart analyze ."
+  test:
+    run: melos exec -- "dart test || flutter test"

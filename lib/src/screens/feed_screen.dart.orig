@@ -1,0 +1,213 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../app_state.dart';
+import '../firebase/school_repository.dart';
+import '../theme.dart';
+
+class FeedScreen extends StatefulWidget {
+  const FeedScreen({
+    super.key,
+    required this.repository,
+    required this.appState,
+    required this.classId,
+  });
+
+  final SchoolRepository repository;
+  final SchoolAppState appState;
+  final String classId;
+
+  @override
+  State<FeedScreen> createState() => _FeedScreenState();
+}
+
+class _FeedScreenState extends State<FeedScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Feed')),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: widget.repository.postsForClass(widget.classId),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final posts = snapshot.data!.docs;
+          return ListView.builder(
+            itemCount: posts.length,
+            itemBuilder: (context, index) {
+              final post = posts[index].data();
+              final imageUrls = List<String>.from(post['imageUrls'] ?? []);
+              final attachments = List<Map<String, dynamic>>.from(post['attachments'] ?? []);
+              
+              final allImages = [
+                ...imageUrls,
+                ...attachments.where((a) => a['type'] == 'image').map((a) => a['url'] as String),
+              ];
+
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(child: Text(post['authorId'][0].toUpperCase())),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(post['authorId'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(post['createdAt'] != null ? (post['createdAt'] as Timestamp).toDate().toString() : '', style: const TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                          const Spacer(),
+                          if (post['pinned'] == true) const Icon(Icons.push_pin, color: SchoolColors.primary),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      if (allImages.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: CachedNetworkImage(
+                              imageUrl: allImages.first,
+                              placeholder: (context, url) => Container(
+                                height: 200,
+                                color: Colors.grey[200],
+                                child: const Center(child: CircularProgressIndicator()),
+                              ),
+                              errorWidget: (context, url, error) => const Icon(Icons.error),
+                            ),
+                          ),
+                        ),
+                      Text(post['content'] ?? ''),
+                      const SizedBox(height: 10),
+                      IconButton(
+                        icon: Icon(post['likes'] != null && post['likes'].contains(widget.repository.uid) ? Icons.favorite : Icons.favorite_border, color: Colors.red),
+                        onPressed: () => widget.repository.toggleLike(posts[index].id, post['likes'] != null && post['likes'].contains(widget.repository.uid)),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+
+            },
+          );
+        },
+      ),
+      floatingActionButton: widget.appState.role == 'teacher'
+          ? FloatingActionButton(
+              onPressed: () => _createPost(context),
+              child: const Icon(Icons.add),
+            )
+          : null,
+    );
+  }
+
+  void _createPost(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController();
+        PlatformFile? pickedFile;
+        bool isUploading = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('New Post'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: controller,
+                      decoration: const InputDecoration(hintText: 'What\'s on your mind?'),
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 10),
+                    if (pickedFile != null)
+                      ListTile(
+                        leading: const Icon(Icons.image),
+                        title: Text(pickedFile!.name),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => setDialogState(() => pickedFile = null),
+                        ),
+                      ),
+                    if (isUploading)
+                      const LinearProgressIndicator(),
+                    if (pickedFile == null && !isUploading)
+                      TextButton.icon(
+                        onPressed: () async {
+                          final result = await FilePicker.platform.pickFiles(type: FileType.image);
+                          if (result != null) {
+                            setDialogState(() => pickedFile = result.files.first);
+                          }
+                        },
+                        icon: const Icon(Icons.add_photo_alternate),
+                        label: const Text('Add Photo'),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isUploading ? null : () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: isUploading ? null : () async {
+                    final content = controller.text.trim();
+                    if (content.isEmpty && pickedFile == null) return;
+
+                    setDialogState(() => isUploading = true);
+                    try {
+                      Map<String, dynamic>? attachment;
+                      if (pickedFile != null) {
+                        final path = 'classes/${widget.classId}/feed/${DateTime.now().millisecondsSinceEpoch}_${pickedFile!.name}';
+                        if (kIsWeb) {
+                          attachment = await widget.repository.uploadFileWeb(path, pickedFile!.bytes!);
+                        } else {
+                          attachment = await widget.repository.uploadFile(path, File(pickedFile!.path!));
+                        }
+                      }
+
+                      await widget.repository.createPost(
+                        classId: widget.classId,
+                        content: content,
+                        attachments: attachment != null ? [{
+                          'type': 'image',
+                          ...attachment,
+                          'name': pickedFile!.name,
+                          'size': pickedFile!.size,
+                        }] : [],
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to post: $e')),
+                        );
+                      }
+                    } finally {
+                      if (context.mounted) setDialogState(() => isUploading = false);
+                    }
+                  },
+                  child: const Text('Post'),
+                ),
+              ],
+            );
+          }
+        );
+      },
+    );
+  }
+}

@@ -1,0 +1,19 @@
+name: sw_design_system
+description: Design system tokens, theme, widgets for School World.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  cached_network_image: ^3.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^6.0.0
