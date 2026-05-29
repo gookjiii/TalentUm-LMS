@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -52,7 +51,6 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
     }
 
     final appState = ref.watch(schoolAppStateProvider);
-    final isLeadTeacher = appState.isLeadTeacher;
     final classesAsync = ref.watch(teacherClassesStreamProvider);
 
     final Stream<List<ScheduleEntry>> schedulesStream;
@@ -91,7 +89,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
               DateFormat('MMMM yyyy', l10n.localeName).format(_weekStart),
               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
-            if (isLeadTeacher) ...[
+            if (appState.isTeacher) ...[
               const SizedBox(width: 16),
               classesAsync.when(
                 data: (classes) {
@@ -763,10 +761,10 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                 ),
               ),
               const SizedBox(height: 16),
-              CachedStreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                streamFactory: () => repo.teacherClasses(),
+              StreamBuilder<List<Map<String, dynamic>>>(
+                stream: repo.teacherClassesCached(),
                 builder: (context, classSnap) {
-                  if (!classSnap.hasData) {
+                  if (classSnap.hasError) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: Text(
@@ -778,19 +776,19 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                       ),
                     );
                   }
-                  if (classSnap.connectionState == ConnectionState.waiting) {
+                  if (classSnap.connectionState == ConnectionState.waiting && !classSnap.hasData) {
                     return const Padding(
                       padding: EdgeInsets.symmetric(vertical: 8.0),
                       child: Center(child: CircularProgressIndicator()),
                     );
                   }
-                  final docs = classSnap.data!.docs;
+                  final docs = classSnap.data ?? [];
                   if (docs.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.only(bottom: 12.0),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
                       child: Text(
-                        'У вас еще нет созданных классов. Создайте класс во вкладке AppLocalizations.of(context)!.unknownKey14 перед составлением расписания.',
-                        style: TextStyle(
+                        'У вас еще нет созданных классов. Создайте класс во вкладке ${AppLocalizations.of(context)!.unknownKey14} перед составлением расписания.',
+                        style: const TextStyle(
                           color: SchoolColors.muted,
                           fontSize: 13,
                         ),
@@ -798,9 +796,9 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                       ),
                     );
                   }
-                  final docIds = docs.map((d) => d.id).toList();
+                  final docIds = docs.map((d) => d['id'] as String).toList();
                   if (_classId == null || !docIds.contains(_classId)) {
-                    _classId = docs.first.id;
+                    _classId = docs.first['id'] as String;
                   }
                   return DropdownButtonFormField<String>(
                     value: _classId,
@@ -811,8 +809,8 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                     items: [
                       for (final d in docs)
                         DropdownMenuItem(
-                          value: d.id,
-                          child: Text(d.data()['name']?.toString() ?? d.id),
+                          value: d['id'] as String,
+                          child: Text(d['name']?.toString() ?? d['id'] as String),
                         ),
                     ],
                     onChanged: (v) => setState(() => _classId = v),
