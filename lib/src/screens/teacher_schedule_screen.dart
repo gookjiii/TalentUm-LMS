@@ -76,11 +76,13 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
       streamKeys = [_selectedClassId!];
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: SchoolColors.bg,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: SchoolColors.text,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
         centerTitle: false,
         title: Row(
@@ -105,23 +107,30 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                     height: 38,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.08),
+                      color: isDark
+                          ? SchoolColors.darkSurfaceElevated
+                          : Colors.grey.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      border: Border.all(
+                        color: isDark
+                            ? SchoolColors.darkBorder
+                            : Colors.grey.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String?>(
                         value: safeSelectedId,
+                        dropdownColor: isDark ? SchoolColors.darkSurface : null,
                         hint: Text(
                           AppLocalizations.of(context)!.mySchedule,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: SchoolColors.text,
+                            color: isDark ? SchoolColors.darkText : SchoolColors.text,
                           ),
                         ),
-                        style: const TextStyle(
-                          color: SchoolColors.text,
+                        style: TextStyle(
+                          color: isDark ? SchoolColors.darkText : SchoolColors.text,
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
@@ -290,9 +299,9 @@ Future<void> showScheduleEditor(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: _ScheduleEditorSheet(
           prefillDate: prefillDate ?? DateTime.now(),
@@ -353,6 +362,7 @@ class _WeekGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return LayoutBuilder(
       builder: (context, c) {
         final isMobile = c.maxWidth < 700;
@@ -364,7 +374,7 @@ class _WeekGrid extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. Fixed Time Gutter
-              _buildTimeGutter(endHour - startHour),
+              _buildTimeGutter(endHour - startHour, isDark),
 
               // 2. Horizontally Scrollable Days
               Expanded(
@@ -380,6 +390,7 @@ class _WeekGrid extends StatelessWidget {
                           endHour - startHour,
                           hourHeight * (endHour - startHour),
                           dayWidth,
+                          isDark,
                         ),
                       ],
                     ),
@@ -393,10 +404,18 @@ class _WeekGrid extends StatelessWidget {
     );
   }
 
-  Widget _buildTimeGutter(int hours) {
+  Widget _buildTimeGutter(int hours, bool isDark) {
+    final borderColor = isDark ? SchoolColors.darkBorder : SchoolColors.border;
     return Column(
       children: [
-        const SizedBox(height: _headerH),
+        SizedBox(
+          height: _headerH,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: borderColor)),
+            ),
+          ),
+        ),
         for (int i = 0; i < hours; i++)
           SizedBox(
             width: _gutter,
@@ -406,9 +425,9 @@ class _WeekGrid extends StatelessWidget {
               child: Text(
                 '${(startHour + i).toString().padLeft(2, '0')}:00',
                 textAlign: TextAlign.right,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: SchoolColors.muted,
+                  color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -436,7 +455,8 @@ class _WeekGrid extends StatelessWidget {
     );
   }
 
-  Widget _buildBody(int hours, double bodyH, double dayWidth) {
+  Widget _buildBody(int hours, double bodyH, double dayWidth, bool isDark) {
+    final borderColor = isDark ? SchoolColors.darkBorder : SchoolColors.border;
     return SizedBox(
       height: bodyH,
       child: Stack(
@@ -447,8 +467,8 @@ class _WeekGrid extends StatelessWidget {
               return SizedBox(
                 height: hourHeight,
                 child: Container(
-                  decoration: const BoxDecoration(
-                    border: Border(top: BorderSide(color: SchoolColors.border)),
+                  decoration: BoxDecoration(
+                    border: Border(top: BorderSide(color: borderColor)),
                   ),
                 ),
               );
@@ -470,9 +490,9 @@ class _WeekGrid extends StatelessWidget {
                     // Vertical separator
                     Positioned.fill(
                       child: Container(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           border: Border(
-                            left: BorderSide(color: SchoolColors.border),
+                            left: BorderSide(color: borderColor),
                           ),
                         ),
                       ),
@@ -491,7 +511,7 @@ class _WeekGrid extends StatelessWidget {
                       }),
                     ),
                     // Events
-                    ...items.map((it) => _eventCard(it)),
+                    ...items.map((it) => _eventCard(it, isDark)),
                   ],
                 ),
               );
@@ -502,7 +522,7 @@ class _WeekGrid extends StatelessWidget {
     );
   }
 
-  Widget _eventCard(ResolvedScheduleItem it) {
+  Widget _eventCard(ResolvedScheduleItem it, bool isDark) {
     final topMin = it.startMinute - startHour * 60;
     final top = (topMin / 60) * hourHeight;
     final height = ((it.endMinute - it.startMinute) / 60) * hourHeight;
@@ -551,7 +571,7 @@ class _WeekGrid extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: SchoolColors.text,
+                        color: isDark ? SchoolColors.darkText : SchoolColors.text,
                         decoration: it.cancelled
                             ? TextDecoration.lineThrough
                             : null,
@@ -584,9 +604,13 @@ class _DayHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final wkd = DateFormat('E', l10n.localeName).format(date).toUpperCase();
     final dd = DateFormat('d', l10n.localeName).format(date);
-    final color = isToday ? SchoolColors.primary : SchoolColors.text;
+    final textColor = isToday
+        ? SchoolColors.primary
+        : (isDark ? SchoolColors.darkText : SchoolColors.text);
+    final mutedColor = isDark ? SchoolColors.darkMuted : SchoolColors.muted;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 0),
       child: Column(
@@ -599,7 +623,7 @@ class _DayHeader extends StatelessWidget {
               height: 1.0,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.1,
-              color: isToday ? SchoolColors.primary : SchoolColors.muted,
+              color: isToday ? SchoolColors.primary : mutedColor,
             ),
           ),
           const SizedBox(height: 1),
@@ -618,7 +642,7 @@ class _DayHeader extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w900,
-                color: color,
+                color: textColor,
               ),
             ),
           ),
@@ -732,10 +756,10 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
             children: [
               Text(
                 widget.existing == null ? l10n.createClass : l10n.settings,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
-                  color: SchoolColors.text,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 16),
@@ -1034,7 +1058,9 @@ class _TimeField extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade400),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+          ),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Column(
@@ -1042,7 +1068,10 @@ class _TimeField extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 4),
             Text(

@@ -102,6 +102,38 @@ class SchoolColors {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// DESIGN TOKENS
+// ─────────────────────────────────────────────────────────────────
+class AppSpacing {
+  const AppSpacing._();
+  static const double xs = 4.0;
+  static const double sm = 8.0;
+  static const double md = 16.0;
+  static const double lg = 24.0;
+  static const double xl = 32.0;
+  static const double xxl = 48.0;
+}
+
+class AppRadius {
+  const AppRadius._();
+  static const sm = BorderRadius.all(Radius.circular(8));
+  static const md = BorderRadius.all(Radius.circular(12));
+  static const lg = BorderRadius.all(Radius.circular(16));
+  static const xl = BorderRadius.all(Radius.circular(20));
+  static const full = BorderRadius.all(Radius.circular(999));
+}
+
+class AppTextStyle {
+  const AppTextStyle._();
+  static const labelSm = TextStyle(fontSize: 11, fontWeight: FontWeight.w600);
+  static const labelMd = TextStyle(fontSize: 13, fontWeight: FontWeight.w600);
+  static const bodyMd = TextStyle(fontSize: 15, fontWeight: FontWeight.w500);
+  static const titleSm = TextStyle(fontSize: 18, fontWeight: FontWeight.w700);
+  static const titleLg = TextStyle(fontSize: 24, fontWeight: FontWeight.w800);
+  static const display = TextStyle(fontSize: 28, fontWeight: FontWeight.w900);
+}
+
+// ─────────────────────────────────────────────────────────────────
 // LIGHT THEME
 // ─────────────────────────────────────────────────────────────────
 ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {

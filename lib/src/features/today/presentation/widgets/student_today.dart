@@ -37,283 +37,78 @@ class StudentToday extends ConsumerWidget {
 
     final userAsync = ref.watch(userDocumentProvider);
     final userData = userAsync.value ?? {};
-    final rawName =
-        userData['name']?.toString() ?? user?.displayName ?? AppLocalizations.of(context)!.student;
+    final rawName = userData['name']?.toString() ?? user?.displayName ?? l10n.student;
     final name = rawName.trim().isNotEmpty
         ? rawName.split(RegExp(r'\s+')).first
-        : AppLocalizations.of(context)!.student;
+        : l10n.student;
+    final avatarUrl = userData['avatarUrl']?.toString();
 
     final now = DateTime.now();
-    final date = DateFormat('EEEE, d MMMM', l10n.localeName).format(now);
+    final date = DateFormat('EEEE, MMMM d', l10n.localeName).format(now);
+    final hour = now.hour;
+    final greeting = hour < 12
+        ? l10n.goodMorning
+        : hour < 17
+        ? l10n.goodAfternoon
+        : l10n.goodEvening;
 
     final todaySchedules = ref.watch(studentTodaySchedulesProvider);
     final classNames = {
-      for (final c in classes)
-        c['id'].toString(): c['name']?.toString() ?? "Класс",
+      for (final c in classes) c['id'].toString(): c['name']?.toString() ?? 'Класс',
     };
 
     ResolvedScheduleItem? upcomingClass;
     for (final item in todaySchedules) {
       if (item.cancelled) continue;
-      final diff = item.start.difference(DateTime.now()).inMinutes;
+      final diff = item.start.difference(now).inMinutes;
       if (diff > 0 && diff <= 15) {
         upcomingClass = item;
         break;
       }
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 700;
+    final activeLessons = todaySchedules.where((s) {
+      final n = DateTime.now();
+      return !s.cancelled && n.isAfter(s.start) && n.isBefore(s.end);
+    }).length;
 
-        return ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            // ── Hero ──────────────────────────────────────────────
-            FadeIn(
-              delay: Duration.zero,
-              child: wide
-                  ? _StudentHero(
-                      name: name,
-                      onTabSelect: onTabSelect,
-                      onHomeworkTap: onHomeworkTap,
-                    )
-                  : _MobileHeader(
-                      name: name,
-                      date: date,
-                      classes: classes,
-                      onHomeworkTap: onHomeworkTap,
-                    ),
-            ),
-
-            if (upcomingClass != null)
-              FadeIn(
-                delay: const Duration(milliseconds: 60),
-                child: _UpcomingClassReminder(
-                  item: upcomingClass,
-                  className: classNames[upcomingClass.classId] ?? "Класс",
-                ),
-              ),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              child: FadeIn(
-                delay: const Duration(milliseconds: 100),
-                child: const LearningStreakWidget(),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // ── Today's classes ───────────────────────────────────
-            if (!showSidebar) ...[
-              FadeIn(
-                delay: const Duration(milliseconds: 180),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: SectionHeader(
-                        title: l10n.todaysClasses,
-                        action: l10n.viewAll,
-                        onActionTap: () => onTabSelect(4),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: todaySchedules.isEmpty
-                          ? GlassCard(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 24,
-                                horizontal: 16,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  AppLocalizations.of(context)!.noLessonsForToday,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                              ),
-                            )
-                          : StaggeredList(
-                              children: todaySchedules
-                                  .take(3)
-                                  .map(
-                                    (item) => StudentScheduleCard(
-                                      item: item,
-                                      className:
-                                          classNames[item.classId] ?? "Класс",
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-            ],
-
-            // ── Quick links ───────────────────────────────────────
-            FadeIn(
-              delay: const Duration(milliseconds: 260),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: SectionHeader(title: l10n.quickLinks),
-                  ),
-                  const SizedBox(height: 14),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: GridView.count(
-                      crossAxisCount: wide ? 4 : 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.5,
-                      children: [
-                        QuickTile(
-                          onTap: () => onTabSelect(5),
-                          icon: Icons.library_books_outlined,
-                          label: AppLocalizations.of(context)!.library,
-                          color: SchoolColors.primary,
-                        ),
-                        QuickTile(
-                          onTap: () => onTabSelect(6),
-                          icon: Icons.ondemand_video_outlined,
-                          label: AppLocalizations.of(context)!.webinars,
-                          color: SchoolColors.accent,
-                        ),
-                        QuickTile(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RosterGradesScreen(),
-                            ),
-                          ),
-                          icon: Icons.school_outlined,
-                          label: l10n.myGrades,
-                          color: SchoolColors.green,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 40),
-          ],
-        );
-      },
-    );
-  }
-
-  String _getDisplayName(BuildContext context, User? user) {
-    return (user?.displayName?.trim().isNotEmpty ?? false)
-        ? user!.displayName!.split(RegExp(r'\s+')).first
-        : AppLocalizations.of(context)!.student;
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────
-// MOBILE HEADER  (greeting + streak card)
-// ─────────────────────────────────────────────────────────────────
-class _MobileHeader extends StatelessWidget {
-  const _MobileHeader({
-    required this.name,
-    required this.date,
-    required this.classes,
-    required this.onHomeworkTap,
-  });
-
-  final String name;
-  final String date;
-  final List<Map<String, dynamic>> classes;
-  final VoidCallback onHomeworkTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 60, 24, 28),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  SchoolColors.darkSurface,
-                  Color.lerp(
-                        SchoolColors.darkSurface,
-                        SchoolColors.primary,
-                        0.03,
-                      ) ??
-                      SchoolColors.darkSurface,
-                ]
-              : [
-                  Colors.white,
-                  Color.lerp(Colors.white, SchoolColors.primary, 0.02) ??
-                      Colors.white,
-                ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? SchoolColors.darkBorder.withValues(alpha: 0.6)
-                : SchoolColors.border.withValues(alpha: 0.6),
-            width: 1.2,
-          ),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return ListView(
+      padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 24),
+      children: [
+        // ── Header ────────────────────────────────────────────────
+        FadeIn(
+          delay: Duration.zero,
+          child: Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      date.toUpperCase(),
-                      style: TextStyle(
-                        color: isDark
-                            ? SchoolColors.darkMuted.withValues(alpha: 0.7)
-                            : SchoolColors.muted.withValues(alpha: 0.8),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
+                      date,
+                      style: const TextStyle(
+                        color: SchoolColors.muted,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
-                      '${_greeting(context)}, $name 👋',
+                      '$greeting, $name 👋',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w900,
-                        height: 1.15,
-                        color: isDark ? Colors.white : SchoolColors.darkText,
-                        letterSpacing: 0.0,
+                        height: 1.1,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
               SchoolAvatar(
                 name: name,
-                radius: 25,
+                avatarUrl: avatarUrl,
+                radius: 23,
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -327,202 +122,253 @@ class _MobileHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          StreakCard(
+        ),
+        const SizedBox(height: 20),
+
+        // ── Stats row ─────────────────────────────────────────────
+        FadeIn(
+          delay: const Duration(milliseconds: 60),
+          child: _StatsRow(
+            classCount: classes.length,
+            todayLessons: todaySchedules.length,
+            activeLessons: activeLessons,
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // ── Upcoming class reminder ────────────────────────────────
+        if (upcomingClass != null) ...[
+          FadeIn(
+            delay: const Duration(milliseconds: 80),
+            child: _UpcomingClassReminder(
+              item: upcomingClass,
+              className: classNames[upcomingClass.classId] ?? 'Класс',
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        // ── Streak / homework progress ─────────────────────────────
+        FadeIn(
+          delay: const Duration(milliseconds: 100),
+          child: const LearningStreakWidget(),
+        ),
+        const SizedBox(height: 12),
+        FadeIn(
+          delay: const Duration(milliseconds: 120),
+          child: StreakCard(
             classIds: classes.map((c) => c['id'] as String).toList(),
             onTap: onHomeworkTap,
           ),
-        ],
-      ),
-    );
-  }
-
-  String _greeting(BuildContext context) {
-    final h = DateTime.now().hour;
-    if (h < 12) return AppLocalizations.of(context)!.goodMorning;
-    if (h < 17) return AppLocalizations.of(context)!.goodAfternoon;
-    return AppLocalizations.of(context)!.goodEvening;
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────
-// WIDE HERO BANNER
-// ─────────────────────────────────────────────────────────────────
-class _StudentHero extends StatelessWidget {
-  const _StudentHero({
-    required this.name,
-    required this.onTabSelect,
-    required this.onHomeworkTap,
-  });
-
-  final String name;
-  final ValueChanged<int> onTabSelect;
-  final VoidCallback onHomeworkTap;
-
-  String _greeting(BuildContext context) {
-    final h = DateTime.now().hour;
-    if (h < 12) return AppLocalizations.of(context)!.goodMorning;
-    if (h < 17) return AppLocalizations.of(context)!.goodAfternoon;
-    return AppLocalizations.of(context)!.goodEvening;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(40, 44, 40, 44),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1D4ED8), Color(0xFF2563EB), Color(0xFF4F46E5)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: SchoolColors.primary.withValues(alpha: 0.25),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Decorative circles
-          Positioned(
-            top: -40,
-            right: -20,
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
+        const SizedBox(height: 24),
+
+        // ── Today's classes ───────────────────────────────────────
+        if (!showSidebar) ...[
+          FadeIn(
+            delay: const Duration(milliseconds: 160),
+            child: SectionHeader(
+              title: l10n.todaysClasses.toUpperCase(),
+              action: l10n.viewAll,
+              onActionTap: () => onTabSelect(4),
             ),
           ),
-          Positioned(
-            bottom: -60,
-            right: 80,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.04),
-              ),
-            ),
-          ),
-          // Content
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${_greeting(context)}, $name',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                AppLocalizations.of(context)!.areYouReadyFornnewKnowledge,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 38,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -1.0,
-                  height: 1.05,
-                ),
-              ),
-              const SizedBox(height: 28),
-              Row(
-                children: [
-                  _HeroButton(
-                    label: l10n.join,
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.joinLessonSoon)),
+          const SizedBox(height: 12),
+          FadeIn(
+            delay: const Duration(milliseconds: 180),
+            child: todaySchedules.isEmpty
+                ? SchoolCard(
+                    padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          const Icon(Icons.calendar_today_outlined, size: 32, color: SchoolColors.muted),
+                          const SizedBox(height: 10),
+                          Text(
+                            l10n.noLessonsForToday,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: SchoolColors.muted,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    filled: true,
+                  )
+                : StaggeredList(
+                    children: todaySchedules.take(3).map(
+                      (item) => StudentScheduleCard(
+                        item: item,
+                        className: classNames[item.classId] ?? 'Класс',
+                      ),
+                    ).toList(),
                   ),
-                  const SizedBox(width: 12),
-                  _HeroButton(
-                    label: l10n.homework,
-                    onTap: onHomeworkTap,
-                    filled: false,
-                  ),
-                ],
+          ),
+          const SizedBox(height: 24),
+        ],
+
+        // ── Quick links ───────────────────────────────────────────
+        FadeIn(
+          delay: const Duration(milliseconds: 220),
+          child: SectionHeader(title: l10n.quickLinks),
+        ),
+        const SizedBox(height: 12),
+        FadeIn(
+          delay: const Duration(milliseconds: 240),
+          child: GridView.count(
+            crossAxisCount: MediaQuery.sizeOf(context).width >= 700 ? 4 : 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.5,
+            children: [
+              QuickTile(
+                onTap: () => onTabSelect(5),
+                icon: Icons.library_books_outlined,
+                label: l10n.library,
+                color: SchoolColors.primary,
+              ),
+              QuickTile(
+                onTap: () => onTabSelect(6),
+                icon: Icons.ondemand_video_outlined,
+                label: l10n.webinars,
+                color: SchoolColors.accent,
+              ),
+              QuickTile(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RosterGradesScreen()),
+                ),
+                icon: Icons.school_outlined,
+                label: l10n.myGrades,
+                color: SchoolColors.green,
               ),
             ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 40),
+      ],
     );
   }
 }
 
-class _HeroButton extends StatefulWidget {
-  const _HeroButton({
-    required this.label,
-    required this.onTap,
-    required this.filled,
+// ─────────────────────────────────────────────────────────────────
+// STATS ROW
+// ─────────────────────────────────────────────────────────────────
+class _StatsRow extends StatelessWidget {
+  const _StatsRow({
+    required this.classCount,
+    required this.todayLessons,
+    required this.activeLessons,
   });
-  final String label;
-  final VoidCallback onTap;
-  final bool filled;
-
-  @override
-  State<_HeroButton> createState() => _HeroButtonState();
-}
-
-class _HeroButtonState extends State<_HeroButton> {
-  bool _pressed = false;
+  final int classCount;
+  final int todayLessons;
+  final int activeLessons;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 120),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          decoration: BoxDecoration(
-            color: widget.filled
-                ? Colors.white
-                : Colors.white.withValues(alpha: _pressed ? 0.15 : 0.0),
-            borderRadius: BorderRadius.circular(12),
-            border: widget.filled
-                ? null
-                : Border.all(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    width: 1.5,
-                  ),
-            boxShadow: widget.filled
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
+
+    return Row(
+      children: [
+        _StatMini(
+          icon: Icons.school_rounded,
+          value: '$classCount',
+          label: l10n.allClasses,
+          color: SchoolColors.primary,
+          isDark: isDark,
+        ),
+        const SizedBox(width: 10),
+        _StatMini(
+          icon: Icons.calendar_today_rounded,
+          value: '$todayLessons',
+          label: l10n.todaysClasses,
+          color: SchoolColors.accent,
+          isDark: isDark,
+        ),
+        if (activeLessons > 0) ...[
+          const SizedBox(width: 10),
+          _StatMini(
+            icon: Icons.play_circle_rounded,
+            value: '$activeLessons',
+            label: AppLocalizations.of(context)!.now,
+            color: SchoolColors.green,
+            isDark: isDark,
+            pulsing: true,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _StatMini extends StatelessWidget {
+  const _StatMini({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+    required this.isDark,
+    this.pulsing = false,
+  });
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+  final bool isDark;
+  final bool pulsing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDark
+              ? color.withValues(alpha: 0.12)
+              : color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: color.withValues(alpha: isDark ? 0.2 : 0.15),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: color,
+                      height: 1.1,
                     ),
-                  ]
-                : null,
-          ),
-          child: Text(
-            widget.label,
-            style: TextStyle(
-              color: widget.filled ? SchoolColors.primary : Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 15,
+                  ),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? SchoolColors.darkTextSecondary
+                          : SchoolColors.muted,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -596,16 +442,14 @@ class _StreakCardState extends State<StreakCard> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF1D4ED8), Color(0xFF4F46E5)],
+                    colors: [SchoolColors.primaryDark, SchoolColors.secondary],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(
-                        0xFF2563EB,
-                      ).withValues(alpha: _hovered ? 0.45 : 0.28),
+                      color: SchoolColors.primary.withValues(alpha: _hovered ? 0.45 : 0.28),
                       blurRadius: _hovered ? 28 : 20,
                       offset: Offset(0, _hovered ? 12 : 8),
                     ),

@@ -40,6 +40,7 @@ class TeacherWorkspaceScreen extends ConsumerStatefulWidget {
 class _TeacherWorkspaceScreenState
     extends ConsumerState<TeacherWorkspaceScreen> {
   int _tabIndex = 0;
+  bool _moreSelected = false;
   String? selectedClassId;
   late final SchoolAppState _appState;
 
@@ -309,16 +310,13 @@ class _TeacherWorkspaceScreenState
                   ? null
                   : Builder(
                       builder: (context) {
-                        final mobileIndices = appState.isLeadTeacher
-                            ? [0, 1, 2, 4, 10] // Today, Feed, Chat, Homework, Admin Panel
-                            : [0, 1, 2, 4, 7]; // Today, Feed, Chat, Homework, Journal
+                        const mobileIndices = [0, 2, 4, 8]; // Today, Chat, Homework, Schedule
                         final mobileNavItems = mobileIndices
                             .map((i) => navItems[i])
                             .toList();
                         var mobileSelected = mobileIndices.indexOf(_tabIndex);
 
-                        // Guard against resize to mobile when a desktop-only tab is selected
-                        if (mobileSelected < 0) {
+                        if (mobileSelected < 0 && !_moreSelected) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             if (mounted) setState(() => _tabIndex = 0);
                           });
@@ -326,13 +324,18 @@ class _TeacherWorkspaceScreenState
                         }
 
                         return _MobileBottomBar(
-                          selectedIndex: mobileSelected,
+                          selectedIndex: _moreSelected ? -1 : mobileSelected,
                           onSelect: (i) {
-                            final realIndex = mobileIndices[i];
-                            setState(() => _tabIndex = realIndex);
-                            ref.read(schoolAppStateProvider).setTeacherTabIndex(realIndex);
+                            HapticFeedback.lightImpact();
+                            setState(() {
+                              _tabIndex = mobileIndices[i];
+                              _moreSelected = false;
+                            });
+                            ref.read(schoolAppStateProvider).setTeacherTabIndex(mobileIndices[i]);
                           },
                           items: mobileNavItems,
+                          onMoreTap: () => _showTeacherMoreSheet(context, appState),
+                          moreSelected: _moreSelected,
                         );
                       },
                     ),
@@ -864,9 +867,7 @@ class _TeacherWorkspaceScreenState
     AppLocalizations l10n,
     List<Map<String, dynamic>> classes,
   ) {
-    final mobileIndices = appState.isLeadTeacher
-        ? [0, 1, 2, 4, 10]
-        : [0, 1, 2, 4, 7];
+    const mobileIndices = [0, 2, 4, 8];
 
     if (!wide && !mobileIndices.contains(index)) {
       Navigator.push(
@@ -887,6 +888,28 @@ class _TeacherWorkspaceScreenState
       setState(() => _tabIndex = index);
       ref.read(schoolAppStateProvider).setTeacherTabIndex(index);
     }
+  }
+
+  void _showTeacherMoreSheet(BuildContext context, SchoolAppState appState) {
+    HapticFeedback.lightImpact();
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => _TeacherMoreSheet(
+        isLeadTeacher: appState.isLeadTeacher,
+        onSelect: (index) {
+          Navigator.pop(ctx);
+          setState(() {
+            _tabIndex = index;
+            _moreSelected = true;
+          });
+          ref.read(schoolAppStateProvider).setTeacherTabIndex(index);
+        },
+        l10n: l10n,
+      ),
+    );
   }
 
   String _getTabTitle(int index, AppLocalizations l10n) {
@@ -1055,10 +1078,14 @@ class _MobileBottomBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelect,
     required this.items,
+    required this.onMoreTap,
+    this.moreSelected = false,
   });
   final int selectedIndex;
   final ValueChanged<int> onSelect;
   final List<TeacherNavDest> items;
+  final VoidCallback onMoreTap;
+  final bool moreSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -1094,13 +1121,65 @@ class _MobileBottomBar extends StatelessWidget {
             filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(items.length, (index) {
-                final item = items[index];
-                final selected = selectedIndex == index;
+              children: [
+                ...List.generate(items.length, (index) {
+                  final item = items[index];
+                  final selected = selectedIndex == index;
 
-                return Expanded(
+                  return Expanded(
+                    child: InkWell(
+                      onTap: () => onSelect(index),
+                      borderRadius: BorderRadius.circular(20),
+                      highlightColor: Colors.transparent,
+                      splashColor: SchoolColors.primary.withValues(alpha: 0.1),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedScale(
+                            scale: selected ? 1.15 : 1.0,
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeOutBack,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? (isDark
+                                        ? SchoolColors.primary.withValues(alpha: 0.18)
+                                        : SchoolColors.primary.withValues(alpha: 0.1))
+                                    : Colors.transparent,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                selected ? item.selectedIcon : item.icon,
+                                color: selected
+                                    ? SchoolColors.primary
+                                    : (isDark
+                                        ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
+                                        : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                          if (selected)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Container(
+                                width: 4,
+                                height: 4,
+                                decoration: const BoxDecoration(
+                                  color: SchoolColors.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                Expanded(
                   child: InkWell(
-                    onTap: () => onSelect(index),
+                    onTap: onMoreTap,
                     borderRadius: BorderRadius.circular(20),
                     highlightColor: Colors.transparent,
                     splashColor: SchoolColors.primary.withValues(alpha: 0.1),
@@ -1108,13 +1187,13 @@ class _MobileBottomBar extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         AnimatedScale(
-                          scale: selected ? 1.15 : 1.0,
+                          scale: moreSelected ? 1.15 : 1.0,
                           duration: const Duration(milliseconds: 250),
                           curve: Curves.easeOutBack,
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: selected
+                              color: moreSelected
                                   ? (isDark
                                       ? SchoolColors.primary.withValues(alpha: 0.18)
                                       : SchoolColors.primary.withValues(alpha: 0.1))
@@ -1122,8 +1201,8 @@ class _MobileBottomBar extends StatelessWidget {
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              selected ? item.selectedIcon : item.icon,
-                              color: selected
+                              moreSelected ? Icons.grid_view_rounded : Icons.grid_view_outlined,
+                              color: moreSelected
                                   ? SchoolColors.primary
                                   : (isDark
                                       ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
@@ -1132,7 +1211,7 @@ class _MobileBottomBar extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (selected)
+                        if (moreSelected)
                           Padding(
                             padding: const EdgeInsets.only(top: 2),
                             child: Container(
@@ -1147,8 +1226,8 @@ class _MobileBottomBar extends StatelessWidget {
                       ],
                     ),
                   ),
-                );
-              }),
+                ),
+              ],
             ),
           ),
         ),
@@ -1202,5 +1281,144 @@ class _AnimatedNavIconState extends State<_AnimatedNavIcon>
   @override
   Widget build(BuildContext context) {
     return ScaleTransition(scale: _scale, child: Icon(widget.icon));
+  }
+}
+
+class _TeacherMoreSheet extends StatelessWidget {
+  const _TeacherMoreSheet({
+    required this.isLeadTeacher,
+    required this.onSelect,
+    required this.l10n,
+  });
+  final bool isLeadTeacher;
+  final ValueChanged<int> onSelect;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final items = [
+      (icon: Icons.campaign_rounded, label: l10n.feed, color: SchoolColors.secondary, index: 1),
+      (icon: Icons.coffee_rounded, label: l10n.teachersRoom, color: SchoolColors.accent, index: 3),
+      (icon: Icons.library_books_rounded, label: l10n.library, color: const Color(0xFF059669), index: 5),
+      (icon: Icons.ondemand_video_rounded, label: l10n.webinars, color: SchoolColors.primary, index: 6),
+      (icon: Icons.book_rounded, label: l10n.magazine, color: SchoolColors.orange, index: 7),
+      (icon: Icons.people_rounded, label: l10n.participants, color: SchoolColors.textSecondary, index: 9),
+      if (isLeadTeacher)
+        (icon: Icons.admin_panel_settings_rounded, label: l10n.adminPanel, color: Colors.redAccent, index: 10),
+      (icon: Icons.settings_rounded, label: l10n.settings, color: SchoolColors.muted, index: isLeadTeacher ? 11 : 10),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      decoration: BoxDecoration(
+        color: isDark ? SchoolColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+          width: 1.0,
+        ),
+        boxShadow: [SchoolColors.elevatedShadow],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Text(
+              'More',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 16),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 2.6,
+              children: items
+                  .map(
+                    (item) => _MoreSheetItem(
+                      icon: item.icon,
+                      label: item.label,
+                      color: item.color,
+                      isDark: isDark,
+                      onTap: () => onSelect(item.index),
+                    ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreSheetItem extends StatelessWidget {
+  const _MoreSheetItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.isDark,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withValues(alpha: isDark ? 0.12 : 0.08),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

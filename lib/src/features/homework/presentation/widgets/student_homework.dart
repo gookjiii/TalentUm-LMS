@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
+import 'package:school_world/src/widgets/shimmer_widgets.dart';
 import '../../../../screens/homework_detail_screen.dart';
 import '../../../../firebase/safe_firestore.dart';
 
@@ -210,7 +211,7 @@ class _StudentHomeworkState extends State<StudentHomework> {
                       ),
                       const SizedBox(height: 24),
                       if (loading)
-                        const Center(child: CircularProgressIndicator())
+                        const ShimmerHomeworkList(count: 5)
                       else if (filteredAssignments.isEmpty)
                         const NoHomeworkEmptyState()
                       else

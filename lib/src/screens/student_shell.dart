@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/main.dart';
@@ -214,22 +215,29 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                   ? null
                   : Builder(
                       builder: (context) {
-                        // 0=Today, 1=Feed, 2=Chat, 3=Homework, 7=Journal
-                        const mobileIndices = [0, 1, 2, 3, 7];
+                        // 0=Today, 2=Chat, 3=Homework, 4=Schedule; More opens sheet
+                        const mobileIndices = [0, 2, 3, 4];
                         final mobileNavItems = mobileIndices.map((i) => navItems[i]).toList();
                         var mobileSelected = mobileIndices.indexOf(_tabIndex);
 
-                        if (mobileSelected < 0) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted) setState(() => _tabIndex = 0);
-                          });
-                          mobileSelected = 0;
-                        }
+                        if (mobileSelected < 0) mobileSelected = -1;
 
                         return _MobileTabBar(
                           selectedIndex: mobileSelected,
-                          onSelect: (i) => setState(() => _tabIndex = mobileIndices[i]),
+                          onSelect: (i) {
+                            HapticFeedback.lightImpact();
+                            setState(() => _tabIndex = mobileIndices[i]);
+                          },
                           items: mobileNavItems,
+                          onMoreTap: () => _showMoreSheet(
+                            context,
+                            classes,
+                            selectedId,
+                            repo,
+                            appState,
+                            l10n,
+                          ),
+                          moreSelected: mobileSelected < 0,
                         );
                       },
                     ),
@@ -237,6 +245,29 @@ class _StudentShellState extends ConsumerState<StudentShell> {
           },
         );
       },
+    );
+  }
+
+  void _showMoreSheet(
+    BuildContext context,
+    List<Map<String, dynamic>> classes,
+    String? selectedId,
+    SchoolRepository repo,
+    SchoolAppState appState,
+    AppLocalizations l10n,
+  ) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => _MoreSheet(
+        onSelect: (index) {
+          Navigator.pop(ctx);
+          _handleTabSelection(index, false, selectedId, repo, appState, l10n, classes);
+        },
+        l10n: l10n,
+      ),
     );
   }
 
@@ -365,6 +396,197 @@ class JoinClassEmptyState extends StatelessWidget {
   }
 }
 
+class _NavTabItem extends StatelessWidget {
+  const _NavTabItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.selected,
+    required this.isDark,
+    required this.onTap,
+  });
+  final IconData icon;
+  final IconData selectedIcon;
+  final bool selected;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      highlightColor: Colors.transparent,
+      splashColor: SchoolColors.primary.withValues(alpha: 0.1),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedScale(
+            scale: selected ? 1.15 : 1.0,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutBack,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: selected
+                    ? (isDark
+                        ? SchoolColors.primary.withValues(alpha: 0.18)
+                        : SchoolColors.primary.withValues(alpha: 0.1))
+                    : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                selected ? selectedIcon : icon,
+                color: selected
+                    ? SchoolColors.primary
+                    : (isDark
+                        ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
+                        : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                size: 24,
+              ),
+            ),
+          ),
+          if (selected)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Container(
+                width: 4,
+                height: 4,
+                decoration: const BoxDecoration(
+                  color: SchoolColors.primary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MoreSheet extends StatelessWidget {
+  const _MoreSheet({required this.onSelect, required this.l10n});
+  final ValueChanged<int> onSelect;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final items = [
+      (icon: Icons.campaign_rounded, label: l10n.feed, color: SchoolColors.secondary, index: 1),
+      (icon: Icons.library_books_rounded, label: l10n.library, color: SchoolColors.accent, index: 5),
+      (icon: Icons.ondemand_video_rounded, label: l10n.webinars, color: SchoolColors.primary, index: 6),
+      (icon: Icons.book_rounded, label: l10n.magazine, color: SchoolColors.orange, index: 7),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      decoration: BoxDecoration(
+        color: isDark ? SchoolColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+          width: 1.0,
+        ),
+        boxShadow: [SchoolColors.elevatedShadow],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+              alignment: Alignment.center,
+            ),
+            Text(
+              'More',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 16),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 2.6,
+              children: items.map((item) => _MoreItem(
+                icon: item.icon,
+                label: item.label,
+                color: item.color,
+                isDark: isDark,
+                onTap: () => onSelect(item.index),
+              )).toList(),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreItem extends StatelessWidget {
+  const _MoreItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.isDark,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color.withValues(alpha: isDark ? 0.12 : 0.08),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class JoinClassDialog extends StatefulWidget {
   const JoinClassDialog({super.key, required this.repository});
   final SchoolRepository repository;
@@ -475,10 +697,14 @@ class _MobileTabBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelect,
     required this.items,
+    required this.onMoreTap,
+    this.moreSelected = false,
   });
   final int selectedIndex;
   final ValueChanged<int> onSelect;
   final List<NavDest> items;
+  final VoidCallback onMoreTap;
+  final bool moreSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -514,61 +740,30 @@ class _MobileTabBar extends StatelessWidget {
             filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(items.length, (index) {
-                final item = items[index];
-                final selected = selectedIndex == index;
-
-                return Expanded(
-                  child: InkWell(
-                    onTap: () => onSelect(index),
-                    borderRadius: BorderRadius.circular(20),
-                    highlightColor: Colors.transparent,
-                    splashColor: SchoolColors.primary.withValues(alpha: 0.1),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedScale(
-                          scale: selected ? 1.15 : 1.0,
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOutBack,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? (isDark
-                                      ? SchoolColors.primary.withValues(alpha: 0.18)
-                                      : SchoolColors.primary.withValues(alpha: 0.1))
-                                  : Colors.transparent,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              selected ? item.selectedIcon : item.icon,
-                              color: selected
-                                  ? SchoolColors.primary
-                                  : (isDark
-                                      ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
-                                      : SchoolColors.textSecondary.withValues(alpha: 0.5)),
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                        if (selected)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Container(
-                              width: 4,
-                              height: 4,
-                              decoration: const BoxDecoration(
-                                color: SchoolColors.primary,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                      ],
+              children: [
+                ...List.generate(items.length, (index) {
+                  final item = items[index];
+                  final selected = selectedIndex == index;
+                  return Expanded(
+                    child: _NavTabItem(
+                      icon: item.icon,
+                      selectedIcon: item.selectedIcon,
+                      selected: selected,
+                      isDark: isDark,
+                      onTap: () => onSelect(index),
                     ),
+                  );
+                }),
+                Expanded(
+                  child: _NavTabItem(
+                    icon: Icons.grid_view_outlined,
+                    selectedIcon: Icons.grid_view_rounded,
+                    selected: moreSelected,
+                    isDark: isDark,
+                    onTap: onMoreTap,
                   ),
-                );
-              }),
+                ),
+              ],
             ),
           ),
         ),

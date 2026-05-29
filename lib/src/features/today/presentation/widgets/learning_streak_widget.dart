@@ -32,12 +32,13 @@ class LearningStreakWidget extends StatelessWidget {
               last.year == now.year;
         }
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: SchoolColors.orange.withOpacity(0.1),
+            color: SchoolColors.orange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: SchoolColors.orange.withOpacity(0.2)),
+            border: Border.all(color: SchoolColors.orange.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -52,7 +53,7 @@ class LearningStreakWidget extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
-                        color: Colors.orange,
+                        color: SchoolColors.orange,
                       ),
                     ),
                     Text(
@@ -61,7 +62,9 @@ class LearningStreakWidget extends StatelessWidget {
                           : AppLocalizations.of(context)!.completeTheTaskSoAs,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.orange.shade800,
+                        color: isDark
+                            ? SchoolColors.orange.withValues(alpha: 0.7)
+                            : SchoolColors.orangeContainer,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -70,7 +73,7 @@ class LearningStreakWidget extends StatelessWidget {
               ),
               const Icon(
                 Icons.emoji_events_rounded,
-                color: Colors.orange,
+                color: SchoolColors.orange,
                 size: 32,
               ),
             ],
@@ -133,7 +136,7 @@ class _FireIconState extends State<_FireIcon> {
       curve: Curves.easeInOut,
       child: Icon(
         Icons.local_fire_department_rounded,
-        color: widget.active ? Colors.orange : Colors.grey.withOpacity(0.5),
+        color: widget.active ? SchoolColors.orange : Colors.grey.withValues(alpha: 0.5),
         size: 40,
       ),
     );

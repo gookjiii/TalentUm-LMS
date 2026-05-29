@@ -1143,22 +1143,34 @@ class _MembersTabView extends StatefulWidget {
 class _MembersTabViewState extends State<_MembersTabView> {
   late Future<List<Map<String, dynamic>>> _membersFuture;
   String _classId = '';
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    _membersFuture = _loadMembers();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      final l10n = AppLocalizations.of(context)!;
+      _membersFuture = _loadMembers(
+        teacherLabel: l10n.teacher,
+        studentLabel: l10n.student,
+        roomNotFoundMsg: l10n.roomNotFound,
+      );
+    }
   }
 
-  Future<List<Map<String, dynamic>>> _loadMembers() async {
-    final l10n = AppLocalizations.of(context)!;
+  Future<List<Map<String, dynamic>>> _loadMembers({
+    required String teacherLabel,
+    required String studentLabel,
+    required String roomNotFoundMsg,
+  }) async {
     final roomSnap = await widget.repository.firestore
         .collection('rooms')
         .doc(widget.roomId)
         .get();
 
     if (!roomSnap.exists) {
-      throw Exception(l10n.roomNotFound);
+      throw Exception(roomNotFoundMsg);
     }
 
     final data = roomSnap.data()!;
@@ -1181,12 +1193,11 @@ class _MembersTabViewState extends State<_MembersTabView> {
 
     if (userIds.isEmpty) return [];
 
-    // Fetch users in chunks or all at once using Future.wait to avoid UI stutter
     final futures = userIds.map((id) => widget.repository.firestore
         .collection('users')
         .doc(id)
         .get(const GetOptions(source: Source.serverAndCache)));
-    
+
     final userSnaps = await Future.wait(futures);
 
     return userSnaps.map((snap) {
@@ -1195,7 +1206,7 @@ class _MembersTabViewState extends State<_MembersTabView> {
       final lastName = userData['lastName'] as String? ?? '';
       final fullName = userData['name'] as String? ??
           (firstName.isEmpty && lastName.isEmpty
-              ? (_classId.isEmpty ? l10n.teacher : l10n.student)
+              ? (_classId.isEmpty ? teacherLabel : studentLabel)
               : '$firstName $lastName'.trim());
 
       final role = userData['role'] as String? ?? '';
@@ -1325,7 +1336,11 @@ class _MembersTabViewState extends State<_MembersTabView> {
                             isAdmin: !isAdmin,
                           );
                           setState(() {
-                            _membersFuture = _loadMembers();
+                            _membersFuture = _loadMembers(
+                                    teacherLabel: AppLocalizations.of(context)!.teacher,
+                                    studentLabel: AppLocalizations.of(context)!.student,
+                                    roomNotFoundMsg: AppLocalizations.of(context)!.roomNotFound,
+                                  );
                           });
                         } else if (val == 'remove') {
                           _confirmRemove(
@@ -1336,7 +1351,11 @@ class _MembersTabViewState extends State<_MembersTabView> {
                           ).then((ok) {
                             if (ok == true && mounted) {
                               setState(() {
-                                _membersFuture = _loadMembers();
+                                _membersFuture = _loadMembers(
+                                    teacherLabel: AppLocalizations.of(context)!.teacher,
+                                    studentLabel: AppLocalizations.of(context)!.student,
+                                    roomNotFoundMsg: AppLocalizations.of(context)!.roomNotFound,
+                                  );
                               });
                             }
                           });
