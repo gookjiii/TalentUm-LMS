@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
@@ -18,7 +20,74 @@ class TeacherSettingsTab extends StatefulWidget {
 
 
 class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
+  String _getAccentColorName(Color color, bool isRu) {
+    final val = color.value;
+    if (val == const Color(0xFF2563EB).value) {
+      return isRu ? AppLocalizations.of(context)!.schoolBlue : 'School blue';
+    } else if (val == const Color(0xFF059669).value || val == SchoolColors.green.value) {
+      return isRu ? AppLocalizations.of(context)!.emerald : 'Emerald';
+    } else if (val == const Color(0xFFF59E0B).value || val == SchoolColors.yellow.value) {
+      return isRu ? AppLocalizations.of(context)!.amber : 'Amber';
+    } else if (val == const Color(0xFFDC2626).value || val == SchoolColors.red.value) {
+      return isRu ? AppLocalizations.of(context)!.scarlet : 'Crimson';
+    } else if (val == const Color(0xFF7C3AED).value || val == SchoolColors.primary.value) {
+      return isRu ? AppLocalizations.of(context)!.violet : 'Purple';
+    }
+    return isRu ? AppLocalizations.of(context)!.schoolBlue : 'School blue';
+  }
+
   bool _loading = true;
+  bool _uploadingAvatar = false;
+
+  Future<void> _pickAndUploadAvatar() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+
+    if (result == null || result.files.isEmpty || !mounted) return;
+
+    setState(() => _uploadingAvatar = true);
+    try {
+      final file = result.files.first;
+      final repo = AppScope.of(context).repository;
+      final uid = repo.uid;
+      if (uid == null) throw Exception('Not logged in');
+
+      final path = 'avatars/$uid/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+
+      Map<String, dynamic>? uploadResult;
+      if (file.bytes != null) {
+        uploadResult = await repo.uploadFileWeb(path, file.bytes!);
+      } else if (file.path != null) {
+        uploadResult = await repo.uploadFile(path, File(file.path!));
+      }
+
+      if (uploadResult != null && uploadResult['url'] != null) {
+        final url = uploadResult['url'] as String;
+        await repo.firestore.collection('users').doc(uid).update({
+          'avatarUrl': url,
+        });
+        await repo.auth.currentUser?.updatePhotoURL(url);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Аватар обновлен / Avatar updated')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка загрузки / Upload error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _uploadingAvatar = false);
+      }
+    }
+  }
   Map<String, dynamic> _userData = {};
   int _classesCount = 0;
   int _studentsCount = 0;
@@ -83,17 +152,20 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
     final user = FirebaseAuth.instance.currentUser;
     final name = (_userData['name'] as String?)?.isNotEmpty == true
         ? _userData['name'] as String
-        : (user?.displayName ?? 'Учитель');
+        : (user?.displayName ?? AppLocalizations.of(context)!.teacher);
     final avatarUrl = _userData['avatarUrl'] as String?;
     final email = user?.email ?? '';
-    final school = _userData['school'] ?? 'Школа №57';
+    final school = _userData['school'] ?? AppLocalizations.of(context)!.n57;
     final appState = AppScope.of(context).appState;
     final settings = _userData['settings'] as Map<String, dynamic>? ?? {};
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800),
-        child: ListView(
+    return AnimatedBuilder(
+      animation: appState,
+      builder: (context, _) {
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 56, 20, 40),
           children: [
             Text(
@@ -109,6 +181,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
               sub: 'Старший учитель · $school',
               isTeacher: true,
               classesCount: _classesCount,
+              onEditAvatar: _uploadingAvatar ? null : _pickAndUploadAvatar,
             ),
 
             const SizedBox(height: 12),
@@ -137,7 +210,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _StatMiniCard(
-                    label: 'СТАЖ',
+                    label: AppLocalizations.of(context)!.experience,
                     value: _userData['experience']?.toString() ?? '—',
                     color: SchoolColors.yellow,
                   ),
@@ -153,7 +226,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                 _SettingsRow(
                   icon: Icons.person_outline_rounded,
                   color: SchoolColors.primary,
-                  label: 'Личные данные',
+                  label: AppLocalizations.of(context)!.personalInformation,
                   sub: name,
                   onTap: () => _editName(context, name),
                 ),
@@ -167,7 +240,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                 _SettingsRow(
                   icon: Icons.link_rounded,
                   color: SchoolColors.accent,
-                  label: 'Связанные аккаунты',
+                  label: AppLocalizations.of(context)!.linkedAccounts,
                   sub: 'Google · Apple',
                   onTap: () => _showLinkedAccounts(context),
                   last: true,
@@ -181,8 +254,8 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                 _SettingsRow(
                   icon: Icons.notifications_none_rounded,
                   color: SchoolColors.red,
-                  label: 'Push-уведомления',
-                  sub: 'Разрешены для чата и заданий',
+                  label: AppLocalizations.of(context)!.pushNotifications,
+                  sub: AppLocalizations.of(context)!.allowedForChatAndTasks,
                   right: _CustomToggle(
                     on: settings['pushEnabled'] ?? true,
                     onChanged: (v) => _updateSetting('pushEnabled', v),
@@ -191,8 +264,8 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                 _SettingsRow(
                   icon: Icons.chat_bubble_outline_rounded,
                   color: SchoolColors.primary,
-                  label: 'Новые сообщения',
-                  sub: 'Звук + вибрация',
+                  label: AppLocalizations.of(context)!.newMessages,
+                  sub: AppLocalizations.of(context)!.soundVibration,
                   right: _CustomToggle(
                     on: settings['msgNotifs'] ?? true,
                     onChanged: (v) => _updateSetting('msgNotifs', v),
@@ -201,8 +274,8 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                 _SettingsRow(
                   icon: Icons.push_pin_outlined,
                   color: SchoolColors.yellow,
-                  label: 'Обновления',
-                  sub: 'Тихий режим: 22:00–07:00',
+                  label: AppLocalizations.of(context)!.updates,
+                  sub: AppLocalizations.of(context)!.quietMode22000700,
                   right: _CustomToggle(
                     on: settings['pinNotifs'] ?? false,
                     onChanged: (v) => _updateSetting('pinNotifs', v),
@@ -213,40 +286,13 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
             ),
 
             _SettingsGroup(
-              label: 'Конфиденциальность',
-              children: [
-                _SettingsRow(
-                  icon: Icons.visibility_outlined,
-                  color: SchoolColors.primary,
-                  label: 'Показывать имя ученикам',
-                  sub: 'Если выключено, будет "Учитель"',
-                  right: _CustomToggle(
-                    on: settings['showName'] ?? true,
-                    onChanged: (v) => _updateSetting('showName', v),
-                  ),
-                ),
-                _SettingsRow(
-                  icon: Icons.message_outlined,
-                  color: SchoolColors.green,
-                  label: 'Личные сообщения',
-                  sub: 'Разрешить ученикам писать напрямую',
-                  right: _CustomToggle(
-                    on: settings['allowDm'] ?? true,
-                    onChanged: (v) => _updateSetting('allowDm', v),
-                  ),
-                  last: true,
-                ),
-              ],
-            ),
-
-            _SettingsGroup(
-              label: 'Оформление',
+              label: AppLocalizations.of(context)!.registration,
               children: [
                 _SettingsRow(
                   icon: Icons.dark_mode_outlined,
                   color: SchoolColors.accent,
                   label: l10n.darkMode,
-                  sub: appState.isDarkMode ? 'Включена' : 'Системная',
+                  sub: appState.isDarkMode ? AppLocalizations.of(context)!.enabled : AppLocalizations.of(context)!.system,
                   right: _CustomToggle(
                     on: appState.isDarkMode,
                     onChanged: (v) => appState.toggleDarkMode(),
@@ -255,19 +301,27 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                 _SettingsRow(
                   icon: Icons.palette_outlined,
                   color: SchoolColors.primary,
-                  label: 'Акцентный цвет',
-                  sub: 'Школьный синий',
+                  label: AppLocalizations.of(context)!.accentColor,
+                  sub: _getAccentColorName(appState.accentColor, Localizations.localeOf(context).languageCode == 'ru'),
                   right: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       for (final c in [
-                        SchoolColors.primary,
+                        const Color(0xFF2563EB),
                         SchoolColors.green,
                         SchoolColors.yellow,
                         SchoolColors.red,
                       ])
                         GestureDetector(
-                          onTap: () => appState.setAccentColor(c),
+                          onTap: () {
+                            final isSelected = c.value == appState.accentColor.value;
+                            if (!isSelected) {
+                              appState.setAccentColor(c);
+                              Future.delayed(const Duration(milliseconds: 250), () {
+                                reloadApp();
+                              });
+                            }
+                          },
                           child: Container(
                             width: 24,
                             height: 24,
@@ -307,7 +361,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                   color: SchoolColors.green,
                   label: l10n.language,
                   sub: appState.locale?.languageCode == 'ru'
-                      ? 'Русский (ru)'
+                      ? AppLocalizations.of(context)!.russianRu
                       : 'English (en)',
                   onTap: () => _editLanguage(context),
                   last: true,
@@ -316,7 +370,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
             ),
 
             _SettingsGroup(
-              label: 'Тарифный план',
+              label: AppLocalizations.of(context)!.tariffPlan,
               children: [
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -384,23 +438,23 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
             ),
 
             _SettingsGroup(
-              label: 'Безопасность',
+              label: AppLocalizations.of(context)!.safety,
               children: [
-                const _SettingsRow(
+                _SettingsRow(
                   icon: Icons.security_outlined,
                   color: SchoolColors.red,
-                  label: 'Двухфакторная защита',
-                  sub: 'Включена · Authenticator',
+                  label: AppLocalizations.of(context)!.twofactorProtection,
+                  sub: AppLocalizations.of(context)!.enabledAuthenticator,
                   right: StatusChip(
-                    label: 'Активно',
+                    label: AppLocalizations.of(context)!.actively,
                     color: SchoolColors.green,
                   ),
                 ),
                 _SettingsRow(
                   icon: Icons.download_outlined,
                   color: SchoolColors.accent,
-                  label: 'Скачать мои данные',
-                  sub: 'Экспорт в ZIP',
+                  label: AppLocalizations.of(context)!.downloadMyData,
+                  sub: AppLocalizations.of(context)!.exportToZip,
                   onTap: () => _downloadMyData(context),
                   last: true,
                 ),
@@ -426,6 +480,8 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
           ],
         ),
       ),
+    );
+      },
     );
   }
 
@@ -535,8 +591,8 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Связанные аккаунты',
+                  Text(
+                    AppLocalizations.of(context)!.linkedAccounts,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                   ),
                   const SizedBox(height: 20),
@@ -549,14 +605,14 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                   _buildProviderTile('Apple', isApple, Icons.apple_rounded),
                   const SizedBox(height: 14),
                   _buildProviderTile(
-                    'Email / Пароль',
+                    AppLocalizations.of(context)!.emailpassword,
                     isEmail,
                     Icons.email_rounded,
                   ),
                   const SizedBox(height: 28),
                   FilledButton(
                     onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Готово'),
+                    child: Text(AppLocalizations.of(context)!.ready),
                   ),
                 ],
               ),
@@ -585,7 +641,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
         ),
         const Spacer(),
         StatusChip(
-          label: linked ? 'Связано' : 'Не связано',
+          label: linked ? AppLocalizations.of(context)!.related : AppLocalizations.of(context)!.notRelated,
           color: linked ? SchoolColors.green : SchoolColors.muted,
         ),
       ],
@@ -616,13 +672,13 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _buildLanguageTile(ctx, 'Русский (ru)', 'ru', appState),
+                  _buildLanguageTile(ctx, AppLocalizations.of(context)!.russianRu, 'ru', appState),
                   const SizedBox(height: 12),
                   _buildLanguageTile(ctx, 'English (en)', 'en', appState),
                   const SizedBox(height: 28),
                   FilledButton(
                     onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Готово'),
+                    child: Text(AppLocalizations.of(context)!.ready),
                   ),
                 ],
               ),
@@ -648,7 +704,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
           SnackBar(
             content: Text(
               code == 'ru'
-                  ? 'Язык изменен на Русский'
+                  ? AppLocalizations.of(context)!.languageChangedToRussian
                   : 'Language changed to English',
             ),
           ),
@@ -701,8 +757,8 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                               ),
                             ),
                             const SizedBox(height: 20),
-                            const Text(
-                              'Подготовка ZIP-архива...',
+                            Text(
+                              AppLocalizations.of(context)!.preparingAZipArchive,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
@@ -722,16 +778,16 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Text(
-                              'Экспорт данных',
+                            Text(
+                              AppLocalizations.of(context)!.exportData,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
                             const SizedBox(height: 14),
-                            const Text(
-                              'Будет создан ZIP-архив, содержащий все ваши личные данные, включая созданные вами классы, домашние задания, сообщения чата и профиль.',
+                            Text(
+                              AppLocalizations.of(context)!.aZipArchiveWillBe,
                               style: TextStyle(
                                 fontSize: 13,
                                 height: 1.45,
@@ -744,8 +800,8 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                               children: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(ctx),
-                                  child: const Text(
-                                    'Отмена',
+                                  child: Text(
+                                    AppLocalizations.of(context)!.unknownKey,
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -772,16 +828,16 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
-                                        const SnackBar(
+                                        SnackBar(
                                           content: Text(
-                                            'Архив успешно сохранен в папку Загрузки',
+                                            AppLocalizations.of(context)!.theArchiveWasSuccessfullySaved,
                                           ),
                                         ),
                                       );
                                     }
                                   },
-                                  child: const Text(
-                                    'Экспортировать',
+                                  child: Text(
+                                    AppLocalizations.of(context)!.export,
                                     style: TextStyle(
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -808,11 +864,13 @@ class _ProfileCard extends StatelessWidget {
     required this.isTeacher,
     required this.classesCount,
     this.avatarUrl,
+    this.onEditAvatar,
   });
   final String name, sub;
   final bool isTeacher;
   final int classesCount;
   final String? avatarUrl;
+  final VoidCallback? onEditAvatar;
 
   @override
   Widget build(BuildContext context) {
@@ -870,6 +928,7 @@ class _ProfileCard extends StatelessWidget {
                       avatarUrl: avatarUrl,
                       radius: 32,
                       color: avatarUrl != null ? null : Colors.transparent,
+                      onEditAvatar: onEditAvatar,
                     ),
                   ),
                   Positioned(
@@ -915,8 +974,8 @@ class _ProfileCard extends StatelessWidget {
                           textColor: SchoolColors.primary,
                         ),
                         const SizedBox(width: 6),
-                        const StatusChip(
-                          label: 'Проверен',
+                        StatusChip(
+                          label: AppLocalizations.of(context)!.verified,
                           color: SchoolColors.green,
                         ),
                       ],

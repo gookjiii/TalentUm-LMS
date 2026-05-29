@@ -90,7 +90,11 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
   @override
   void initState() {
     super.initState();
-    _loadRoom();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadRoom();
+      }
+    });
   }
 
   @override
@@ -193,7 +197,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
 
       if (widget.classId == 'teachers_lounge') {
         roomId = 'global_teachers_lounge';
-        roomName = 'Учительская';
+        roomName = AppLocalizations.of(context)!.teachersRoom;
         color = SchoolColors.primary;
         
         final roomDoc = await widget.repository.firestore.collection('rooms').doc(roomId).get();
@@ -218,11 +222,11 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
 
         if (!mounted || widget.classId != capturedClassId) return;
 
-        if (!classDoc.exists) throw 'Класс не найден';
+        if (!classDoc.exists) throw AppLocalizations.of(context)!.unknownKey;
 
         teacherId = classDoc.data()?['teacherId'] as String?;
         roomId = classDoc.data()?['chatRoomId'] as String?;
-        roomName = classDoc.data()?['name']?.toString() ?? 'Чат класса';
+        roomName = classDoc.data()?['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey8;
         color = parseHexColor(classDoc.data()?['coverColor']);
       }
 
@@ -346,7 +350,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
   }
 
   String _resolveUserName(String authorId) =>
-      _userCache[authorId]?.name ?? 'Участник';
+      _userCache[authorId]?.name ?? AppLocalizations.of(context)!.participant;
 
   Future<void> _showCreatePollDialog() async {
     final questionCtrl = TextEditingController();
@@ -355,14 +359,14 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
-          title: const Text('Новый опрос'),
+          title: Text(AppLocalizations.of(context)!.newPoll),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: questionCtrl,
-                  decoration: const InputDecoration(labelText: 'Вопрос'),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.question),
                 ),
                 const SizedBox(height: 12),
                 for (int i = 0; i < opts.length; i++)
@@ -379,8 +383,8 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
                   onPressed: opts.length < 6
                       ? () => setS(() => opts.add(TextEditingController()))
                       : null,
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Добавить вариант'),
+                  icon: Icon(Icons.add, size: 16),
+                  label: Text(AppLocalizations.of(context)!.addAnOption),
                 ),
               ],
             ),
@@ -388,7 +392,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Отмена'),
+              child: Text(AppLocalizations.of(context)!.unknownKey),
             ),
             FilledButton(
               onPressed: () async {
@@ -422,7 +426,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
                 );
                 if (ctx.mounted) Navigator.pop(ctx);
               },
-              child: const Text('Создать'),
+              child: Text(AppLocalizations.of(context)!.create),
             ),
           ],
         ),
@@ -476,7 +480,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
               'replyToId': _replyingTo!.id,
               'replyToText': _replyingTo is TextMessage
                   ? (_replyingTo as TextMessage).text
-                  : 'Вложение',
+                  : AppLocalizations.of(context)!.attachment,
               'replyToSenderId': _replyingTo!.authorId,
             }
           : null;
@@ -568,17 +572,17 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Удалить сообщение?'),
-        content: const Text('Вы действительно хотите удалить это сообщение?'),
+        title: Text(AppLocalizations.of(context)!.deleteMessage),
+        content: Text(AppLocalizations.of(context)!.areYouSureYouWant),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Отмена'),
+            child: Text(AppLocalizations.of(context)!.unknownKey),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: SchoolColors.red),
-            child: const Text('Удалить'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),
@@ -798,7 +802,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
                           _buildMenuItem(
                             context,
                             icon: Icons.push_pin_outlined,
-                            label: 'Закрепить',
+                            label: AppLocalizations.of(context)!.pin,
                             onTap: () {
                               Navigator.pop(context);
                               _chatController?.pinMessage(msg.id);
@@ -822,7 +826,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
                               _buildMenuItem(
                                 context,
                                 icon: Icons.edit_rounded,
-                                label: 'Изменить',
+                                label: AppLocalizations.of(context)!.change,
                                 onTap: () {
                                   Navigator.pop(context);
                                   _startEditing(msg);
@@ -831,7 +835,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
                             _buildMenuItem(
                               context,
                               icon: Icons.delete_outline_rounded,
-                              label: 'Удалить',
+                              label: AppLocalizations.of(context)!.delete,
                               color: Colors.red,
                               onTap: () {
                                 Navigator.pop(context);
@@ -1185,14 +1189,14 @@ class _ConnectivityBanner extends ConsumerWidget {
           ? Container(
               color: Colors.orange.shade700,
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-              child: const Row(
+              padding: EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.wifi_off_rounded, color: Colors.white, size: 14),
                   SizedBox(width: 8),
                   Text(
-                    'Нет подключения',
+                    AppLocalizations.of(context)!.noConnection,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -1250,7 +1254,7 @@ class _SearchResultsPanel extends StatelessWidget {
           final controllerIndex = results.length - 1 - listIndex;
           final msgId = results[controllerIndex];
           final msg = chatController.getMessageById(msgId);
-          if (msg == null) return const SizedBox.shrink();
+          if (msg == null) return SizedBox.shrink();
 
           final isSelected = currentIndex == controllerIndex;
           final authorName = resolveUserName(msg.authorId);
@@ -1258,9 +1262,9 @@ class _SearchResultsPanel extends StatelessWidget {
           if (msg is TextMessage) {
             snippet = msg.text;
           } else if (msg is ImageMessage) {
-            snippet = '📷 Изображение';
+            snippet = AppLocalizations.of(context)!.image;
           } else {
-            snippet = '📎 Файл';
+            snippet = AppLocalizations.of(context)!.file;
           }
           final date = msg.createdAt != null
               ? DateFormat(

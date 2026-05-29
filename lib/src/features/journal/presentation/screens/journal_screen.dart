@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/src/theme.dart';
@@ -50,8 +51,8 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Классный журнал',
+                      Text(
+                        AppLocalizations.of(context)!.coolMagazine,
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
@@ -61,8 +62,8 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                       const SizedBox(height: 4),
                       Text(
                         widget.studentId != null
-                            ? 'Мои оценки и предметы'
-                            : 'Успеваемость и предметы',
+                            ? AppLocalizations.of(context)!.myGradesAndSubjects
+                            : AppLocalizations.of(context)!.academicPerformanceAndSubjects,
                         style: TextStyle(
                           fontSize: 14,
                           color: isDark ? Colors.white70 : SchoolColors.muted,
@@ -78,7 +79,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                     child: FilledButton.icon(
                       onPressed: () => _showAddLessonDialog(context, ref),
                       icon: const Icon(Icons.add_rounded, size: 20),
-                      label: const Text('Добавить урок'),
+                      label: Text(AppLocalizations.of(context)!.addALesson),
                       style: FilledButton.styleFrom(
                         backgroundColor: SchoolColors.primary,
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -122,9 +123,9 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                 labelColor: isDark ? Colors.white : SchoolColors.darkSurface,
                 unselectedLabelColor: isDark ? Colors.white54 : SchoolColors.muted,
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                tabs: const [
-                  Tab(text: 'Оценки'),
-                  Tab(text: 'Предметы'),
+                tabs: [
+                  Tab(text: AppLocalizations.of(context)!.ratings),
+                  Tab(text: AppLocalizations.of(context)!.items),
                 ],
               ),
             ),
@@ -161,7 +162,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Добавить урок'),
+              title: Text(AppLocalizations.of(context)!.addALesson),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -169,8 +170,8 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                     TextField(
                       controller: dateController,
                       readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Дата',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.date,
                         suffixIcon: Icon(Icons.calendar_today_rounded),
                       ),
                       onTap: () async {
@@ -191,16 +192,16 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                     const SizedBox(height: 16),
                     TextField(
                       controller: topicController,
-                      decoration: const InputDecoration(
-                        labelText: 'Предмет',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.item,
                       ),
                       maxLines: 2,
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: homeworkController,
-                      decoration: const InputDecoration(
-                        labelText: 'Домашнее задание',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.homework,
                       ),
                       maxLines: 2,
                     ),
@@ -210,11 +211,11 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Отмена'),
+                  child: Text(AppLocalizations.of(context)!.unknownKey),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Сохранить'),
+                  child: Text(AppLocalizations.of(context)!.save),
                 ),
               ],
             );

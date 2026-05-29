@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,7 +34,7 @@ class _AdminTeacherRequestsScreenState extends ConsumerState<AdminTeacherRequest
       if (mounted) {
         Navigator.pop(context); // spinner
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Права учителя выданы')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.teachersLicenseIssued)),
         );
       }
     } catch (e) {
@@ -61,7 +62,7 @@ class _AdminTeacherRequestsScreenState extends ConsumerState<AdminTeacherRequest
       if (mounted) {
         Navigator.pop(context); // spinner
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Заявка отклонена')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.applicationRejected)),
         );
       }
     } catch (e) {
@@ -80,7 +81,7 @@ class _AdminTeacherRequestsScreenState extends ConsumerState<AdminTeacherRequest
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Заявки в учителя'),
+        title: Text(AppLocalizations.of(context)!.applicationsForTeachers),
         backgroundColor: Colors.transparent,
       ),
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -96,10 +97,10 @@ class _AdminTeacherRequestsScreenState extends ConsumerState<AdminTeacherRequest
           
           final docs = snapshot.data?.docs ?? [];
           if (docs.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.inbox_outlined,
-              title: 'Нет заявок',
-              subtitle: 'Все запросы обработаны',
+              title: AppLocalizations.of(context)!.noApplications,
+              subtitle: AppLocalizations.of(context)!.allRequestsProcessed,
             );
           }
 
@@ -110,7 +111,7 @@ class _AdminTeacherRequestsScreenState extends ConsumerState<AdminTeacherRequest
               final data = docs[index].data() as Map<String, dynamic>;
               final requestId = docs[index].id;
               final userId = data['userId'] as String;
-              final name = data['name'] as String? ?? 'Ученик';
+              final name = data['name'] as String? ?? AppLocalizations.of(context)!.student;
               final email = data['email'] as String? ?? '';
 
               return Padding(
@@ -143,12 +144,12 @@ class _AdminTeacherRequestsScreenState extends ConsumerState<AdminTeacherRequest
                       IconButton(
                         onPressed: () => _approveRequest(userId, requestId),
                         icon: const Icon(Icons.check_circle_outline, color: SchoolColors.green),
-                        tooltip: 'Одобрить',
+                        tooltip: AppLocalizations.of(context)!.approve,
                       ),
                       IconButton(
                         onPressed: () => _rejectRequest(requestId),
                         icon: const Icon(Icons.cancel_outlined, color: SchoolColors.red),
-                        tooltip: 'Отклонить',
+                        tooltip: AppLocalizations.of(context)!.reject,
                       ),
                     ],
                   ),

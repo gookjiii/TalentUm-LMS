@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -86,7 +87,7 @@ class _AuthScreenState extends State<AuthScreen>
 
   Future<void> _signIn() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      _showMessage('Пожалуйста, введите email и пароль');
+      _showMessage(AppLocalizations.of(context)!.pleaseEnterYourEmailAnd);
       return;
     }
     setState(() => _loading = true);
@@ -106,7 +107,7 @@ class _AuthScreenState extends State<AuthScreen>
     if (_emailController.text.isEmpty ||
         _passwordController.text.isEmpty ||
         _nameController.text.isEmpty) {
-      _showMessage('Пожалуйста, заполните все поля');
+      _showMessage(AppLocalizations.of(context)!.pleaseFillInAllFields);
       return;
     }
     setState(() => _loading = true);
@@ -126,7 +127,7 @@ class _AuthScreenState extends State<AuthScreen>
   Future<void> _forgotPassword() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
-      _showMessage('Введите email для сброса пароля');
+      _showMessage(AppLocalizations.of(context)!.enterYourEmailToReset);
       return;
     }
     try {
@@ -135,7 +136,7 @@ class _AuthScreenState extends State<AuthScreen>
         _showMessage('Письмо для сброса пароля отправлено на $email');
       }
     } on FirebaseAuthException catch (e) {
-      if (mounted) _showMessage(e.message ?? 'Ошибка сброса пароля');
+      if (mounted) _showMessage(e.message ?? AppLocalizations.of(context)!.passwordResetError);
     }
   }
 
@@ -147,17 +148,17 @@ class _AuthScreenState extends State<AuthScreen>
 
   String _friendlyError(String raw) {
     if (raw.contains('wrong-password') || raw.contains('invalid-credential')) {
-      return 'Неверный email или пароль';
+      return AppLocalizations.of(context)!.invalidEmailOrPassword;
     }
-    if (raw.contains('user-not-found')) return 'Пользователь не найден';
+    if (raw.contains('user-not-found')) return AppLocalizations.of(context)!.userNotFound;
     if (raw.contains('email-already-in-use')) {
-      return 'Этот email уже зарегистрирован';
+      return AppLocalizations.of(context)!.thisEmailIsAlreadyRegistered;
     }
     if (raw.contains('weak-password')) {
-      return 'Пароль слишком слабый (минимум 6 символов)';
+      return AppLocalizations.of(context)!.passwordIsTooWeakMinimum;
     }
-    if (raw.contains('network-request-failed')) return 'Нет подключения к сети';
-    return 'Что-то пошло не так. Попробуйте ещё раз.';
+    if (raw.contains('network-request-failed')) return AppLocalizations.of(context)!.unknownKey15;
+    return AppLocalizations.of(context)!.somethingWentWrongTryAgain;
   }
 }
 
@@ -305,7 +306,7 @@ class _WideAuthLayout extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Единый класс для чата,\nленты и домашних заданий.',
+                      AppLocalizations.of(context)!.singleClassForChatnfeedAnd,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 18,
@@ -341,10 +342,10 @@ class _WideAuthLayout extends StatelessWidget {
 class _FeaturePills extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    const features = [
-      (Icons.chat_bubble_outline_rounded, 'Чат класса в реальном времени'),
-      (Icons.campaign_outlined, 'Объявления и лента'),
-      (Icons.assignment_outlined, 'Задания и оценки'),
+    final features = [
+      (Icons.chat_bubble_outline_rounded, AppLocalizations.of(context)!.realtimeClassChat),
+      (Icons.campaign_outlined, AppLocalizations.of(context)!.adsAndFeed),
+      (Icons.assignment_outlined, AppLocalizations.of(context)!.assignmentsAndAssessments),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,7 +452,7 @@ class _AuthForm extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          isSignUp ? 'Создайте аккаунт' : 'С возвращением 👋',
+          isSignUp ? AppLocalizations.of(context)!.createAnAccount : AppLocalizations.of(context)!.welcomeBack,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 15,
@@ -475,8 +476,8 @@ class _AuthForm extends StatelessWidget {
                       controller: nameController,
                       textInputAction: TextInputAction.next,
                       textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(
-                        labelText: 'Полное имя',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.fullName,
                         prefixIcon: Icon(Icons.person_outline_rounded),
                       ),
                     ),
@@ -491,8 +492,8 @@ class _AuthForm extends StatelessWidget {
           controller: emailController,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
-          decoration: const InputDecoration(
-            labelText: 'Эл. почта',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context)!.emailMail,
             prefixIcon: Icon(Icons.email_outlined),
           ),
         ),
@@ -505,7 +506,7 @@ class _AuthForm extends StatelessWidget {
           onSubmitted: (_) => onSubmit(),
           textInputAction: TextInputAction.done,
           decoration: InputDecoration(
-            labelText: 'Пароль',
+            labelText: AppLocalizations.of(context)!.password,
             prefixIcon: const Icon(Icons.lock_outline_rounded),
             suffixIcon: IconButton(
               icon: AnimatedSwitcher(
@@ -534,8 +535,8 @@ class _AuthForm extends StatelessWidget {
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text(
-                'Забыли пароль?',
+              child: Text(
+                AppLocalizations.of(context)!.forgotYourPassword,
                 style: TextStyle(fontSize: 13),
               ),
             ),
@@ -561,10 +562,10 @@ class _AuthForm extends StatelessWidget {
               ),
               children: [
                 TextSpan(
-                  text: isSignUp ? 'Уже есть аккаунт? ' : 'Нет аккаунта? ',
+                  text: isSignUp ? AppLocalizations.of(context)!.alreadyHaveAnAccount : AppLocalizations.of(context)!.dontHaveAnAccount,
                 ),
                 TextSpan(
-                  text: isSignUp ? 'Войти' : 'Зарегистрироваться',
+                  text: isSignUp ? AppLocalizations.of(context)!.login : AppLocalizations.of(context)!.register,
                   style: const TextStyle(
                     color: SchoolColors.primary,
                     fontWeight: FontWeight.w700,
@@ -634,7 +635,7 @@ class _SubmitButtonState extends State<_SubmitButton> {
                       size: 20,
                     ),
                     const SizedBox(width: 10),
-                    Text(widget.isSignUp ? 'Создать аккаунт' : 'Войти'),
+                    Text(widget.isSignUp ? AppLocalizations.of(context)!.createAnAccount : AppLocalizations.of(context)!.login),
                   ],
                 ),
         ),

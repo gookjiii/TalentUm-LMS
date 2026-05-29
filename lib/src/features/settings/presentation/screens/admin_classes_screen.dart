@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
@@ -69,10 +70,10 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
             child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
-                  'Назначить учителя',
+                  AppLocalizations.of(context)!.assignATeacher,
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -85,7 +86,7 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                     final doc = allTeachers[index];
                     final data = doc.data();
                     final id = doc.id;
-                    final name = data['name']?.toString() ?? 'Без имени';
+                    final name = data['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey6;
                     final isCurrent = id == currentTeacherId;
 
                     return ListTile(
@@ -159,10 +160,10 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
-                      const SizedBox(width: 16),
-                      const Expanded(
+                      SizedBox(width: 16),
+                      Expanded(
                         child: Text(
-                          'Управление классами',
+                          AppLocalizations.of(context)!.classManagement,
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w900,
@@ -174,11 +175,11 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                         onPressed: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const BulkClassCreateScreen(),
+                            builder: (_) => BulkClassCreateScreen(),
                           ),
                         ),
-                        icon: const Icon(Icons.add_rounded),
-                        tooltip: 'Создать классы',
+                        icon: Icon(Icons.add_rounded),
+                        tooltip: AppLocalizations.of(context)!.createClasses,
                       ),
                     ],
                   ),
@@ -188,7 +189,7 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'Поиск по названию или предмету...',
+                        hintText: AppLocalizations.of(context)!.searchByTitleOrSubject,
                         prefixIcon: const Icon(Icons.search_rounded),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
@@ -230,7 +231,7 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                   }).toList();
 
                   if (docs.isEmpty) {
-                    return const Center(child: Text('Классы не найдены'));
+                    return Center(child: Text(AppLocalizations.of(context)!.noClassesFound));
                   }
 
                   return ListView.separated(
@@ -240,11 +241,11 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                       vertical: 8,
                     ),
                     itemCount: docs.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, __) => SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final data = docs[index].data();
                       final id = docs[index].id;
-                      final name = data['name']?.toString() ?? 'Без названия';
+                      final name = data['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey7;
                       final subject = data['subject']?.toString();
                       final teacherId = data['teacherId']?.toString() ?? '';
 
@@ -336,10 +337,10 @@ class _ClassActions extends StatelessWidget {
       onPressed: onAssignTeacher,
       style: FilledButton.styleFrom(
         minimumSize: Size.zero,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
-      icon: const Icon(Icons.person_add_alt_1_rounded, size: 16),
-      label: const Text('Учитель'),
+      icon: Icon(Icons.person_add_alt_1_rounded, size: 16),
+      label: Text(AppLocalizations.of(context)!.teacher),
     );
   }
 }

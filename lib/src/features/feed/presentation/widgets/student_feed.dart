@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -61,7 +62,7 @@ class _StudentFeedState extends State<StudentFeed> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final name = user?.displayName ?? 'Ученик';
+    final name = user?.displayName ?? AppLocalizations.of(context)!.student;
 
     return Center(
       child: ConstrainedBox(
@@ -81,8 +82,8 @@ class _StudentFeedState extends State<StudentFeed> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Лента',
+                                Text(
+                                  AppLocalizations.of(context)!.ribbon,
                                   style: TextStyle(
                                     fontSize: 28,
                                     fontWeight: FontWeight.w900,
@@ -90,7 +91,7 @@ class _StudentFeedState extends State<StudentFeed> {
                                   ),
                                 ),
                                 Text(
-                                  'Объявления от ваших учителей',
+                                  AppLocalizations.of(context)!.announcementsFromYourTeachers,
                                   style: TextStyle(
                                     color: SchoolColors.muted.withValues(
                                       alpha: 0.7,
@@ -104,6 +105,7 @@ class _StudentFeedState extends State<StudentFeed> {
                           ),
                           SchoolAvatar(
                             name: name,
+                            userId: user?.uid,
                             radius: 22,
                             onTap: () => Navigator.push(
                               context,
@@ -114,13 +116,13 @@ class _StudentFeedState extends State<StudentFeed> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       TextField(
                         onChanged: (v) => setState(
                           () => _searchQuery = v.trim().toLowerCase(),
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Поиск по объявлениям...',
+                          hintText: AppLocalizations.of(context)!.searchByAdvertisements,
                           prefixIcon: const Icon(Icons.search_rounded),
                           filled: true,
                           fillColor:
@@ -136,13 +138,13 @@ class _StudentFeedState extends State<StudentFeed> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
                             _FeedFilterChip(
-                              label: 'Все классы',
+                              label: AppLocalizations.of(context)!.allClasses,
                               active: widget.classId == 'all',
                               onTap: () => widget.onClassSelect('all'),
                             ),
@@ -176,12 +178,12 @@ class _StudentFeedState extends State<StudentFeed> {
 
                   if (posts.isEmpty &&
                       snapshot.connectionState != ConnectionState.waiting) {
-                    return const SliverToBoxAdapter(
+                    return SliverToBoxAdapter(
                       child: Center(
                         child: Padding(
                           padding: EdgeInsets.all(80),
                           child: Text(
-                            'Объявлений пока нет.',
+                            AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
                             style: TextStyle(color: SchoolColors.muted),
                           ),
                         ),

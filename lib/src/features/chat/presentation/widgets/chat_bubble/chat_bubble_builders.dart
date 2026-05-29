@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:math' as math;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -157,7 +158,7 @@ class ChatBubbleBuilders {
                   Padding(
                     padding: const EdgeInsets.only(right: 4),
                     child: Text(
-                      'изменено',
+                      AppLocalizations.of(context)!.changed,
                       style: TextStyle(
                         fontSize: 9,
                         fontStyle: FontStyle.italic,
@@ -238,7 +239,7 @@ class ChatBubbleBuilders {
           children: [
             buildHighlightedText(
               context,
-              'Сообщение удалено',
+              AppLocalizations.of(context)!.postDeleted,
               '',
               isSentByMe,
               isCurrentMatch: false,
@@ -488,10 +489,71 @@ class ChatBubbleBuilders {
     }
 
     final msgText = message.metadata?['text'] as String?;
+
+    // --- Audio / Voice message ---
+    final isAudio = message.metadata?['type'] == 'audio' ||
+        message.mimeType?.startsWith('audio/') == true ||
+        RegExp(r'\.(m4a|mp3|ogg|aac|wav|opus|webm)$', caseSensitive: false)
+            .hasMatch(message.name);
+
+    if (isAudio) {
+      final durationMs = message.metadata?['durationMs'] as int? ?? 0;
+      final audioDuration = Duration(milliseconds: durationMs);
+      return buildBubbleShell(
+        context: context,
+        messageId: message.id,
+        authorId: message.authorId,
+        createdAt: _toDate(message.createdAt),
+        metadata: message.metadata,
+        isSentByMe: isSentByMe,
+        onLongPress: (details) =>
+            showMessageOptions(message, position: details.globalPosition),
+        onReply: () => onReply(message),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSentByMe ? null : SchoolColors.chatBubbleOther,
+            gradient: isSentByMe
+                ? const LinearGradient(
+                    colors: [
+                      SchoolColors.chatBubbleStart,
+                      SchoolColors.chatBubbleEnd,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            border: isSentByMe
+                ? null
+                : Border.all(
+                    color: SchoolColors.chatBubbleOtherBorder,
+                    width: 1,
+                  ),
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(20),
+              topRight: const Radius.circular(20),
+              bottomLeft: isSentByMe
+                  ? const Radius.circular(20)
+                  : const Radius.circular(4),
+              bottomRight: isSentByMe
+                  ? const Radius.circular(4)
+                  : const Radius.circular(20),
+            ),
+          ),
+          child: _AudioBubble(
+            url: message.source,
+            duration: audioDuration,
+            isSentByMe: isSentByMe,
+            createdAt: _toDate(message.createdAt),
+          ),
+        ),
+      );
+    }
+
     final isVideo = message.mimeType?.startsWith('video/') == true ||
         RegExp(r'\.(mp4|mov|webm|mkv)$', caseSensitive: false).hasMatch(message.name);
     final screenWidth = MediaQuery.sizeOf(context).width;
     final videoWidth = screenWidth < 520 ? screenWidth * .62 : 260.0;
+
 
     return buildBubbleShell(
       context: context,
@@ -831,7 +893,7 @@ class ChatBubbleBuilders {
                                 padding: EdgeInsets.only(
                                   top: (replyText != null) ? 48 : 24,
                                 ),
-                                child: SchoolAvatar(name: authorId, radius: 14),
+                                child: SchoolAvatar(name: authorId, userId: authorId, radius: 14),
                               ),
                               const SizedBox(width: 7),
                             ],
@@ -851,7 +913,7 @@ class ChatBubbleBuilders {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Semantics(
-                                            label: 'Отправитель',
+                                            label: AppLocalizations.of(context)!.sender,
                                             child: FutureBuilder<User?>(
                                               future: resolveUser(authorId),
                                               builder: (ctx, snap) {
@@ -874,7 +936,7 @@ class ChatBubbleBuilders {
                                     ),
                                   if (replyText != null)
                                     Semantics(
-                                      label: 'Ответ на сообщение',
+                                      label: AppLocalizations.of(context)!.replyToAMessage,
                                       child: ReplyContext(
                                         text: replyText,
                                         isMe: isSentByMe,
@@ -894,7 +956,7 @@ class ChatBubbleBuilders {
                                     ),
                                   Semantics(
                                     container: true,
-                                    label: 'Текст сообщения',
+                                    label: AppLocalizations.of(context)!.messageText,
                                     child: LayoutBuilder(
                                       builder: (context, constraints) {
                                         return Row(
@@ -1084,7 +1146,7 @@ class ChatBubbleBuilders {
           Icon(Icons.delete_outline_rounded, size: 16, color: deletedColor),
           const SizedBox(width: 6),
           Text(
-            'Сообщение удалено',
+            AppLocalizations.of(context)!.postDeleted,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: deletedColor,
               height: 1.4,
@@ -1863,7 +1925,7 @@ class _InlinePollCardState extends State<_InlinePollCard> {
                   Icon(Icons.poll_rounded, size: 14, color: mutedTextColor),
                   const SizedBox(width: 6),
                   Text(
-                    'ОПРОС',
+                    AppLocalizations.of(context)!.survey,
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
@@ -1883,7 +1945,7 @@ class _InlinePollCardState extends State<_InlinePollCard> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'ЗАКРЫТ',
+                        AppLocalizations.of(context)!.closed,
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
@@ -1942,7 +2004,7 @@ class _InlinePollCardState extends State<_InlinePollCard> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '$totalVotes голос${totalVotes == 1 ? '' : (totalVotes >= 5 ? 'ов' : 'а')}',
+                    '$totalVotes голос${totalVotes == 1 ? '' : (totalVotes >= 5 ? AppLocalizations.of(context)!.ov : AppLocalizations.of(context)!.a)}',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,

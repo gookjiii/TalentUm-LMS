@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -114,7 +115,7 @@ class ReplyContext extends StatelessWidget {
             ],
             Flexible(
               child: Text(
-                isDeleted ? 'Сообщение удалено' : text,
+                isDeleted ? AppLocalizations.of(context)!.postDeleted : text,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -148,7 +149,7 @@ class ReplyPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final content = message is TextMessage
         ? (message as TextMessage).text
-        : 'Вложение';
+        : AppLocalizations.of(context)!.attachment;
     final theme = Theme.of(context);
 
     return Container(
@@ -170,7 +171,7 @@ class ReplyPreview extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'ОТВЕТ НА СООБЩЕНИЕ',
+                  AppLocalizations.of(context)!.replyToMessage,
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w900,
@@ -240,8 +241,8 @@ class EditPreview extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'РЕДАКТИРОВАНИЕ',
+                Text(
+                  AppLocalizations.of(context)!.editing,
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w900,

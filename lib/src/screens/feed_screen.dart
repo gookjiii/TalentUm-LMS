@@ -37,7 +37,7 @@ class _FeedScreenState extends State<FeedScreen> {
     final width = MediaQuery.sizeOf(context).width;
     final isMobile = width < 720;
     final userName =
-        widget.repository.auth.currentUser?.displayName ?? 'Пользователь';
+        widget.repository.auth.currentUser?.displayName ?? AppLocalizations.of(context)!.user;
 
     return Scaffold(
       backgroundColor: SchoolColors.bg,
@@ -71,6 +71,7 @@ class _FeedScreenState extends State<FeedScreen> {
                           ),
                           SchoolAvatar(
                             name: userName,
+                            userId: widget.repository.uid,
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -90,7 +91,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 ),
               ),
               if (posts.isEmpty)
-                const SliverFillRemaining(child: Center(child: Text('Пусто')))
+                SliverFillRemaining(child: Center(child: Text(AppLocalizations.of(context)!.empty)))
               else
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),

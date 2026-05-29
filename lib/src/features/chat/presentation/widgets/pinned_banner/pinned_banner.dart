@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
@@ -90,7 +91,7 @@ class _PinnedBannerState extends State<PinnedBanner> {
             if (msg is TextMessage) {
               content = msg.text;
             } else if (msg is ImageMessage) {
-              content = 'Фотография';
+              content = AppLocalizations.of(context)!.photo;
               hasAttachment = true;
             } else if (msg is FileMessage) {
               content = msg.name;
@@ -139,7 +140,7 @@ class _PinnedBannerState extends State<PinnedBanner> {
                           Row(
                             children: [
                               Text(
-                                'Закреплённое сообщение',
+                                AppLocalizations.of(context)!.pinnedMessage,
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: theme.colorScheme.primary,
                                   fontWeight: FontWeight.w900,
@@ -293,7 +294,7 @@ class _PinnedMessagesSheetState extends State<PinnedMessagesSheet> {
                 const Icon(Icons.push_pin_rounded, color: SchoolColors.orange),
                 const SizedBox(width: 12),
                 Text(
-                  'Закреплённые сообщения',
+                  AppLocalizations.of(context)!.pinnedMessages,
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w900,
                   ),
@@ -392,7 +393,7 @@ class PinnedChatMessageItem extends StatelessWidget {
     if (message is TextMessage) {
       content = (message as TextMessage).text;
     } else if (message is ImageMessage) {
-      content = 'Фотография';
+      content = AppLocalizations.of(context)!.photo;
       icon = Icons.image_rounded;
     } else if (message is FileMessage) {
       content = (message as FileMessage).name;
@@ -417,7 +418,7 @@ class PinnedChatMessageItem extends StatelessWidget {
           children: [
             Row(
               children: [
-                SchoolAvatar(name: message.authorId, radius: 14),
+                SchoolAvatar(name: message.authorId, userId: message.authorId, radius: 14),
                 const SizedBox(width: 8),
                 Expanded(
                   child: FutureBuilder<Map<String, dynamic>?>(
@@ -490,7 +491,7 @@ class _EmptyPinnedState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Нет закреплённых сообщений',
+            AppLocalizations.of(context)!.noPinnedMessages,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.outline,
             ),

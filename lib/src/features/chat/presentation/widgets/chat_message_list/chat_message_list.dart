@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
@@ -301,7 +302,7 @@ class _TypingIndicatorBuilderState extends State<_TypingIndicatorBuilder> {
                             const SizedBox(width: 8),
                             Text(
                               typing.length == 1
-                                  ? 'Печатает...'
+                                  ? AppLocalizations.of(context)!.printing
                                   : '${typing.length} печатают...',
                               style: TextStyle(
                                 fontSize: 11,

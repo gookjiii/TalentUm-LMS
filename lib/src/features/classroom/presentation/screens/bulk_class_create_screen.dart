@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
@@ -49,18 +50,18 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Создание классов')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.creatingClasses)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Классная фабрика',
+            Text(
+              AppLocalizations.of(context)!.coolFactory,
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
             ),
-            const Text(
-              'Введите названия классов, которые вы хотите создать массово.',
+            Text(
+              AppLocalizations.of(context)!.enterTheNamesOfThe,
               style: TextStyle(color: SchoolColors.muted, fontSize: 13),
             ),
             const SizedBox(height: 24),
@@ -74,7 +75,7 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
                 child: TextField(
                   controller: _controllers[i],
                   decoration: InputDecoration(
-                    hintText: 'Напр: 7-й класс "А"',
+                    hintText: 'Напр: 7-й класс AppLocalizations.of(context)!.unknownKey10',
                     prefixIcon: const Icon(Icons.school_rounded),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
@@ -99,7 +100,7 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
             TextButton.icon(
               onPressed: _addMore,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Добавить еще'),
+              label: Text(AppLocalizations.of(context)!.addMore),
             ),
             const SizedBox(height: 40),
             SizedBox(
@@ -109,7 +110,7 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
                 onPressed: _loading ? null : _createAll,
                 child: _loading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('СОЗДАТЬ ВСЕ КЛАССЫ'),
+                    : Text(AppLocalizations.of(context)!.createAllClasses),
               ),
             ),
           ],

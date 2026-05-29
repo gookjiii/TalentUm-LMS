@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
@@ -19,7 +20,7 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Настройки класса'),
+        title: Text(AppLocalizations.of(context)!.unknownKey),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -33,7 +34,7 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
           if (!snapshot.hasData)
             return const Center(child: CircularProgressIndicator());
           final data = snapshot.data!.data();
-          if (data == null) return const Center(child: Text('Класс не найден'));
+          if (data == null) return Center(child: Text(AppLocalizations.of(context)!.unknownKey));
 
           final appState = AppScope.of(context).appState;
           final isLeadOfClass = appState.isLeadTeacher ||
@@ -49,21 +50,21 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              const SectionHeader(title: 'Общие настройки'),
+              SectionHeader(title: AppLocalizations.of(context)!.generalSettings1),
               const SizedBox(height: 16),
               SchoolCard(
                 child: Column(
                   children: [
                     ListTile(
-                      title: const Text('Название класса'),
+                      title: Text(AppLocalizations.of(context)!.unknownKey),
                       subtitle: Text(data['name'] ?? ''),
                       trailing: const Icon(Icons.edit_rounded, size: 20),
                       onTap: () => _editName(context, data['name'] ?? ''),
                     ),
                     const Divider(height: 1),
                     ListTile(
-                      title: const Text('Код приглашения'),
-                      subtitle: Text(data['inviteCode'] ?? 'Нет кода'),
+                      title: Text(AppLocalizations.of(context)!.invitationCode),
+                      subtitle: Text(data['inviteCode'] ?? AppLocalizations.of(context)!.unknownKey11),
                       trailing: const Icon(Icons.refresh_rounded, size: 20),
                       onTap: () {},
                     ),
@@ -71,15 +72,15 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              const SectionHeader(title: 'Разрешения для учеников'),
+              SectionHeader(title: AppLocalizations.of(context)!.studentPermissions),
               const SizedBox(height: 16),
               SchoolCard(
                 child: Column(
                   children: [
                     SwitchListTile(
-                      title: const Text('Общение в чате'),
-                      subtitle: const Text(
-                        'Разрешить ученикам писать сообщения в общий чат',
+                      title: Text(AppLocalizations.of(context)!.chat),
+                      subtitle: Text(
+                        AppLocalizations.of(context)!.allowStudentsToWriteMessages,
                       ),
                       value: canStudentChat,
                       activeColor: SchoolColors.primary,
@@ -88,9 +89,9 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
                     ),
                     const Divider(height: 1),
                     SwitchListTile(
-                      title: const Text('Публикации в ленте'),
-                      subtitle: const Text(
-                        'Разрешить ученикам создавать посты в ленте новостей',
+                      title: Text(AppLocalizations.of(context)!.publicationsInTheFeed),
+                      subtitle: Text(
+                        AppLocalizations.of(context)!.allowStudentsToCreateNews,
                       ),
                       value: canStudentPost,
                       activeColor: SchoolColors.primary,
@@ -99,9 +100,9 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
                     ),
                     const Divider(height: 1),
                     SwitchListTile(
-                      title: const Text('Модерация вступления'),
-                      subtitle: const Text(
-                        'Требовать одобрение учителя для новых участников',
+                      title: Text(AppLocalizations.of(context)!.moderationOfEntry),
+                      subtitle: Text(
+                        AppLocalizations.of(context)!.requireTeacherApprovalForNew,
                       ),
                       value: requireApproval,
                       activeColor: SchoolColors.primary,
@@ -113,7 +114,7 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
               ),
               if (isLeadOfClass) ...[
                 const SizedBox(height: 32),
-                const SectionHeader(title: 'Опасная зона'),
+                SectionHeader(title: AppLocalizations.of(context)!.dangerZone),
                 const SizedBox(height: 16),
                 SchoolCard(
                   child: ListTile(
@@ -121,15 +122,15 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
                       Icons.delete_forever_rounded,
                       color: Colors.red,
                     ),
-                    title: const Text(
-                      'Удалить класс',
+                    title: Text(
+                      AppLocalizations.of(context)!.deleteClass,
                       style: TextStyle(
                         color: Colors.red,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    subtitle: const Text(
-                      'Это действие нельзя отменить. Все данные будут удалены.',
+                    subtitle: Text(
+                      AppLocalizations.of(context)!.thisActionCannotBeUndone1,
                     ),
                     onTap: () => _confirmDelete(context),
                   ),
@@ -154,19 +155,19 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Изменить название'),
+        title: Text(AppLocalizations.of(context)!.changeName),
         content: TextField(
           controller: ctrl,
-          decoration: const InputDecoration(hintText: 'Название класса'),
+          decoration: InputDecoration(hintText: AppLocalizations.of(context)!.unknownKey),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
+            child: Text(AppLocalizations.of(context)!.unknownKey),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Сохранить'),
+            child: Text(AppLocalizations.of(context)!.save),
           ),
         ],
       ),
@@ -183,19 +184,19 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Удалить класс?'),
-        content: const Text(
-          'Все сообщения, задания и оценки будут безвозвратно удалены.',
+        title: Text(AppLocalizations.of(context)!.deleteAClass),
+        content: Text(
+          AppLocalizations.of(context)!.allMessagesAssignmentsAndGrades,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
+            child: Text(AppLocalizations.of(context)!.unknownKey),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('УДАЛИТЬ'),
+            child: Text(AppLocalizations.of(context)!.delete1),
           ),
         ],
       ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase/push_notification_manager.dart';
 
 class SchoolAppState extends ChangeNotifier {
   SchoolAppState() {
@@ -140,6 +142,15 @@ class SchoolAppState extends ChangeNotifier {
     _pushNotifications = value;
     Hive.box('app_settings').put('pushNotifications', value);
     notifyListeners();
+    
+    // Reactively register or unregister the device push token on toggle
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      PushNotificationManager.syncTokenSubscription(
+        userId: uid,
+        enabled: value,
+      );
+    }
   }
 
   void setSoundAndVibe(bool value) {

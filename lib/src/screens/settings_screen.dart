@@ -1,9 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:school_world/l10n/app_localizations.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../app_state.dart';
 import '../firebase/school_repository.dart';
 import '../theme.dart';
 import '../widgets/school_widgets.dart';
+import '../utils/reload_app.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -21,6 +25,57 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final _nameController = TextEditingController();
+  bool _uploadingAvatar = false;
+
+  Future<void> _pickAndUploadAvatar(BuildContext context) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+
+    if (result == null || result.files.isEmpty || !mounted) return;
+
+    setState(() => _uploadingAvatar = true);
+    try {
+      final file = result.files.first;
+      final repo = widget.repository;
+      final uid = repo.uid;
+      if (uid == null) throw Exception('Not logged in');
+
+      final path = 'avatars/$uid/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+
+      Map<String, dynamic>? uploadResult;
+      if (file.bytes != null) {
+        uploadResult = await repo.uploadFileWeb(path, file.bytes!);
+      } else if (file.path != null) {
+        uploadResult = await repo.uploadFile(path, File(file.path!));
+      }
+
+      if (uploadResult != null && uploadResult['url'] != null) {
+        final url = uploadResult['url'] as String;
+        await repo.firestore.collection('users').doc(uid).update({
+          'avatarUrl': url,
+        });
+        await repo.auth.currentUser?.updatePhotoURL(url);
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Аватар обновлен / Avatar updated')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка загрузки / Upload error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _uploadingAvatar = false);
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -37,22 +92,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _getAccentColorName(Color color, bool isRu) {
     final val = color.value;
-    if (val == const Color(0xFF7C3AED).value) {
-      return isRu ? 'Фиолетовый' : 'Purple';
+    if (val == const Color(0xFF2563EB).value) {
+      return isRu ? AppLocalizations.of(context)!.schoolBlue : 'School blue';
     } else if (val == const Color(0xFF059669).value) {
-      return isRu ? 'Изумрудный' : 'Emerald';
+      return isRu ? AppLocalizations.of(context)!.emerald : 'Emerald';
     } else if (val == const Color(0xFFF59E0B).value) {
-      return isRu ? 'Янтарный' : 'Amber';
+      return isRu ? AppLocalizations.of(context)!.amber : 'Amber';
     } else if (val == const Color(0xFFDC2626).value) {
-      return isRu ? 'Алый' : 'Crimson';
+      return isRu ? AppLocalizations.of(context)!.scarlet : 'Crimson';
+    } else if (val == const Color(0xFF7C3AED).value) {
+      return isRu ? AppLocalizations.of(context)!.violet : 'Purple';
     }
-    return isRu ? 'Школьный синий' : 'School Blue';
+    return isRu ? AppLocalizations.of(context)!.schoolBlue : 'School blue';
   }
 
   Widget _buildColorDot(Color color, bool isDark) {
     final isSelected = widget.appState.accentColor.value == color.value;
     return GestureDetector(
-      onTap: () => widget.appState.setAccentColor(color),
+      onTap: () {
+        if (!isSelected) {
+          widget.appState.setAccentColor(color);
+          Future.delayed(const Duration(milliseconds: 250), () {
+            reloadApp();
+          });
+        }
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: 24,
@@ -129,7 +193,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _LanguageTile(
                 flag: '🇷🇺',
                 label: l10n.russian,
-                sublabel: 'Русский',
+                sublabel: AppLocalizations.of(context)!.russian,
                 selected: widget.appState.locale?.languageCode == 'ru' ||
                     (widget.appState.locale == null &&
                         Localizations.localeOf(context).languageCode == 'ru'),
@@ -148,29 +212,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isRu = Localizations.localeOf(context).languageCode == 'ru';
+    return AnimatedBuilder(
+      animation: widget.appState,
+      builder: (context, _) {
+        final l10n = AppLocalizations.of(context)!;
+        final isDark = widget.appState.isDarkMode;
+        final isRu = Localizations.localeOf(context).languageCode == 'ru';
 
-    // Localized labels matching screenshot
-    final notificationsLabel = isRu ? 'Уведомления' : 'Notifications';
-    final pushNotificationsLabel = isRu ? 'Push-уведомления' : 'Push notifications';
-    final pushNotificationsSub = isRu ? 'Разрешены для чата и заданий' : 'Allowed for chat and assignments';
-    final newMessagesLabel = isRu ? 'Новые сообщения' : 'New messages';
-    final newMessagesSub = isRu ? 'Звук + вибрация' : 'Sound + vibration';
-    final updatesLabel = isRu ? 'Обновления' : 'Updates';
-    final updatesSub = isRu ? 'Тихий режим: 22:00–07:00' : 'Quiet mode: 22:00–07:00';
+        // Localized labels matching screenshot
+        final notificationsLabel = isRu ? AppLocalizations.of(context)!.notifications : 'Notifications';
+        final pushNotificationsLabel = isRu ? AppLocalizations.of(context)!.pushNotifications : 'Push notifications';
+        final pushNotificationsSub = isRu ? AppLocalizations.of(context)!.allowedForChatAndTasks : 'Allowed for chat and assignments';
+        final newMessagesLabel = isRu ? AppLocalizations.of(context)!.newMessages : 'New messages';
+        final newMessagesSub = isRu ? AppLocalizations.of(context)!.soundVibration : 'Sound + vibration';
+        final updatesLabel = isRu ? AppLocalizations.of(context)!.updates : 'Updates';
+        final updatesSub = isRu ? AppLocalizations.of(context)!.quietMode22000700 : 'Quiet mode: 22:00–07:00';
 
-    final appearanceLabel = isRu ? 'Оформление' : 'Appearance';
-    final darkThemeLabel = isRu ? 'Тёмная тема' : 'Dark theme';
-    final darkThemeSub = isRu ? 'Системная' : 'System';
-    final accentColorLabel = isRu ? 'Акцентный цвет' : 'Accent color';
-    final languageLabel = isRu ? 'Язык' : 'Language';
-    final activeLanguageSub = widget.appState.locale?.languageCode == 'en'
-        ? 'English (en)'
-        : 'Русский (ru)';
+        final appearanceLabel = isRu ? AppLocalizations.of(context)!.registration : 'Appearance';
+        final darkThemeLabel = isRu ? AppLocalizations.of(context)!.darkTheme : 'Dark theme';
+        final darkThemeSub = isRu ? AppLocalizations.of(context)!.system : 'System';
+        final accentColorLabel = isRu ? AppLocalizations.of(context)!.accentColor : 'Accent color';
+        final languageLabel = isRu ? AppLocalizations.of(context)!.language : 'Language';
+        final activeLanguageSub = widget.appState.locale?.languageCode == 'en'
+            ? 'English (en)'
+            : AppLocalizations.of(context)!.russianRu;
 
-    return Scaffold(
+        return Scaffold(
       appBar: AppBar(
         title: Text(l10n.settings),
         centerTitle: false,
@@ -180,24 +247,87 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           // ── Profile section ─────────────────────────────────
           _SectionLabel(label: l10n.profile),
-          SchoolCard(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: l10n.name,
-                    prefixIcon: const Icon(Icons.person_outline_rounded),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.save_outlined),
-                      tooltip: l10n.saveChanges,
-                      onPressed: () => _saveName(context, l10n),
+          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: widget.repository.userDocStream(),
+            builder: (context, snapshot) {
+              final data = snapshot.data?.data() ?? {};
+              final avatarUrl = data['avatarUrl'] as String?;
+              final currentName = data['name'] as String? ?? widget.repository.auth.currentUser?.displayName ?? '';
+              
+              if (_nameController.text.isEmpty && currentName.isNotEmpty) {
+                _nameController.text = currentName;
+              }
+
+              return SchoolCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Center(
+                      child: GestureDetector(
+                        onTap: _uploadingAvatar ? null : () => _pickAndUploadAvatar(context),
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.outlineVariant,
+                                  width: 2,
+                                ),
+                              ),
+                              child: ClipOval(
+                                child: _uploadingAvatar
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(24.0),
+                                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                                      )
+                                    : SchoolAvatar(
+                                        name: currentName,
+                                        avatarUrl: avatarUrl,
+                                        radius: 40,
+                                      ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: widget.appState.accentColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1.5),
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt_rounded,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: l10n.name,
+                        prefixIcon: const Icon(Icons.person_outline_rounded),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.save_outlined),
+                          tooltip: l10n.saveChanges,
+                          onPressed: () => _saveName(context, l10n),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
 
           const SizedBox(height: 28),
@@ -302,7 +432,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildColorDot(const Color(0xFF7C3AED), isDark),
+                      _buildColorDot(const Color(0xFF2563EB), isDark),
                       const SizedBox(width: 8),
                       _buildColorDot(const Color(0xFF059669), isDark),
                       const SizedBox(width: 8),
@@ -336,14 +466,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 28),
 
           // ── About section ───────────────────────────────────
-          _SectionLabel(label: isRu ? 'О приложении' : 'About'),
+          _SectionLabel(label: isRu ? AppLocalizations.of(context)!.aboutTheApplication : 'About'),
           SchoolCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: [
                 _InfoTile(
                   icon: Icons.info_outline_rounded,
-                  label: isRu ? 'Версия' : 'Version',
+                  label: isRu ? AppLocalizations.of(context)!.version : 'Version',
                   trailing: '1.0.0',
                 ),
                 Divider(
@@ -363,7 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 28),
 
           // ── Danger zone ─────────────────────────────────────
-          _SectionLabel(label: isRu ? 'Опасная зона' : 'Danger Zone', color: SchoolColors.red),
+          _SectionLabel(label: isRu ? AppLocalizations.of(context)!.dangerZone : 'Danger Zone', color: SchoolColors.red),
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
@@ -402,7 +532,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   subtitle: Text(
                     isRu
-                        ? 'Вы будете перенаправлены на экран входа'
+                        ? AppLocalizations.of(context)!.youWillBeRedirectedTo
                         : 'You will be redirected to the sign in screen',
                     style: TextStyle(
                       color: SchoolColors.red.withValues(alpha: 0.65),
@@ -422,6 +552,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 40),
         ],
       ),
+    );
+      },
     );
   }
 

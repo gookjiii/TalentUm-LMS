@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -85,8 +86,12 @@ class _ChatInputState extends State<ChatInput> {
     widget.controller.removeListener(_onTextChanged);
     _focusNode.dispose();
     _typingTimer?.cancel();
-    _audioRecorder.dispose();
     _recordTimer?.cancel();
+    // Stop recorder if still active to avoid dangling timer callbacks
+    if (_isRecording) {
+      _audioRecorder.stop().catchError((_) => null);
+    }
+    _audioRecorder.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -119,28 +124,46 @@ class _ChatInputState extends State<ChatInput> {
 
   Future<void> _startRecording() async {
     try {
-      if (await _audioRecorder.hasPermission()) {
-        String? path;
-        if (!kIsWeb) {
-          final dir = await getTemporaryDirectory();
-          path = '${dir.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final hasPermission = await _audioRecorder.hasPermission();
+      if (!hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.micPermissionDenied,
+              ),
+              duration: const Duration(seconds: 3),
+            ),
+          );
         }
-
-        await _audioRecorder.start(const RecordConfig(), path: path ?? '');
-
-        setState(() {
-          _isRecording = true;
-          _recordStartTime = DateTime.now();
-          _recordDuration = Duration.zero;
-        });
-
-        _recordTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-          setState(() {
-            _recordDuration = DateTime.now().difference(_recordStartTime!);
-          });
-        });
-        HapticFeedback.mediumImpact();
+        return;
       }
+
+      String? path;
+      if (!kIsWeb) {
+        final dir = await getTemporaryDirectory();
+        path = '${dir.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      }
+
+      await _audioRecorder.start(const RecordConfig(), path: path ?? '');
+
+      if (!mounted) return;
+      setState(() {
+        _isRecording = true;
+        _recordStartTime = DateTime.now();
+        _recordDuration = Duration.zero;
+      });
+
+      _recordTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        setState(() {
+          _recordDuration = DateTime.now().difference(_recordStartTime!);
+        });
+      });
+      HapticFeedback.mediumImpact();
     } catch (e) {
       debugPrint('Start recording error: $e');
     }
@@ -152,6 +175,7 @@ class _ChatInputState extends State<ChatInput> {
       _recordTimer?.cancel();
 
       final finalDuration = _recordDuration;
+      if (!mounted) return;
       setState(() {
         _isRecording = false;
         _recordDuration = Duration.zero;
@@ -159,6 +183,7 @@ class _ChatInputState extends State<ChatInput> {
 
       if (!cancel && path != null && widget.onAudioSend != null) {
         if (finalDuration.inSeconds >= 1) {
+          if (!mounted) return;
           setState(() {
             _recordedAudioPath = path;
             _recordedAudioDuration = finalDuration;
@@ -168,7 +193,7 @@ class _ChatInputState extends State<ChatInput> {
         final file = File(path);
         if (await file.exists()) await file.delete();
       }
-      HapticFeedback.lightImpact();
+      if (mounted) HapticFeedback.lightImpact();
     } catch (e) {
       debugPrint('Stop recording error: $e');
     }
@@ -324,7 +349,7 @@ class _ChatInputState extends State<ChatInput> {
                         ? theme.colorScheme.onSurfaceVariant.withOpacity(0.3)
                         : theme.colorScheme.primary,
                   ),
-                  tooltip: 'Прикрепить',
+                  tooltip: AppLocalizations.of(context)!.attach,
                   padding: EdgeInsets.all(isMobile ? 8 : 10),
                   constraints: isMobile
                       ? const BoxConstraints(minWidth: 40, minHeight: 40)
@@ -337,7 +362,7 @@ class _ChatInputState extends State<ChatInput> {
                       Icons.camera_alt_outlined,
                       color: theme.colorScheme.primary,
                     ),
-                    tooltip: 'Камера',
+                    tooltip: AppLocalizations.of(context)!.camera,
                     padding: const EdgeInsets.all(8),
                     constraints: const BoxConstraints(
                       minWidth: 40,
@@ -351,7 +376,7 @@ class _ChatInputState extends State<ChatInput> {
                       Icons.poll_outlined,
                       color: theme.colorScheme.primary,
                     ),
-                    tooltip: 'Опрос',
+                    tooltip: AppLocalizations.of(context)!.survey1,
                     padding: EdgeInsets.all(isMobile ? 8 : 10),
                     constraints: isMobile
                         ? const BoxConstraints(minWidth: 40, minHeight: 40)
@@ -385,9 +410,9 @@ class _ChatInputState extends State<ChatInput> {
                       ),
                       decoration: InputDecoration(
                         hintText: isMobile
-                            ? 'Сообщение'
+                            ? AppLocalizations.of(context)!.message
                             : (isEditing
-                                  ? 'Изменить сообщение'
+                                  ? AppLocalizations.of(context)!.editMessage
                                   : 'Написать в ${widget.className}...'),
                         hintStyle: theme.textTheme.bodyLarge?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant.withOpacity(
@@ -438,26 +463,47 @@ class _ChatInputState extends State<ChatInput> {
                       child: !canSend
                           ? GestureDetector(
                               key: const ValueKey('mic'),
+                              // Mobile: hold to record, release to preview
                               onLongPress: isEditing ? null : _startRecording,
-                              onLongPressEnd: isEditing
+                              onLongPressEnd: isEditing || !isMobile
                                   ? null
                                   : (details) => _stopRecording(),
-                              onLongPressCancel: isEditing
+                              onLongPressCancel: isEditing || !isMobile
                                   ? null
                                   : () => _stopRecording(cancel: true),
                               child: IconButton(
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Удерживайте для записи голоса',
-                                      ),
-                                      duration: Duration(seconds: 1),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.mic_rounded),
-                                color: theme.colorScheme.primary,
+                                onPressed: isEditing
+                                    ? null
+                                    : () {
+                                        if (_isRecording) {
+                                          // Desktop/web tap-to-stop
+                                          _stopRecording();
+                                        } else if (!isMobile) {
+                                          // Desktop/web tap-to-start
+                                          _startRecording();
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                AppLocalizations.of(context)!.holdToRecordVoice,
+                                              ),
+                                              duration: const Duration(seconds: 1),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                icon: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 180),
+                                  child: Icon(
+                                    _isRecording
+                                        ? Icons.stop_rounded
+                                        : Icons.mic_rounded,
+                                    key: ValueKey(_isRecording),
+                                  ),
+                                ),
+                                color: _isRecording
+                                    ? Colors.red
+                                    : theme.colorScheme.primary,
                                 padding: EdgeInsets.all(isMobile ? 8 : 10),
                                 constraints: isMobile
                                     ? const BoxConstraints(
@@ -510,19 +556,25 @@ class _ChatInputState extends State<ChatInput> {
               ),
             ),
             const Spacer(),
-            TextButton.icon(
+            // Discard
+            IconButton(
               onPressed: () => _stopRecording(cancel: true),
-              icon: const Icon(
-                Icons.delete_outline_rounded,
-                size: 18,
-                color: Colors.red,
+              icon: const Icon(Icons.delete_outline_rounded, size: 20),
+              color: Colors.red,
+              tooltip: AppLocalizations.of(context)!.cancel,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.red.withOpacity(0.08),
               ),
-              label: const Text('Отмена', style: TextStyle(color: Colors.red)),
             ),
             const SizedBox(width: 8),
-            const Text(
-              'Отпустите для просмотра',
-              style: TextStyle(fontSize: 11, color: Colors.grey),
+            // Stop & preview
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: _GradientSendButton(
+                onTap: () => _stopRecording(),
+                isUploading: false,
+                isEditing: false,
+              ),
             ),
           ],
         ),

@@ -22,6 +22,10 @@ import 'src/theme.dart';
 import 'src/utils/reload_app.dart';
 import 'src/utils/splash_loader.dart';
 import 'package:provider/provider.dart' as provider_pkg;
+import 'src/firebase/push_notification_manager.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
   try {
@@ -130,7 +134,7 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
     final activeLocale = ref.watch(
       schoolAppStateProvider.select((state) => state.locale),
     );
-    final appState = ref.read(schoolAppStateProvider);
+    final appState = ref.watch(schoolAppStateProvider);
     final repository = ref.watch(repositoryProvider);
     final guestParams = getGuestInviteParams();
     if (guestParams != null) {
@@ -172,6 +176,8 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
 
           return MaterialApp(
             title: appName,
+            navigatorKey: navigatorKey,
+            scaffoldMessengerKey: scaffoldMessengerKey,
             debugShowCheckedModeBanner: false,
             theme: schoolTheme(primaryColor: appState.accentColor),
             darkTheme: schoolDarkTheme(primaryColor: appState.accentColor),
@@ -496,6 +502,13 @@ class _AuthGateState extends State<AuthGate> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             widget.repository.startPresenceMonitoring();
             widget.repository.updateActivity();
+            
+            // Initialize push notifications reactively on login
+            PushNotificationManager.syncTokenSubscription(
+              userId: user.uid,
+              enabled: widget.appState.pushNotifications,
+            );
+            PushNotificationManager.initNotificationListeners();
           });
         }
 

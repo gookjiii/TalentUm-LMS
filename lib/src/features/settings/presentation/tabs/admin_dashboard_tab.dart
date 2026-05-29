@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -37,16 +38,16 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Админ-панель',
+            Text(
+              AppLocalizations.of(context)!.adminPanel,
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.5,
               ),
             ),
-            const Text(
-              'Управление системой и аналитика активности',
+            Text(
+              AppLocalizations.of(context)!.systemManagementAndActivityAnalytics,
               style: TextStyle(
                 color: SchoolColors.muted,
                 fontSize: 14,
@@ -65,7 +66,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                     builder: (context, snapshot) {
                       final count = snapshot.data?.docs.length ?? 0;
                       return _StatCard(
-                        title: 'Всего пользователей',
+                        title: AppLocalizations.of(context)!.totalUsers,
                         value: count.toString(),
                         icon: Icons.people_rounded,
                         color: SchoolColors.primary,
@@ -73,13 +74,13 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       );
                     },
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   FutureBuilder<QuerySnapshot>(
                     future: repo.firestore.collection('rooms').get(),
                     builder: (context, snapshot) {
                       final count = snapshot.data?.docs.length ?? 0;
                       return _StatCard(
-                        title: 'Активные чаты',
+                        title: AppLocalizations.of(context)!.activeChats,
                         value: count.toString(),
                         icon: Icons.chat_bubble_rounded,
                         color: SchoolColors.green,
@@ -87,7 +88,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       );
                     },
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   FutureBuilder<QuerySnapshot>(
                     future: repo.firestore
                         .collectionGroup('messages')
@@ -96,7 +97,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                     builder: (context, snapshot) {
                       final count = snapshot.data?.docs.length ?? 0;
                       return _StatCard(
-                        title: 'Сообщений сегодня',
+                        title: AppLocalizations.of(context)!.postsToday,
                         value: count.toString(),
                         icon: Icons.auto_graph_rounded,
                         color: SchoolColors.purple,
@@ -115,7 +116,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       builder: (context, snapshot) {
                         final count = snapshot.data?.docs.length ?? 0;
                         return _StatCard(
-                          title: 'Всего пользователей',
+                          title: AppLocalizations.of(context)!.totalUsers,
                           value: count.toString(),
                           icon: Icons.people_rounded,
                           color: SchoolColors.primary,
@@ -124,14 +125,14 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: FutureBuilder<QuerySnapshot>(
                       future: repo.firestore.collection('rooms').get(),
                       builder: (context, snapshot) {
                         final count = snapshot.data?.docs.length ?? 0;
                         return _StatCard(
-                          title: 'Активные чаты',
+                          title: AppLocalizations.of(context)!.activeChats,
                           value: count.toString(),
                           icon: Icons.chat_bubble_rounded,
                           color: SchoolColors.green,
@@ -150,7 +151,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       builder: (context, snapshot) {
                         final count = snapshot.data?.docs.length ?? 0;
                         return _StatCard(
-                          title: 'Сообщений сегодня',
+                          title: AppLocalizations.of(context)!.postsToday,
                           value: count.toString(),
                           icon: Icons.auto_graph_rounded,
                           color: SchoolColors.purple,
@@ -164,53 +165,53 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
 
 
 
-            const SizedBox(height: 32),
-            const SectionHeader(title: 'Брендинг приложения'),
-            const SizedBox(height: 16),
-            const _BrandingSettingsCard(),
+            SizedBox(height: 32),
+            SectionHeader(title: AppLocalizations.of(context)!.appBranding),
+            SizedBox(height: 16),
+            _BrandingSettingsCard(),
 
-            const SizedBox(height: 32),
-            const SectionHeader(title: 'Быстрые действия'),
-            const SizedBox(height: 16),
+            SizedBox(height: 32),
+            SectionHeader(title: AppLocalizations.of(context)!.quickActions1),
+            SizedBox(height: 16),
             Wrap(
               spacing: 16,
               runSpacing: 16,
               children: [
                 _AdminActionTile(
-                  title: 'Пользователи',
-                  subtitle: 'Управление ролями и бан',
+                  title: AppLocalizations.of(context)!.users,
+                  subtitle: AppLocalizations.of(context)!.roleManagementAndBan,
                   icon: Icons.manage_accounts_rounded,
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const UserManagementScreen(),
+                        builder: (_) => UserManagementScreen(),
                       ),
                     );
                   },
                 ),
                 _AdminActionTile(
-                  title: 'Все классы',
-                  subtitle: 'Просмотр и модерация',
+                  title: AppLocalizations.of(context)!.allClasses,
+                  subtitle: AppLocalizations.of(context)!.reviewAndModeration,
                   icon: Icons.school_rounded,
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const AdminClassesScreen(),
+                        builder: (_) => AdminClassesScreen(),
                       ),
                     );
                   },
                 ),
                 _AdminActionTile(
-                  title: 'Заявки в учителя',
-                  subtitle: 'Модерация запросов',
+                  title: AppLocalizations.of(context)!.applicationsForTeachers,
+                  subtitle: AppLocalizations.of(context)!.moderationOfRequests,
                   icon: Icons.how_to_reg_rounded,
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const AdminTeacherRequestsScreen(),
+                        builder: (_) => AdminTeacherRequestsScreen(),
                       ),
                     );
                   },
@@ -218,8 +219,8 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
               ],
             ),
 
-            const SizedBox(height: 32),
-            const SectionHeader(title: 'Последние пользователи'),
+            SizedBox(height: 32),
+            SectionHeader(title: AppLocalizations.of(context)!.latestUsers),
             const SizedBox(height: 16),
             FutureBuilder<QuerySnapshot>(
               future: repo.firestore
@@ -230,15 +231,15 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
               builder: (context, snapshot) {
                 final docs = snapshot.data?.docs ?? [];
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SchoolCard(
+                  return SchoolCard(
                     padding: EdgeInsets.all(32),
                     child: Center(child: CircularProgressIndicator()),
                   );
                 }
                 if (docs.isEmpty) {
-                  return const SchoolCard(
+                  return SchoolCard(
                     padding: EdgeInsets.all(32),
-                    child: Center(child: Text('Нет данных')),
+                    child: Center(child: Text(AppLocalizations.of(context)!.noData)),
                   );
                 }
                 return SchoolCard(
@@ -248,7 +249,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       for (int i = 0; i < docs.length; i++) ...[
                         _LogItem(
                           user: docs[i].get('name') ?? 'User',
-                          action: 'зарегистрировался',
+                          action: AppLocalizations.of(context)!.registered,
                           target: '',
                           time: _formatTime(docs[i].get('createdAt')),
                           icon: Icons.person_add_rounded,
@@ -268,7 +269,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
   }
 
   String _formatTime(dynamic ts) {
-    if (ts is! Timestamp) return 'недавно';
+    if (ts is! Timestamp) return AppLocalizations.of(context)!.recently;
     final date = ts.toDate();
     final now = DateTime.now();
     if (date.day == now.day &&
@@ -528,7 +529,7 @@ class _BrandingSettingsCardState extends State<_BrandingSettingsCard> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Логотип загружен')));
+        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.logoLoaded)));
       }
     } catch (e) {
       if (mounted) {
@@ -599,13 +600,13 @@ class _BrandingSettingsCardState extends State<_BrandingSettingsCard> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 20),
+                  SizedBox(width: 20),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Название приложения',
+                        Text(
+                          AppLocalizations.of(context)!.applicationName,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -614,14 +615,14 @@ class _BrandingSettingsCardState extends State<_BrandingSettingsCard> {
                         const SizedBox(height: 8),
                         TextField(
                           controller: _nameController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             isDense: true,
                             contentPadding: EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 12,
                             ),
                             border: OutlineInputBorder(),
-                            hintText: 'Введите название',
+                            hintText: AppLocalizations.of(context)!.enterAName,
                           ),
                         ),
                       ],
@@ -644,8 +645,8 @@ class _BrandingSettingsCardState extends State<_BrandingSettingsCard> {
                             );
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Настройки сохранены'),
+                                SnackBar(
+                                  content: Text(AppLocalizations.of(context)!.settingsSaved),
                                 ),
                               );
                             }
@@ -661,7 +662,7 @@ class _BrandingSettingsCardState extends State<_BrandingSettingsCard> {
                           }
                         },
                   icon: _loading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
@@ -669,8 +670,8 @@ class _BrandingSettingsCardState extends State<_BrandingSettingsCard> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.save_rounded, size: 18),
-                  label: const Text('Сохранить изменения'),
+                      : Icon(Icons.save_rounded, size: 18),
+                  label: Text(AppLocalizations.of(context)!.saveChanges1),
                 ),
               ),
             ],

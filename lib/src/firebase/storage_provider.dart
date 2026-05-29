@@ -167,7 +167,7 @@ class CloudinaryStorageProvider implements StorageProvider {
     }
 
     final uniqueUploadId = DateTime.now().millisecondsSinceEpoch.toString();
-    final chunkSize = 10 * 1024 * 1024; // 10 MB per chunk
+    const chunkSize = 10 * 1024 * 1024; // 10 MB per chunk
     
     Response<dynamic>? lastResponse;
     int bytesUploaded = 0;

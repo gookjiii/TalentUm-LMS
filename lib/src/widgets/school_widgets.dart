@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -393,8 +394,8 @@ class SchoolAvatar extends HookWidget {
   final bool showBorder;
   final String? userId;
 
-  String get _initials {
-    final parts = name.trim().split(RegExp(r'\s+'));
+  String _getInitials(String inputName) {
+    final parts = inputName.trim().split(RegExp(r'\s+'));
     if (parts.isEmpty || parts.first.isEmpty) return '?';
     if (parts.length == 1) {
       return parts.first.characters.first.toUpperCase();
@@ -403,8 +404,8 @@ class SchoolAvatar extends HookWidget {
         .toUpperCase();
   }
 
-  Color get _resolvedColor {
-    if (color != null) return color!;
+  Color _resolveColorForName(Color? customColor, String resolvedName) {
+    if (customColor != null) return customColor;
     const colors = [
       SchoolColors.primary,
       SchoolColors.green,
@@ -412,13 +413,27 @@ class SchoolAvatar extends HookWidget {
       SchoolColors.secondary,
       SchoolColors.red,
     ];
-    return colors[name.hashCode.abs() % colors.length];
+    return colors[resolvedName.hashCode.abs() % colors.length];
   }
 
   @override
   Widget build(BuildContext context) {
     final repo = AppScope.of(context).repository;
-    final c = _resolvedColor;
+    final isHovered = useState(false);
+
+    final userStream = useMemoized(
+      () => userId != null
+          ? repo.firestore.collection('users').doc(userId).snapshots()
+          : const Stream<DocumentSnapshot<Map<String, dynamic>>>.empty(),
+      [userId],
+    );
+    final userSnap = useStream(userStream);
+
+    final Map<String, dynamic> userData = userSnap.data?.data() ?? {};
+    final String resolvedName = userData['name'] as String? ?? name;
+    final String? resolvedAvatarUrl = userData['avatarUrl'] as String? ?? avatarUrl;
+
+    final c = _resolveColorForName(color, resolvedName);
     
     final statusStream = useMemoized(
       () => userId != null ? repo.userStatusStream(userId!) : const Stream<Map<String, dynamic>>.empty(),
@@ -447,20 +462,20 @@ class SchoolAvatar extends HookWidget {
       CurvedAnimation(parent: rippleController, curve: Curves.easeOut),
     );
 
-    Widget avatar = avatarUrl != null
+    Widget avatar = resolvedAvatarUrl != null && resolvedAvatarUrl.isNotEmpty
         ? ClipOval(
             child: CachedNetworkImage(
-              imageUrl: avatarUrl!,
+              imageUrl: resolvedAvatarUrl,
               width: radius * 2,
               height: radius * 2,
               fit: BoxFit.cover,
               placeholder: (context, url) => Container(
                 color: Colors.grey.withValues(alpha: 0.1),
               ),
-              errorWidget: (_, __, ___) => _buildDefaultAvatar(c),
+              errorWidget: (_, __, ___) => _buildDefaultAvatar(c, resolvedName),
             ),
           )
-        : _buildDefaultAvatar(c);
+        : _buildDefaultAvatar(c, resolvedName);
 
     if (showBorder) {
       avatar = Container(
@@ -475,81 +490,85 @@ class SchoolAvatar extends HookWidget {
       );
     }
 
-    Widget content = Stack(
-      clipBehavior: Clip.none,
-      children: [
-        if (isOnline)
-          Positioned.fill(
-            child: AnimatedBuilder(
-              animation: rippleController,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: rippleScale.value,
-                  child: Opacity(
-                    opacity: rippleOpacity.value,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: SchoolColors.green,
-                          width: 2,
+    Widget content = MouseRegion(
+      onEnter: (_) => isHovered.value = true,
+      onExit: (_) => isHovered.value = false,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (isOnline)
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: rippleController,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: rippleScale.value,
+                    child: Opacity(
+                      opacity: rippleOpacity.value,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: SchoolColors.green,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
-          ),
-        avatar,
-        if (onEditAvatar != null)
-          Positioned.fill(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onEditAvatar,
-                customBorder: const CircleBorder(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.camera_alt_rounded,
-                    color: Colors.white,
-                    size: radius * 0.8,
+          avatar,
+          if (onEditAvatar != null)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  opacity: isHovered.value ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.4),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.camera_alt_rounded,
+                      color: Colors.white,
+                      size: radius * 0.8,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        if (isOnline)
-          Positioned(
-            right: -1,
-            bottom: -1,
-            child: Container(
-              width: radius * 0.55,
-              height: radius * 0.55,
-              decoration: BoxDecoration(
-                color: SchoolColors.green,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: SchoolColors.green.withValues(alpha: 0.4),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
+          if (isOnline)
+            Positioned(
+              right: -1,
+              bottom: -1,
+              child: Container(
+                width: radius * 0.55,
+                height: radius * 0.55,
+                decoration: BoxDecoration(
+                  color: SchoolColors.green,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: SchoolColors.green.withValues(alpha: 0.4),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
 
-    if (onTap != null) {
+    final tapTarget = onEditAvatar ?? onTap;
+    if (tapTarget != null) {
       return InkWell(
-        onTap: onTap,
+        onTap: tapTarget,
         borderRadius: BorderRadius.circular(radius),
         child: content,
       );
@@ -557,7 +576,7 @@ class SchoolAvatar extends HookWidget {
     return content;
   }
 
-  Widget _buildDefaultAvatar(Color c) {
+  Widget _buildDefaultAvatar(Color c, String resolvedName) {
     return Container(
       width: radius * 2,
       height: radius * 2,
@@ -578,7 +597,7 @@ class SchoolAvatar extends HookWidget {
         ],
       ),
       child: Text(
-        _initials,
+        _getInitials(resolvedName),
         style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w800,
@@ -735,8 +754,8 @@ class _TeacherTagState extends State<TeacherTag> {
                 ),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Text(
-                'УЧИТЕЛЬ',
+              child: Text(
+                AppLocalizations.of(context)!.teacher1,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 8,

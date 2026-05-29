@@ -194,7 +194,7 @@ class _TopicSidebarState extends State<TopicSidebar> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Удалить тему?'),
+        title: Text(AppLocalizations.of(context)!.deleteTopic),
         content: Text('Вы уверены, что хотите удалить тему "$topicName"?'),
         actions: [
           TextButton(
@@ -216,7 +216,7 @@ class _TopicSidebarState extends State<TopicSidebar> {
                   .doc(topicId)
                   .delete();
             },
-            child: const Text('Удалить'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),

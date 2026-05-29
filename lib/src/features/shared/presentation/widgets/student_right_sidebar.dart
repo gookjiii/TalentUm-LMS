@@ -22,15 +22,15 @@ class StudentRightSidebar extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          const SectionHeader(title: 'ПРЕДСТОЯЩЕЕ РАСПИСАНИЕ'),
+          SectionHeader(title: AppLocalizations.of(context)!.upcomingSchedule),
           const SizedBox(height: 16),
           ...classes.take(3).map((c) => UpcomingScheduleCard(data: c)),
           const SizedBox(height: 32),
-          const SectionHeader(title: 'БЛИЖАЙШИЕ ЗАДАНИЯ'),
+          SectionHeader(title: AppLocalizations.of(context)!.upcomingTasks),
           const SizedBox(height: 16),
           _UpcomingAssignmentsList(classes: classes),
           const SizedBox(height: 32),
-          const SectionHeader(title: 'УСПЕХИ В КЛАССЕ'),
+          SectionHeader(title: AppLocalizations.of(context)!.successInTheClass),
           const SizedBox(height: 16),
           const SuccessProgressCard(),
         ],

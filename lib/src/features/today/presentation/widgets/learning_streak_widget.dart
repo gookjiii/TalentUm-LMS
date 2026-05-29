@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -56,8 +57,8 @@ class LearningStreakWidget extends StatelessWidget {
                     ),
                     Text(
                       activeToday
-                          ? 'Сегодняшняя цель достигнута'
-                          : 'Выполни задание, чтобы не прервать серию',
+                          ? AppLocalizations.of(context)!.todaysGoalAchieved
+                          : AppLocalizations.of(context)!.completeTheTaskSoAs,
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.orange.shade800,

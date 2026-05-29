@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
@@ -46,9 +47,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                         constraints: const BoxConstraints(),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Пользователи',
+                          AppLocalizations.of(context)!.users,
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w900,
@@ -66,7 +67,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'Поиск по имени, email или ID...',
+                        hintText: AppLocalizations.of(context)!.searchByNameEmailOr,
                         prefixIcon: const Icon(Icons.search_rounded),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
@@ -110,7 +111,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   }).toList();
 
                   if (docs.isEmpty) {
-                    return const Center(child: Text('Пользователи не найдены'));
+                    return Center(child: Text(AppLocalizations.of(context)!.noUsersFound));
                   }
 
                   return ListView.separated(
@@ -145,8 +146,8 @@ class _UserListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = AppScope.of(context).repository;
     final role = data['role']?.toString() ?? 'student';
-    final name = data['name']?.toString() ?? 'Без имени';
-    final email = data['email']?.toString() ?? 'Нет email';
+    final name = data['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey6;
+    final email = data['email']?.toString() ?? AppLocalizations.of(context)!.noEmail;
     final avatarUrl = data['avatarUrl']?.toString();
     final isBanned = data['isBanned'] == true;
 
@@ -257,33 +258,33 @@ class _UserListTile extends StatelessWidget {
             itemBuilder: (context) => [
               if (!isBanned) ...[
                 if (role != 'admin')
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'make_admin',
-                    child: Text('Сделать админом'),
+                    child: Text(AppLocalizations.of(context)!.makeAdmin),
                   ),
                 if (role != 'teacher')
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'make_teacher',
-                    child: Text('Сделать учителем'),
+                    child: Text(AppLocalizations.of(context)!.makeItATeacher),
                   ),
                 if (role != 'student')
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'make_student',
-                    child: Text('Сделать учеником'),
+                    child: Text(AppLocalizations.of(context)!.makeAStudent),
                   ),
                 const PopupMenuDivider(),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'ban',
                   child: Text(
-                    'Заблокировать',
+                    AppLocalizations.of(context)!.block,
                     style: TextStyle(color: Colors.red),
                   ),
                 ),
               ] else ...[
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'unban',
                   child: Text(
-                    'Разблокировать',
+                    AppLocalizations.of(context)!.unblock,
                     style: TextStyle(color: Colors.green),
                   ),
                 ),

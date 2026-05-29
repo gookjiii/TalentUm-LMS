@@ -32,7 +32,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final messages = ref.watch(classMessagesProvider(widget.classId));
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.classChat)),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.unknownKey)),
       body: Column(
         children: [
           Expanded(

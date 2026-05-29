@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
@@ -52,7 +53,7 @@ class StudentSidebar extends StatelessWidget {
       child: Column(
         children: [
           // Header
-          _SidebarHeader(extended: extended, subtitle: 'Портал ученика'),
+          _SidebarHeader(extended: extended, subtitle: AppLocalizations.of(context)!.studentPortal),
           _SidebarDivider(),
 
           // Navigation items
@@ -76,7 +77,7 @@ class StudentSidebar extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'МОИ КЛАССЫ',
+                  AppLocalizations.of(context)!.myClasses,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.3),
                     fontSize: 10,
@@ -417,7 +418,7 @@ class _UserCard extends StatelessWidget {
       stream: repo.userDocStream(),
       builder: (context, snapshot) {
         final data = snapshot.data?.data() ?? {};
-        final fallbackName = repo.auth.currentUser?.displayName ?? 'Ученик';
+        final fallbackName = repo.auth.currentUser?.displayName ?? AppLocalizations.of(context)!.student;
         final name = (data['name'] as String?)?.isNotEmpty == true
             ? data['name'] as String
             : fallbackName;
@@ -465,7 +466,7 @@ class _UserCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Ученик',
+                          AppLocalizations.of(context)!.student,
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.white.withValues(alpha: 0.45),
@@ -481,7 +482,7 @@ class _UserCard extends StatelessWidget {
                       size: 17,
                       color: SchoolColors.red,
                     ),
-                    tooltip: 'Выйти',
+                    tooltip: AppLocalizations.of(context)!.logOut,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),

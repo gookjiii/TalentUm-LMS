@@ -43,7 +43,7 @@ class HomeworkScreen extends StatelessWidget {
                         color: Colors.white,
                         size: 22,
                       ),
-                      tooltip: 'Новое задание',
+                      tooltip: AppLocalizations.of(context)!.newTask,
                       constraints: const BoxConstraints(
                         minWidth: 38,
                         minHeight: 38,
@@ -119,7 +119,7 @@ class HomeworkScreen extends StatelessWidget {
                   ),
                   subtitle: dueDate != null
                       ? Text(
-                          l10n.due(_formatDate(dueDate)),
+                          l10n.due(_formatDate(context, dueDate)),
                           style: TextStyle(
                             fontSize: 12,
                             color: overdue ? Colors.red : Colors.grey,
@@ -146,20 +146,20 @@ class HomeworkScreen extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime d) {
-    const months = [
-      'янв',
-      'фев',
-      'мар',
-      'апр',
-      'мая',
-      'июн',
-      'июл',
-      'авг',
-      'сен',
-      'окт',
-      'ноя',
-      'дек',
+  String _formatDate(BuildContext context, DateTime d) {
+    final months = [
+      AppLocalizations.of(context)!.jan,
+      AppLocalizations.of(context)!.feb,
+      AppLocalizations.of(context)!.mar,
+      AppLocalizations.of(context)!.apr,
+      AppLocalizations.of(context)!.may1,
+      AppLocalizations.of(context)!.jun,
+      AppLocalizations.of(context)!.jul,
+      AppLocalizations.of(context)!.aug,
+      AppLocalizations.of(context)!.sep,
+      AppLocalizations.of(context)!.oct,
+      AppLocalizations.of(context)!.nov,
+      AppLocalizations.of(context)!.dec,
     ];
     return '${d.day} ${months[d.month - 1]} ${d.year}';
   }
@@ -173,19 +173,19 @@ class HomeworkScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: const Text('Новое задание'),
+          title: Text(AppLocalizations.of(context)!.newTask),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: titleCtrl,
-                  decoration: const InputDecoration(labelText: 'Заголовок'),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.title),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: descCtrl,
-                  decoration: const InputDecoration(labelText: 'Описание'),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.description),
                   maxLines: 2,
                 ),
                 const SizedBox(height: 8),
@@ -193,8 +193,8 @@ class HomeworkScreen extends StatelessWidget {
                   contentPadding: EdgeInsets.zero,
                   title: Text(
                     dueDate != null
-                        ? 'Срок: ${_formatDate(dueDate!)}'
-                        : 'Установить срок',
+                        ? 'Срок: ${_formatDate(context, dueDate!)}'
+                        : AppLocalizations.of(context)!.setADeadline,
                   ),
                   trailing: const Icon(Icons.calendar_today_outlined),
                   onTap: () async {
@@ -213,7 +213,7 @@ class HomeworkScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Отмена'),
+              child: Text(AppLocalizations.of(context)!.unknownKey),
             ),
             FilledButton(
               onPressed: () async {
@@ -226,7 +226,7 @@ class HomeworkScreen extends StatelessWidget {
                 );
                 if (ctx.mounted) Navigator.pop(ctx);
               },
-              child: const Text('Создать'),
+              child: Text(AppLocalizations.of(context)!.create),
             ),
           ],
         ),

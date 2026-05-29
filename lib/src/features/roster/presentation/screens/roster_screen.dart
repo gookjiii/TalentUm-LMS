@@ -183,7 +183,7 @@ class _MembersHeader extends StatelessWidget {
                 }
               },
               icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
-              tooltip: 'Добавить ученика',
+              tooltip: AppLocalizations.of(context)!.addAStudent,
             ),
             const SizedBox(width: 8),
           ],
@@ -422,7 +422,7 @@ class _MemberCardState extends State<_MemberCard> {
                         ),
                       ),
                       Text(
-                        widget.isAdmin ? 'Администратор' : 'Участник',
+                        widget.isAdmin ? AppLocalizations.of(context)!.administrator : AppLocalizations.of(context)!.participant,
                         style: TextStyle(
                           fontSize: 12,
                           color: widget.isAdmin
@@ -454,16 +454,16 @@ class _MemberCardState extends State<_MemberCard> {
                           value: 'profile',
                           child: Text(l10n.profile),
                         ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'edit_name',
-                          child: Text('Редактировать имя'),
+                          child: Text(AppLocalizations.of(context)!.editName),
                         ),
                         PopupMenuItem(
                           value: 'admin',
                           child: Text(
                             widget.isAdmin
-                                ? 'Убрать права админа'
-                                : 'Сделать администратором',
+                                ? AppLocalizations.of(context)!.removeAdminRights
+                                : AppLocalizations.of(context)!.makeAsAdministrator,
                           ),
                         ),
                         PopupMenuItem(
@@ -500,22 +500,22 @@ class _MemberCardState extends State<_MemberCard> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Редактировать имя ученика'),
+        title: Text(AppLocalizations.of(context)!.editStudentName),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Имя ученика',
-            hintText: 'Иван Иванов',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context)!.studentName,
+            hintText: AppLocalizations.of(context)!.ivanIvanov,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
+            child: Text(AppLocalizations.of(context)!.unknownKey),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Сохранить'),
+            child: Text(AppLocalizations.of(context)!.save),
           ),
         ],
       ),
@@ -540,7 +540,7 @@ class _MemberCardState extends State<_MemberCard> {
     final name = userData['name']?.toString() ?? l10n.student;
     final email = userData['email']?.toString();
     final createdAt = userData['createdAt'];
-    String dateStr = 'неизвестно';
+    String dateStr = AppLocalizations.of(context)!.unknown;
     if (createdAt is Timestamp) {
       dateStr = DateFormat('d MMMM yyyy', 'ru').format(createdAt.toDate());
     }
@@ -576,6 +576,7 @@ class _MemberCardState extends State<_MemberCard> {
                   name: name,
                   avatarUrl: userData['avatarUrl'],
                   radius: 36,
+                  userId: widget.studentId,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -591,7 +592,7 @@ class _MemberCardState extends State<_MemberCard> {
                       ),
                       const SizedBox(height: 4),
                       StatusChip(
-                        label: widget.isAdmin ? 'АДМИНИСТРАТОР' : 'УЧЕНИК',
+                        label: widget.isAdmin ? AppLocalizations.of(context)!.administrator1 : AppLocalizations.of(context)!.student1,
                         color: widget.isAdmin
                             ? SchoolColors.primary
                             : SchoolColors.green,
@@ -604,7 +605,7 @@ class _MemberCardState extends State<_MemberCard> {
             const SizedBox(height: 24),
             const Divider(),
             const SizedBox(height: 12),
-            _InfoRow(icon: Icons.email_outlined, text: email ?? 'Нет email'),
+            _InfoRow(icon: Icons.email_outlined, text: email ?? AppLocalizations.of(context)!.noEmail),
             _InfoRow(
               icon: Icons.calendar_today_outlined,
               text: 'Участник с: $dateStr',
@@ -669,7 +670,7 @@ class _AddStudentDialogState extends State<_AddStudentDialog> {
       final results = await repo.searchUserByEmail(email);
       setState(() {
         _results = results;
-        if (results.isEmpty) _error = 'Пользователь не найден';
+        if (results.isEmpty) _error = AppLocalizations.of(context)!.userNotFound;
       });
     } catch (e) {
       setState(() => _error = 'Ошибка поиска: $e');
@@ -695,7 +696,7 @@ class _AddStudentDialogState extends State<_AddStudentDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Добавить ученика'),
+      title: Text(AppLocalizations.of(context)!.addAStudent),
       content: SizedBox(
         width: 400,
         child: Column(
@@ -704,7 +705,7 @@ class _AddStudentDialogState extends State<_AddStudentDialog> {
             TextField(
               controller: _emailController,
               decoration: InputDecoration(
-                labelText: 'Email ученика',
+                labelText: AppLocalizations.of(context)!.studentEmail,
                 hintText: 'student@email.com',
                 suffixIcon: _searching
                     ? const Padding(
@@ -735,15 +736,16 @@ class _AddStudentDialogState extends State<_AddStudentDialog> {
                 leading: SchoolAvatar(
                   name: user['name']?.toString() ?? '',
                   radius: 18,
+                  userId: user['id'] as String?,
                 ),
-                title: Text(user['name']?.toString() ?? 'Неизвестный'),
+                title: Text(user['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey9),
                 subtitle: Text(
                   user['email']?.toString() ?? '',
                   style: const TextStyle(fontSize: 12),
                 ),
                 trailing: FilledButton(
                   onPressed: () => _addUser(user['id'] as String),
-                  child: const Text('Добавить'),
+                  child: Text(AppLocalizations.of(context)!.add),
                 ),
               ),
             ),
@@ -753,7 +755,7 @@ class _AddStudentDialogState extends State<_AddStudentDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Отмена'),
+          child: Text(AppLocalizations.of(context)!.unknownKey),
         ),
       ],
     );

@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -309,7 +310,7 @@ class FilePreviewWidget extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              isImage ? 'Просмотреть' : 'Открыть',
+                              isImage ? AppLocalizations.of(context)!.view : AppLocalizations.of(context)!.open,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: docAccentColor,

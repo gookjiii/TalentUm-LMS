@@ -133,7 +133,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                             Text(
                               l10n.teacherLabel(
                                 classData['teacherName']?.toString() ??
-                                    'Учитель',
+                                    AppLocalizations.of(context)!.teacher,
                               ),
                               style: const TextStyle(color: SchoolColors.muted),
                             ),

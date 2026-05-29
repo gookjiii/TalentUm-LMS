@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/src/features/chat/data/firebase_chat_controller.dart';
@@ -91,7 +92,7 @@ class _ChatHeaderState extends State<ChatHeader> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Не удалось открыть комнату для звонка')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.failedToOpenCallRoom)),
         );
       }
     }
@@ -137,7 +138,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: Text(
-                        'Очистить чат',
+                        AppLocalizations.of(context)!.clearChat1,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
@@ -149,7 +150,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                 ),
                 const SizedBox(height: 18),
                 Text(
-                  'Вы уверены, что хотите очистить всю историю чата Учительской? Это действие невозможно отменить.',
+                  AppLocalizations.of(context)!.areYouSureYouWant1,
                   style: TextStyle(
                     fontSize: 14,
                     height: 1.4,
@@ -163,13 +164,13 @@ class _ChatHeaderState extends State<ChatHeader> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: Text('Отмена', style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
+              child: Text(AppLocalizations.of(context)!.unknownKey, style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
             ),
             const SizedBox(width: 12),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
               style: FilledButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-              child: const Text('Очистить'),
+              child: Text(AppLocalizations.of(context)!.clear),
             ),
           ],
         );
@@ -199,7 +200,7 @@ class _ChatHeaderState extends State<ChatHeader> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Очистка чата...',
+                AppLocalizations.of(context)!.clearingChat,
                 style: TextStyle(
                   color: isDark ? Colors.white : Colors.black87,
                   fontSize: 14,
@@ -228,7 +229,7 @@ class _ChatHeaderState extends State<ChatHeader> {
       if (mounted) {
         Navigator.pop(context); // Dismiss loading spinner
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Чат Учительской успешно очищен')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.teachersChatHasBeenSuccessfully)),
         );
       }
     } catch (e) {
@@ -259,12 +260,12 @@ class _ChatHeaderState extends State<ChatHeader> {
         final int memberCount;
 
         if (widget.classId == 'teachers_lounge') {
-          name = data['name']?.toString() ?? 'Учительская';
+          name = data['name']?.toString() ?? AppLocalizations.of(context)!.teachersRoom;
           color = SchoolColors.primary;
           final userIds = List<String>.from(data['userIds'] ?? []);
           memberCount = userIds.length;
         } else {
-          name = data['name']?.toString() ?? 'Класс';
+          name = data['name']?.toString() ?? AppLocalizations.of(context)!.classText;
           color = parseHexColor(data['coverColor']);
           final studentIds = List<String>.from(data['studentIds'] ?? []);
           final teacherId = data['teacherId'] as String?;
@@ -299,7 +300,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                   children: [
                     if (!isSearching) ...[
                       Semantics(
-                        label: 'Назад',
+                        label: AppLocalizations.of(context)!.back,
                         button: true,
                         child: IconButton(
                           onPressed: widget.onBack ?? () => Navigator.of(context).maybePop(),
@@ -309,7 +310,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                       ),
                       const SizedBox(width: 4),
                       Semantics(
-                        label: 'Темы чата',
+                        label: AppLocalizations.of(context)!.chatTopics,
                         button: true,
                         child: IconButton(
                           onPressed: widget.onToggleTopics,
@@ -331,7 +332,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                           ? SearchBar(
                               controller: widget.searchController,
                               onChanged: widget.onSearchChanged,
-                              hintText: 'Поиск...',
+                              hintText: AppLocalizations.of(context)!.search,
                               focusNode: _searchFocusNode,
                               elevation: const WidgetStatePropertyAll(0),
                               backgroundColor: WidgetStatePropertyAll(
@@ -367,7 +368,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                           : GestureDetector(
                               onTap: widget.onOpenMembers,
                               child: Semantics(
-                                label: 'Информация о чате',
+                                label: AppLocalizations.of(context)!.chatInformation,
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   mainAxisSize: MainAxisSize.min,
@@ -407,7 +408,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                     if (!isSearching) ...[
                       const SizedBox(width: 4),
                       Semantics(
-                        label: 'Звонок',
+                        label: AppLocalizations.of(context)!.call,
                         button: true,
                         child: IconButton(
                           onPressed: () => _openCallRoom(widget.classId),
@@ -458,7 +459,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                               children: [
                                 Icon(Icons.search_rounded, size: 20, color: theme.colorScheme.primary),
                                 const SizedBox(width: 12),
-                                const Text('Поиск сообщений'),
+                                Text(AppLocalizations.of(context)!.searchMessages),
                               ],
                             ),
                           ),
@@ -468,7 +469,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                               children: [
                                 Icon(Icons.group_rounded, size: 20, color: theme.colorScheme.primary),
                                 const SizedBox(width: 12),
-                                const Text('Участники'),
+                                Text(AppLocalizations.of(context)!.participants),
                               ],
                             ),
                           ),
@@ -484,7 +485,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                                   color: theme.colorScheme.primary,
                                 ),
                                 const SizedBox(width: 12),
-                                const Text('Медиа и файлы'),
+                                Text(AppLocalizations.of(context)!.mediaAndFiles),
                               ],
                             ),
                           ),
@@ -500,7 +501,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
-                                    'Очистить чат',
+                                    AppLocalizations.of(context)!.clearChat1,
                                     style: TextStyle(
                                       color: Colors.red.shade700,
                                       fontWeight: FontWeight.w600,
@@ -519,10 +520,10 @@ class _ChatHeaderState extends State<ChatHeader> {
               return Row(
                 children: [
                   Semantics(
-                    label: 'Темы чата',
+                    label: AppLocalizations.of(context)!.chatTopics,
                     button: true,
                     child: IconButton.filledTonal(
-                      tooltip: 'Темы чата',
+                      tooltip: AppLocalizations.of(context)!.chatTopics,
                       onPressed: widget.onToggleTopics,
                       icon: Icon(
                         widget.showTopicsSidebar ? Icons.topic : Icons.topic_outlined,
@@ -546,7 +547,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Semantics(
-                      label: 'Информация о чате',
+                      label: AppLocalizations.of(context)!.chatInformation,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
@@ -576,7 +577,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                     child: SearchBar(
                       controller: widget.searchController,
                       onChanged: widget.onSearchChanged,
-                      hintText: 'Поиск сообщений...',
+                      hintText: AppLocalizations.of(context)!.searchMessages1,
                       elevation: const WidgetStatePropertyAll(0),
                       backgroundColor: WidgetStatePropertyAll(
                         theme.colorScheme.surfaceVariant.withOpacity(0.5),
@@ -601,10 +602,10 @@ class _ChatHeaderState extends State<ChatHeader> {
                   ),
                   const SizedBox(width: 8),
                   Semantics(
-                    label: 'Звонок',
+                    label: AppLocalizations.of(context)!.call,
                     button: true,
                     child: IconButton.filledTonal(
-                      tooltip: 'Начать видеозвонок',
+                      tooltip: AppLocalizations.of(context)!.startAVideoCall,
                       onPressed: () => _openCallRoom(widget.classId),
                       icon: const Icon(Icons.video_call_rounded, size: 20),
                       color: theme.colorScheme.primary,
@@ -615,10 +616,10 @@ class _ChatHeaderState extends State<ChatHeader> {
                   ),
                   const SizedBox(width: 8),
                   Semantics(
-                    label: 'Участники',
+                    label: AppLocalizations.of(context)!.participants,
                     button: true,
                     child: IconButton.filledTonal(
-                      tooltip: 'Участники',
+                      tooltip: AppLocalizations.of(context)!.participants,
                       onPressed: widget.onOpenMembers,
                       icon: const Icon(Icons.group_rounded, size: 20),
                       color: theme.colorScheme.onSurfaceVariant,
@@ -629,10 +630,10 @@ class _ChatHeaderState extends State<ChatHeader> {
                   ),
                   const SizedBox(width: 8),
                   Semantics(
-                    label: 'Медиа и файлы',
+                    label: AppLocalizations.of(context)!.mediaAndFiles,
                     button: true,
                     child: IconButton.filledTonal(
-                      tooltip: 'Медиа и файлы',
+                      tooltip: AppLocalizations.of(context)!.mediaAndFiles,
                       onPressed: widget.onToggleResources,
                       icon: Icon(
                         widget.showResourceSidebar
@@ -653,10 +654,10 @@ class _ChatHeaderState extends State<ChatHeader> {
                   if (widget.classId == 'teachers_lounge' && AppScope.of(context).appState.isLeadTeacher) ...[
                     const SizedBox(width: 8),
                     Semantics(
-                      label: 'Очистить чат',
+                      label: AppLocalizations.of(context)!.clearChat1,
                       button: true,
                       child: IconButton.filledTonal(
-                        tooltip: 'Очистить чат Учительской',
+                        tooltip: AppLocalizations.of(context)!.clearTeachersChat,
                         onPressed: _clearTeachersLoungeChat,
                         icon: const Icon(Icons.delete_sweep_rounded, size: 20),
                         color: Colors.redAccent,

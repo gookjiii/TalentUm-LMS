@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -107,8 +108,8 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                   return Center(
                     child: Text(
                       widget.studentIdFilter != null
-                          ? 'У вас пока нет оценок.'
-                          : 'Журнал пуст. Добавьте первый урок!',
+                          ? AppLocalizations.of(context)!.youDontHaveRatingsYet
+                          : AppLocalizations.of(context)!.theMagazineIsEmptyAdd,
                       style: const TextStyle(color: SchoolColors.muted, fontSize: 16),
                     ),
                   );
@@ -184,7 +185,7 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                         border: Border(right: BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05))),
                       ),
                       child: Text(
-                        widget.studentIdFilter != null ? 'Мои оценки' : 'Ученик',
+                        widget.studentIdFilter != null ? AppLocalizations.of(context)!.myRatings : AppLocalizations.of(context)!.student,
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 13,
@@ -241,7 +242,7 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                         itemBuilder: (context, index) {
                           final studentId = studentIds[index];
                           final user = _usersCache[studentId];
-                          final name = user?['name']?.toString() ?? 'Загрузка...';
+                          final name = user?['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey1;
                           final isLast = index == studentIds.length - 1;
 
                           return Container(
@@ -363,19 +364,19 @@ class _MarkCell extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final bool enabled;
 
-  Color _getMarkColor(String mark) {
+  Color _getMarkColor(BuildContext context, String mark) {
     if (mark == '5') return SchoolColors.green;
     if (mark == '4') return SchoolColors.primary;
     if (mark == '3') return SchoolColors.orange;
     if (mark == '2') return SchoolColors.red;
-    if (mark.toLowerCase() == 'н') return SchoolColors.red;
+    if (mark.toLowerCase() == AppLocalizations.of(context)!.n) return SchoolColors.red;
     return isDark ? Colors.white : Colors.black87;
   }
 
   @override
   Widget build(BuildContext context) {
     final mark = initialValue.trim();
-    final color = _getMarkColor(mark);
+    final color = _getMarkColor(context, mark);
     
     final cellWidget = Container(
       decoration: BoxDecoration(
@@ -406,7 +407,7 @@ class _MarkCell extends StatelessWidget {
     }
 
     return PopupMenuButton<String>(
-      tooltip: 'Оценить',
+      tooltip: AppLocalizations.of(context)!.rate,
       onSelected: (val) {
         onChanged(val == 'clear' ? '' : val);
       },
@@ -414,11 +415,11 @@ class _MarkCell extends StatelessWidget {
       offset: const Offset(0, 4),
       constraints: const BoxConstraints(minWidth: 180),
       itemBuilder: (context) => [
-        _buildPopupItem('5', '5', 'Отлично', SchoolColors.green),
-        _buildPopupItem('4', '4', 'Хорошо', SchoolColors.primary),
-        _buildPopupItem('3', '3', 'Удовлетворительно', SchoolColors.orange),
-        _buildPopupItem('2', '2', 'Плохо', SchoolColors.red),
-        _buildPopupItem('Н', 'Н', 'Отсутствует', SchoolColors.red),
+        _buildPopupItem('5', '5', AppLocalizations.of(context)!.unknownKey2, SchoolColors.green),
+        _buildPopupItem('4', '4', AppLocalizations.of(context)!.unknownKey3, SchoolColors.primary),
+        _buildPopupItem('3', '3', AppLocalizations.of(context)!.unknownKey4, SchoolColors.orange),
+        _buildPopupItem('2', '2', AppLocalizations.of(context)!.unknownKey5, SchoolColors.red),
+        _buildPopupItem(AppLocalizations.of(context)!.n1, AppLocalizations.of(context)!.n1, AppLocalizations.of(context)!.absent, SchoolColors.red),
         const PopupMenuDivider(height: 8),
         PopupMenuItem<String>(
           value: 'clear',
@@ -431,7 +432,7 @@ class _MarkCell extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                'Очистить отметку',
+                AppLocalizations.of(context)!.clearMark,
                 style: TextStyle(
                   color: isDark ? Colors.white70 : SchoolColors.textSecondary,
                   fontWeight: FontWeight.w600,

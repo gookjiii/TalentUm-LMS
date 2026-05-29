@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -128,13 +129,13 @@ class _StudentHomeworkState extends State<StudentHomework> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const StatusChip(
-                                  label: 'Учёба · Домашние задания',
+                                StatusChip(
+                                  label: AppLocalizations.of(context)!.studyHomework,
                                   color: SchoolColors.primary,
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
-                                  'Мои задания',
+                                  AppLocalizations.of(context)!.myTasks,
                                   style: TextStyle(
                                     fontSize: 32,
                                     fontWeight: FontWeight.bold,
@@ -154,7 +155,7 @@ class _StudentHomeworkState extends State<StudentHomework> {
                         controller: _searchController,
                         onChanged: (v) => setState(() => _searchQuery = v),
                         decoration: InputDecoration(
-                          hintText: 'Поиск заданий...',
+                          hintText: AppLocalizations.of(context)!.searchForTasks,
                           prefixIcon: const Icon(Icons.search),
                           filled: true,
                           fillColor:
@@ -174,7 +175,7 @@ class _StudentHomeworkState extends State<StudentHomework> {
                           _filter == 'All' &&
                           _searchQuery.isEmpty) ...[
                         const SizedBox(height: 32),
-                        const SectionHeader(title: 'РЕЖИМ ФОКУСА'),
+                        SectionHeader(title: AppLocalizations.of(context)!.focusMode),
                         const SizedBox(height: 12),
                         FocusAssignmentCard(doc: urgentAssignment),
                       ],
@@ -184,23 +185,23 @@ class _StudentHomeworkState extends State<StudentHomework> {
                         child: Row(
                           children: [
                             FilterChipItem(
-                              label: 'Все',
+                              label: AppLocalizations.of(context)!.all,
                               active: _filter == 'All',
                               onTap: () => setState(() => _filter = 'All'),
                             ),
                             FilterChipItem(
-                              label: 'Ожидают',
+                              label: AppLocalizations.of(context)!.waiting,
                               active: _filter == 'Pending',
                               onTap: () => setState(() => _filter = 'Pending'),
                             ),
                             FilterChipItem(
-                              label: 'Сдано',
+                              label: AppLocalizations.of(context)!.delivered,
                               active: _filter == 'Submitted',
                               onTap: () =>
                                   setState(() => _filter = 'Submitted'),
                             ),
                             FilterChipItem(
-                              label: 'Оценено',
+                              label: AppLocalizations.of(context)!.rated,
                               active: _filter == 'Graded',
                               onTap: () => setState(() => _filter = 'Graded'),
                             ),
@@ -238,7 +239,7 @@ class FocusAssignmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = doc.data();
-    final title = data['title']?.toString() ?? 'Задание';
+    final title = data['title']?.toString() ?? AppLocalizations.of(context)!.unknownKey13;
     final due = toDate(data['dueDate']);
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -271,8 +272,8 @@ class FocusAssignmentCard extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  'СРОЧНО',
+                child: Text(
+                  AppLocalizations.of(context)!.urgently,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 10,
@@ -299,7 +300,7 @@ class FocusAssignmentCard extends StatelessWidget {
               const Icon(Icons.timer_outlined, color: Colors.white70, size: 16),
               const SizedBox(width: 8),
               Text(
-                due != null ? _getHumanFriendlyDate(due) : 'Без срока',
+                due != null ? _getHumanFriendlyDate(context, due) : AppLocalizations.of(context)!.noDeadline,
                 style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 14,
@@ -318,7 +319,7 @@ class FocusAssignmentCard extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Text(
-              'Начать сейчас',
+              AppLocalizations.of(context)!.startNow,
               style: TextStyle(
                 color: colorScheme.primary,
                 fontWeight: FontWeight.bold,
@@ -339,7 +340,7 @@ class HomeworkCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = doc.data();
-    final title = data['title']?.toString() ?? 'Задание';
+    final title = data['title']?.toString() ?? AppLocalizations.of(context)!.unknownKey13;
     final due = toDate(data['dueDate']);
     final attachments = List<Map<String, dynamic>>.from(
       data['attachments'] ?? [],
@@ -367,7 +368,7 @@ class HomeworkCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SchoolAvatar(name: 'Учитель', radius: 24),
+            SchoolAvatar(name: AppLocalizations.of(context)!.teacher, radius: 24),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -394,8 +395,8 @@ class HomeworkCard extends StatelessWidget {
                           ),
                         )
                       else if (isOverdue)
-                        const Text(
-                          'ПРОСРОЧЕНО',
+                        Text(
+                          AppLocalizations.of(context)!.expired,
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
@@ -405,8 +406,8 @@ class HomeworkCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Предмет: общий',
+                  Text(
+                    AppLocalizations.of(context)!.subjectGeneral,
                     style: TextStyle(color: SchoolColors.muted, fontSize: 12),
                   ),
                   const SizedBox(height: 12),
@@ -421,7 +422,7 @@ class HomeworkCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        due != null ? _getHumanFriendlyDate(due) : 'Без срока',
+                        due != null ? _getHumanFriendlyDate(context, due) : AppLocalizations.of(context)!.noDeadline,
                         style: TextStyle(
                           fontSize: 12,
                           color: isOverdue
@@ -474,8 +475,8 @@ class HomeworkCard extends StatelessWidget {
                           color: SchoolColors.primary,
                         ),
                         const SizedBox(width: 4),
-                        const Text(
-                          'Сдано',
+                        Text(
+                          AppLocalizations.of(context)!.delivered,
                           style: TextStyle(
                             fontSize: 12,
                             color: SchoolColors.primary,
@@ -510,13 +511,13 @@ class NoHomeworkEmptyState extends StatelessWidget {
             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Всё выполнено!',
+          Text(
+            AppLocalizations.of(context)!.everythingIsDone,
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Заданий пока нет.',
+          Text(
+            AppLocalizations.of(context)!.thereAreNoTasksYet,
             style: TextStyle(color: SchoolColors.muted),
           ),
         ],
@@ -557,11 +558,11 @@ class FilterChipItem extends StatelessWidget {
   }
 }
 
-String _getHumanFriendlyDate(DateTime date) {
+String _getHumanFriendlyDate(BuildContext context, DateTime date) {
   final now = DateTime.now();
   final diff = date.difference(now);
-  if (diff.inDays == 0) return 'Сегодня';
-  if (diff.inDays == 1) return 'Завтра';
+  if (diff.inDays == 0) return AppLocalizations.of(context)!.today;
+  if (diff.inDays == 1) return AppLocalizations.of(context)!.tomorrow;
   if (diff.inDays < 7) return DateFormat('EEEE', 'ru').format(date);
   return DateFormat('d MMM', 'ru').format(date);
 }

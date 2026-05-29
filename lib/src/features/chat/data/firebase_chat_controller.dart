@@ -781,7 +781,7 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
         .collection('messages')
         .doc(messageId);
     await ref.update({
-      'text': 'Сообщение удалено',
+      'text': 'Пост удален',
       'metadata.isDeleted': true,
       'metadata.deletedAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),

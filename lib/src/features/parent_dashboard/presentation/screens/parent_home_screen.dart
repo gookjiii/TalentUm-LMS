@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
@@ -28,26 +29,26 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
           final childIds = List<String>.from(userData?['childIds'] ?? []);
 
           if (childIds.isEmpty) {
-            return const _NoChildrenState();
+            return _NoChildrenState();
           }
 
           return CustomScrollView(
             slivers: [
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(32, 64, 32, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Панель родителей',
+                        AppLocalizations.of(context)!.parentsPanel,
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                       Text(
-                        'Мониторинг успеваемости ваших детей',
+                        AppLocalizations.of(context)!.monitoringYourChildrensProgress,
                         style: TextStyle(
                           color: SchoolColors.muted,
                           fontSize: 14,
@@ -86,9 +87,9 @@ class _ChildProgressCard extends StatelessWidget {
     return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       future: repo.firestore.collection('users').doc(childId).get(),
       builder: (context, snap) {
-        if (!snap.hasData) return const SizedBox(height: 100);
+        if (!snap.hasData) return SizedBox(height: 100);
         final data = snap.data!.data();
-        final name = data?['name'] ?? 'Ученик';
+        final name = data?['name'] ?? AppLocalizations.of(context)!.student;
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 20),
@@ -112,13 +113,13 @@ class _ChildProgressCard extends StatelessWidget {
                         children: [
                           Text(
                             name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const Text(
-                            '7-й класс "А"',
+                          Text(
+                            '7-й класс AppLocalizations.of(context)!.unknownKey10',
                             style: TextStyle(
                               color: SchoolColors.muted,
                               fontSize: 12,
@@ -136,35 +137,35 @@ class _ChildProgressCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                const Row(
+                SizedBox(height: 24),
+                Row(
                   children: [
                     _MetricTile(
-                      label: 'Ср. балл',
+                      label: AppLocalizations.of(context)!.wedPoint,
                       value: '4.8',
                       color: SchoolColors.green,
                     ),
                     SizedBox(width: 12),
                     _MetricTile(
-                      label: 'Посещаемость',
+                      label: AppLocalizations.of(context)!.attendance,
                       value: '98%',
                       color: SchoolColors.primary,
                     ),
                     SizedBox(width: 12),
                     _MetricTile(
-                      label: 'Задания',
+                      label: AppLocalizations.of(context)!.quests,
                       value: '12/12',
                       color: SchoolColors.purple,
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Последние оценки',
+                SizedBox(height: 24),
+                Text(
+                  AppLocalizations.of(context)!.latestRatings,
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                 ),
                 const SizedBox(height: 12),
-                const _RecentGrades(),
+                _RecentGrades(),
               ],
             ),
           ),
@@ -224,14 +225,14 @@ class _RecentGrades extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _GradeBubble(subject: 'Мат', grade: '5'),
-        _GradeBubble(subject: 'Рус', grade: '4'),
-        _GradeBubble(subject: 'Физ', grade: '5'),
-        _GradeBubble(subject: 'Ист', grade: '5'),
-        const Spacer(),
+        _GradeBubble(subject: AppLocalizations.of(context)!.mat, grade: '5'),
+        _GradeBubble(subject: AppLocalizations.of(context)!.rus, grade: '4'),
+        _GradeBubble(subject: AppLocalizations.of(context)!.phys, grade: '5'),
+        _GradeBubble(subject: AppLocalizations.of(context)!.east, grade: '5'),
+        Spacer(),
         TextButton(
           onPressed: () {},
-          child: const Text('Все оценки', style: TextStyle(fontSize: 12)),
+          child: Text(AppLocalizations.of(context)!.allRatings, style: TextStyle(fontSize: 12)),
         ),
       ],
     );
@@ -276,15 +277,16 @@ class _NoChildrenState extends StatelessWidget {
   Future<void> _showLinkChildDialog(BuildContext context) async {
     final ctrl = TextEditingController();
     final repo = AppScope.of(context).repository;
+    final l10n = AppLocalizations.of(context)!;
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Привязать ребенка'),
+        title: Text(l10n.tieTheBaby),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Введите Email вашего ребенка для привязки профиля.'),
+            Text(l10n.enterYourChildsEmailTo),
             const SizedBox(height: 16),
             TextField(
               controller: ctrl,
@@ -298,11 +300,11 @@ class _NoChildrenState extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
+            child: Text(l10n.unknownKey),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Привязать'),
+            child: Text(l10n.snap),
           ),
         ],
       ),
@@ -318,7 +320,7 @@ class _NoChildrenState extends StatelessWidget {
             .get();
 
         if (snap.docs.isEmpty) {
-          throw 'Пользователь с таким email не найден';
+          throw l10n.userWithThisEmailWas;
         }
 
         final childId = snap.docs.first.id;
@@ -330,7 +332,7 @@ class _NoChildrenState extends StatelessWidget {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ребенок успешно привязан')),
+            SnackBar(content: Text(l10n.theChildIsSuccessfullyAttached)),
           );
         }
       } catch (e) {
@@ -349,25 +351,25 @@ class _NoChildrenState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.family_restroom_rounded,
             size: 64,
             color: SchoolColors.border,
           ),
-          const SizedBox(height: 24),
-          const Text(
-            'Дети не привязаны',
+          SizedBox(height: 24),
+          Text(
+            AppLocalizations.of(context)!.childrenAreNotAttached,
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
           ),
-          const Text(
-            'Используйте код ребенка, чтобы привязать профиль',
+          Text(
+            AppLocalizations.of(context)!.useYourChildsCodeTo,
             style: TextStyle(color: SchoolColors.muted),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: 32),
           FilledButton.icon(
             onPressed: () => _showLinkChildDialog(context),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Привязать ребенка'),
+            icon: Icon(Icons.add_rounded),
+            label: Text(AppLocalizations.of(context)!.tieTheBaby),
           ),
         ],
       ),

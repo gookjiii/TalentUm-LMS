@@ -41,4 +41,6 @@
             <data android:mimeType="text/plain"/>
         </intent>
     </queries>
+    <!-- Required for voice message recording -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 </manifest>

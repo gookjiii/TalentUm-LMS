@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -54,7 +55,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
           return Center(
             child: Text(
               errorMessage,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: Colors.white),
             ),
           );
         },
@@ -96,13 +97,13 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
         height: 160,
         color: Colors.black.withOpacity(0.05),
         alignment: Alignment.center,
-        child: const Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 28),
             SizedBox(height: 8),
             Text(
-              'Не удалось загрузить видео',
+              AppLocalizations.of(context)!.failedToLoadVideo,
               style: TextStyle(fontSize: 12, color: SchoolColors.muted),
             ),
           ],
@@ -145,7 +146,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
             // Play button or Loading Indicator
             Center(
               child: _isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 44,
                       height: 44,
                       child: CircularProgressIndicator(
@@ -171,7 +172,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
                       child: ClipOval(
                         child: BackdropFilter(
                           filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                          child: const Icon(
+                          child: Icon(
                             Icons.play_arrow_rounded,
                             color: Colors.white,
                             size: 36,
@@ -186,12 +187,12 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
               bottom: 8,
               left: 8,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
@@ -201,7 +202,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
                     ),
                     SizedBox(width: 4),
                     Text(
-                      'Видео',
+                      AppLocalizations.of(context)!.video1,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,

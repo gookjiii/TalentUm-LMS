@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -56,7 +57,7 @@ class _PostCardState extends State<PostCard> {
     final data = widget.doc.data();
     final repo = AppScope.of(context).repository;
     final uid = repo.uid;
-    final authorId = data['authorId']?.toString() ?? 'Учитель';
+    final authorId = data['authorId']?.toString() ?? AppLocalizations.of(context)!.teacher;
     final content = data['content']?.toString() ?? '';
     final pinned = data['pinned'] == true;
     final likes = List<String>.from(data['likes'] ?? []);
@@ -95,7 +96,7 @@ class _PostCardState extends State<PostCard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                authorId == uid ? 'Вы' : authorName,
+                                authorId == uid ? AppLocalizations.of(context)!.you : authorName,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
@@ -120,10 +121,10 @@ class _PostCardState extends State<PostCard> {
               ),
               const Spacer(),
               if (pinned)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(right: 8),
                   child: StatusChip(
-                    label: 'Закреплено',
+                    label: AppLocalizations.of(context)!.pinned,
                     color: SchoolColors.yellow,
                     icon: Icons.push_pin,
                     iconSize: 10,
@@ -182,7 +183,7 @@ class _PostCardState extends State<PostCard> {
       }
       return DateFormat('d MMM · H:mm', 'ru').format(date);
     }
-    return 'только что';
+    return AppLocalizations.of(context)!.justNow1;
   }
 }
 
@@ -275,8 +276,8 @@ class _PostReactionRow extends StatelessWidget {
         IconButton(
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Закладки появятся в следующем обновлении'),
+              SnackBar(
+                content: Text(AppLocalizations.of(context)!.bookmarksWillAppearInThe),
               ),
             );
           },
@@ -379,9 +380,9 @@ class _CommentSheetState extends State<_CommentSheet> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
-                'Комментарии',
+              SizedBox(height: 24),
+              Text(
+                AppLocalizations.of(context)!.comments,
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 20),
@@ -390,11 +391,11 @@ class _CommentSheetState extends State<_CommentSheet> {
                   maxHeight: MediaQuery.sizeOf(context).height * 0.4,
                 ),
                 child: comments.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Padding(
                           padding: EdgeInsets.all(40.0),
                           child: Text(
-                            'Комментариев пока нет.',
+                            AppLocalizations.of(context)!.noCommentsYet,
                             style: TextStyle(color: SchoolColors.muted),
                           ),
                         ),
@@ -421,8 +422,8 @@ class _CommentSheetState extends State<_CommentSheet> {
                                       children: [
                                         Text(
                                           c['authorId'] == repo.uid
-                                              ? 'Вы'
-                                              : 'Пользователь',
+                                              ? AppLocalizations.of(context)!.you
+                                              : AppLocalizations.of(context)!.user,
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 13,
@@ -458,7 +459,7 @@ class _CommentSheetState extends State<_CommentSheet> {
                     child: TextField(
                       controller: _controller,
                       decoration: InputDecoration(
-                        hintText: 'Добавить комментарий...',
+                        hintText: AppLocalizations.of(context)!.addAComment,
                         filled: true,
                         fillColor: SchoolColors.surface,
                         border: OutlineInputBorder(
@@ -535,11 +536,11 @@ class _PostMenu extends StatelessWidget {
       itemBuilder: (_) => [
         PopupMenuItem(
           value: 'pin',
-          child: Text(pinned ? 'Открепить' : 'Закрепить'),
+          child: Text(pinned ? AppLocalizations.of(context)!.unpin : AppLocalizations.of(context)!.pin),
         ),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'delete',
-          child: Text('Удалить', style: TextStyle(color: Colors.red)),
+          child: Text(AppLocalizations.of(context)!.delete, style: TextStyle(color: Colors.red)),
         ),
       ],
     );
@@ -580,8 +581,8 @@ class _FileTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: const Icon(Icons.insert_drive_file_outlined),
-      title: Text(file['name'] ?? 'Файл'),
+      leading: Icon(Icons.insert_drive_file_outlined),
+      title: Text(file['name'] ?? AppLocalizations.of(context)!.file2),
       onTap: () => openExternalUrl(file['url']),
     );
   }

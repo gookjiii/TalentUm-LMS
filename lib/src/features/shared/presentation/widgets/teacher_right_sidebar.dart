@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
@@ -25,17 +26,17 @@ class TeacherRightSidebar extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          const SectionHeader(title: 'ПРЕДСТОЯЩИЕ ЗАНЯТИЯ'),
+          SectionHeader(title: AppLocalizations.of(context)!.upcomingClasses),
           const SizedBox(height: 16),
           if (classes.isEmpty)
-            const Text(
-              'Нет классов',
+            Text(
+              AppLocalizations.of(context)!.noClasses,
               style: TextStyle(color: SchoolColors.muted),
             )
           else
             ...classes.take(3).map((c) => _ScheduleCard(data: c)),
           const SizedBox(height: 32),
-          const SectionHeader(title: 'ЗАДАНИЯ НА ПРОВЕРКУ'),
+          SectionHeader(title: AppLocalizations.of(context)!.tasksForTesting),
           const SizedBox(height: 16),
           _PendingSubmissionsList(classes: classes),
         ],
@@ -71,7 +72,7 @@ class _ScheduleCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  data['subject']?.toString() ?? 'Без предмета',
+                  data['subject']?.toString() ?? AppLocalizations.of(context)!.unknownKey12,
                   style: const TextStyle(
                     fontSize: 12,
                     color: SchoolColors.muted,
@@ -127,8 +128,8 @@ class _PendingSubmissionsListState extends State<_PendingSubmissionsList> {
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) {
-          return const Text(
-            'Все задания проверены ✨',
+          return Text(
+            AppLocalizations.of(context)!.allTasksHaveBeenChecked,
             style: TextStyle(color: SchoolColors.muted, fontSize: 13),
           );
         }
@@ -171,8 +172,8 @@ class _SubmissionMiniCard extends StatelessWidget {
                       fontSize: 12,
                     ),
                   ),
-                  const Text(
-                    'Новая работа',
+                  Text(
+                    AppLocalizations.of(context)!.newJob,
                     style: TextStyle(fontSize: 10, color: SchoolColors.muted),
                   ),
                 ],

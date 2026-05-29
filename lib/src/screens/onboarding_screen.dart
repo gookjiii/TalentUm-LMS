@@ -257,10 +257,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                   ? SchoolColors.darkTextSecondary
                                   : SchoolColors.textSecondary,
                             ),
-                            children: const [
-                              TextSpan(text: 'Вы учитель? '),
+                            children: [
+                              TextSpan(text: AppLocalizations.of(context)!.areYouATeacher),
                               TextSpan(
-                                text: 'Войти как учитель',
+                                text: AppLocalizations.of(context)!.loginAsTeacher,
                                 style: TextStyle(
                                   color: SchoolColors.primary,
                                   fontWeight: FontWeight.w700,
@@ -285,7 +285,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   Future<void> _previewClass() async {
     final code = _codeController.text.trim();
     if (code.isEmpty) {
-      setState(() => _codeError = 'Введите код приглашения');
+      setState(() => _codeError = AppLocalizations.of(context)!.enterInvitationCode);
       return;
     }
     setState(() {
@@ -300,7 +300,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       _previewAnimCtrl.forward(from: 0);
     } catch (_) {
       setState(
-        () => _codeError = 'Код не найден. Проверьте и попробуйте снова.',
+        () => _codeError = AppLocalizations.of(context)!.codeNotFoundCheckAnd,
       );
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -314,12 +314,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       final repo = AppScope.of(context).repository;
       final user = repo.auth.currentUser;
       if (user == null) {
-        _showMessage('Пожалуйста, сначала войдите.');
+        _showMessage(AppLocalizations.of(context)!.pleaseLoginFirst);
         return;
       }
       await repo.createProfile(
         role: 'student',
-        name: user.displayName ?? user.email?.split('@').first ?? 'Ученик',
+        name: user.displayName ?? user.email?.split('@').first ?? AppLocalizations.of(context)!.student,
       );
       final result = await repo.joinClass(_previewData!['classId'].toString());
       if (mounted) {
@@ -339,12 +339,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       final repo = AppScope.of(context).repository;
       final user = repo.auth.currentUser;
       if (user == null) {
-        _showMessage('Пожалуйста, сначала войдите.');
+        _showMessage(AppLocalizations.of(context)!.pleaseLoginFirst);
         return;
       }
       await repo.createProfile(
         role: 'teacher',
-        name: user.displayName ?? user.email?.split('@').first ?? 'Учитель',
+        name: user.displayName ?? user.email?.split('@').first ?? AppLocalizations.of(context)!.teacher,
       );
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);

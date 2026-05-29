@@ -112,8 +112,8 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String?>(
                         value: safeSelectedId,
-                        hint: const Text(
-                          'Моё расписание',
+                        hint: Text(
+                          AppLocalizations.of(context)!.mySchedule,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -126,7 +126,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                         items: [
-                          const DropdownMenuItem<String?>(
+                          DropdownMenuItem<String?>(
                             value: null,
                             child: Row(
                               children: [
@@ -136,7 +136,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                                   color: SchoolColors.primary,
                                 ),
                                 SizedBox(width: 8),
-                                Text('Моё расписание'),
+                                Text(AppLocalizations.of(context)!.mySchedule),
                               ],
                             ),
                           ),
@@ -154,7 +154,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(c['name']?.toString() ?? 'Класс'),
+                                  Text(c['name']?.toString() ?? AppLocalizations.of(context)!.classText),
                                 ],
                               ),
                             ),
@@ -226,7 +226,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                   color: Colors.white,
                   size: 22,
                 ),
-                tooltip: 'Добавить урок',
+                tooltip: AppLocalizations.of(context)!.addALesson,
                 constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
                 padding: EdgeInsets.zero,
               ),
@@ -765,7 +765,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                     return const Padding(
                       padding: EdgeInsets.only(bottom: 12.0),
                       child: Text(
-                        'У вас еще нет созданных классов. Создайте класс во вкладке "Классы" перед составлением расписания.',
+                        'У вас еще нет созданных классов. Создайте класс во вкладке AppLocalizations.of(context)!.unknownKey14 перед составлением расписания.',
                         style: TextStyle(
                           color: SchoolColors.muted,
                           fontSize: 13,
@@ -808,8 +808,8 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
               if (_recurring)
                 DropdownButtonFormField<int>(
                   value: _dayOfWeek,
-                  decoration: const InputDecoration(
-                    labelText: 'День недели',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.dayOfTheWeek,
                     border: OutlineInputBorder(),
                   ),
                   items: [
@@ -828,7 +828,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                   icon: const Icon(Icons.calendar_today_outlined),
                   label: Text(
                     _oneOffDate == null
-                        ? 'Выберите дату'
+                        ? AppLocalizations.of(context)!.selectDate
                         : DateFormat('EEE, d MMM', 'ru').format(_oneOffDate!),
                   ),
                   onPressed: () async {
@@ -848,7 +848,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                 children: [
                   Expanded(
                     child: _TimeField(
-                      label: 'Начало',
+                      label: AppLocalizations.of(context)!.start,
                       value: _start,
                       onChanged: (t) => setState(() => _start = t),
                     ),
@@ -856,7 +856,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _TimeField(
-                      label: 'Конец',
+                      label: AppLocalizations.of(context)!.end,
                       value: _end,
                       onChanged: (t) => setState(() => _end = t),
                     ),
@@ -866,8 +866,8 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
               const SizedBox(height: 12),
               TextField(
                 controller: _room,
-                decoration: const InputDecoration(
-                  labelText: 'Кабинет / заметка',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.officenote,
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -908,19 +908,19 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
 
   Future<void> _save() async {
     if (_classId == null || _classId!.isEmpty) {
-      _showErr('Сначала выберите класс');
+      _showErr(AppLocalizations.of(context)!.firstSelectAClass);
       return;
     }
     if (_toMin(_end) <= _toMin(_start)) {
-      _showErr('Конец должен быть позже начала');
+      _showErr(AppLocalizations.of(context)!.theEndMustBeLater);
       return;
     }
     if (_recurring && _dayOfWeek == null) {
-      _showErr('Выберите день недели');
+      _showErr(AppLocalizations.of(context)!.selectDayOfWeek);
       return;
     }
     if (!_recurring && _oneOffDate == null) {
-      _showErr('Выберите дату');
+      _showErr(AppLocalizations.of(context)!.selectDate);
       return;
     }
 
@@ -982,7 +982,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
           FilledButton.tonal(
             style: FilledButton.styleFrom(minimumSize: const Size(100, 44)),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Удалить'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),

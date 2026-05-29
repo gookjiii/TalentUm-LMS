@@ -115,8 +115,8 @@ class _TeacherWorkspaceScreenState
             Icons.chat_bubble_outline_rounded,
             Icons.chat_bubble_rounded,
           ),
-          const TeacherNavDest(
-            'Учительская',
+          TeacherNavDest(
+            AppLocalizations.of(context)!.teachersRoom,
             Icons.coffee_outlined,
             Icons.coffee_rounded,
           ),
@@ -125,39 +125,39 @@ class _TeacherWorkspaceScreenState
             Icons.assignment_outlined,
             Icons.assignment_rounded,
           ),
-          const TeacherNavDest(
-            'Библиотека',
+          TeacherNavDest(
+            AppLocalizations.of(context)!.library,
             Icons.library_books_outlined,
             Icons.library_books_rounded,
           ),
-          const TeacherNavDest(
-            'Вебинары',
+          TeacherNavDest(
+            AppLocalizations.of(context)!.webinars,
             Icons.ondemand_video_outlined,
             Icons.ondemand_video_rounded,
           ),
-          const TeacherNavDest(
-            'Журнал',
+          TeacherNavDest(
+            AppLocalizations.of(context)!.magazine,
             Icons.book_outlined,
             Icons.book_rounded,
           ),
-          const TeacherNavDest(
-            'Расписание',
+          TeacherNavDest(
+            AppLocalizations.of(context)!.schedule,
             Icons.calendar_month_outlined,
             Icons.calendar_month_rounded,
           ),
-          const TeacherNavDest(
-            'Участники',
+          TeacherNavDest(
+            AppLocalizations.of(context)!.participants,
             Icons.people_outline,
             Icons.people,
           ),
           if (appState.isLeadTeacher)
-            const TeacherNavDest(
-              'Админ-панель',
+            TeacherNavDest(
+              AppLocalizations.of(context)!.adminPanel,
               Icons.admin_panel_settings_outlined,
               Icons.admin_panel_settings_rounded,
             ),
-          const TeacherNavDest(
-            'Настройки',
+          TeacherNavDest(
+            AppLocalizations.of(context)!.settings,
             Icons.settings_outlined,
             Icons.settings_rounded,
           ),
@@ -192,8 +192,8 @@ class _TeacherWorkspaceScreenState
 
                   hasClasses && activeId != null
                       ? TeacherFeed(classId: activeId, classes: classes)
-                      : const _FeatureLockedEmptyState(
-                          title: 'Лента',
+                      : _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.ribbon,
                           icon: Icons.campaign_outlined,
                         ),
 
@@ -206,8 +206,8 @@ class _TeacherWorkspaceScreenState
                           desktopMode: wide,
                           canInitializeRoom: true,
                         )
-                      : const _FeatureLockedEmptyState(
-                          title: 'Чат',
+                      : _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.chat,
                           icon: Icons.chat_bubble_outline_rounded,
                         ),
 
@@ -232,29 +232,29 @@ class _TeacherWorkspaceScreenState
                               )['name']
                               ?.toString(),
                         )
-                      : const _FeatureLockedEmptyState(
-                          title: 'Задания',
+                      : _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.quests,
                           icon: Icons.assignment_outlined,
                         ),
 
                   hasClasses && activeId != null
                       ? LibraryScreen(classId: activeId)
-                      : const _FeatureLockedEmptyState(
-                          title: 'Библиотека',
+                      : _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.library,
                           icon: Icons.library_books_outlined,
                         ),
 
                   hasClasses && activeId != null
                       ? WebinarsScreen(classId: activeId)
-                      : const _FeatureLockedEmptyState(
-                          title: 'Вебинары',
+                      : _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.webinars,
                           icon: Icons.ondemand_video_outlined,
                         ),
 
                   hasClasses && activeId != null
                       ? JournalScreen(classId: activeId)
-                      : const _FeatureLockedEmptyState(
-                          title: 'Журнал',
+                      : _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.magazine,
                           icon: Icons.book_outlined,
                         ),
 
@@ -262,8 +262,8 @@ class _TeacherWorkspaceScreenState
 
                   hasClasses && activeId != null
                       ? RosterScreen(classId: activeId)
-                      : const _FeatureLockedEmptyState(
-                          title: 'Участники',
+                      : _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.participants,
                           icon: Icons.people_outline,
                         ),
 
@@ -412,14 +412,14 @@ class _TeacherWorkspaceScreenState
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Пригласить в класс'),
+        title: Text(AppLocalizations.of(context)!.inviteToClass),
         content: SizedBox(
           width: 320,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Покажите этот QR-код ученикам или отправьте им прямую ссылку.',
+              Text(
+                AppLocalizations.of(context)!.showThisQrCodeTo,
                 style: TextStyle(fontSize: 13, color: SchoolColors.muted),
               ),
               const SizedBox(height: 24),
@@ -459,21 +459,21 @@ class _TeacherWorkspaceScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Закрыть'),
+            child: Text(AppLocalizations.of(context)!.close),
           ),
           FilledButton.icon(
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: link));
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Ссылка скопирована!')),
+                  SnackBar(content: Text(AppLocalizations.of(context)!.linkCopied)),
                 );
                 Navigator.pop(context);
               }
             },
             style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
             icon: const Icon(Icons.copy_rounded, size: 18),
-            label: const Text('Копировать ссылку'),
+            label: Text(AppLocalizations.of(context)!.copyLink),
           ),
         ],
       ),
@@ -611,7 +611,7 @@ class _TeacherWorkspaceScreenState
               ),
               const SizedBox(height: 16),
               Text(
-                'Очистка чата...',
+                AppLocalizations.of(context)!.clearingChat,
                 style: TextStyle(
                   color: Theme.of(context).brightness == Brightness.dark
                       ? Colors.white
@@ -676,7 +676,7 @@ class _TeacherWorkspaceScreenState
         Navigator.pop(context); // Dismiss loading spinner
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('История чата очищена')));
+        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatHistoryCleared)));
       }
     } catch (e) {
       if (mounted) {
@@ -725,7 +725,7 @@ class _TeacherWorkspaceScreenState
                       const SizedBox(width: 16),
                       Expanded(
                         child: Text(
-                          'Удалить класс',
+                          AppLocalizations.of(context)!.deleteClass,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
@@ -787,8 +787,8 @@ class _TeacherWorkspaceScreenState
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          'Удалить',
+                        child: Text(
+                          AppLocalizations.of(context)!.delete,
                           style: TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),
@@ -819,7 +819,7 @@ class _TeacherWorkspaceScreenState
               ),
               const SizedBox(height: 16),
               Text(
-                'Удаление класса...',
+                AppLocalizations.of(context)!.removingAClass,
                 style: TextStyle(
                   color: Theme.of(context).brightness == Brightness.dark
                       ? Colors.white
@@ -843,7 +843,7 @@ class _TeacherWorkspaceScreenState
         Navigator.pop(context); // Dismiss loading spinner
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Класс успешно удален')));
+        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.classDeletedSuccessfully)));
       }
     } catch (e) {
       if (mounted) {
@@ -898,23 +898,23 @@ class _TeacherWorkspaceScreenState
       case 2:
         return l10n.chat;
       case 3:
-        return 'Учительская';
+        return AppLocalizations.of(context)!.teachersRoom;
       case 4:
         return l10n.homework;
       case 5:
-        return 'Библиотека';
+        return AppLocalizations.of(context)!.library;
       case 6:
-        return 'Вебинары';
+        return AppLocalizations.of(context)!.webinars;
       case 7:
-        return 'Журнал';
+        return AppLocalizations.of(context)!.magazine;
       case 8:
-        return 'Расписание';
+        return AppLocalizations.of(context)!.schedule;
       case 9:
-        return 'Участники';
+        return AppLocalizations.of(context)!.participants;
       case 10:
-        return _appState.isLeadTeacher ? 'Админ-панель' : 'Настройки';
+        return _appState.isLeadTeacher ? AppLocalizations.of(context)!.adminPanel : AppLocalizations.of(context)!.settings;
       case 11:
-        return 'Настройки';
+        return AppLocalizations.of(context)!.settings;
       default:
         return '';
     }
@@ -1029,7 +1029,7 @@ class _FeatureLockedEmptyState extends StatelessWidget {
     return EmptyState(
       icon: icon,
       title: title,
-      subtitle: 'Создайте класс, чтобы открыть этот раздел.',
+      subtitle: AppLocalizations.of(context)!.createAClassToOpen,
     );
   }
 }
@@ -1042,9 +1042,9 @@ class _TeacherEmptyState extends StatelessWidget {
     final isLead = AppScope.of(context).appState.isLeadTeacher;
     return EmptyState(
       icon: Icons.school_outlined,
-      title: isLead ? 'Создайте свой первый класс' : 'У вас пока нет классов',
-      subtitle: isLead ? 'Добавьте учеников и начинайте работу.' : 'Ожидайте, пока вас добавят в класс.',
-      actionLabel: isLead ? 'Создать класс' : null,
+      title: isLead ? AppLocalizations.of(context)!.createYourFirstClass : AppLocalizations.of(context)!.youDontHaveAnyClasses,
+      subtitle: isLead ? AppLocalizations.of(context)!.addStudentsAndGetStarted : AppLocalizations.of(context)!.waitToBeAddedTo,
+      actionLabel: isLead ? AppLocalizations.of(context)!.createAClass : null,
       action: isLead ? onCreate : null,
     );
   }

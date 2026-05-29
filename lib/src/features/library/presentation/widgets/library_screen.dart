@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -37,8 +38,8 @@ class LibraryScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(24),
                 sliver: SliverToBoxAdapter(
                   child: SectionHeader(
-                    title: 'Библиотека',
-                    action: isTeacher ? 'Добавить' : null,
+                    title: AppLocalizations.of(context)!.library,
+                    action: isTeacher ? AppLocalizations.of(context)!.add : null,
                     onActionTap: isTeacher
                         ? () => _showUploadDialog(context, ref)
                         : null,
@@ -48,12 +49,12 @@ class LibraryScreen extends ConsumerWidget {
               materialsAsync.when(
                 data: (docs) {
                   if (docs.isEmpty) {
-                    return const SliverFillRemaining(
+                    return SliverFillRemaining(
                       child: EmptyState(
                         icon: Icons.library_books_outlined,
-                        title: 'Библиотека пуста',
+                        title: AppLocalizations.of(context)!.theLibraryIsEmpty,
                         subtitle:
-                            'Здесь будут отображаться учебные материалы и лекции.',
+                            AppLocalizations.of(context)!.studyMaterialsAndLecturesWill,
                       ),
                     );
                   }
@@ -66,7 +67,7 @@ class LibraryScreen extends ConsumerWidget {
                         final id = docs[index].id;
                         return _MaterialTile(
                           id: id,
-                          title: data['title'] ?? 'Без названия',
+                          title: data['title'] ?? AppLocalizations.of(context)!.unknownKey7,
                           description: data['description'],
                           fileUrl: data['fileUrl'] ?? '',
                           fileName: data['fileName'],
@@ -105,17 +106,17 @@ class LibraryScreen extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Удалить материал?'),
-        content: const Text('Это действие нельзя отменить.'),
+        title: Text(AppLocalizations.of(context)!.deleteMaterial),
+        content: Text(AppLocalizations.of(context)!.thisActionCannotBeUndone),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена'),
+            child: Text(AppLocalizations.of(context)!.unknownKey),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: SchoolColors.red),
-            child: const Text('Удалить'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),
@@ -346,22 +347,22 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Добавить материал'),
+      title: Text(AppLocalizations.of(context)!.addMaterial),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: 'Заголовок',
-              hintText: 'например: Лекция 1. Введение',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.title,
+              hintText: AppLocalizations.of(context)!.forExampleLecture1Introduction,
             ),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _descController,
-            decoration: const InputDecoration(
-              labelText: 'Описание (необязательно)',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.descriptionOptional,
             ),
             maxLines: 3,
           ),
@@ -417,7 +418,7 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
             OutlinedButton.icon(
               onPressed: _pickFile,
               icon: const Icon(Icons.attach_file_rounded),
-              label: const Text('Выбрать файл'),
+              label: Text(AppLocalizations.of(context)!.selectFile),
             ),
           if (_isUploading) ...[
             const SizedBox(height: 16),
@@ -430,7 +431,7 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Отмена'),
+          child: Text(AppLocalizations.of(context)!.unknownKey),
         ),
         ElevatedButton(
           onPressed:
@@ -439,7 +440,7 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
                   _isUploading)
               ? null
               : _upload,
-          child: const Text('Загрузить'),
+          child: Text(AppLocalizations.of(context)!.download),
         ),
       ],
     );

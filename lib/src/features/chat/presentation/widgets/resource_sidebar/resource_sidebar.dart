@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -101,16 +102,16 @@ class _ChatResourceSidebarState extends State<ChatResourceSidebar>
       content = Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+            padding: EdgeInsets.fromLTRB(8, 16, 8, 8),
             child: Row(
               children: [
                 IconButton(
                   onPressed: () => setState(() => _showMembers = false),
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  tooltip: 'К ресурсам',
+                  icon: Icon(Icons.arrow_back_rounded),
+                  tooltip: AppLocalizations.of(context)!.toResources,
                 ),
-                const Text(
-                  'Участники',
+                Text(
+                  AppLocalizations.of(context)!.participants,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
                 ),
                 const Spacer(),
@@ -238,11 +239,11 @@ class _ResourceSidebarHeader extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+          padding: EdgeInsets.fromLTRB(16, 16, 8, 8),
           child: Row(
             children: [
-              const Text(
-                'Ресурсы',
+              Text(
+                AppLocalizations.of(context)!.resources,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
               ),
               const Spacer(),
@@ -281,7 +282,7 @@ class _ResourceSidebarHeader extends StatelessWidget {
           dividerColor: Colors.transparent,
           padding: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
           tabAlignment: TabAlignment.start,
-          tabs: const [
+          tabs: [
             Tab(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -290,7 +291,7 @@ class _ResourceSidebarHeader extends StatelessWidget {
                   children: [
                     Icon(Icons.image_outlined, size: 16),
                     SizedBox(width: 6),
-                    Text('Медиа'),
+                    Text(AppLocalizations.of(context)!.media),
                   ],
                 ),
               ),
@@ -303,7 +304,7 @@ class _ResourceSidebarHeader extends StatelessWidget {
                   children: [
                     Icon(Icons.file_present_outlined, size: 16),
                     SizedBox(width: 6),
-                    Text('Файлы'),
+                    Text(AppLocalizations.of(context)!.files),
                   ],
                 ),
               ),
@@ -316,7 +317,7 @@ class _ResourceSidebarHeader extends StatelessWidget {
                   children: [
                     Icon(Icons.link_outlined, size: 16),
                     SizedBox(width: 6),
-                    Text('Ссылки'),
+                    Text(AppLocalizations.of(context)!.links),
                   ],
                 ),
               ),
@@ -329,7 +330,7 @@ class _ResourceSidebarHeader extends StatelessWidget {
                   children: [
                     Icon(Icons.poll_outlined, size: 16),
                     SizedBox(width: 6),
-                    Text('Опросы'),
+                    Text(AppLocalizations.of(context)!.polls),
                   ],
                 ),
               ),
@@ -342,7 +343,7 @@ class _ResourceSidebarHeader extends StatelessWidget {
                   children: [
                     Icon(Icons.auto_awesome_rounded, size: 16),
                     SizedBox(width: 6),
-                    Text('ИИ'),
+                    Text(AppLocalizations.of(context)!.ai),
                   ],
                 ),
               ),
@@ -425,9 +426,9 @@ class _MediaGridState extends State<_MediaGrid> {
         }).toList();
 
         if (docs.isEmpty)
-          return const _EmptySidebarState(
+          return _EmptySidebarState(
             icon: Icons.image_outlined,
-            label: 'Медиа пока не было',
+            label: AppLocalizations.of(context)!.thereWasNoMediaYet,
           );
 
         return GridView.builder(
@@ -623,20 +624,20 @@ class _FilesListState extends State<_FilesList> {
         }).toList();
 
         if (docs.isEmpty)
-          return const _EmptySidebarState(
+          return _EmptySidebarState(
             icon: Icons.file_present_outlined,
-            label: 'Файлов пока не было',
+            label: AppLocalizations.of(context)!.thereAreNoFilesYet,
           );
 
         return ListView.builder(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12),
           itemCount: docs.length,
           itemBuilder: (context, index) {
             final data = docs[index].data();
             final name =
                 data['name']?.toString() ??
                 data['metadata']?['fileName']?.toString() ??
-                'Файл';
+                AppLocalizations.of(context)!.file2;
             final url = data['uri'] as String? ?? '';
             final size =
                 (data['size'] as num?)?.toInt() ??
@@ -859,14 +860,14 @@ class _FileCardItemState extends State<_FileCardItem> {
                                 ),
                               ),
                               if (widget.url.isNotEmpty) ...[
-                                const SizedBox(width: 6),
-                                const CircleAvatar(
+                                SizedBox(width: 6),
+                                CircleAvatar(
                                   radius: 2,
                                   backgroundColor: SchoolColors.muted,
                                 ),
-                                const SizedBox(width: 6),
+                                SizedBox(width: 6),
                                 Text(
-                                  _isImage ? 'Просмотреть' : 'Открыть',
+                                  _isImage ? AppLocalizations.of(context)!.view : AppLocalizations.of(context)!.open,
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: fileColor,
@@ -965,9 +966,9 @@ class _LinksListViewState extends State<_LinksListView> {
         }).toList();
 
         if (docs.isEmpty)
-          return const _EmptySidebarState(
+          return _EmptySidebarState(
             icon: Icons.link_outlined,
-            label: 'Ссылок пока не было',
+            label: AppLocalizations.of(context)!.thereAreNoLinksYet,
           );
 
         return ListView.builder(
@@ -1150,13 +1151,14 @@ class _MembersTabViewState extends State<_MembersTabView> {
   }
 
   Future<List<Map<String, dynamic>>> _loadMembers() async {
+    final l10n = AppLocalizations.of(context)!;
     final roomSnap = await widget.repository.firestore
         .collection('rooms')
         .doc(widget.roomId)
         .get();
 
     if (!roomSnap.exists) {
-      throw Exception('Комната не найдена');
+      throw Exception(l10n.roomNotFound);
     }
 
     final data = roomSnap.data()!;
@@ -1193,7 +1195,7 @@ class _MembersTabViewState extends State<_MembersTabView> {
       final lastName = userData['lastName'] as String? ?? '';
       final fullName = userData['name'] as String? ??
           (firstName.isEmpty && lastName.isEmpty
-              ? (_classId.isEmpty ? 'Учитель' : 'Ученик')
+              ? (_classId.isEmpty ? l10n.teacher : l10n.student)
               : '$firstName $lastName'.trim());
 
       final role = userData['role'] as String? ?? '';
@@ -1231,9 +1233,9 @@ class _MembersTabViewState extends State<_MembersTabView> {
         final members = snapshot.data ?? [];
 
         if (members.isEmpty) {
-          return const _EmptySidebarState(
+          return _EmptySidebarState(
             icon: Icons.group_outlined,
-            label: 'Участников пока нет',
+            label: AppLocalizations.of(context)!.noParticipantsYet,
           );
         }
 
@@ -1251,24 +1253,24 @@ class _MembersTabViewState extends State<_MembersTabView> {
 
             String roleText = '';
             if (isAdmin) {
-              roleText = 'Администратор';
+              roleText = AppLocalizations.of(context)!.administrator;
             } else {
               switch (role) {
                 case 'teacher':
                 case 'leadTeacher':
-                  roleText = 'Учитель';
+                  roleText = AppLocalizations.of(context)!.teacher;
                   break;
                 case 'student':
-                  roleText = 'Ученик';
+                  roleText = AppLocalizations.of(context)!.student;
                   break;
                 case 'parent':
-                  roleText = 'Родитель';
+                  roleText = AppLocalizations.of(context)!.parent1;
                   break;
                 case 'admin':
-                  roleText = 'Администратор';
+                  roleText = AppLocalizations.of(context)!.administrator;
                   break;
                 default:
-                  roleText = _classId.isEmpty ? 'Учитель' : 'Ученик';
+                  roleText = _classId.isEmpty ? AppLocalizations.of(context)!.teacher : AppLocalizations.of(context)!.student;
               }
             }
 
@@ -1351,16 +1353,16 @@ class _MembersTabViewState extends State<_MembersTabView> {
                                     : Icons.admin_panel_settings_outlined,
                                 size: 18,
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               Text(
                                 isAdmin
-                                    ? 'Убрать админа'
-                                    : 'Сделать админом',
+                                    ? AppLocalizations.of(context)!.removeAdmin
+                                    : AppLocalizations.of(context)!.makeAdmin,
                               ),
                             ],
                           ),
                         ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'remove',
                           child: Row(
                             children: [
@@ -1371,7 +1373,7 @@ class _MembersTabViewState extends State<_MembersTabView> {
                               ),
                               SizedBox(width: 8),
                               Text(
-                                'Удалить',
+                                AppLocalizations.of(context)!.delete,
                                 style: TextStyle(
                                   color: SchoolColors.red,
                                 ),
@@ -1398,19 +1400,19 @@ class _MembersTabViewState extends State<_MembersTabView> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Удалить из класса?'),
-        content: const Text(
-          'Вы уверены, что хотите удалить этого ученика из класса?',
+        title: Text(AppLocalizations.of(context)!.removeFromClass),
+        content: Text(
+          AppLocalizations.of(context)!.areYouSureYouWant2,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('ОТМЕНА'),
+            child: Text(AppLocalizations.of(context)!.cancellation),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: SchoolColors.red),
-            child: const Text('УДАЛИТЬ'),
+            child: Text(AppLocalizations.of(context)!.delete1),
           ),
         ],
       ),
@@ -1483,12 +1485,12 @@ class _PollsListViewState extends State<_PollsListView> {
           );
         }
         if (snapshot.connectionState == ConnectionState.waiting)
-          return const Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator());
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty)
-          return const _EmptySidebarState(
+          return _EmptySidebarState(
             icon: Icons.poll_outlined,
-            label: 'Опросов пока не было',
+            label: AppLocalizations.of(context)!.thereAreNoPollsYet,
           );
         return ListView.builder(
           padding: const EdgeInsets.all(12),
@@ -1578,11 +1580,11 @@ class _PollCard extends StatelessWidget {
                   }
                 },
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
             ],
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
-              '$totalVotes голос${totalVotes == 1 ? '' : (totalVotes < 5 ? 'а' : 'ов')}',
+              '$totalVotes голос${totalVotes == 1 ? '' : (totalVotes < 5 ? AppLocalizations.of(context)!.a : AppLocalizations.of(context)!.ov)}',
               style: const TextStyle(fontSize: 11, color: SchoolColors.muted),
             ),
           ],
@@ -1704,7 +1706,7 @@ class _AIAssistantTabState extends State<_AIAssistantTab> {
     {
       'role': 'ai',
       'content':
-          'Привет! Я твой учебный ассистент. Я могу помочь тебе разобраться с материалами этого класса. Спрашивай!',
+          'Привет, я ваш учебный ассистент',
     },
   ];
   bool _loading = false;
@@ -1720,14 +1722,14 @@ class _AIAssistantTabState extends State<_AIAssistantTab> {
     });
 
     // Simulate AI response for now (RAG logic would be here)
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(Duration(seconds: 2));
 
     if (mounted) {
       setState(() {
         _messages.add({
           'role': 'ai',
           'content':
-              'Интересный вопрос! Основываясь на материалах класса, я могу сказать, что данный аспект очень важен для понимания темы. Рекомендую обратить внимание на вторую главу учебника.',
+              AppLocalizations.of(context)!.interestingQuestionBasedOnThe,
         });
         _loading = false;
       });
@@ -1771,8 +1773,8 @@ class _AIAssistantTabState extends State<_AIAssistantTab> {
               Expanded(
                 child: TextField(
                   controller: _inputController,
-                  decoration: const InputDecoration(
-                    hintText: 'Спросить ИИ...',
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.askAi,
                     border: InputBorder.none,
                     isDense: true,
                   ),

@@ -22,7 +22,7 @@ class _StudentProfileState extends State<StudentProfile> {
   Map<String, dynamic> _userData = {};
   int _assignmentsCount = 0;
   String _avgGrade = '—';
-  String _classesLabel = 'Без класса';
+  String _classesLabel = '';
   bool _teacherRequestSent = false;
   bool _initialized = false;
 
@@ -36,6 +36,7 @@ class _StudentProfileState extends State<StudentProfile> {
   }
 
   Future<void> _loadData() async {
+    final l10n = AppLocalizations.of(context)!;
     final repo = AppScope.of(context).repository;
     final uid = repo.uid;
     if (uid != null) {
@@ -64,7 +65,7 @@ class _StudentProfileState extends State<StudentProfile> {
         avg = (totalScore / gradedCount).toStringAsFixed(1);
       }
 
-      // Fetch actual class names dynamically from Firestore to replace hardcoded '9Б класс'
+      // Fetch actual class names dynamically from Firestore to replace hardcoded AppLocalizations.of(context)!.n9bClass
       final classesSnap = await repo.firestore
           .collection('classes')
           .where('studentIds', arrayContains: uid)
@@ -74,7 +75,7 @@ class _StudentProfileState extends State<StudentProfile> {
           .where((name) => name.isNotEmpty)
           .toList();
       final actualGrade = classNames.isEmpty
-          ? 'Без класса'
+          ? l10n.noClass
           : classNames.join(', ');
 
       final requestDoc = await repo.firestore.collection('teacher_requests').doc(uid).get();
@@ -96,11 +97,12 @@ class _StudentProfileState extends State<StudentProfile> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_loading) return const Center(child: CircularProgressIndicator());
 
-    final l10n = AppLocalizations.of(context)!;
+    
     final user = FirebaseAuth.instance.currentUser;
-    final name = _userData['name'] ?? user?.displayName ?? 'Ученик';
+    final name = _userData['name'] ?? user?.displayName ?? AppLocalizations.of(context)!.student;
     final email = user?.email ?? '';
     final grade = _userData['grade'] ?? _classesLabel;
     final appState = AppScope.of(context).appState;
@@ -167,7 +169,7 @@ class _StudentProfileState extends State<StudentProfile> {
                 _SettingsRow(
                   icon: Icons.person_outline_rounded,
                   color: SchoolColors.primary,
-                  label: 'Личные данные',
+                  label: AppLocalizations.of(context)!.personalInformation,
                   sub: name,
                   onTap: () => _editName(context, name),
                 ),
@@ -177,8 +179,8 @@ class _StudentProfileState extends State<StudentProfile> {
                   label: l10n.email,
                   sub: email,
                   onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Для смены email обратитесь к учителю'),
+                    SnackBar(
+                      content: Text(AppLocalizations.of(context)!.toChangeYourEmailContact),
                     ),
                   ),
                 ),
@@ -186,14 +188,14 @@ class _StudentProfileState extends State<StudentProfile> {
                   icon: Icons.add_circle_outline_rounded,
                   color: SchoolColors.green,
                   label: l10n.joinClass,
-                  sub: 'Использовать код приглашения',
+                  sub: AppLocalizations.of(context)!.useInvitationCode,
                   onTap: widget.onJoinClass,
                 ),
                 _SettingsRow(
                   icon: Icons.school_outlined,
                   color: SchoolColors.accent,
-                  label: 'Доступ учителя',
-                  sub: _teacherRequestSent ? 'Запрос отправлен' : 'Запросить права учителя',
+                  label: AppLocalizations.of(context)!.teacherAccess,
+                  sub: _teacherRequestSent ? AppLocalizations.of(context)!.requestSent : AppLocalizations.of(context)!.requestTeacherPermissions,
                   onTap: _teacherRequestSent ? null : _requestTeacherAccess,
                   last: true,
                 ),
@@ -206,8 +208,8 @@ class _StudentProfileState extends State<StudentProfile> {
                 _SettingsRow(
                   icon: Icons.notifications_none_rounded,
                   color: SchoolColors.red,
-                  label: 'Push-уведомления',
-                  sub: 'Разрешены для чата и заданий',
+                  label: AppLocalizations.of(context)!.pushNotifications,
+                  sub: AppLocalizations.of(context)!.allowedForChatAndTasks,
                   right: _CustomToggle(
                     on: settings['pushEnabled'] ?? true,
                     onChanged: (v) => _updateSetting('pushEnabled', v),
@@ -216,8 +218,8 @@ class _StudentProfileState extends State<StudentProfile> {
                 _SettingsRow(
                   icon: Icons.chat_bubble_outline_rounded,
                   color: SchoolColors.primary,
-                  label: 'Новые сообщения',
-                  sub: 'Только от учителей',
+                  label: AppLocalizations.of(context)!.newMessages,
+                  sub: AppLocalizations.of(context)!.onlyFromTeachers,
                   right: _CustomToggle(
                     on: settings['msgNotifs'] ?? true,
                     onChanged: (v) => _updateSetting('msgNotifs', v),
@@ -228,13 +230,13 @@ class _StudentProfileState extends State<StudentProfile> {
             ),
 
             _SettingsGroup(
-              label: 'Оформление',
+              label: AppLocalizations.of(context)!.registration,
               children: [
                 _SettingsRow(
                   icon: Icons.dark_mode_outlined,
                   color: SchoolColors.accent,
                   label: l10n.darkMode,
-                  sub: appState.isDarkMode ? 'Включена' : 'Системная',
+                  sub: appState.isDarkMode ? AppLocalizations.of(context)!.enabled : AppLocalizations.of(context)!.system,
                   right: _CustomToggle(
                     on: appState.isDarkMode,
                     onChanged: (v) => appState.toggleDarkMode(),
@@ -244,7 +246,7 @@ class _StudentProfileState extends State<StudentProfile> {
                   icon: Icons.language_rounded,
                   color: SchoolColors.green,
                   label: l10n.language,
-                  sub: 'Русский (ru)',
+                  sub: AppLocalizations.of(context)!.russianRu,
                   onTap: () {},
                   last: true,
                 ),
@@ -275,22 +277,23 @@ class _StudentProfileState extends State<StudentProfile> {
 
   Future<void> _requestTeacherAccess() async {
     final repo = AppScope.of(context).repository;
+    final l10n = AppLocalizations.of(context)!;
     final uid = repo.uid;
     if (uid == null) return;
     
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Доступ учителя'),
-        content: const Text('Отправить запрос на получение прав учителя? Администратор должен будет одобрить его.'),
+        title: Text(AppLocalizations.of(context)!.teacherAccess),
+        content: Text(AppLocalizations.of(context)!.submitARequestForA),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена'),
+            child: Text(AppLocalizations.of(context)!.unknownKey),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Отправить'),
+            child: Text(AppLocalizations.of(context)!.send),
           ),
         ],
       ),
@@ -300,7 +303,7 @@ class _StudentProfileState extends State<StudentProfile> {
       setState(() => _loading = true);
       await repo.firestore.collection('teacher_requests').doc(uid).set({
         'userId': uid,
-        'name': _userData['name'] ?? 'Ученик',
+        'name': _userData['name'] ?? l10n.student,
         'email': FirebaseAuth.instance.currentUser?.email ?? '',
         'timestamp': FieldValue.serverTimestamp(),
       });
@@ -321,6 +324,7 @@ class _StudentProfileState extends State<StudentProfile> {
 
   Future<void> _editName(BuildContext context, String current) async {
     final l10n = AppLocalizations.of(context)!;
+    
     final controller = TextEditingController(text: current);
     final ok = await showDialog<bool>(
       context: context,
@@ -398,6 +402,7 @@ class _StudentProfileState extends State<StudentProfile> {
 
   Future<void> _confirmSignOut(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
+    
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -518,7 +523,7 @@ class _ProfileCard extends StatelessWidget {
                           const SizedBox(width: 8),
                         ],
                         StatusChip(
-                          label: isTeacher ? 'Учитель' : 'Ученик',
+                          label: isTeacher ? AppLocalizations.of(context)!.teacher : AppLocalizations.of(context)!.student,
                           color: isTeacher
                               ? SchoolColors.red
                               : SchoolColors.primary,

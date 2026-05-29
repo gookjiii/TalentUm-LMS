@@ -1,8 +1,7 @@
-import 'dart:io';
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/src/theme.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_web/webview_flutter_web.dart'; // ADDED
@@ -152,7 +151,7 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Предпросмотр недоступен на этой платформе',
+                              AppLocalizations.of(context)!.previewNotAvailableOnThis,
                               style: TextStyle(
                                 color: isDark ? Colors.white54 : Colors.black45,
                               ),

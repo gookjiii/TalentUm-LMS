@@ -37,26 +37,26 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Редактировать задание'),
+          title: Text(AppLocalizations.of(context)!.editTask),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: titleCtrl,
-                  decoration: const InputDecoration(labelText: 'Заголовок'),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.title),
                 ),
                 TextField(
                   controller: descCtrl,
-                  decoration: const InputDecoration(labelText: 'Описание'),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.description),
                   maxLines: 3,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 ListTile(
-                  leading: const Icon(Icons.calendar_today),
+                  leading: Icon(Icons.calendar_today),
                   title: Text(
                     dueDate == null
-                        ? 'Выберите дату сдачи'
+                        ? AppLocalizations.of(context)!.selectDueDate
                         : 'Срок: ${DateFormat.yMMMd('ru').format(dueDate!)}',
                   ),
                   onTap: () async {
@@ -79,14 +79,14 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Отмена'),
+              child: Text(AppLocalizations.of(context)!.unknownKey),
             ),
             FilledButton(
               onPressed: () {
                 if (titleCtrl.text.isNotEmpty && dueDate != null)
                   Navigator.pop(context, true);
               },
-              child: const Text('Сохранить'),
+              child: Text(AppLocalizations.of(context)!.save),
             ),
           ],
         ),
@@ -109,19 +109,19 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Удалить задание?'),
-        content: const Text(
-          'Все сданные работы этого задания также будут удалены.',
+        title: Text(AppLocalizations.of(context)!.deleteTask),
+        content: Text(
+          AppLocalizations.of(context)!.allSubmittedWorkForThis,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена'),
+            child: Text(AppLocalizations.of(context)!.unknownKey),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: SchoolColors.red),
-            child: const Text('Удалить'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),
@@ -204,13 +204,13 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                   ),
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(32, 24, 32, 40),
+                      padding: EdgeInsets.fromLTRB(32, 24, 32, 40),
                       children: [
                         _HomeworkHeader(doc: selectedDoc),
-                        const SizedBox(height: 24),
-                        const SectionHeader(
-                          title: "СДАННЫЕ РАБОТЫ",
-                          action: "Фильтр",
+                        SizedBox(height: 24),
+                        SectionHeader(
+                          title: AppLocalizations.of(context)!.completedWorks,
+                          action: AppLocalizations.of(context)!.filter,
                         ),
                         const SizedBox(height: 12),
                         _SubmissionsList(doc: selectedDoc),
@@ -240,7 +240,7 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Создать задание'),
+          title: Text(AppLocalizations.of(context)!.createATask),
           content: SingleChildScrollView(
             child: SizedBox(
               width: 450,
@@ -250,21 +250,21 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                 children: [
                   TextField(
                     controller: titleCtrl,
-                    decoration: const InputDecoration(labelText: 'Заголовок'),
+                    decoration: InputDecoration(labelText: AppLocalizations.of(context)!.title),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   TextField(
                     controller: descCtrl,
-                    decoration: const InputDecoration(labelText: 'Описание'),
+                    decoration: InputDecoration(labelText: AppLocalizations.of(context)!.description),
                     maxLines: 3,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   ListTile(
-                    leading: const Icon(Icons.calendar_today),
+                    leading: Icon(Icons.calendar_today),
                     contentPadding: EdgeInsets.zero,
                     title: Text(
                       dueDate == null
-                          ? 'Выберите дату сдачи'
+                          ? AppLocalizations.of(context)!.selectDueDate
                           : 'Срок: ${DateFormat.yMMMd(l10n.localeName).format(dueDate!)}',
                     ),
                     onTap: () async {
@@ -276,22 +276,22 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                         firstDate: DateTime.now().subtract(
                           const Duration(days: 1),
                         ),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                        lastDate: DateTime.now().add(Duration(days: 365)),
                       );
                       if (picked != null) {
                         setState(() => dueDate = picked);
                       }
                     },
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Файлы задания:',
+                  SizedBox(height: 16),
+                  Text(
+                    AppLocalizations.of(context)!.jobFiles,
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   if (files.isEmpty)
                     Text(
-                      'Нет прикрепленных файлов',
+                      AppLocalizations.of(context)!.noAttachments,
                       style: TextStyle(
                         color: SchoolColors.muted.withValues(alpha: 0.6),
                         fontSize: 12,
@@ -321,8 +321,8 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                                 setState(() => files.addAll(res.files));
                               }
                             },
-                      icon: const Icon(Icons.attach_file, size: 16),
-                      label: const Text('Прикрепить файлы'),
+                      icon: Icon(Icons.attach_file, size: 16),
+                      label: Text(AppLocalizations.of(context)!.attachFiles),
                     ),
                   ),
                 ],
@@ -332,7 +332,7 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
           actions: [
             TextButton(
               onPressed: uploading ? null : () => Navigator.pop(context),
-              child: const Text('Отмена'),
+              child: Text(AppLocalizations.of(context)!.unknownKey),
             ),
             FilledButton(
               onPressed: uploading
@@ -340,9 +340,9 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                   : () async {
                       if (titleCtrl.text.trim().isEmpty || dueDate == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
+                          SnackBar(
                             content: Text(
-                              'Пожалуйста, введите заголовок и выберите дату',
+                              AppLocalizations.of(context)!.pleaseEnterATitleAnd,
                             ),
                           ),
                         );
@@ -395,7 +395,7 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                       }
                     },
               child: uploading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
@@ -403,7 +403,7 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Создать'),
+                  : Text(AppLocalizations.of(context)!.create),
             ),
           ],
         ),
@@ -452,8 +452,8 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Задания',
+                  Text(
+                    AppLocalizations.of(context)!.quests,
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
@@ -474,36 +474,36 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
                 onPressed: widget.onCreate,
                 style: FilledButton.styleFrom(
                   minimumSize: Size.zero,
-                  padding: const EdgeInsets.symmetric(
+                  padding: EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 12,
                   ),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Создать задание'),
+                icon: Icon(Icons.add, size: 18),
+                label: Text(AppLocalizations.of(context)!.createATask),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          padding: EdgeInsets.symmetric(horizontal: 32),
           child: Wrap(
             spacing: 8,
             children: [
               _FilterChip(
-                label: 'Все',
+                label: AppLocalizations.of(context)!.all,
                 selected: _filter == 'all',
                 onSelected: (v) => setState(() => _filter = 'all'),
               ),
               _FilterChip(
-                label: 'Активные',
+                label: AppLocalizations.of(context)!.active1,
                 selected: _filter == 'active',
                 onSelected: (v) => setState(() => _filter = 'active'),
               ),
               _FilterChip(
-                label: 'Просрочено',
+                label: AppLocalizations.of(context)!.overdue,
                 selected: _filter == 'overdue',
                 onSelected: (v) => setState(() => _filter = 'overdue'),
               ),
@@ -584,7 +584,7 @@ class _AssignmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = doc.data();
-    final title = data['title']?.toString() ?? 'Задание';
+    final title = data['title']?.toString() ?? AppLocalizations.of(context)!.unknownKey13;
     final desc = data['description']?.toString() ?? '';
     final due = (data['dueDate'] as Timestamp?)?.toDate();
     final isOverdue = due != null && due.isBefore(DateTime.now());
@@ -636,16 +636,16 @@ class _AssignmentCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             desc,
-            style: const TextStyle(fontSize: 13, color: SchoolColors.muted),
+            style: TextStyle(fontSize: 13, color: SchoolColors.muted),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const Spacer(),
-          const SizedBox(height: 12),
+          Spacer(),
+          SizedBox(height: 12),
           Row(
             children: [
               StatusChip(
-                label: isOverdue ? 'ПРОСРОЧЕНО' : 'АКТИВНО',
+                label: isOverdue ? AppLocalizations.of(context)!.expired : AppLocalizations.of(context)!.actively1,
                 color: isOverdue ? SchoolColors.red : SchoolColors.green,
               ),
               const Spacer(),
@@ -732,22 +732,22 @@ class _HomeworkTopBar extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           IconButton(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Экспорт скоро будет доступен')),
+                SnackBar(content: Text(AppLocalizations.of(context)!.exportWillBeAvailableSoon)),
               );
             },
             icon: const Icon(Icons.download_outlined, size: 20),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, size: 20),
+            icon: Icon(Icons.more_vert, size: 20),
             onSelected: (val) {
               if (val == 'edit') {
                 onEdit(doc);
@@ -756,11 +756,11 @@ class _HomeworkTopBar extends StatelessWidget {
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(value: 'edit', child: Text('Редактировать')),
-              const PopupMenuItem(
+              PopupMenuItem(value: 'edit', child: Text(AppLocalizations.of(context)!.edit)),
+              PopupMenuItem(
                 value: 'delete',
                 child: Text(
-                  'Удалить задание',
+                  AppLocalizations.of(context)!.deleteTask1,
                   style: TextStyle(color: SchoolColors.red),
                 ),
               ),
@@ -785,26 +785,26 @@ class _HomeworkTopBar extends StatelessWidget {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Редактировать задание'),
+          title: Text(AppLocalizations.of(context)!.editTask),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: titleCtrl,
-                  decoration: const InputDecoration(labelText: 'Заголовок'),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.title),
                 ),
                 TextField(
                   controller: descCtrl,
-                  decoration: const InputDecoration(labelText: 'Описание'),
+                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.description),
                   maxLines: 3,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 ListTile(
-                  leading: const Icon(Icons.calendar_today),
+                  leading: Icon(Icons.calendar_today),
                   title: Text(
                     dueDate == null
-                        ? 'Выберите дату сдачи'
+                        ? AppLocalizations.of(context)!.selectDueDate
                         : 'Срок: ${DateFormat.yMMMd('ru').format(dueDate!)}',
                   ),
                   onTap: () async {
@@ -827,14 +827,14 @@ class _HomeworkTopBar extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Отмена'),
+              child: Text(AppLocalizations.of(context)!.unknownKey),
             ),
             FilledButton(
               onPressed: () {
                 if (titleCtrl.text.isNotEmpty && dueDate != null)
                   Navigator.pop(context, true);
               },
-              child: const Text('Сохранить'),
+              child: Text(AppLocalizations.of(context)!.save),
             ),
           ],
         ),
@@ -857,19 +857,19 @@ class _HomeworkTopBar extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Удалить задание?'),
-        content: const Text(
-          'Все сданные работы этого задания также будут удалены.',
+        title: Text(AppLocalizations.of(context)!.deleteTask),
+        content: Text(
+          AppLocalizations.of(context)!.allSubmittedWorkForThis,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена'),
+            child: Text(AppLocalizations.of(context)!.unknownKey),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: SchoolColors.red),
-            child: const Text('Удалить'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),
@@ -980,7 +980,7 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
                       future: _classFuture,
                       builder: (context, cSnap) {
                         final className =
-                            cSnap.data?['name']?.toString() ?? 'Класс';
+                            cSnap.data?['name']?.toString() ?? AppLocalizations.of(context)!.classText;
                         return Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -1010,11 +1010,11 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
                         );
                       },
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Text(
                       data['createdAt'] != null
                           ? 'Опубликовано: ${DateFormat('d MMM, HH:mm', 'ru').format((data['createdAt'] as Timestamp).toDate())}'
-                          : 'Опубликовано: —',
+                          : AppLocalizations.of(context)!.published,
                       style: TextStyle(
                         color: SchoolColors.muted.withValues(alpha: 0.7),
                         fontSize: 11,
@@ -1043,9 +1043,9 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (attachments.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Файлы задания:',
+                  SizedBox(height: 16),
+                  Text(
+                    AppLocalizations.of(context)!.jobFiles,
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
@@ -1056,20 +1056,20 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
               ],
             ),
           ),
-          const SizedBox(width: 24),
+          SizedBox(width: 24),
           Row(
             children: [
               _StatBlock(
-                label: "Срок",
+                label: AppLocalizations.of(context)!.term,
                 big: dateStr,
                 sub: timeStr,
                 color: SchoolColors.red,
               ),
-              const SizedBox(width: 12),
-              const _StatBlock(
-                label: "Баллы",
+              SizedBox(width: 12),
+              _StatBlock(
+                label: AppLocalizations.of(context)!.points,
                 big: "10",
-                sub: "макс.",
+                sub: AppLocalizations.of(context)!.max,
                 color: SchoolColors.primary,
               ),
               const SizedBox(width: 12),
@@ -1083,9 +1083,9 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
                           .length ??
                       0;
                   return _StatBlock(
-                    label: "Статус",
+                    label: AppLocalizations.of(context)!.status,
                     big: "$graded / $total",
-                    sub: "проверено",
+                    sub: AppLocalizations.of(context)!.verified1,
                     color: SchoolColors.green,
                   );
                 },
@@ -1197,12 +1197,12 @@ class _SubmissionsListState extends State<_SubmissionsList> {
       builder: (context, snapshot) {
         final submissions = snapshot.data?.docs ?? [];
         if (submissions.isEmpty) {
-          return const SchoolCard(
+          return SchoolCard(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 48),
               child: Center(
                 child: Text(
-                  'Работ пока нет',
+                  AppLocalizations.of(context)!.noWorkYet,
                   style: TextStyle(color: SchoolColors.muted),
                 ),
               ),
@@ -1259,10 +1259,11 @@ class _SubmissionRowState extends State<_SubmissionRow> {
   ) async {
     final data = subDoc.data();
     final repo = AppScope.of(context).repository;
+    final l10n = AppLocalizations.of(context)!;
     final studentId = data['studentId'] ?? '';
     final studentName = await repo
         .getUserData(studentId)
-        .then((m) => m?['name'] ?? 'Ученик');
+        .then((m) => m?['name'] ?? l10n.student);
     final gradeCtrl = TextEditingController(
       text: data['grade']?.toString() ?? '',
     );
@@ -1289,8 +1290,8 @@ class _SubmissionRowState extends State<_SubmissionRow> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if ((data['content']?.toString() ?? '').isNotEmpty) ...[
-                    const Text(
-                      'Ответ ученика:',
+                    Text(
+                      AppLocalizations.of(context)!.studentAnswer,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -1308,14 +1309,14 @@ class _SubmissionRowState extends State<_SubmissionRow> {
                       ),
                       child: Text(
                         data['content'].toString(),
-                        style: const TextStyle(height: 1.4),
+                        style: TextStyle(height: 1.4),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                   ],
                   if (attachments.isNotEmpty) ...[
-                    const Text(
-                      'Прикрепленные файлы:',
+                    Text(
+                      AppLocalizations.of(context)!.attachedFiles,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -1325,24 +1326,24 @@ class _SubmissionRowState extends State<_SubmissionRow> {
                     ...attachments.map(
                       (file) => FilePreviewWidget(remoteFile: file),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                   ],
-                  const Divider(),
-                  const SizedBox(height: 12),
+                  Divider(),
+                  SizedBox(height: 12),
                   TextField(
                     controller: gradeCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Оценка (в % или баллах)',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.scoreInOrPoints,
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   TextField(
                     controller: feedbackCtrl,
                     maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Отзыв учителя',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.teachersReview,
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -1353,7 +1354,7 @@ class _SubmissionRowState extends State<_SubmissionRow> {
           actions: [
             TextButton(
               onPressed: saving ? null : () => Navigator.pop(context),
-              child: const Text('Отмена'),
+              child: Text(AppLocalizations.of(context)!.unknownKey),
             ),
             FilledButton(
               onPressed: saving
@@ -1362,9 +1363,9 @@ class _SubmissionRowState extends State<_SubmissionRow> {
                       final gradeVal = double.tryParse(gradeCtrl.text.trim());
                       if (gradeVal == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
+                          SnackBar(
                             content: Text(
-                              'Пожалуйста, введите корректную оценку (число)',
+                              AppLocalizations.of(context)!.pleaseEnterAValidRating,
                             ),
                           ),
                         );
@@ -1389,7 +1390,7 @@ class _SubmissionRowState extends State<_SubmissionRow> {
                       }
                     },
               child: saving
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
@@ -1397,7 +1398,7 @@ class _SubmissionRowState extends State<_SubmissionRow> {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Поставить оценку'),
+                  : Text(AppLocalizations.of(context)!.giveARating),
             ),
           ],
         ),
@@ -1495,13 +1496,13 @@ class _StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     if (status == 'graded') {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: SchoolColors.green.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(999),
         ),
-        child: const Text(
-          'ОЦЕНЕНО',
+        child: Text(
+          AppLocalizations.of(context)!.rated1,
           style: TextStyle(
             color: SchoolColors.green,
             fontSize: 10,
@@ -1511,13 +1512,13 @@ class _StatusPill extends StatelessWidget {
       );
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: SchoolColors.yellow.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: const Text(
-        'НА ПРОВЕРКЕ',
+      child: Text(
+        AppLocalizations.of(context)!.underCheck,
         style: TextStyle(
           color: SchoolColors.orange,
           fontSize: 10,
@@ -1543,25 +1544,25 @@ class _NoAssignmentsState extends StatelessWidget {
             size: 64,
             color: SchoolColors.muted.withValues(alpha: 0.3),
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Нет заданий',
+          SizedBox(height: 16),
+          Text(
+            AppLocalizations.of(context)!.noTasks,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: SchoolColors.muted,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Создайте свое первое задание для этого класса.',
+          SizedBox(height: 8),
+          Text(
+            AppLocalizations.of(context)!.createYourFirstAssignmentFor,
             style: TextStyle(color: SchoolColors.muted),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           FilledButton.icon(
             onPressed: onCreate,
-            icon: const Icon(Icons.add),
-            label: const Text('Создать задание'),
+            icon: Icon(Icons.add),
+            label: Text(AppLocalizations.of(context)!.createATask),
           ),
         ],
       ),

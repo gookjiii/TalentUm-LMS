@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -111,7 +112,7 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
           (c) => c['id'] == _selectedClassId,
           orElse: () => {
             'id': 'teachers_lounge',
-            'name': 'Учительская',
+            'name': AppLocalizations.of(context)!.teachersRoom,
             'chatRoomId': 'global_teachers_lounge',
             'coverColor': '#FF4F46E5',
             'isTeachersLounge': true,
@@ -188,11 +189,11 @@ class _ChatClassListState extends State<_ChatClassList> {
   Widget build(BuildContext context) {
     final classesList = List<Map<String, dynamic>>.from(widget.classes);
     if (widget.appState.isTeacher) {
-      final matchesSearch = 'учительская'.contains(_searchQuery.toLowerCase());
+      final matchesSearch = AppLocalizations.of(context)!.teachersRoom1.contains(_searchQuery.toLowerCase());
       if (matchesSearch) {
         classesList.insert(0, {
           'id': 'teachers_lounge',
-          'name': 'Учительская',
+          'name': AppLocalizations.of(context)!.teachersRoom,
           'chatRoomId': 'global_teachers_lounge',
           'coverColor': '#FF4F46E5',
           'isTeachersLounge': true,
@@ -213,8 +214,8 @@ class _ChatClassListState extends State<_ChatClassList> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: const Text(
-          'Чаты',
+        title: Text(
+          AppLocalizations.of(context)!.chats,
           style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
         ),
         centerTitle: true,
@@ -290,7 +291,7 @@ class _ChatClassListState extends State<_ChatClassList> {
                         fontWeight: FontWeight.w600,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Поиск чатов...',
+                        hintText: AppLocalizations.of(context)!.searchChats,
                         hintStyle: const TextStyle(color: SchoolColors.muted),
                         prefixIcon: const Icon(
                           Icons.search_rounded,
@@ -321,7 +322,7 @@ class _ChatClassListState extends State<_ChatClassList> {
                       ? Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
+                            children: [
                               Icon(
                                 Icons.chat_bubble_outline_rounded,
                                 size: 40,
@@ -329,7 +330,7 @@ class _ChatClassListState extends State<_ChatClassList> {
                               ),
                               SizedBox(height: 12),
                               Text(
-                                'Чаты не найдены',
+                                AppLocalizations.of(context)!.noChatsFound,
                                 style: TextStyle(
                                   color: SchoolColors.muted,
                                   fontSize: 13,
@@ -555,8 +556,8 @@ class _ClassCardState extends State<_ClassCard> {
                           stream: _lastMessageStream,
                           builder: (context, msgSnap) {
                             if (msgSnap.hasError) {
-                              return const Text(
-                                'Ошибка загрузки сообщения',
+                              return Text(
+                                AppLocalizations.of(context)!.errorLoadingMessage,
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: SchoolColors.red,
@@ -565,8 +566,8 @@ class _ClassCardState extends State<_ClassCard> {
                             }
                             final docs = msgSnap.data?.docs ?? [];
                             if (docs.isEmpty) {
-                              return const Text(
-                                'Сообщений пока нет',
+                              return Text(
+                                AppLocalizations.of(context)!.noMessagesYet1,
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: SchoolColors.muted,
@@ -581,13 +582,13 @@ class _ClassCardState extends State<_ClassCard> {
 
                             String displaySnippet = text;
                             if (type == 'image')
-                              displaySnippet = '📷 Фотография';
+                              displaySnippet = AppLocalizations.of(context)!.photography;
                             else if (type == 'video')
-                              displaySnippet = '🎥 Видео';
+                              displaySnippet = AppLocalizations.of(context)!.video;
                             else if (type == 'file')
-                              displaySnippet = '📁 Файл';
+                              displaySnippet = AppLocalizations.of(context)!.file1;
                             else if (type == 'audio')
-                              displaySnippet = '🎤 Голосовое сообщение';
+                              displaySnippet = AppLocalizations.of(context)!.voiceMessage1;
 
                             final display = authorName.isNotEmpty
                                 ? '$authorName: $displaySnippet'
@@ -608,8 +609,8 @@ class _ClassCardState extends State<_ClassCard> {
                           },
                         )
                       else
-                        const Text(
-                          'Нажмите, чтобы открыть чат',
+                        Text(
+                          AppLocalizations.of(context)!.clickToOpenChat,
                           style: TextStyle(
                             fontSize: 13,
                             color: SchoolColors.muted,

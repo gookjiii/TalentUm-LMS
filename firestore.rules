@@ -46,6 +46,11 @@ service cloud.firestore {
       allow create: if signedIn() && request.auth.uid == userId;
       allow update: if signedIn() && (request.auth.uid == userId || isTeacher());
       allow delete: if false;
+
+      // FCM push notification tokens — each user manages only their own tokens
+      match /tokens/{tokenId} {
+        allow read, write, delete: if signedIn() && request.auth.uid == userId;
+      }
     }
 
     match /classes/{classId} {

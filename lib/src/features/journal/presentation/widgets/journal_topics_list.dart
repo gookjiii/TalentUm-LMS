@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,9 +21,9 @@ class JournalTopicsList extends ConsumerWidget {
       error: (e, st) => Center(child: Text('Ошибка: $e')),
       data: (columns) {
         if (columns.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
-              'Нет уроков. Добавьте первый урок!',
+              AppLocalizations.of(context)!.noLessonsAddYourFirst,
               style: TextStyle(color: SchoolColors.muted, fontSize: 16),
             ),
           );
@@ -124,7 +125,7 @@ class JournalTopicsList extends ConsumerWidget {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    _monthName(date.month),
+                                    _monthName(context, date.month),
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700,
@@ -173,7 +174,7 @@ class JournalTopicsList extends ConsumerWidget {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                topic.isNotEmpty ? topic : 'Без темы',
+                                topic.isNotEmpty ? topic : AppLocalizations.of(context)!.noTheme,
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
@@ -233,20 +234,20 @@ class JournalTopicsList extends ConsumerWidget {
     );
   }
 
-  String _monthName(int month) {
-    const months = [
-      'ЯНВАРЯ',
-      'ФЕВРАЛЯ',
-      'МАРТА',
-      'АПРЕЛЯ',
-      'МАЯ',
-      'ИЮНЯ',
-      'ИЮЛЯ',
-      'АВГУСТА',
-      'СЕНТЯБРЯ',
-      'ОКТЯБРЯ',
-      'НОЯБРЯ',
-      'ДЕКАБРЯ',
+  String _monthName(BuildContext context, int month) {
+    final months = [
+      AppLocalizations.of(context)!.january,
+      AppLocalizations.of(context)!.february,
+      AppLocalizations.of(context)!.martha,
+      AppLocalizations.of(context)!.april,
+      AppLocalizations.of(context)!.may,
+      AppLocalizations.of(context)!.june,
+      AppLocalizations.of(context)!.july,
+      AppLocalizations.of(context)!.august,
+      AppLocalizations.of(context)!.september,
+      AppLocalizations.of(context)!.october,
+      AppLocalizations.of(context)!.november,
+      AppLocalizations.of(context)!.december,
     ];
     return months[month - 1];
   }
@@ -274,7 +275,7 @@ class JournalTopicsList extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Редактировать урок'),
+              title: Text(AppLocalizations.of(context)!.editLesson),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -282,8 +283,8 @@ class JournalTopicsList extends ConsumerWidget {
                     TextField(
                       controller: dateController,
                       readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Дата',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.date,
                         suffixIcon: Icon(Icons.calendar_today_rounded),
                       ),
                       onTap: () async {
@@ -304,16 +305,16 @@ class JournalTopicsList extends ConsumerWidget {
                     const SizedBox(height: 16),
                     TextField(
                       controller: topicController,
-                      decoration: const InputDecoration(
-                        labelText: 'Предмет',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.item,
                       ),
                       maxLines: 2,
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       controller: homeworkController,
-                      decoration: const InputDecoration(
-                        labelText: 'Домашнее задание',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.homework,
                       ),
                       maxLines: 2,
                     ),
@@ -323,11 +324,11 @@ class JournalTopicsList extends ConsumerWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Отмена'),
+                  child: Text(AppLocalizations.of(context)!.unknownKey),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Сохранить'),
+                  child: Text(AppLocalizations.of(context)!.save),
                 ),
               ],
             );
@@ -359,17 +360,17 @@ class JournalTopicsList extends ConsumerWidget {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Удалить урок?'),
-        content: const Text('Это действие нельзя отменить.'),
+        title: Text(AppLocalizations.of(context)!.deleteLesson),
+        content: Text(AppLocalizations.of(context)!.thisActionCannotBeUndone),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена'),
+            child: Text(AppLocalizations.of(context)!.unknownKey),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: TextButton.styleFrom(foregroundColor: SchoolColors.red),
-            child: const Text('Удалить'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),

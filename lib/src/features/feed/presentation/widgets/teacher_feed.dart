@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
@@ -59,11 +60,11 @@ class _TeacherFeedState extends State<TeacherFeed> {
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final isMobileHeader = constraints.maxWidth < 500;
-                    const headerTitle = Column(
+                    final headerTitle = Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Лента',
+                          AppLocalizations.of(context)!.ribbon,
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w900,
@@ -71,7 +72,7 @@ class _TeacherFeedState extends State<TeacherFeed> {
                           ),
                         ),
                         Text(
-                          'Объявления для ваших классов',
+                          AppLocalizations.of(context)!.declarationsForYourClasses,
                           style: TextStyle(
                             color: SchoolColors.muted,
                             fontSize: 13,
@@ -94,13 +95,13 @@ class _TeacherFeedState extends State<TeacherFeed> {
                       style: FilledButton.styleFrom(
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 12,
                         ),
                       ),
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Новый пост'),
+                      icon: Icon(Icons.add, size: 18),
+                      label: Text(AppLocalizations.of(context)!.newPost),
                     );
 
                     if (isMobileHeader) {
@@ -120,19 +121,19 @@ class _TeacherFeedState extends State<TeacherFeed> {
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Expanded(child: headerTitle),
+                        Expanded(child: headerTitle),
                         const SizedBox(width: 16),
                         newPostButton,
                       ],
                     );
                   },
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 TextField(
                   onChanged: (v) =>
                       setState(() => _searchQuery = v.trim().toLowerCase()),
                   decoration: InputDecoration(
-                    hintText: 'Поиск по объявлениям...',
+                    hintText: AppLocalizations.of(context)!.searchByAdvertisements,
                     prefixIcon: const Icon(Icons.search_rounded),
                     filled: true,
                     fillColor: Theme.of(context).brightness == Brightness.dark
@@ -173,12 +174,12 @@ class _TeacherFeedState extends State<TeacherFeed> {
 
             if (posts.isEmpty &&
                 snapshot.connectionState != ConnectionState.waiting) {
-              return const SliverToBoxAdapter(
+              return SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 80),
                   child: Center(
                     child: Text(
-                      'Объявлений пока нет.',
+                      AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
                       style: TextStyle(color: SchoolColors.muted),
                     ),
                   ),
@@ -264,22 +265,26 @@ class _InlineComposerState extends State<_InlineComposer> {
   @override
   Widget build(BuildContext context) {
     return SchoolCard(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24),
       child: Column(
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SchoolAvatar(name: 'Вы', radius: 20),
-              const SizedBox(width: 16),
+              SchoolAvatar(
+                name: AppLocalizations.of(context)!.you,
+                userId: AppScope.of(context).repository.uid,
+                radius: 20,
+              ),
+              SizedBox(width: 16),
               Expanded(
                 child: TextField(
                   controller: controller,
                   minLines: 1,
                   maxLines: 10,
                   onChanged: (_) => setState(() {}),
-                  decoration: const InputDecoration(
-                    hintText: 'Опубликуйте объявление для классов…',
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.postAnAnnouncementForClasses,
                     hintStyle: TextStyle(color: SchoolColors.muted),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
@@ -355,9 +360,9 @@ class _InlineComposerState extends State<_InlineComposer> {
                       .toList(),
                   onChanged: (v) => setState(() => selectedClassId = v!),
                 ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Semantics(
-                label: 'Прикрепить изображение',
+                label: AppLocalizations.of(context)!.attachAnImage,
                 button: true,
                 child: IconButton(
                   onPressed: () async {
@@ -377,7 +382,7 @@ class _InlineComposerState extends State<_InlineComposer> {
                 ),
               ),
               Semantics(
-                label: 'Закрепить объявление',
+                label: AppLocalizations.of(context)!.pinThisAd,
                 button: true,
                 child: IconButton(
                   onPressed: () => setState(() => isPinned = !isPinned),
@@ -403,12 +408,12 @@ class _InlineComposerState extends State<_InlineComposer> {
                   style: FilledButton.styleFrom(
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                       horizontal: 24,
                       vertical: 14,
                     ),
                   ),
-                  child: const Text('Опубликовать'),
+                  child: Text(AppLocalizations.of(context)!.publish),
                 ),
             ],
           ),

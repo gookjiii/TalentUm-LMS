@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,11 +33,11 @@ class WebinarsScreen extends ConsumerWidget {
           body: CustomScrollView(
             slivers: [
               SliverPadding(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(24),
                 sliver: SliverToBoxAdapter(
                   child: SectionHeader(
-                    title: 'Вебинары',
-                    action: isTeacher ? 'Добавить' : null,
+                    title: AppLocalizations.of(context)!.webinars,
+                    action: isTeacher ? AppLocalizations.of(context)!.add : null,
                     onActionTap: isTeacher
                         ? () => _showAddDialog(context, ref)
                         : null,
@@ -46,25 +47,25 @@ class WebinarsScreen extends ConsumerWidget {
               webinarsAsync.when(
                 data: (docs) {
                   if (docs.isEmpty) {
-                    return const SliverFillRemaining(
+                    return SliverFillRemaining(
                       child: EmptyState(
                         icon: Icons.ondemand_video_outlined,
-                        title: 'Нет вебинаров',
+                        title: AppLocalizations.of(context)!.noWebinars,
                         subtitle:
-                            'Здесь будут отображаться записи уроков и видеоматериалы.',
+                            AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
                       ),
                     );
                   }
 
                   return SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: EdgeInsets.symmetric(horizontal: 24),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final data = docs[index].data();
                         final id = docs[index].id;
                         return _WebinarTile(
                           id: id,
-                          title: data['title'] ?? 'Без названия',
+                          title: data['title'] ?? AppLocalizations.of(context)!.unknownKey7,
                           description: data['description'],
                           videoUrl: data['videoUrl'] ?? '',
                           canDelete: isLeadOfClass,
@@ -102,17 +103,17 @@ class WebinarsScreen extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Удалить вебинар?'),
-        content: const Text('Это действие нельзя отменить.'),
+        title: Text(AppLocalizations.of(context)!.deleteWebinar),
+        content: Text(AppLocalizations.of(context)!.thisActionCannotBeUndone),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена'),
+            child: Text(AppLocalizations.of(context)!.unknownKey),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: SchoolColors.red),
-            child: const Text('Удалить'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),
@@ -353,7 +354,7 @@ class _WebinarTile extends StatelessWidget {
                             ),
                           ),
                         const SizedBox(height: 6),
-                        const Row(
+                        Row(
                           children: [
                             Icon(
                               Icons.link_rounded,
@@ -362,7 +363,7 @@ class _WebinarTile extends StatelessWidget {
                             ),
                             SizedBox(width: 4),
                             Text(
-                              'Смотреть видео',
+                              AppLocalizations.of(context)!.watchVideo,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: SchoolColors.primary,
@@ -436,7 +437,7 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Добавить вебинар'),
+      title: Text(AppLocalizations.of(context)!.addAWebinar),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -444,17 +445,17 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
           children: [
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Заголовок',
-                hintText: 'например: Урок 1. Основы',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.title,
+                hintText: AppLocalizations.of(context)!.forExampleLesson1Basics,
               ),
               onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             TextField(
               controller: _descController,
-              decoration: const InputDecoration(
-                labelText: 'Описание (необязательно)',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.descriptionOptional,
               ),
               maxLines: 3,
             ),
@@ -488,14 +489,14 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
                                   BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.05),
                                     blurRadius: 4,
-                                    offset: const Offset(0, 2),
+                                    offset: Offset(0, 2),
                                   )
                                 ]
                               : null,
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          'Указать ссылку',
+                          AppLocalizations.of(context)!.provideLink,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -524,14 +525,14 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
                                   BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.05),
                                     blurRadius: 4,
-                                    offset: const Offset(0, 2),
+                                    offset: Offset(0, 2),
                                   )
                                 ]
                               : null,
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          'Загрузить файл',
+                          AppLocalizations.of(context)!.uploadFile,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -546,15 +547,15 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             
             // Mode Fields
             if (!_uploadMode) ...[
               TextField(
                 controller: _urlController,
-                decoration: const InputDecoration(
-                  labelText: 'Ссылка на видео',
-                  hintText: 'https://youtube.com/... или ссылка на файл',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.videoLink,
+                  hintText: AppLocalizations.of(context)!.httpsyoutubecomOrLinkToFile,
                 ),
                 onChanged: (_) => setState(() {}),
               ),
@@ -577,29 +578,29 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
                     style: const TextStyle(fontSize: 12),
                   ),
                   trailing: IconButton(
-                    icon: const Icon(Icons.close_rounded),
+                    icon: Icon(Icons.close_rounded),
                     onPressed: () => setState(() => _selectedFile = null),
                   ),
                 )
               else
                 OutlinedButton.icon(
                   onPressed: _pickVideo,
-                  icon: const Icon(Icons.attach_file_rounded),
-                  label: const Text('Выбрать видеофайл'),
+                  icon: Icon(Icons.attach_file_rounded),
+                  label: Text(AppLocalizations.of(context)!.selectVideoFile),
                 ),
               if (_isUploading) ...[
                 const SizedBox(height: 16),
                 LinearProgressIndicator(
                   value: _uploadProgress,
                   backgroundColor: SchoolColors.muted.withValues(alpha: 0.1),
-                  valueColor: const AlwaysStoppedAnimation<Color>(SchoolColors.primary),
+                  valueColor: AlwaysStoppedAnimation<Color>(SchoolColors.primary),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Загрузка видео...',
+                      AppLocalizations.of(context)!.loadingVideo,
                       style: TextStyle(
                         fontSize: 12,
                         color: SchoolColors.muted,
@@ -624,7 +625,7 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Отмена'),
+          child: Text(AppLocalizations.of(context)!.unknownKey),
         ),
         ElevatedButton(
           onPressed: (_isLoading ||
@@ -633,7 +634,7 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
                   (_uploadMode && _selectedFile == null))
               ? null
               : _save,
-          child: const Text('Сохранить'),
+          child: Text(AppLocalizations.of(context)!.save),
         ),
       ],
     );
@@ -662,7 +663,7 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
       
       if (_uploadMode) {
         if (_selectedFile == null) {
-          throw Exception('Пожалуйста, выберите видеофайл');
+          throw Exception(AppLocalizations.of(context)!.pleaseSelectAVideoFile);
         }
         
         setState(() {

@@ -38,10 +38,10 @@ class StudentToday extends ConsumerWidget {
     final userAsync = ref.watch(userDocumentProvider);
     final userData = userAsync.value ?? {};
     final rawName =
-        userData['name']?.toString() ?? user?.displayName ?? 'Ученик';
+        userData['name']?.toString() ?? user?.displayName ?? AppLocalizations.of(context)!.student;
     final name = rawName.trim().isNotEmpty
         ? rawName.split(RegExp(r'\s+')).first
-        : 'Ученик';
+        : AppLocalizations.of(context)!.student;
 
     final now = DateTime.now();
     final date = DateFormat('EEEE, d MMMM', l10n.localeName).format(now);
@@ -49,7 +49,7 @@ class StudentToday extends ConsumerWidget {
     final todaySchedules = ref.watch(studentTodaySchedulesProvider);
     final classNames = {
       for (final c in classes)
-        c['id'].toString(): c['name']?.toString() ?? 'Класс',
+        c['id'].toString(): c['name']?.toString() ?? "Класс",
     };
 
     ResolvedScheduleItem? upcomingClass;
@@ -91,7 +91,7 @@ class StudentToday extends ConsumerWidget {
                 delay: const Duration(milliseconds: 60),
                 child: _UpcomingClassReminder(
                   item: upcomingClass,
-                  className: classNames[upcomingClass.classId] ?? 'Класс',
+                  className: classNames[upcomingClass.classId] ?? "Класс",
                 ),
               ),
 
@@ -131,7 +131,7 @@ class StudentToday extends ConsumerWidget {
                               ),
                               child: Center(
                                 child: Text(
-                                  'Нет уроков на сегодня',
+                                  AppLocalizations.of(context)!.noLessonsForToday,
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -150,7 +150,7 @@ class StudentToday extends ConsumerWidget {
                                     (item) => StudentScheduleCard(
                                       item: item,
                                       className:
-                                          classNames[item.classId] ?? 'Класс',
+                                          classNames[item.classId] ?? "Класс",
                                     ),
                                   )
                                   .toList(),
@@ -186,13 +186,13 @@ class StudentToday extends ConsumerWidget {
                         QuickTile(
                           onTap: () => onTabSelect(5),
                           icon: Icons.library_books_outlined,
-                          label: 'Библиотека',
+                          label: AppLocalizations.of(context)!.library,
                           color: SchoolColors.primary,
                         ),
                         QuickTile(
                           onTap: () => onTabSelect(6),
                           icon: Icons.ondemand_video_outlined,
-                          label: 'Вебинары',
+                          label: AppLocalizations.of(context)!.webinars,
                           color: SchoolColors.accent,
                         ),
                         QuickTile(
@@ -219,10 +219,10 @@ class StudentToday extends ConsumerWidget {
     );
   }
 
-  String _getDisplayName(User? user) {
+  String _getDisplayName(BuildContext context, User? user) {
     return (user?.displayName?.trim().isNotEmpty ?? false)
         ? user!.displayName!.split(RegExp(r'\s+')).first
-        : 'Ученик';
+        : AppLocalizations.of(context)!.student;
   }
 }
 
@@ -298,7 +298,7 @@ class _MobileHeader extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${_greeting()}, $name 👋',
+                      '${_greeting(context)}, $name 👋',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w900,
@@ -337,11 +337,11 @@ class _MobileHeader extends StatelessWidget {
     );
   }
 
-  String _greeting() {
+  String _greeting(BuildContext context) {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Доброе утро';
-    if (h < 17) return 'Добрый день';
-    return 'Добрый вечер';
+    if (h < 12) return AppLocalizations.of(context)!.goodMorning;
+    if (h < 17) return AppLocalizations.of(context)!.goodAfternoon;
+    return AppLocalizations.of(context)!.goodEvening;
   }
 }
 
@@ -359,11 +359,11 @@ class _StudentHero extends StatelessWidget {
   final ValueChanged<int> onTabSelect;
   final VoidCallback onHomeworkTap;
 
-  String get _greeting {
+  String _greeting(BuildContext context) {
     final h = DateTime.now().hour;
-    if (h < 12) return 'Доброе утро';
-    if (h < 17) return 'Добрый день';
-    return 'Добрый вечер';
+    if (h < 12) return AppLocalizations.of(context)!.goodMorning;
+    if (h < 17) return AppLocalizations.of(context)!.goodAfternoon;
+    return AppLocalizations.of(context)!.goodEvening;
   }
 
   @override
@@ -418,7 +418,7 @@ class _StudentHero extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '$_greeting, $name',
+                '${_greeting(context)}, $name',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 14,
@@ -426,8 +426,8 @@ class _StudentHero extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
-                'Готовы к\nновым знаниям?',
+              Text(
+                AppLocalizations.of(context)!.areYouReadyFornnewKnowledge,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 38,
@@ -986,8 +986,8 @@ class _StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     if (isCancelled) {
-      return const StatusChip(
-        label: 'ОТМЕНЕНО',
+      return StatusChip(
+        label: AppLocalizations.of(context)!.canceled,
         color: SchoolColors.red,
         icon: Icons.cancel_outlined,
       );
@@ -1001,7 +1001,7 @@ class _StatusPill extends StatelessWidget {
     }
     if (isNext) {
       return StatusChip(
-        label: 'СКОРО',
+        label: AppLocalizations.of(context)!.soon,
         color: SchoolColors.orange,
         icon: Icons.access_time_rounded,
       );

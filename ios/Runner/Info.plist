@@ -66,5 +66,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Microphone access for voice messages -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>School World uses the microphone to record voice messages in class chats.</string>
 </dict>
 </plist>

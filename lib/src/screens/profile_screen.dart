@@ -50,7 +50,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             onPressed: () => setState(() => _editMode = !_editMode),
-            tooltip: _editMode ? 'Отмена' : 'Редактировать',
+            tooltip: _editMode ? AppLocalizations.of(context)!.unknownKey : AppLocalizations.of(context)!.edit,
           ),
           const SizedBox(width: 8),
         ],
@@ -64,7 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           final data = snapshot.data?.data() ?? {};
           final name =
-              data['name']?.toString() ?? user?.displayName ?? 'Пользователь';
+              data['name']?.toString() ?? user?.displayName ?? AppLocalizations.of(context)!.user;
           final email = user?.email ?? '';
           final role = data['role']?.toString() ?? 'student';
           final avatarUrl = data['avatarUrl']?.toString();
@@ -157,7 +157,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final file = result.files.first;
       final repo = AppScope.of(context).repository;
       final uid = repo.uid;
-      if (uid == null) throw Exception('Не вошли в систему');
+      if (uid == null) throw Exception(AppLocalizations.of(context)!.notLoggedIn);
 
       final path =
           'avatars/$uid/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
@@ -205,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final repo = AppScope.of(context).repository;
       final uid = repo.uid;
-      if (uid == null) throw Exception('Не вошли в систему');
+      if (uid == null) throw Exception(AppLocalizations.of(context)!.notLoggedIn);
 
       await repo.firestore.collection('users').doc(uid).update({
         'name': _nameController.text.trim(),

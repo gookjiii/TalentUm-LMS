@@ -264,16 +264,16 @@ class _SubmissionForm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Ваша работа',
+          Text(
+            AppLocalizations.of(context)!.yourWork,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 14),
           TextField(
             controller: contentController,
             maxLines: 4,
-            decoration: const InputDecoration(
-              labelText: 'Заметки к работе',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.notesForWork,
               alignLabelWithHint: true,
             ),
           ),
@@ -292,7 +292,7 @@ class _SubmissionForm extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: isUploading ? null : onPickFiles,
                 icon: const Icon(Icons.add_link),
-                label: const Text('Добавить файлы'),
+                label: Text(AppLocalizations.of(context)!.addFiles),
               ),
               FilledButton.icon(
                 onPressed: isUploading ? null : onSubmit,
@@ -353,8 +353,8 @@ class _SubmittedCard extends StatelessWidget {
           ],
           if (feedback.isNotEmpty) ...[
             const SizedBox(height: 14),
-            const Text(
-              'Отзыв учителя',
+            Text(
+              AppLocalizations.of(context)!.teachersReview,
               style: TextStyle(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 6),

@@ -606,7 +606,7 @@ class _AdminModeToggle extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'РЕЖИМ АДМИНА',
+              AppLocalizations.of(context)!.adminMode,
               style: TextStyle(
                 color: Colors.orange.shade400,
                 fontSize: 10,
@@ -706,7 +706,7 @@ class _TeacherUserCard extends StatelessWidget {
                       size: 17,
                       color: SchoolColors.red,
                     ),
-                    tooltip: 'Выйти',
+                    tooltip: AppLocalizations.of(context)!.logOut,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),

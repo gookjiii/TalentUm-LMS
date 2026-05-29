@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 class IframePlayer extends StatelessWidget {
@@ -6,8 +7,8 @@ class IframePlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Встроенный плеер доступен в веб-версии.'),
+    return Center(
+      child: Text(AppLocalizations.of(context)!.theBuiltinPlayerIsAvailable),
     );
   }
 }

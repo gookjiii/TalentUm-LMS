@@ -73,23 +73,23 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                 Icons.assignment_outlined,
                 Icons.assignment_rounded,
               ),
-              const NavDest(
-                'Расписание',
+              NavDest(
+                AppLocalizations.of(context)!.schedule,
                 Icons.calendar_month_outlined,
                 Icons.calendar_month_rounded,
               ),
-              const NavDest(
-                'Библиотека',
+              NavDest(
+                AppLocalizations.of(context)!.library,
                 Icons.library_books_outlined,
                 Icons.library_books_rounded,
               ),
-              const NavDest(
-                'Вебинары',
+              NavDest(
+                AppLocalizations.of(context)!.webinars,
                 Icons.ondemand_video_outlined,
                 Icons.ondemand_video_rounded,
               ),
-              const NavDest(
-                'Журнал',
+              NavDest(
+                AppLocalizations.of(context)!.magazine,
                 Icons.book_outlined,
                 Icons.book_rounded,
               ),
@@ -118,8 +118,8 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                     onClassSelect: (id) => appState.selectClass(id),
                   )
                 else
-                  const _FeatureLockedEmptyState(
-                    title: 'Лента',
+                  _FeatureLockedEmptyState(
+                    title: AppLocalizations.of(context)!.ribbon,
                     icon: Icons.campaign_outlined,
                   ),
 
@@ -133,16 +133,16 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                     canInitializeRoom: false,
                   )
                 else
-                  const _FeatureLockedEmptyState(
-                    title: 'Чат',
+                  _FeatureLockedEmptyState(
+                    title: AppLocalizations.of(context)!.chat,
                     icon: Icons.chat_bubble_outline_rounded,
                   ),
 
                 if (hasClasses && selectedId != null)
                   StudentHomework(classId: selectedId)
                 else
-                  const _FeatureLockedEmptyState(
-                    title: 'Задания',
+                  _FeatureLockedEmptyState(
+                    title: AppLocalizations.of(context)!.quests,
                     icon: Icons.assignment_outlined,
                   ),
 
@@ -152,24 +152,24 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                     studentClassIds: classes.map((c) => c['id'] as String).toList(),
                   )
                 else
-                  const _FeatureLockedEmptyState(
-                    title: 'Расписание',
+                  _FeatureLockedEmptyState(
+                    title: AppLocalizations.of(context)!.schedule,
                     icon: Icons.calendar_month_outlined,
                   ),
 
                 if (hasClasses && selectedId != null)
                   LibraryScreen(classId: selectedId)
                 else
-                  const _FeatureLockedEmptyState(
-                    title: 'Библиотека',
+                  _FeatureLockedEmptyState(
+                    title: AppLocalizations.of(context)!.library,
                     icon: Icons.library_books_outlined,
                   ),
 
                 if (hasClasses && selectedId != null)
                   WebinarsScreen(classId: selectedId)
                 else
-                  const _FeatureLockedEmptyState(
-                    title: 'Вебинары',
+                  _FeatureLockedEmptyState(
+                    title: AppLocalizations.of(context)!.webinars,
                     icon: Icons.ondemand_video_outlined,
                   ),
 
@@ -180,8 +180,8 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                     studentId: repo.uid,
                   )
                 else
-                  const _FeatureLockedEmptyState(
-                    title: 'Журнал',
+                  _FeatureLockedEmptyState(
+                    title: AppLocalizations.of(context)!.magazine,
                     icon: Icons.book_outlined,
                   ),
               ],
@@ -292,13 +292,13 @@ class _StudentShellState extends ConsumerState<StudentShell> {
   String _getStudentTabTitle(int index, AppLocalizations l10n) {
     switch (index) {
       case 4:
-        return 'Расписание';
+        return AppLocalizations.of(context)!.schedule;
       case 5:
-        return 'Библиотека';
+        return AppLocalizations.of(context)!.library;
       case 6:
-        return 'Вебинары';
+        return AppLocalizations.of(context)!.webinars;
       case 7:
-        return 'Журнал';
+        return AppLocalizations.of(context)!.magazine;
       default:
         return '';
     }
@@ -341,7 +341,7 @@ class _FeatureLockedEmptyState extends StatelessWidget {
     return EmptyState(
       icon: icon,
       title: title,
-      subtitle: 'Вступите в класс, чтобы открыть этот раздел.',
+      subtitle: AppLocalizations.of(context)!.joinTheClassToAccess,
     );
   }
 }
@@ -352,10 +352,10 @@ class JoinClassEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return EmptyState(
       icon: Icons.school_outlined,
-      title: 'Вступите в свой первый класс',
+      title: AppLocalizations.of(context)!.joinYourFirstClass,
       subtitle:
-          'Введите код приглашения от учителя, чтобы открыть чат, ленту и задания.',
-      actionLabel: 'Ввести код приглашения',
+          AppLocalizations.of(context)!.enterTheTeacherInvitationCode,
+      actionLabel: AppLocalizations.of(context)!.enterInvitationCode,
       action: () => showDialog(
         context: context,
         builder: (_) =>
@@ -380,7 +380,7 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Вступить в класс'),
+      title: Text(AppLocalizations.of(context)!.joinTheClass),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -389,14 +389,14 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
               controller: _controller,
               textCapitalization: TextCapitalization.characters,
               decoration: InputDecoration(
-                labelText: 'Код приглашения',
+                labelText: AppLocalizations.of(context)!.invitationCode,
                 errorText: _error,
                 prefixIcon: const Icon(Icons.key_rounded),
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              '— ИЛИ —',
+            Text(
+              AppLocalizations.of(context)!.or,
               style: TextStyle(
                 fontSize: 10,
                 color: SchoolColors.muted,
@@ -407,13 +407,13 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
             OutlinedButton.icon(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Камера будет доступна в следующем обновлении'),
+                  SnackBar(
+                    content: Text(AppLocalizations.of(context)!.theCameraWillBeAvailable),
                   ),
                 );
               },
               icon: const Icon(Icons.qr_code_scanner_rounded),
-              label: const Text('Сканировать QR-код'),
+              label: Text(AppLocalizations.of(context)!.scanQrCode),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 48),
                 side: const BorderSide(color: SchoolColors.primary),
@@ -425,7 +425,7 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Отмена'),
+          child: Text(AppLocalizations.of(context)!.unknownKey),
         ),
         FilledButton(
           onPressed: _loading ? null : _join,
@@ -439,7 +439,7 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
                     color: Colors.white,
                   ),
                 )
-              : const Text('Вступить'),
+              : Text(AppLocalizations.of(context)!.join),
         ),
       ],
     );
@@ -447,8 +447,9 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
 
   Future<void> _join() async {
     final code = _controller.text.trim();
+    final l10n = AppLocalizations.of(context)!;
     if (code.isEmpty) {
-      setState(() => _error = 'Введите код');
+      setState(() => _error = l10n.enterCode);
       return;
     }
     setState(() {
@@ -458,7 +459,7 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
     try {
       final res = await widget.repository.validateInviteCode(code);
       final id = res['classId']?.toString();
-      if (id == null) throw 'Неверный код';
+      if (id == null) throw l10n.invalidCode;
       await widget.repository.joinClass(id);
       if (mounted) Navigator.pop(context);
     } catch (e) {

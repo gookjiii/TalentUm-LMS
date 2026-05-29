@@ -7,7 +7,6 @@ import 'package:school_world/src/firebase/school_repository.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/widgets/file_preview.dart';
-import 'package:school_world/src/screens/settings_screen.dart';
 import 'package:school_world/src/models/schedule.dart';
 
 class TeacherToday extends StatefulWidget {
@@ -68,7 +67,7 @@ class _TeacherTodayState extends State<TeacherToday> {
         final profile = profileSnap.data?.data() ?? const <String, dynamic>{};
         final name = (profile['name']?.toString().trim().isNotEmpty ?? false)
             ? profile['name'].toString().trim()
-            : (user?.displayName ?? 'Учитель');
+            : (user?.displayName ?? AppLocalizations.of(context)!.teacher);
         final avatarUrl = profile['avatarUrl']?.toString();
         final firstName = name.split(RegExp(r'\s+')).first;
 
@@ -103,6 +102,7 @@ class _TeacherTodayState extends State<TeacherToday> {
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
+                          height: 1.1,
                           color: Theme.of(context).colorScheme.onSurface,
                           letterSpacing: 0.0,
                         ),
@@ -138,7 +138,7 @@ class _TeacherTodayState extends State<TeacherToday> {
             ),
             const SizedBox(height: 24),
             SectionHeader(
-              title: 'БЫСТРЫЕ ССЫЛКИ',
+              title: AppLocalizations.of(context)!.quickLinks1,
               action: "",
             ),
             const SizedBox(height: 12),
@@ -153,26 +153,26 @@ class _TeacherTodayState extends State<TeacherToday> {
                 QuickTile(
                   onTap: () => widget.onTabSelect(5),
                   icon: Icons.library_books_outlined,
-                  label: 'Библиотека',
+                  label: AppLocalizations.of(context)!.library,
                   color: SchoolColors.primary,
                 ),
                 QuickTile(
                   onTap: () => widget.onTabSelect(6),
                   icon: Icons.ondemand_video_outlined,
-                  label: 'Вебинары',
+                  label: AppLocalizations.of(context)!.webinars,
                   color: SchoolColors.accent,
                 ),
                 // Journal is at index 7. For regular teachers it's in nav bar, but we can put it here as well.
                 QuickTile(
                   onTap: () => widget.onTabSelect(7),
                   icon: Icons.book_outlined,
-                  label: 'Журнал',
+                  label: AppLocalizations.of(context)!.magazine,
                   color: SchoolColors.green,
                 ),
                 QuickTile(
                   onTap: () => widget.onTabSelect(9),
                   icon: Icons.people_outline,
-                  label: 'Участники',
+                  label: AppLocalizations.of(context)!.participants,
                   color: SchoolColors.orange,
                 ),
               ],
@@ -498,8 +498,8 @@ class _AttentionSubmissionRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if ((data['content']?.toString() ?? '').isNotEmpty) ...[
-                    const Text(
-                      'Ответ ученика:',
+                    Text(
+                      AppLocalizations.of(context)!.studentAnswer,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -523,8 +523,8 @@ class _AttentionSubmissionRow extends StatelessWidget {
                     const SizedBox(height: 16),
                   ],
                   if (attachments.isNotEmpty) ...[
-                    const Text(
-                      'Прикрепленные файлы:',
+                    Text(
+                      AppLocalizations.of(context)!.attachedFiles,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -541,8 +541,8 @@ class _AttentionSubmissionRow extends StatelessWidget {
                   TextField(
                     controller: gradeCtrl,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Оценка (в % или баллах)',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.scoreInOrPoints,
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -550,8 +550,8 @@ class _AttentionSubmissionRow extends StatelessWidget {
                   TextField(
                     controller: feedbackCtrl,
                     maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Отзыв учителя',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.teachersReview,
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -562,7 +562,7 @@ class _AttentionSubmissionRow extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: saving ? null : () => Navigator.pop(context),
-              child: const Text('Отмена'),
+              child: Text(AppLocalizations.of(context)!.unknownKey),
             ),
             FilledButton(
               onPressed: saving
@@ -571,9 +571,9 @@ class _AttentionSubmissionRow extends StatelessWidget {
                       final gradeVal = double.tryParse(gradeCtrl.text.trim());
                       if (gradeVal == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
+                          SnackBar(
                             content: Text(
-                              'Пожалуйста, введите корректную оценку (число)',
+                              AppLocalizations.of(context)!.pleaseEnterAValidRating,
                             ),
                           ),
                         );
@@ -606,7 +606,7 @@ class _AttentionSubmissionRow extends StatelessWidget {
                         color: Colors.white,
                       ),
                     )
-                  : const Text('Поставить оценку'),
+                  : Text(AppLocalizations.of(context)!.giveARating),
             ),
           ],
         ),
