@@ -122,6 +122,16 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                   marksMap[doc.id] = m.map((k, v) => MapEntry(k, v.toString()));
                 }
 
+                // If in student read-only mode, display a beautiful vertical rating card list.
+                if (widget.studentIdFilter != null) {
+                  return _buildStudentGradesList(
+                    context,
+                    columns,
+                    widget.studentIdFilter!,
+                    marksMap,
+                  );
+                }
+
                 return _buildCustomGrid(context, columns, studentIds, marksMap);
               },
             );
@@ -204,20 +214,36 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                           children: columns.map((col) {
                             final data = col.data()!;
                             final date = (data['date'] as Timestamp).toDate();
-                            return SizedBox(
-                              width: cellWidth,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    date.day.toString().padLeft(2, '0'),
-                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                                  ),
-                                  Text(
-                                    date.month.toString().padLeft(2, '0'),
-                                    style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : SchoolColors.muted, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
+                            final topic = data['topic']?.toString() ?? '';
+                            final homework = data['homework']?.toString() ?? '';
+                            final formattedDate = '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+                            
+                            String tooltipMsg = formattedDate;
+                            if (topic.isNotEmpty) {
+                              tooltipMsg += '\n${AppLocalizations.of(context)!.item}: $topic';
+                            }
+                            if (homework.isNotEmpty) {
+                              tooltipMsg += '\n${AppLocalizations.of(context)!.homework}: $homework';
+                            }
+
+                            return Tooltip(
+                              message: tooltipMsg,
+                              preferBelow: true,
+                              child: SizedBox(
+                                width: cellWidth,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      date.day.toString().padLeft(2, '0'),
+                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                                    ),
+                                    Text(
+                                      date.month.toString().padLeft(2, '0'),
+                                      style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : SchoolColors.muted, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           }).toList(),
@@ -307,6 +333,11 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                                   children: columns.map((col) {
                                     final colId = col.id;
                                     final mark = marksMap[studentId]?[colId] ?? '';
+                                    final user = _usersCache[studentId];
+                                    final studentName = user?['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey1;
+                                    final colData = col.data()!;
+                                    final date = (colData['date'] as Timestamp).toDate();
+                                    final topic = colData['topic']?.toString() ?? '';
 
                                     final isTeacher = ref.watch(schoolAppStateProvider).isTeacher;
                                     return SizedBox(
@@ -319,6 +350,9 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                                           isDark: isDark,
                                           onChanged: (val) => _updateMark(studentId, colId, val),
                                           enabled: isTeacher,
+                                          studentName: studentName,
+                                          date: date,
+                                          topic: topic,
                                         ),
                                       ),
                                     );
@@ -349,6 +383,243 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
       mark: value.trim(),
     );
   }
+
+  String _monthName(BuildContext context, int month) {
+    final months = [
+      AppLocalizations.of(context)!.january,
+      AppLocalizations.of(context)!.february,
+      AppLocalizations.of(context)!.martha,
+      AppLocalizations.of(context)!.april,
+      AppLocalizations.of(context)!.may,
+      AppLocalizations.of(context)!.june,
+      AppLocalizations.of(context)!.july,
+      AppLocalizations.of(context)!.august,
+      AppLocalizations.of(context)!.september,
+      AppLocalizations.of(context)!.october,
+      AppLocalizations.of(context)!.november,
+      AppLocalizations.of(context)!.december,
+    ];
+    return months[month - 1];
+  }
+
+  Widget _buildStudentGradesList(
+    BuildContext context,
+    List<DocumentSnapshot<Map<String, dynamic>>> columns,
+    String studentId,
+    Map<String, Map<String, String>> marksMap,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final studentMarks = marksMap[studentId] ?? {};
+
+    // Sort columns by date descending (newest first)
+    final sortedColumns = List<DocumentSnapshot<Map<String, dynamic>>>.from(columns)
+      ..sort((a, b) {
+        final dateA = (a.data()?['date'] as Timestamp?)?.toDate() ?? DateTime.now();
+        final dateB = (b.data()?['date'] as Timestamp?)?.toDate() ?? DateTime.now();
+        return dateB.compareTo(dateA);
+      });
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      itemCount: sortedColumns.length,
+      itemBuilder: (context, index) {
+        final col = sortedColumns[index];
+        final colId = col.id;
+        final data = col.data() ?? {};
+        final date = (data['date'] as Timestamp?)?.toDate() ?? DateTime.now();
+        final topic = data['topic']?.toString() ?? '';
+        final homework = data['homework']?.toString() ?? '';
+        final mark = studentMarks[colId]?.toString() ?? '';
+
+        return _buildStudentGradeCard(context, date, topic, homework, mark, isDark);
+      },
+    );
+  }
+
+  Widget _buildStudentGradeCard(
+    BuildContext context,
+    DateTime date,
+    String topic,
+    String homework,
+    String mark,
+    bool isDark,
+  ) {
+    final cleanMark = mark.trim();
+    Color gradeColor;
+    String gradeDesc = '';
+
+    if (cleanMark == '5') {
+      gradeColor = SchoolColors.green;
+      gradeDesc = AppLocalizations.of(context)!.unknownKey2; // Отлично
+    } else if (cleanMark == '4') {
+      gradeColor = SchoolColors.primary;
+      gradeDesc = AppLocalizations.of(context)!.unknownKey3; // Хорошо
+    } else if (cleanMark == '3') {
+      gradeColor = SchoolColors.orange;
+      gradeDesc = AppLocalizations.of(context)!.unknownKey4; // Удовлетворительно
+    } else if (cleanMark == '2') {
+      gradeColor = SchoolColors.red;
+      gradeDesc = AppLocalizations.of(context)!.unknownKey5; // Плохо
+    } else if (cleanMark.toLowerCase() == AppLocalizations.of(context)!.n1.toLowerCase()) {
+      gradeColor = SchoolColors.red;
+      gradeDesc = AppLocalizations.of(context)!.absent; // Отсутствовал
+    } else {
+      gradeColor = isDark ? Colors.white38 : Colors.black26;
+      gradeDesc = '';
+    }
+
+    final monthStr = _monthName(context, date.month);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? SchoolColors.darkSurface : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+          ),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+          ],
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Left Side: Beautiful Date Badge
+            Container(
+              width: 56,
+              height: 60,
+              decoration: BoxDecoration(
+                color: SchoolColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: SchoolColors.primary.withValues(alpha: 0.15),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    date.day.toString().padLeft(2, '0'),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 20,
+                      color: SchoolColors.primary,
+                      height: 1.1,
+                    ),
+                  ),
+                  Text(
+                    monthStr.length > 4 ? monthStr.substring(0, 3).toUpperCase() : monthStr.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: SchoolColors.primary.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+
+            // Middle Side: Topic & Homework Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    topic.isNotEmpty ? topic : AppLocalizations.of(context)!.noTheme,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (homework.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.home_work_rounded,
+                          size: 14,
+                          color: SchoolColors.orange,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            homework,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white60 : SchoolColors.textSecondary,
+                              height: 1.3,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+
+            // Right Side: Beautiful Color-Coded Rating Badge
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: cleanMark.isNotEmpty ? gradeColor.withValues(alpha: 0.12) : Colors.transparent,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: cleanMark.isNotEmpty ? gradeColor.withValues(alpha: 0.3) : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.08)),
+                      width: 2,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    cleanMark.isNotEmpty ? cleanMark : '-',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                      color: cleanMark.isNotEmpty ? gradeColor : (isDark ? Colors.white30 : Colors.black26),
+                    ),
+                  ),
+                ),
+                if (gradeDesc.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    gradeDesc,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: gradeColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _MarkCell extends StatelessWidget {
@@ -357,19 +628,25 @@ class _MarkCell extends StatelessWidget {
     required this.isDark,
     required this.onChanged,
     required this.enabled,
+    required this.studentName,
+    required this.date,
+    required this.topic,
   });
 
   final String initialValue;
   final bool isDark;
   final ValueChanged<String> onChanged;
   final bool enabled;
+  final String studentName;
+  final DateTime date;
+  final String topic;
 
   Color _getMarkColor(BuildContext context, String mark) {
     if (mark == '5') return SchoolColors.green;
     if (mark == '4') return SchoolColors.primary;
     if (mark == '3') return SchoolColors.orange;
     if (mark == '2') return SchoolColors.red;
-    if (mark.toLowerCase() == AppLocalizations.of(context)!.n) return SchoolColors.red;
+    if (mark.toLowerCase() == AppLocalizations.of(context)!.n1.toLowerCase()) return SchoolColors.red;
     return isDark ? Colors.white : Colors.black87;
   }
 
@@ -377,27 +654,47 @@ class _MarkCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final mark = initialValue.trim();
     final color = _getMarkColor(context, mark);
+    final formattedDate = '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
     
-    final cellWidget = Container(
-      decoration: BoxDecoration(
-        color: mark.isNotEmpty 
-          ? color.withValues(alpha: 0.1) 
-          : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
+    String tooltipMsg = '$studentName\n$formattedDate';
+    if (topic.isNotEmpty) {
+      tooltipMsg += '\n${AppLocalizations.of(context)!.item}: $topic';
+    }
+    if (mark.isNotEmpty) {
+      String markDesc = '';
+      if (mark == '5') markDesc = AppLocalizations.of(context)!.unknownKey2;
+      else if (mark == '4') markDesc = AppLocalizations.of(context)!.unknownKey3;
+      else if (mark == '3') markDesc = AppLocalizations.of(context)!.unknownKey4;
+      else if (mark == '2') markDesc = AppLocalizations.of(context)!.unknownKey5;
+      else if (mark.toLowerCase() == AppLocalizations.of(context)!.n1.toLowerCase()) markDesc = AppLocalizations.of(context)!.absent;
+      
+      tooltipMsg += '\n${AppLocalizations.of(context)!.ratings}: $mark ${markDesc.isNotEmpty ? "($markDesc)" : ""}';
+    }
+
+    final cellWidget = Tooltip(
+      message: tooltipMsg,
+      preferBelow: false,
+      child: Container(
+        decoration: BoxDecoration(
           color: mark.isNotEmpty 
-            ? color.withValues(alpha: 0.2) 
-            : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
-          width: 1,
+            ? color.withValues(alpha: 0.1) 
+            : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: mark.isNotEmpty 
+              ? color.withValues(alpha: 0.2) 
+              : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
+            width: 1,
+          ),
         ),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        mark,
-        style: TextStyle(
-          fontWeight: FontWeight.w900,
-          fontSize: 16,
-          color: color,
+        alignment: Alignment.center,
+        child: Text(
+          mark,
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 16,
+            color: color,
+          ),
         ),
       ),
     );
@@ -413,8 +710,65 @@ class _MarkCell extends StatelessWidget {
       },
       position: PopupMenuPosition.under,
       offset: const Offset(0, 4),
-      constraints: const BoxConstraints(minWidth: 180),
+      constraints: const BoxConstraints(minWidth: 220, maxWidth: 280),
       itemBuilder: (context) => [
+        // Premium Header detailing Student & Lesson topic
+        PopupMenuItem<String>(
+          enabled: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.person_outline_rounded,
+                    size: 16,
+                    color: SchoolColors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      studentName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(
+                    Icons.menu_book_rounded,
+                    size: 14,
+                    color: isDark ? Colors.white54 : SchoolColors.muted,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "$formattedDate: ${topic.isNotEmpty ? topic : AppLocalizations.of(context)!.noTheme}",
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white60 : SchoolColors.textSecondary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Divider(height: 1, thickness: 1),
+            ],
+          ),
+        ),
         _buildPopupItem('5', '5', AppLocalizations.of(context)!.unknownKey2, SchoolColors.green),
         _buildPopupItem('4', '4', AppLocalizations.of(context)!.unknownKey3, SchoolColors.primary),
         _buildPopupItem('3', '3', AppLocalizations.of(context)!.unknownKey4, SchoolColors.orange),
