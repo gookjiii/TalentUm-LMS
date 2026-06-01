@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:school_world/src/theme.dart';
+import 'package:school_world/src/utils/string_extensions.dart';
 
 class InlineVideoPlayer extends StatefulWidget {
   final String videoUrl;
@@ -131,7 +132,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
             // Thumbnail image or placeholder
             if (thumbnailUrl != null)
               CachedNetworkImage(
-                imageUrl: thumbnailUrl,
+                imageUrl: thumbnailUrl.toDirectImageUrl,
                 fit: BoxFit.cover,
                 errorWidget: (_, __, ___) => _buildPlaceholder(),
               )

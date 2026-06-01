@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'safe_firestore.dart';
@@ -141,5 +142,57 @@ mixin SchoolRepositoryAuth {
       user.updateDisplayName(name),
       firestore.collection('users').doc(user.uid).update({'name': name}),
     ]);
+  }
+
+  Future<void> deleteUserAccount(String userId) async {
+    const apiSecret = String.fromEnvironment('APP_API_SECRET');
+    const proxyUrl = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
+    if (proxyUrl.isEmpty) {
+      throw Exception('Backend GOOGLE_DRIVE_PROXY_URL is not configured. Please run with --dart-define=GOOGLE_DRIVE_PROXY_URL=...');
+    }
+    if (apiSecret.isEmpty) {
+      throw Exception('Backend APP_API_SECRET is not configured. Please run with --dart-define=APP_API_SECRET=...');
+    }
+
+    final dio = Dio();
+    final res = await dio.post(
+      '$proxyUrl/api/auth/delete_user',
+      data: {'userId': userId},
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $apiSecret',
+        },
+      ),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Failed to delete user: ${res.data}');
+    }
+  }
+
+  Future<void> verifyPhone({
+    required String phoneNumber,
+    required PhoneCodeSent codeSent,
+    required PhoneVerificationFailed verificationFailed,
+    required PhoneVerificationCompleted verificationCompleted,
+  }) async {
+    await auth.verifyPhoneNumber(
+      phoneNumber: phoneNumber,
+      verificationCompleted: verificationCompleted,
+      verificationFailed: verificationFailed,
+      codeSent: codeSent,
+      codeAutoRetrievalTimeout: (String verificationId) {},
+    );
+  }
+
+  Future<UserCredential> signInWithPhoneCredential({
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    final credential = PhoneAuthProvider.credential(
+      verificationId: verificationId,
+      smsCode: smsCode,
+    );
+    return auth.signInWithCredential(credential);
   }
 }

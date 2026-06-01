@@ -7,6 +7,7 @@ import 'package:school_world/main.dart';
 import 'package:school_world/src/features/chat/presentation/widgets/chat_tab_flow.dart';
 import 'package:school_world/src/features/journal/presentation/screens/journal_screen.dart';
 import 'package:school_world/src/screens/teacher_schedule_screen.dart';
+import 'package:school_world/src/screens/settings_screen.dart';
 import 'package:school_world/src/firebase/school_repository.dart';
 import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/app_state.dart';
@@ -43,7 +44,11 @@ class _StudentShellState extends ConsumerState<StudentShell> {
     return classesAsync.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (err, stack) => Scaffold(body: Center(child: Text('Error: $err'))),
+      error: (err, stack) => Scaffold(
+        body: Center(
+          child: Text(AppLocalizations.of(context)!.errorPrefix(err.toString())),
+        ),
+      ),
       data: (classes) {
         final selectedId = _selectedClassIdFromMap(selectedClassId, classes);
         final hasClasses = classes.isNotEmpty;
@@ -151,6 +156,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                   TeacherScheduleScreen(
                     readOnly: true,
                     studentClassIds: classes.map((c) => c['id'] as String).toList(),
+                    studentClasses: classes,
                   )
                 else
                   _FeatureLockedEmptyState(
@@ -202,6 +208,15 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                       classes: classes,
                       activeClassId: selectedId,
                       onSelectClass: (id) => appState.selectClass(id),
+                      onProfileTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (ctx) => SettingsScreen(
+                            repository: AppScope.of(ctx).repository,
+                            appState: AppScope.of(ctx).appState,
+                          ),
+                        ),
+                      ),
                     ),
                   Expanded(child: content),
                   if (showRightSidebar && hasClasses)
@@ -267,6 +282,10 @@ class _StudentShellState extends ConsumerState<StudentShell> {
           _handleTabSelection(index, false, selectedId, repo, appState, l10n, classes);
         },
         l10n: l10n,
+        onJoinClass: () {
+          Navigator.pop(ctx);
+          _showJoinDialog(context);
+        },
       ),
     );
   }
@@ -323,13 +342,13 @@ class _StudentShellState extends ConsumerState<StudentShell> {
   String _getStudentTabTitle(int index, AppLocalizations l10n) {
     switch (index) {
       case 4:
-        return AppLocalizations.of(context)!.schedule;
+        return l10n.schedule;
       case 5:
-        return AppLocalizations.of(context)!.library;
+        return l10n.library;
       case 6:
-        return AppLocalizations.of(context)!.webinars;
+        return l10n.webinars;
       case 7:
-        return AppLocalizations.of(context)!.magazine;
+        return l10n.magazine;
       default:
         return '';
     }
@@ -347,6 +366,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
         return TeacherScheduleScreen(
           readOnly: true,
           studentClassIds: classes.map((c) => c['id'] as String).toList(),
+          studentClasses: classes,
         );
       case 5:
         return LibraryScreen(classId: selectedId ?? '');
@@ -464,9 +484,10 @@ class _NavTabItem extends StatelessWidget {
 }
 
 class _MoreSheet extends StatelessWidget {
-  const _MoreSheet({required this.onSelect, required this.l10n});
+  const _MoreSheet({required this.onSelect, required this.l10n, required this.onJoinClass});
   final ValueChanged<int> onSelect;
   final AppLocalizations l10n;
+  final VoidCallback onJoinClass;
 
   @override
   Widget build(BuildContext context) {
@@ -507,7 +528,7 @@ class _MoreSheet extends StatelessWidget {
               alignment: Alignment.center,
             ),
             Text(
-              'More',
+              l10n.more,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
@@ -530,6 +551,39 @@ class _MoreSheet extends StatelessWidget {
                 isDark: isDark,
                 onTap: () => onSelect(item.index),
               )).toList(),
+            ),
+            const SizedBox(height: 12),
+            Material(
+              color: SchoolColors.green.withValues(alpha: isDark ? 0.12 : 0.08),
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                onTap: onJoinClass,
+                borderRadius: BorderRadius.circular(14),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.group_add_rounded, color: SchoolColors.green, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l10n.joinAClass,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 8),
           ],
@@ -709,6 +763,54 @@ class _MobileTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final performanceMode = AppScope.of(context).appState.performanceMode;
+
+    if (performanceMode) {
+      return SafeArea(
+        top: false,
+        child: Container(
+          height: 72,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          decoration: BoxDecoration(
+            color: isDark ? SchoolColors.darkSurface : Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : SchoolColors.border.withValues(alpha: 0.8),
+              width: 1.0,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ...List.generate(items.length, (index) {
+                final item = items[index];
+                final selected = selectedIndex == index;
+                return Expanded(
+                  child: _NavTabItem(
+                    icon: item.icon,
+                    selectedIcon: item.selectedIcon,
+                    selected: selected,
+                    isDark: isDark,
+                    onTap: () => onSelect(index),
+                  ),
+                );
+              }),
+              Expanded(
+                child: _NavTabItem(
+                  icon: Icons.grid_view_outlined,
+                  selectedIcon: Icons.grid_view_rounded,
+                  selected: moreSelected,
+                  isDark: isDark,
+                  onTap: onMoreTap,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return SafeArea(
       top: false,

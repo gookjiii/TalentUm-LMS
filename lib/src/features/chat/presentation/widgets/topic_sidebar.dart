@@ -105,7 +105,7 @@ class _TopicSidebarState extends State<TopicSidebar> {
                       icon: Icons.forum_rounded,
                       isActive: activeTopicId == null,
                       onTap: () {
-                        widget.chatController.setTopicId(null);
+                        widget.chatController.setTopicId(null, topicName: null);
                         widget.onTopicChanged?.call(null);
                       },
                     ),
@@ -130,7 +130,7 @@ class _TopicSidebarState extends State<TopicSidebar> {
                           icon: Icons.tag_rounded,
                           isActive: activeTopicId == doc.id,
                           onTap: () {
-                            widget.chatController.setTopicId(doc.id);
+                            widget.chatController.setTopicId(doc.id, topicName: data['name'] ?? 'Без названия');
                             widget.onTopicChanged?.call(doc.id);
                           },
                           onDelete: widget.isTeacher
@@ -206,7 +206,7 @@ class _TopicSidebarState extends State<TopicSidebar> {
             onPressed: () async {
               Navigator.pop(context);
               if (widget.chatController.currentTopicId == topicId) {
-                widget.chatController.setTopicId(null);
+                widget.chatController.setTopicId(null, topicName: null);
                 widget.onTopicChanged?.call(null);
               }
               await widget.chatController.firestore
@@ -224,7 +224,7 @@ class _TopicSidebarState extends State<TopicSidebar> {
   }
 }
 
-class _TopicItem extends StatelessWidget {
+class _TopicItem extends StatefulWidget {
   const _TopicItem({
     required this.title,
     required this.icon,
@@ -240,74 +240,115 @@ class _TopicItem extends StatelessWidget {
   final VoidCallback? onDelete;
 
   @override
+  State<_TopicItem> createState() => _TopicItemState();
+}
+
+class _TopicItemState extends State<_TopicItem> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Material(
-        color: isActive
-            ? theme.colorScheme.primary.withOpacity(0.08)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        clipBehavior: Clip.antiAlias,
-        child: ListTile(
-          onTap: onTap,
-          dense: true,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 0,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          leading: Icon(
-            icon,
-            size: 18,
-            color: isActive
-                ? theme.colorScheme.primary
-                : theme.colorScheme.onSurfaceVariant,
-          ),
-          title: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
-              fontSize: 14,
-              color: isActive
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface,
+    final isDark = theme.brightness == Brightness.dark;
+    final activeColor = theme.colorScheme.primary;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedScale(
+        scale: _hovered && !widget.isActive ? 1.02 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          decoration: BoxDecoration(
+            color: widget.isActive
+                ? activeColor.withValues(alpha: 0.1)
+                : (isDark
+                    ? Colors.white.withValues(alpha: _hovered ? 0.05 : 0.0)
+                    : Colors.black.withValues(alpha: _hovered ? 0.03 : 0.0)),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: widget.isActive
+                  ? activeColor.withValues(alpha: 0.3)
+                  : Colors.transparent,
+              width: 1,
             ),
           ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (onDelete != null)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                  color: Colors.redAccent.withOpacity(0.7),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: onDelete,
+          child: Material(
+            color: Colors.transparent,
+            child: ListTile(
+              onTap: widget.onTap,
+              dense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 2,
+              ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              if (isActive && onDelete != null) const SizedBox(width: 8),
-              if (isActive)
-                Container(
-                  width: 4,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(2),
+                leading: Icon(
+                  widget.icon,
+                  size: 20,
+                  color: widget.isActive
+                      ? activeColor
+                      : theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: _hovered ? 1.0 : 0.7,
+                        ),
+                ),
+                title: Text(
+                  widget.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: widget.isActive ? FontWeight.bold : FontWeight.w500,
+                    fontSize: 14,
+                    color: widget.isActive
+                        ? activeColor
+                        : theme.colorScheme.onSurface,
                   ),
                 ),
-            ],
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.onDelete != null && (_hovered || widget.isActive))
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 200),
+                        opacity: _hovered || widget.isActive ? 1.0 : 0.0,
+                        child: IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                          color: Colors.redAccent.withValues(alpha: 0.8),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: widget.onDelete,
+                        ),
+                      ),
+                    if (widget.isActive && widget.onDelete != null)
+                      const SizedBox(width: 8),
+                    if (widget.isActive)
+                      Container(
+                        width: 4,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: activeColor,
+                          borderRadius: BorderRadius.circular(4),
+                          boxShadow: [
+                            BoxShadow(
+                              color: activeColor.withValues(alpha: 0.4),
+                              blurRadius: 4,
+                              offset: const Offset(0, 0),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
-      ),
     );
   }
 }
+

@@ -98,6 +98,62 @@
       }
     }
   },
+  "more": "Ещё",
+  "additionalSections": "Дополнительные разделы",
+  "loadingProfile": "Загрузка профиля...",
+  "authCheck": "Проверка авторизации...",
+  "technicalError": "Техническая ошибка",
+  "close": "Закрыть",
+  "viewErrorDetails": "Показать детали ошибки",
+  "loginWithMainAccount": "Войти через основной аккаунт",
+  "retry": "Попробовать снова",
+  "joiningClass": "Вступление в класс...",
+  "viewFullError": "Посмотреть полную ошибку",
+  "unableToJoinServerErr": "Не удалось вступить: ошибка сервера.",
+  "errorJoiningClass": "Произошла ошибка при вступлении в класс.",
+  "invalidLinkOrExpired": "Неверная ссылка или код приглашения истек.",
+  "classNotExists": "Класс не существует.",
+  "networkError": "Ошибка сети. Пожалуйста, проверьте интернет-соединение.",
+  "joiningWait": "Вступление...",
+  "enterClassroom": "Войти в класс",
+  "totalAssignmentsCount": "{count} заданий всего",
+  "@totalAssignmentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cabinetWithNumber": "Кабинет {number}",
+  "@cabinetWithNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "editedPhotoAttached": "Измененное фото прикреплено к сообщению",
+  "avatarUpdated": "Аватар обновлен",
+  "errorPrefix": "Ошибка: {error}",
+  "errorClearingChat": "Ошибка при очистке чата: {error}",
+  "errorDeletingClass": "Ошибка при удалении класса: {error}",
+  "@errorPrefix": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "reload": "Перезагрузить",
+  "loadingSystemSettings": "Загрузка настроек системы...",
+  "uploadError": "Ошибка загрузки: {error}",
+  "@uploadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "searchMessages": "Поиск сообщений",
   "you": "Вы",
   "classmate": "Одноклассник",
@@ -792,5 +848,44 @@
   "invalidCode": "Неверный код",
   "previewNotAvailableOnThis": "Предпросмотр недоступен на этой платформе",
   "teacher1": "УЧИТЕЛЬ",
-  "classText": "Класс"
+  "classText": "Класс",
+  "cloudStorageManagement": "Управление облачным хранилищем",
+  "loadingCloudStorageStats": "Загрузка статистики облачного хранилища...",
+  "googleDriveSubtitle": "Хранение ресурсов библиотеки и крупных уроков",
+  "cloudinarySubtitle": "Хранение изображений, коротких видео и постов ленты",
+  "firebaseStorageSubtitle": "Хранение вспомогательных файлов, аватаров и конфигурационных изображений",
+  "cleaningUpStorage": "Очистка хранилища...",
+  "cleanUpRedundantData": "Очистить избыточные данные в системе",
+  "confirmCleanup": "Подтверждение очистки",
+  "confirmCleanupDesc": "Система просканирует и удалит потерянные файлы (мусорные файлы), которые были удалены в приложении, но все еще существуют в облачных сервисах (Google Drive, Cloudinary, Firebase). Этот процесс может занять 1–2 минуты.",
+  "startCleanup": "Начать очистку",
+  "cleanupSuccess": "Очистка выполнена успешно! Удалено {count} избыточных файлов, освобождено {size}.",
+  "@cleanupSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cleanupFailed": "Ошибка очистки: {error}",
+  "@cleanupFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "searchTasks": "Поиск задач",
+  "personalizationAndAccountManagement": "Персонализация и управление аккаунтом",
+  "cabinetWithNumber": "Кабинет {number}",
+  "@cabinetWithNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  }
 }

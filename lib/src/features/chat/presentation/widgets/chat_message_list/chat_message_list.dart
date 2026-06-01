@@ -73,6 +73,7 @@ class ChatMessageList extends StatelessWidget {
         ? Colors.white.withOpacity(0.04)
         : Colors.black.withOpacity(0.06);
 
+    final performanceMode = AppScope.of(context).appState.performanceMode;
     return ListenableBuilder(
       listenable: chatController,
       builder: (context, _) {
@@ -80,7 +81,11 @@ class ChatMessageList extends StatelessWidget {
           children: [
             Positioned.fill(
               child: RepaintBoundary(
-                child: _AuroraBackground(bgColor: bgColor, dotColor: dotColor),
+                child: _AuroraBackground(
+                  bgColor: bgColor,
+                  dotColor: dotColor,
+                  performanceMode: performanceMode,
+                ),
               ),
             ),
             Positioned.fill(
@@ -323,9 +328,14 @@ class _TypingIndicatorBuilderState extends State<_TypingIndicatorBuilder> {
 }
 
 class _AuroraBackground extends StatefulWidget {
-  const _AuroraBackground({required this.bgColor, required this.dotColor});
+  const _AuroraBackground({
+    required this.bgColor,
+    required this.dotColor,
+    required this.performanceMode,
+  });
   final Color bgColor;
   final Color dotColor;
+  final bool performanceMode;
 
   @override
   State<_AuroraBackground> createState() => _AuroraBackgroundState();
@@ -333,33 +343,64 @@ class _AuroraBackground extends StatefulWidget {
 
 class _AuroraBackgroundState extends State<_AuroraBackground>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
+  AnimationController? _ctrl;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 20),
-    )..repeat();
+    if (!widget.performanceMode) {
+      _ctrl = AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 20),
+      )..repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _AuroraBackground oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.performanceMode != widget.performanceMode) {
+      if (widget.performanceMode) {
+        _ctrl?.dispose();
+        _ctrl = null;
+      } else {
+        _ctrl = AnimationController(
+          vsync: this,
+          duration: const Duration(seconds: 20),
+        )..repeat();
+      }
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _ctrl?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.performanceMode) {
+      return CustomPaint(
+        painter: _DotGridPainter(
+          bgColor: widget.bgColor,
+          dotColor: widget.dotColor,
+          animationValue: 0.0,
+          performanceMode: true,
+        ),
+      );
+    }
+
     return AnimatedBuilder(
-      animation: _ctrl,
+      animation: _ctrl!,
       builder: (context, child) {
         return CustomPaint(
           painter: _DotGridPainter(
             bgColor: widget.bgColor,
             dotColor: widget.dotColor,
-            animationValue: _ctrl.value,
+            animationValue: _ctrl!.value,
+            performanceMode: false,
           ),
         );
       },
@@ -372,56 +413,54 @@ class _DotGridPainter extends CustomPainter {
     required this.bgColor,
     required this.dotColor,
     required this.animationValue,
+    required this.performanceMode,
   });
   final Color bgColor;
   final Color dotColor;
   final double animationValue;
+  final bool performanceMode;
 
   @override
   void paint(Canvas canvas, Size size) {
     // 1. Solid background fill
     canvas.drawRect(Offset.zero & size, Paint()..color = bgColor);
 
-    // 2. Animated fluid Aurora radial gradients
-    final Paint glow1 = Paint()
-      ..shader =
-          RadialGradient(
-            colors: [
-              const Color(0xFF2563EB).withOpacity(0.06), // Primary Blue
-              const Color(0xFF2563EB).withOpacity(0.0),
-            ],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(
-                size.width *
-                    (0.3 + 0.3 * math.sin(animationValue * 2 * math.pi)),
-                size.height *
-                    (0.2 + 0.2 * math.cos(animationValue * 2 * math.pi)),
-              ),
-              radius: size.width * 0.9,
+    if (!performanceMode) {
+      // 2. Animated fluid Aurora radial gradients
+      final Paint glow1 = Paint()
+        ..shader = RadialGradient(
+          colors: [
+            const Color(0xFF2563EB).withOpacity(0.06), // Primary Blue
+            const Color(0xFF2563EB).withOpacity(0.0),
+          ],
+        ).createShader(
+          Rect.fromCircle(
+            center: Offset(
+              size.width * (0.3 + 0.3 * math.sin(animationValue * 2 * math.pi)),
+              size.height * (0.2 + 0.2 * math.cos(animationValue * 2 * math.pi)),
             ),
-          );
-    canvas.drawRect(Offset.zero & size, glow1);
+            radius: size.width * 0.9,
+          ),
+        );
+      canvas.drawRect(Offset.zero & size, glow1);
 
-    final Paint glow2 = Paint()
-      ..shader =
-          RadialGradient(
-            colors: [
-              const Color(0xFF6366F1).withOpacity(0.05), // Indigo Purple
-              const Color(0xFF6366F1).withOpacity(0.0),
-            ],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(
-                size.width *
-                    (0.7 + 0.2 * math.cos(animationValue * 2 * math.pi + 1.2)),
-                size.height *
-                    (0.6 + 0.2 * math.sin(animationValue * 2 * math.pi + 1.2)),
-              ),
-              radius: size.width * 0.8,
+      final Paint glow2 = Paint()
+        ..shader = RadialGradient(
+          colors: [
+            const Color(0xFF6366F1).withOpacity(0.05), // Indigo Purple
+            const Color(0xFF6366F1).withOpacity(0.0),
+          ],
+        ).createShader(
+          Rect.fromCircle(
+            center: Offset(
+              size.width * (0.7 + 0.2 * math.cos(animationValue * 2 * math.pi + 1.2)),
+              size.height * (0.6 + 0.2 * math.sin(animationValue * 2 * math.pi + 1.2)),
             ),
-          );
-    canvas.drawRect(Offset.zero & size, glow2);
+            radius: size.width * 0.8,
+          ),
+        );
+      canvas.drawRect(Offset.zero & size, glow2);
+    }
 
     // 3. Static canvas dot-grid mesh
     final dotPaint = Paint()..color = dotColor;
@@ -439,5 +478,6 @@ class _DotGridPainter extends CustomPainter {
   bool shouldRepaint(covariant _DotGridPainter old) =>
       old.bgColor != bgColor ||
       old.dotColor != dotColor ||
-      old.animationValue != animationValue;
+      old.animationValue != animationValue ||
+      old.performanceMode != performanceMode;
 }

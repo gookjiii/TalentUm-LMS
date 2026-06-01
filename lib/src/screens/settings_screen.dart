@@ -60,14 +60,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Аватар обновлен / Avatar updated')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.avatarUpdated)),
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка загрузки / Upload error: $e')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.uploadError(e.toString()),
+            ),
+          ),
         );
       }
     } finally {
@@ -236,6 +240,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final activeLanguageSub = widget.appState.locale?.languageCode == 'en'
             ? 'English (en)'
             : AppLocalizations.of(context)!.russianRu;
+        final performanceLabel = isRu ? 'Режим высокой производительности' : 'High Performance Mode';
+        final performanceSub = isRu ? 'Отключить эффекты размытия для слабых устройств' : 'Disable blur effects for low-end devices';
 
         return Scaffold(
       appBar: AppBar(
@@ -458,6 +464,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
                   ),
                   onTap: () => _showLanguagePicker(context, l10n),
+                ),
+                Divider(
+                  height: 1,
+                  color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                  indent: 68,
+                ),
+                _ModernSettingTile(
+                  icon: Icons.speed_rounded,
+                  iconColor: const Color(0xFFF59E0B),
+                  iconBgColor: const Color(0xFFFFEDD5),
+                  title: performanceLabel,
+                  subtitle: performanceSub,
+                  trailing: Switch.adaptive(
+                    value: widget.appState.performanceMode,
+                    onChanged: (val) => widget.appState.setPerformanceMode(val),
+                    activeColor: widget.appState.accentColor,
+                  ),
+                  onTap: () => widget.appState.setPerformanceMode(
+                    !widget.appState.performanceMode,
+                  ),
                 ),
               ],
             ),

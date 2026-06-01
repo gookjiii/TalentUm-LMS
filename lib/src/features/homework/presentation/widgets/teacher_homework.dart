@@ -135,13 +135,15 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
     }
   }
 
+  int _limit = 20;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
       final repo = AppScope.of(context).repository;
-      _assignmentsStream = repo.assignmentsForClass(widget.classId);
+      _assignmentsStream = repo.assignmentsForClass(widget.classId, limit: _limit);
     }
   }
 
@@ -151,10 +153,19 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
     if (oldWidget.classId != widget.classId) {
       final repo = AppScope.of(context).repository;
       setState(() {
-        _assignmentsStream = repo.assignmentsForClass(widget.classId);
+        _limit = 20;
+        _assignmentsStream = repo.assignmentsForClass(widget.classId, limit: _limit);
         _selectedId = null;
       });
     }
+  }
+
+  void _loadMore() {
+    setState(() {
+      _limit += 20;
+      final repo = AppScope.of(context).repository;
+      _assignmentsStream = repo.assignmentsForClass(widget.classId, limit: _limit);
+    });
   }
 
   @override
@@ -162,64 +173,73 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 1000),
-        child: SizedBox.expand(
-          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: _assignmentsStream,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final docs = snapshot.data?.docs ?? [];
-              if (docs.isEmpty) {
-                return _NoAssignmentsState(
-                  onCreate: () => _createAssignment(context),
-                );
-              }
-
-              if (_selectedId == null) {
-                return _AssignmentSummaryView(
-                  docs: docs,
-                  onSelect: (id) => setState(() => _selectedId = id),
-                  onCreate: () => _createAssignment(context),
-                );
-              }
-
-              QueryDocumentSnapshot<Map<String, dynamic>>? selectedDoc;
-              try {
-                selectedDoc = docs.firstWhere((d) => d.id == _selectedId);
-              } catch (_) {
-                selectedDoc = docs.first;
-              }
-
-              return Column(
-                children: [
-                  _HomeworkTopBar(
-                    classId: widget.classId,
-                    className: widget.className,
-                    title: selectedDoc.data()['title'] ?? '',
-                    doc: selectedDoc,
-                    onBack: () => setState(() => _selectedId = null),
-                    onEdit: (doc) => _editAssignment(context, doc),
-                    onDelete: (doc) => _confirmDelete(context, doc),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.fromLTRB(32, 24, 32, 40),
-                      children: [
-                        _HomeworkHeader(doc: selectedDoc),
-                        SizedBox(height: 24),
-                        SectionHeader(
-                          title: AppLocalizations.of(context)!.completedWorks,
-                          action: AppLocalizations.of(context)!.filter,
-                        ),
-                        const SizedBox(height: 12),
-                        _SubmissionsList(doc: selectedDoc),
-                      ],
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification scrollInfo) {
+            if (_selectedId == null &&
+                scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+              _loadMore();
+            }
+            return false;
+          },
+          child: SizedBox.expand(
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: _assignmentsStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final docs = snapshot.data?.docs ?? [];
+                if (docs.isEmpty) {
+                  return _NoAssignmentsState(
+                    onCreate: () => _createAssignment(context),
+                  );
+                }
+  
+                if (_selectedId == null) {
+                  return _AssignmentSummaryView(
+                    docs: docs,
+                    onSelect: (id) => setState(() => _selectedId = id),
+                    onCreate: () => _createAssignment(context),
+                  );
+                }
+  
+                QueryDocumentSnapshot<Map<String, dynamic>>? selectedDoc;
+                try {
+                  selectedDoc = docs.firstWhere((d) => d.id == _selectedId);
+                } catch (_) {
+                  selectedDoc = docs.first;
+                }
+  
+                return Column(
+                  children: [
+                    _HomeworkTopBar(
+                      classId: widget.classId,
+                      className: widget.className,
+                      title: selectedDoc.data()['title'] ?? '',
+                      doc: selectedDoc,
+                      onBack: () => setState(() => _selectedId = null),
+                      onEdit: (doc) => _editAssignment(context, doc),
+                      onDelete: (doc) => _confirmDelete(context, doc),
                     ),
-                  ),
-                ],
-              );
-            },
+                    Expanded(
+                      child: ListView(
+                        padding: EdgeInsets.fromLTRB(32, 24, 32, 40),
+                        children: [
+                          _HomeworkHeader(doc: selectedDoc),
+                          SizedBox(height: 24),
+                          SectionHeader(
+                            title: AppLocalizations.of(context)!.completedWorks,
+                            action: AppLocalizations.of(context)!.filter,
+                          ),
+                          const SizedBox(height: 12),
+                          _SubmissionsList(doc: selectedDoc),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -442,51 +462,26 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    AppLocalizations.of(context)!.quests,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  Text(
-                    '${widget.docs.length} заданий всего',
-                    style: const TextStyle(
-                      color: SchoolColors.muted,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+        PageHeader(
+          title: AppLocalizations.of(context)!.quests,
+          subtitle: AppLocalizations.of(context)!
+              .totalAssignmentsCount(widget.docs.length),
+          trailing: FilledButton.icon(
+            onPressed: widget.onCreate,
+            style: FilledButton.styleFrom(
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
               ),
-              FilledButton.icon(
-                onPressed: widget.onCreate,
-                style: FilledButton.styleFrom(
-                  minimumSize: Size.zero,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: Icon(Icons.add, size: 18),
-                label: Text(AppLocalizations.of(context)!.createATask),
-              ),
-            ],
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: Text(AppLocalizations.of(context)!.createATask),
           ),
+          padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
         ),
-        SizedBox(height: 24),
+        const SizedBox(height: 24),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 32),
           child: Wrap(

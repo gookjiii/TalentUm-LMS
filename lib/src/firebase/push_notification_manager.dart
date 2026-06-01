@@ -57,7 +57,16 @@ class PushNotificationManager {
               'updatedAt': FieldValue.serverTimestamp(),
               'active': true,
             });
-            debugPrint('FCM device token registered in Firestore: $token');
+
+            // Sync with single fcmToken field on the user doc for Cloud Functions compatibility
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(userId)
+                .update({
+              'fcmToken': token,
+            });
+
+            debugPrint('FCM device token registered in Firestore successfully');
           }
         } else {
           debugPrint('FCM Notification Permissions Denied');
@@ -88,6 +97,21 @@ class PushNotificationManager {
             .collection('tokens')
             .doc(token)
             .delete();
+
+        // Clear fcmToken field if it matches the current token
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+        if (doc.exists && doc.data()?['fcmToken'] == token) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userId)
+              .update({
+            'fcmToken': FieldValue.delete(),
+          });
+        }
+
         debugPrint('FCM token deleted from Firestore successfully');
       }
     } catch (e) {
@@ -121,6 +145,15 @@ class PushNotificationManager {
           'updatedAt': FieldValue.serverTimestamp(),
           'active': true,
         });
+
+        // Sync with single fcmToken field on the user doc for Cloud Functions compatibility
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .update({
+          'fcmToken': newToken,
+        });
+
         debugPrint('FCM token refreshed and saved successfully');
       } catch (e) {
         debugPrint('FCM token refresh persistence error: $e');

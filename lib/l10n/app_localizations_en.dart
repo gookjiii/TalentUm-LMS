@@ -199,6 +199,102 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get more => 'More';
+
+  @override
+  String get additionalSections => 'Additional sections';
+
+  @override
+  String get loadingProfile => 'Loading profile...';
+
+  @override
+  String get authCheck => 'Checking authorization...';
+
+  @override
+  String get technicalError => 'Technical error';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get viewErrorDetails => 'View error details';
+
+  @override
+  String get loginWithMainAccount => 'Log in with main account';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get joiningClass => 'Joining class...';
+
+  @override
+  String get viewFullError => 'View full error';
+
+  @override
+  String get unableToJoinServerErr => 'Unable to join: Server responded with error.';
+
+  @override
+  String get errorJoiningClass => 'An error occurred while joining the class.';
+
+  @override
+  String get invalidLinkOrExpired => 'Invalid link or invite code has expired.';
+
+  @override
+  String get classNotExists => 'The class does not exist.';
+
+  @override
+  String get networkError => 'Network error. Please check your internet connection.';
+
+  @override
+  String get joiningWait => 'Joining...';
+
+  @override
+  String get enterClassroom => 'Enter classroom';
+
+  @override
+  String totalAssignmentsCount(int count) {
+    return '$count assignments total';
+  }
+
+  @override
+  String roomWithNumber(String number) {
+    return 'Room $number';
+  }
+
+  @override
+  String get editedPhotoAttached => 'Edited photo attached to message';
+
+  @override
+  String get avatarUpdated => 'Avatar updated successfully';
+
+  @override
+  String errorPrefix(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String errorClearingChat(Object error) {
+    return 'Error clearing chat: $error';
+  }
+
+  @override
+  String errorDeletingClass(Object error) {
+    return 'Error deleting class: $error';
+  }
+
+  @override
+  String get reload => 'Reload';
+
+  @override
+  String get loadingSystemSettings => 'Loading system settings...';
+
+  @override
+  String uploadError(String error) {
+    return 'Upload error: $error';
+  }
+
+  @override
   String get searchMessages => 'Search messages';
 
   @override
@@ -441,9 +537,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveChanges => 'Save Changes';
-
-  @override
-  String get avatarUpdated => 'Avatar updated successfully';
 
   @override
   String failedToUploadAvatar(Object error) {
@@ -1950,9 +2043,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showThisQrCodeTo => 'Show this QR code to your students or send them a direct link.';
 
   @override
-  String get close => 'Close';
-
-  @override
   String get linkCopied => 'Link copied!';
 
   @override
@@ -2134,4 +2224,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get classText => 'Class';
+
+  @override
+  String get cloudStorageManagement => 'Cloud Storage Management';
+
+  @override
+  String get loadingCloudStorageStats => 'Loading cloud storage statistics...';
+
+  @override
+  String get googleDriveSubtitle => 'Stores library resources and large lessons';
+
+  @override
+  String get cloudinarySubtitle => 'Stores images, short videos, and feed posts';
+
+  @override
+  String get firebaseStorageSubtitle => 'Stores auxiliary files, avatars, and configuration images';
+
+  @override
+  String get cleaningUpStorage => 'Cleaning up storage...';
+
+  @override
+  String get cleanUpRedundantData => 'Clean up redundant data on system';
+
+  @override
+  String get confirmCleanup => 'Confirm Cleanup';
+
+  @override
+  String get confirmCleanupDesc => 'The system will scan and clean up orphan files (garbage files) that have been deleted in the app but still exist on cloud services (Google Drive, Cloudinary, Firebase). This process may take 1-2 minutes.';
+
+  @override
+  String get startCleanup => 'Start Cleanup';
+
+  @override
+  String cleanupSuccess(String count, String size) {
+    return 'Cleanup successful! Deleted $count redundant files, freed up $size.';
+  }
+
+  @override
+  String cleanupFailed(String error) {
+    return 'Cleanup failed: $error';
+  }
+
+  @override
+  String get searchTasks => 'Search tasks';
+
+  @override
+  String get personalizationAndAccountManagement => 'Personalization and account management';
+
+  @override
+  String cabinetWithNumber(String number) {
+    return 'Room $number';
+  }
 }

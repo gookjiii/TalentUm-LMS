@@ -24,6 +24,7 @@ class _TeacherFeedState extends State<TeacherFeed> {
   final _composerKey = GlobalKey();
   Stream<QuerySnapshot<Map<String, dynamic>>>? _postsStream;
   bool _initialized = false;
+  int _limit = 20;
 
   @override
   void didChangeDependencies() {
@@ -38,181 +39,154 @@ class _TeacherFeedState extends State<TeacherFeed> {
   void didUpdateWidget(covariant TeacherFeed oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.classId != widget.classId) {
+      _limit = 20;
       _initStream();
     }
   }
 
   void _initStream() {
     final repo = AppScope.of(context).repository;
-    setState(() => _postsStream = repo.postsForClass(widget.classId));
+    setState(() => _postsStream = repo.postsForClass(widget.classId, limit: _limit));
+  }
+
+  void _loadMore() {
+    setState(() {
+      _limit += 20;
+      _initStream();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 56, 24, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isMobileHeader = constraints.maxWidth < 500;
-                    final headerTitle = Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppLocalizations.of(context)!.ribbon,
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        Text(
-                          AppLocalizations.of(context)!.declarationsForYourClasses,
-                          style: TextStyle(
-                            color: SchoolColors.muted,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification scrollInfo) {
+        if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+          _loadMore();
+        }
+        return false;
+      },
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PageHeader(
+              title: AppLocalizations.of(context)!.ribbon,
+              subtitle: AppLocalizations.of(context)!.declarationsForYourClasses,
+              trailing: FilledButton.icon(
+                onPressed: () {
+                  if (_composerKey.currentContext != null) {
+                    Scrollable.ensureVisible(
+                      _composerKey.currentContext!,
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeInOut,
                     );
-
-                    final newPostButton = FilledButton.icon(
-                      onPressed: () {
-                        if (_composerKey.currentContext != null) {
-                          Scrollable.ensureVisible(
-                            _composerKey.currentContext!,
-                            duration: const Duration(milliseconds: 500),
-                            curve: Curves.easeInOut,
-                          );
-                        }
-                      },
-                      style: FilledButton.styleFrom(
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                      icon: Icon(Icons.add, size: 18),
-                      label: Text(AppLocalizations.of(context)!.newPost),
-                    );
-
-                    if (isMobileHeader) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          headerTitle,
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: newPostButton,
-                          ),
-                        ],
-                      );
-                    }
-
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(child: headerTitle),
-                        const SizedBox(width: 16),
-                        newPostButton,
-                      ],
-                    );
-                  },
-                ),
-                SizedBox(height: 24),
-                TextField(
-                  onChanged: (v) =>
-                      setState(() => _searchQuery = v.trim().toLowerCase()),
-                  decoration: InputDecoration(
-                    hintText: AppLocalizations.of(context)!.searchByAdvertisements,
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    filled: true,
-                    fillColor: Theme.of(context).brightness == Brightness.dark
-                        ? SchoolColors.darkSurface
-                        : Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
                   ),
                 ),
-                const SizedBox(height: 24),
-                Container(
-                  key: _composerKey,
-                  child: _InlineComposer(
-                    classes: widget.classes,
-                    initialClassId: widget.classId,
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: Text(AppLocalizations.of(context)!.newPost),
+              ),
             ),
           ),
-        ),
-        StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: _postsStream,
-          builder: (context, snapshot) {
-            var posts = snapshot.data?.docs ?? [];
-
-            if (_searchQuery.isNotEmpty) {
-              posts = posts.where((doc) {
-                final content =
-                    doc.data()['content']?.toString().toLowerCase() ?? '';
-                return content.contains(_searchQuery);
-              }).toList();
-            }
-
-            if (posts.isEmpty &&
-                snapshot.connectionState != ConnectionState.waiting) {
-              return SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 80),
-                  child: Center(
-                    child: Text(
-                      AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
-                      style: TextStyle(color: SchoolColors.muted),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  TextField(
+                    onChanged: (v) =>
+                        setState(() => _searchQuery = v.trim().toLowerCase()),
+                    decoration: InputDecoration(
+                      hintText:
+                          AppLocalizations.of(context)!.searchByAdvertisements,
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      filled: true,
+                      fillColor: Theme.of(context).brightness == Brightness.dark
+                          ? SchoolColors.darkSurface
+                          : Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  Container(
+                    key: _composerKey,
+                    child: _InlineComposer(
+                      classes: widget.classes,
+                      initialClassId: widget.classId,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: _postsStream,
+            builder: (context, snapshot) {
+              var posts = snapshot.data?.docs ?? [];
+  
+              if (_searchQuery.isNotEmpty) {
+                posts = posts.where((doc) {
+                  final content =
+                      doc.data()['content']?.toString().toLowerCase() ?? '';
+                  return content.contains(_searchQuery);
+                }).toList();
+              }
+  
+              if (posts.isEmpty &&
+                  snapshot.connectionState != ConnectionState.waiting) {
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 80),
+                    child: Center(
+                      child: Text(
+                        AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
+                        style: TextStyle(color: SchoolColors.muted),
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final doc = posts[index];
+                    final data = doc.data();
+                    final cId = data['classId']?.toString();
+                    final classData = widget.classes.firstWhere(
+                      (c) => c['id'] == cId,
+                      orElse: () =>
+                          widget.classes.isNotEmpty ? widget.classes.first : {},
+                    );
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: PostCard(
+                        doc: doc,
+                        classData: classData,
+                        canManage: true,
+                      ),
+                    );
+                  }, childCount: posts.length),
                 ),
               );
-            }
-            return SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final doc = posts[index];
-                  final data = doc.data();
-                  final cId = data['classId']?.toString();
-                  final classData = widget.classes.firstWhere(
-                    (c) => c['id'] == cId,
-                    orElse: () =>
-                        widget.classes.isNotEmpty ? widget.classes.first : {},
-                  );
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: PostCard(
-                      doc: doc,
-                      classData: classData,
-                      canManage: true,
-                    ),
-                  );
-                }, childCount: posts.length),
-              ),
-            );
-          },
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 80)),
-      ],
+            },
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+        ],
+      ),
     );
   }
 }

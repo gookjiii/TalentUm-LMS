@@ -57,7 +57,7 @@ mixin SchoolRepositoryChat {
       }
     }
 
-    final provider = CloudinaryStorageProvider.fromEnvironmentOrFirebase();
+    final provider = CloudinaryStorageProvider.chatProvider();
     final result = await provider.uploadFile(path, fileToUpload);
     return {'url': result['url'], 'path': path};
   }
@@ -79,7 +79,7 @@ mixin SchoolRepositoryChat {
       debugPrint('Web image compression error: $e');
     }
 
-    final provider = CloudinaryStorageProvider.fromEnvironmentOrFirebase();
+    final provider = CloudinaryStorageProvider.chatProvider();
     final result = await provider.uploadFileWeb(path, finalBytes);
     return {'url': result['url'], 'path': path};
   }

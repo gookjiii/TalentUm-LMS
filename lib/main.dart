@@ -149,7 +149,7 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
         future: _settingsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Directionality(
+            return Directionality(
               textDirection: TextDirection.ltr,
               child: ColoredBox(
                 color: Colors.white,
@@ -157,9 +157,16 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Загрузка настроек системы...', style: TextStyle(color: Colors.black, fontSize: 14, decoration: TextDecoration.none)),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(
+                        AppLocalizations.of(context)?.loadingSystemSettings ?? 'Загрузка настроек...',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 14,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -198,7 +205,7 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
               // Force a directionality and default text style to prevent crashes in sub-widgets
               return Directionality(
                 textDirection: TextDirection.ltr,
-                child: child!,
+                child: child ?? const SizedBox.shrink(),
               );
             },
             home: AuthGate(repository: repository, appState: appState),
@@ -316,7 +323,7 @@ class _AppErrorWidget extends StatelessWidget {
                     child: FilledButton.icon(
                       onPressed: reloadApp,
                       icon: const Icon(Icons.refresh_rounded),
-                      label: const Text('Перезагрузить'),
+                      label: Text(AppLocalizations.of(context)?.reload ?? 'Перезагрузить'),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size(200, 52),
                       ),
@@ -426,14 +433,14 @@ class _AuthGateState extends State<AuthGate> {
         guestParams != null && !widget.appState.joinedClassRecently;
 
     if (_processingInvite) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Đang tham gia lớp học...'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(AppLocalizations.of(context)!.joiningClass),
             ],
           ),
         ),
@@ -467,14 +474,14 @@ class _AuthGateState extends State<AuthGate> {
               debugPrint('Auth stream timeout');
             }
           });
-          return const Scaffold(
+          return Scaffold(
             body: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Проверка авторизации...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(AppLocalizations.of(context)!.authCheck),
                 ],
               ),
             ),
@@ -539,14 +546,14 @@ class _AuthGateState extends State<AuthGate> {
 
             if (!profileSnap.hasData &&
                 profileSnap.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
+              return Scaffold(
                 body: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Загрузка профиля...'),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(AppLocalizations.of(context)!.loadingProfile),
                     ],
                   ),
                 ),
@@ -586,14 +593,14 @@ class _AuthGateState extends State<AuthGate> {
                   if (mounted) setState(() => _processingInvite = false);
                 }
               });
-              return const Scaffold(
+              return Scaffold(
                 body: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Đang tham gia lớp học...'),
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(AppLocalizations.of(context)!.joiningClass),
                     ],
                   ),
                 ),
@@ -602,6 +609,7 @@ class _AuthGateState extends State<AuthGate> {
 
             // Normal flow: go to dashboard based on role
             WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
               if (widget.appState.role != role) {
                 widget.appState.setRole(role);
               }

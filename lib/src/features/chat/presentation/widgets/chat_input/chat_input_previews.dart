@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:school_world/src/features/chat/domain/models/chat_attachment.dart';
 import 'package:school_world/src/theme.dart';
@@ -9,9 +8,11 @@ class PendingAttachmentPreview extends StatelessWidget {
     super.key,
     required this.attachment,
     required this.onCancel,
+    this.onEdit,
   });
   final PickedChatAttachment attachment;
   final VoidCallback onCancel;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +52,16 @@ class PendingAttachmentPreview extends StatelessWidget {
               ],
             ),
           ),
+          if (attachment.type == AttachmentType.image && onEdit != null) ...[
+            IconButton(
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_rounded, size: 18),
+              color: SchoolColors.primary,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            const SizedBox(width: 12),
+          ],
           IconButton(
             onPressed: onCancel,
             icon: const Icon(Icons.close_rounded, size: 18),
@@ -85,7 +96,7 @@ class _PreviewThumb extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: (attachment.type == AttachmentType.image)
-          ? (kIsWeb && attachment.file.bytes != null
+          ? (attachment.file.bytes != null
                 ? Image.memory(attachment.file.bytes!, fit: BoxFit.cover)
                 : (attachment.file.path != null
                       ? Image.file(

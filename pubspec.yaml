@@ -125,6 +125,7 @@ dev_dependencies:
   very_good_analysis: ^6.0.0
   fake_cloud_firestore: ^3.1.0
   firebase_auth_mocks: ^0.14.2
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

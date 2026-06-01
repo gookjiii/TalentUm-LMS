@@ -1,0 +1,24 @@
+{
+  "name": "gdrive-vercel-proxy",
+  "version": "1.0.0",
+  "description": "Vercel serverless Google Drive resumable upload proxy",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "vercel-build": "echo 'No custom build step needed for Vercel'"
+  },
+  "dependencies": {
+    "cloudinary": "^2.10.0",
+    "dotenv": "^17.4.2",
+    "firebase-admin": "^12.0.0",
+    "google-auth-library": "^9.0.0",
+    "googleapis": "^140.0.0",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.11.0",
+    "@vercel/node": "^3.0.0",
+    "typescript": "^5.0.0"
+  }
+}

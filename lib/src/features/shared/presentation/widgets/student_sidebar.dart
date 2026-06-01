@@ -2,6 +2,7 @@ import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
+import 'package:school_world/src/screens/student_shell.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 
@@ -22,6 +23,7 @@ class StudentSidebar extends StatelessWidget {
     required this.classes,
     required this.activeClassId,
     required this.onSelectClass,
+    this.onProfileTap,
   });
 
   final bool extended;
@@ -31,6 +33,7 @@ class StudentSidebar extends StatelessWidget {
   final List<Map<String, dynamic>> classes;
   final String? activeClassId;
   final ValueChanged<String> onSelectClass;
+  final VoidCallback? onProfileTap;
 
   @override
   Widget build(BuildContext context) {
@@ -74,17 +77,42 @@ class StudentSidebar extends StatelessWidget {
           if (extended) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  AppLocalizations.of(context)!.myClasses,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context)!.myClasses,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
                   ),
-                ),
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: IconButton(
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (_) => JoinClassDialog(
+                          repository: AppScope.of(context).repository,
+                        ),
+                      ),
+                      icon: const Icon(Icons.add_rounded, size: 14),
+                      color: Colors.white.withValues(alpha: 0.4),
+                      padding: EdgeInsets.zero,
+                      tooltip: AppLocalizations.of(context)!.joinAClass,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.08),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -111,7 +139,11 @@ class StudentSidebar extends StatelessWidget {
             const Spacer(),
 
           _SidebarDivider(),
-          _UserCard(extended: extended, onSignOut: repo.signOut),
+          _UserCard(
+            extended: extended,
+            onSignOut: repo.signOut,
+            onTap: onProfileTap,
+          ),
         ],
       ),
     );
@@ -406,88 +438,104 @@ class _SidebarClassItemState extends State<_SidebarClassItem> {
 }
 
 class _UserCard extends StatelessWidget {
-  const _UserCard({required this.extended, required this.onSignOut});
+  const _UserCard({
+    required this.extended,
+    required this.onSignOut,
+    this.onTap,
+  });
+
   final bool extended;
   final VoidCallback onSignOut;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final repo = AppScope.of(context).repository;
+    final l10n = AppLocalizations.of(context)!;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: repo.userDocStream(),
       builder: (context, snapshot) {
         final data = snapshot.data?.data() ?? {};
-        final fallbackName = repo.auth.currentUser?.displayName ?? AppLocalizations.of(context)!.student;
-        final name = (data['name'] as String?)?.isNotEmpty == true
-            ? data['name'] as String
-            : fallbackName;
+        final fallbackName =
+            repo.auth.currentUser?.displayName ?? l10n.student;
+        final name =
+            (data['name'] as String?)?.isNotEmpty == true
+                ? data['name'] as String
+                : fallbackName;
         final avatarUrl = data['avatarUrl'] as String?;
 
         return Padding(
-          padding: const EdgeInsets.all(12),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: EdgeInsets.all(extended ? 12 : 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.07),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: extended
-                  ? MainAxisAlignment.start
-                  : MainAxisAlignment.center,
-              children: [
-                SchoolAvatar(
-                  name: name,
-                  avatarUrl: avatarUrl,
-                  radius: extended ? 18 : 15,
-                  showBorder: true,
+          padding: EdgeInsets.symmetric(
+            horizontal: extended ? 12 : 4,
+            vertical: 12,
+          ),
+          child: GestureDetector(
+            onTap: onTap,
+            behavior: HitTestBehavior.opaque,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: EdgeInsets.all(extended ? 12 : 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.07),
+                  width: 1,
                 ),
-                if (extended) ...[
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          AppLocalizations.of(context)!.student,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.45),
-                          ),
-                        ),
-                      ],
-                    ),
+              ),
+              child: Row(
+                mainAxisAlignment:
+                    extended ? MainAxisAlignment.start : MainAxisAlignment.center,
+                children: [
+                  SchoolAvatar(
+                    name: name,
+                    avatarUrl: avatarUrl,
+                    radius: extended ? 18 : 15,
+                    showBorder: true,
                   ),
-                  IconButton(
-                    onPressed: onSignOut,
-                    icon: const Icon(
-                      Icons.logout_rounded,
-                      size: 17,
-                      color: SchoolColors.red,
+                  if (extended) ...[
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            l10n.student,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white.withValues(alpha: 0.45),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    tooltip: AppLocalizations.of(context)!.logOut,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  ),
+                    IconButton(
+                      onPressed: onSignOut,
+                      icon: const Icon(
+                        Icons.logout_rounded,
+                        size: 17,
+                        color: SchoolColors.red,
+                      ),
+                      tooltip: l10n.logOut,
+                      padding: EdgeInsets.zero,
+                      constraints:
+                          const BoxConstraints(minWidth: 32, minHeight: 32),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         );

@@ -27,7 +27,7 @@ class HomeworkScreen extends StatelessWidget {
           : AppBar(
               title: Text(l10n.homework),
               actions: [
-                if (appState.role == 'teacher')
+                if (appState.isTeacher)
                   Container(
                     margin: const EdgeInsets.only(right: 12),
                     decoration: BoxDecoration(

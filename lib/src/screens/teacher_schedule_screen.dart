@@ -15,10 +15,12 @@ class TeacherScheduleScreen extends ConsumerStatefulWidget {
     super.key,
     this.readOnly = false,
     this.studentClassIds,
+    this.studentClasses,
   });
 
   final bool readOnly;
   final List<String>? studentClassIds;
+  final List<Map<String, dynamic>>? studentClasses;
 
 
   @override
@@ -91,96 +93,217 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
             ),
             if (appState.isTeacher) ...[
               const SizedBox(width: 16),
-              classesAsync.when(
-                data: (classes) {
-                  final classIds = classes.map((c) => c['id'] as String).toList();
-                  if (_selectedClassId != null && !classIds.contains(_selectedClassId)) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) setState(() => _selectedClassId = null);
-                    });
-                  }
-                  final safeSelectedId = classIds.contains(_selectedClassId) ? _selectedClassId : null;
+              Flexible(
+                child: classesAsync.when(
+                  data: (classes) {
+                    final classIds = classes.map((c) => c['id'] as String).toList();
+                    if (_selectedClassId != null && !classIds.contains(_selectedClassId)) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) setState(() => _selectedClassId = null);
+                      });
+                    }
+                    final safeSelectedId = classIds.contains(_selectedClassId) ? _selectedClassId : null;
 
-                  return Container(
-                    height: 38,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? SchoolColors.darkSurfaceElevated
-                          : Colors.grey.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
+                    return Container(
+                      height: 38,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
                         color: isDark
-                            ? SchoolColors.darkBorder
-                            : Colors.grey.withValues(alpha: 0.2),
+                            ? SchoolColors.darkSurfaceElevated
+                            : Colors.grey.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDark
+                              ? SchoolColors.darkBorder
+                              : Colors.grey.withValues(alpha: 0.2),
+                        ),
                       ),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String?>(
-                        value: safeSelectedId,
-                        dropdownColor: isDark ? SchoolColors.darkSurface : null,
-                        hint: Text(
-                          AppLocalizations.of(context)!.mySchedule,
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String?>(
+                          value: safeSelectedId,
+                          isExpanded: true,
+                          dropdownColor: isDark ? SchoolColors.darkSurface : null,
+                          hint: Text(
+                            AppLocalizations.of(context)!.mySchedule,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           style: TextStyle(
+                            color: isDark ? SchoolColors.darkText : SchoolColors.text,
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? SchoolColors.darkText : SchoolColors.text,
                           ),
-                        ),
-                        style: TextStyle(
-                          color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        items: [
-                          DropdownMenuItem<String?>(
-                            value: null,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.person_outline_rounded,
-                                  size: 16,
-                                  color: SchoolColors.primary,
-                                ),
-                                SizedBox(width: 8),
-                                Text(AppLocalizations.of(context)!.mySchedule),
-                              ],
-                            ),
-                          ),
-                          for (final c in classes)
+                          items: [
                             DropdownMenuItem<String?>(
-                              value: c['id'] as String,
+                              value: null,
                               child: Row(
                                 children: [
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: parseHexColor(c['coverColor']),
-                                      shape: BoxShape.circle,
-                                    ),
+                                  Icon(
+                                    Icons.person_outline_rounded,
+                                    size: 16,
+                                    color: SchoolColors.primary,
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(c['name']?.toString() ?? AppLocalizations.of(context)!.classText),
+                                  Expanded(
+                                    child: Text(
+                                      AppLocalizations.of(context)!.mySchedule,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
-                        ],
-                        onChanged: (val) {
-                          setState(() {
-                            _selectedClassId = val;
-                          });
-                        },
+                            for (final c in classes)
+                              DropdownMenuItem<String?>(
+                                value: c['id'] as String,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: parseHexColor(c['coverColor']),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        c['name']?.toString() ?? AppLocalizations.of(context)!.classText,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedClassId = val;
+                            });
+                          },
+                        ),
                       ),
-                    ),
-                  );
-                },
-                loading: () => const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                    );
+                  },
+                  loading: () => const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  error: (_, __) => const SizedBox.shrink(),
                 ),
-                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ],
+            // Student class filter dropdown
+            if (widget.readOnly && widget.studentClasses != null && widget.studentClasses!.length > 1) ...[
+              const SizedBox(width: 16),
+              Flexible(
+                child: Builder(
+                  builder: (context) {
+                    final classes = widget.studentClasses!;
+                    final classIds = classes.map((c) => c['id'] as String).toList();
+                    final safeSelectedId = (_selectedClassId != null && classIds.contains(_selectedClassId))
+                        ? _selectedClassId
+                        : null;
+
+                    return Container(
+                      height: 38,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? SchoolColors.darkSurfaceElevated
+                            : Colors.grey.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDark
+                              ? SchoolColors.darkBorder
+                              : Colors.grey.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String?>(
+                          value: safeSelectedId,
+                          isExpanded: true,
+                          dropdownColor: isDark ? SchoolColors.darkSurface : null,
+                          hint: Text(
+                            l10n.allClasses,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          style: TextStyle(
+                            color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          items: [
+                            DropdownMenuItem<String?>(
+                              value: null,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.dashboard_rounded,
+                                    size: 16,
+                                    color: SchoolColors.primary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      l10n.allClasses,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            for (final c in classes)
+                              DropdownMenuItem<String?>(
+                                value: c['id'] as String,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: parseHexColor(c['coverColor']),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        c['name']?.toString() ?? l10n.classText,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedClassId = val;
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ],
@@ -258,6 +381,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                 hourHeight: _hourHeight,
                 schedules: schedules,
                 overrides: overrides,
+                classes: classesAsync.value ?? [],
                 onCellTap: widget.readOnly ? (date, minute) {} : (date, minute) => showScheduleEditor(
                   context,
                   prefillDate: date,
@@ -337,6 +461,7 @@ class _WeekGrid extends StatelessWidget {
     required this.hourHeight,
     required this.schedules,
     required this.overrides,
+    required this.classes,
     required this.onCellTap,
     required this.onItemTap,
   });
@@ -347,6 +472,7 @@ class _WeekGrid extends StatelessWidget {
   final double hourHeight;
   final List<ScheduleEntry> schedules;
   final List<ScheduleOverride> overrides;
+  final List<Map<String, dynamic>> classes;
   final void Function(DateTime date, int minute) onCellTap;
   final void Function(ScheduleEntry sched, DateTime date) onItemTap;
 
@@ -529,6 +655,16 @@ class _WeekGrid extends StatelessWidget {
     }
     final color = colorFromHex(it.color, SchoolColors.primary);
     final sched = _schedById[it.scheduleId];
+
+    final clsData = classes.firstWhere(
+      (c) => c['id'] == it.classId,
+      orElse: () => <String, dynamic>{},
+    );
+    final clsName = clsData['name']?.toString() ?? it.classId;
+    final clsSubject = clsData['subject']?.toString() ?? '—';
+
+    final primaryTitle = it.note?.isNotEmpty == true ? it.note! : clsSubject;
+
     return Positioned(
       top: top,
       left: 4,
@@ -552,27 +688,40 @@ class _WeekGrid extends StatelessWidget {
                 Text(
                   '${_fmt(it.startMinute)} – ${_fmt(it.endMinute)}',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: FontWeight.w800,
                     color: color,
-                    decoration: it.cancelled
-                        ? TextDecoration.lineThrough
-                        : null,
+                    decoration: it.cancelled ? TextDecoration.lineThrough : null,
                   ),
                 ),
-                if (sched != null)
+                Flexible(
+                  child: Text(
+                    primaryTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                      decoration:
+                          it.cancelled ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                ),
+                if (height > 45)
                   Flexible(
                     child: Text(
-                      sched.room ?? sched.classId,
-                      maxLines: 2,
+                      '${it.room ?? clsName}${it.room != null ? ' · $clsName' : ''}',
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                        decoration: it.cancelled
-                            ? TextDecoration.lineThrough
-                            : null,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? SchoolColors.darkTextSecondary
+                            : SchoolColors.textSecondary,
+                        decoration:
+                            it.cancelled ? TextDecoration.lineThrough : null,
                       ),
                     ),
                   ),

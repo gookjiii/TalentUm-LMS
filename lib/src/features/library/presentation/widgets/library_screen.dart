@@ -14,77 +14,109 @@ import 'package:flutter/foundation.dart';
 import 'package:school_world/src/widgets/image_viewer.dart';
 
 
-class LibraryScreen extends ConsumerWidget {
+class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key, required this.classId});
   final String classId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final materialsAsync = ref.watch(libraryMaterialsProvider(classId));
+  ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
+}
+
+class _LibraryScreenState extends ConsumerState<LibraryScreen> {
+  int _limit = 20;
+
+  @override
+  void didUpdateWidget(covariant LibraryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.classId != widget.classId) {
+      setState(() {
+        _limit = 20;
+      });
+    }
+  }
+
+  void _loadMore() {
+    setState(() {
+      _limit += 20;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final materialsAsync = ref.watch(libraryMaterialsProvider((widget.classId, _limit)));
     final appState = ref.watch(schoolAppStateProvider);
     final repo = ref.watch(repositoryProvider);
     final isTeacher = appState.isTeacher;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: repo.firestore.collection('classes').doc(classId).snapshots(),
+      stream: repo.firestore.collection('classes').doc(widget.classId).snapshots(),
       builder: (context, classSnap) {
         final isLeadOfClass = appState.isLeadTeacher;
 
         return Scaffold(
           backgroundColor: Colors.transparent,
-          body: CustomScrollView(
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.all(24),
-                sliver: SliverToBoxAdapter(
-                  child: SectionHeader(
+          body: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification scrollInfo) {
+              if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+                _loadMore();
+              }
+              return false;
+            },
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: PageHeader(
                     title: AppLocalizations.of(context)!.library,
-                    action: isTeacher ? AppLocalizations.of(context)!.add : null,
-                    onActionTap: isTeacher
-                        ? () => _showUploadDialog(context, ref)
+                    subtitle: AppLocalizations.of(context)!.studyMaterialsAndLecturesWill,
+                    trailing: isTeacher
+                        ? IconButton.filledTonal(
+                            onPressed: () => _showUploadDialog(context, ref),
+                            icon: const Icon(Icons.add_rounded),
+                            tooltip: AppLocalizations.of(context)!.add,
+                          )
                         : null,
                   ),
                 ),
-              ),
-              materialsAsync.when(
-                data: (docs) {
-                  if (docs.isEmpty) {
-                    return SliverFillRemaining(
-                      child: EmptyState(
-                        icon: Icons.library_books_outlined,
-                        title: AppLocalizations.of(context)!.theLibraryIsEmpty,
-                        subtitle:
-                            AppLocalizations.of(context)!.studyMaterialsAndLecturesWill,
+                materialsAsync.when(
+                  data: (docs) {
+                    if (docs.isEmpty) {
+                      return SliverFillRemaining(
+                        child: EmptyState(
+                          icon: Icons.library_books_outlined,
+                          title: AppLocalizations.of(context)!.theLibraryIsEmpty,
+                          subtitle:
+                              AppLocalizations.of(context)!.studyMaterialsAndLecturesWill,
+                        ),
+                      );
+                    }
+  
+                    return SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final data = docs[index].data();
+                          final id = docs[index].id;
+                          return _MaterialTile(
+                            id: id,
+                            title: data['title'] ?? AppLocalizations.of(context)!.unknownKey7,
+                            description: data['description'],
+                            fileUrl: data['fileUrl'] ?? '',
+                            fileName: data['fileName'],
+                            canDelete: isLeadOfClass,
+                            onDelete: () => _deleteMaterial(context, ref, id),
+                          );
+                        }, childCount: docs.length),
                       ),
                     );
-                  }
-
-                  return SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final data = docs[index].data();
-                        final id = docs[index].id;
-                        return _MaterialTile(
-                          id: id,
-                          title: data['title'] ?? AppLocalizations.of(context)!.unknownKey7,
-                          description: data['description'],
-                          fileUrl: data['fileUrl'] ?? '',
-                          fileName: data['fileName'],
-                          canDelete: isLeadOfClass,
-                          onDelete: () => _deleteMaterial(context, ref, id),
-                        );
-                      }, childCount: docs.length),
-                    ),
-                  );
-                },
-                loading: () => const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
+                  },
+                  loading: () => const SliverFillRemaining(
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (err, stack) => SliverFillRemaining(
+                      child: Center(child: Text('Ошибка: $err'))),
                 ),
-                error: (err, stack) => SliverFillRemaining(
-                    child: Center(child: Text('Ошибка: $err'))),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -94,7 +126,7 @@ class LibraryScreen extends ConsumerWidget {
   void _showUploadDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => _UploadMaterialDialog(classId: classId),
+      builder: (context) => _UploadMaterialDialog(classId: widget.classId),
     );
   }
 
@@ -151,13 +183,14 @@ class _MaterialTile extends StatelessWidget {
     final ext = (fileName ?? title).split('.').last.toLowerCase();
     final isImage = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'].contains(ext);
     final isDoc = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv'].contains(ext);
+    final isVideo = ['mp4', 'mov', 'webm', 'avi', 'mkv'].contains(ext);
 
     if (isImage) {
       showDialog(
         context: context,
         builder: (_) => ImageViewer(imageUrl: fileUrl),
       );
-    } else if (isDoc) {
+    } else if (isDoc || isVideo) {
       showDialog(
         context: context,
         builder: (_) => DocumentPreviewDialog(
@@ -353,6 +386,7 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
         children: [
           TextField(
             controller: _titleController,
+            onChanged: (value) => setState(() {}),
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context)!.title,
               hintText: AppLocalizations.of(context)!.forExampleLecture1Introduction,
@@ -489,7 +523,7 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
     });
 
     try {
-      final storage = ref.read(storageProvider);
+      final storage = ref.read(libraryStorageProvider);
       final repo = ref.read(repositoryProvider);
 
       final path =

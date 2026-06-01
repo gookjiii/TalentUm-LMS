@@ -1,4 +1,5 @@
 import 'package:school_world/l10n/app_localizations.dart';
+import '../utils/string_extensions.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:cached_network_image/cached_network_image.dart';
@@ -94,6 +95,7 @@ class _StudentNameState extends State<StudentName> {
 // ─────────────────────────────────────────────────────────────────
 // SCHOOL LOGO
 // ─────────────────────────────────────────────────────────────────
+
 class SchoolLogo extends StatelessWidget {
   const SchoolLogo({super.key, this.size = 76});
 
@@ -112,11 +114,14 @@ class SchoolLogo extends StatelessWidget {
               : null;
 
           if (logoUrl != null && logoUrl.isNotEmpty) {
+            final cacheSize = (size * 2.5).round();
             return CachedNetworkImage(
-              imageUrl: logoUrl,
+              imageUrl: logoUrl.toDirectImageUrl,
               width: size,
               height: size,
               fit: BoxFit.cover,
+              memCacheWidth: cacheSize,
+              memCacheHeight: cacheSize,
               placeholder: (context, url) => Container(
                 width: size,
                 height: size,
@@ -255,6 +260,36 @@ class GlassCard extends StatelessWidget {
             ? Colors.white.withValues(alpha: 0.04)
             : Colors.white.withValues(alpha: 0.65));
 
+    bool isPerformance = false;
+    try {
+      isPerformance = AppScope.of(context).appState.performanceMode;
+    } catch (_) {}
+
+    if (isPerformance) {
+      return Container(
+        margin: margin,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(borderRadius),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.black.withValues(alpha: 0.08),
+            width: 1,
+          ),
+        ),
+        child: Material(
+          color: color ?? (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+          borderRadius: BorderRadius.circular(borderRadius),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(borderRadius),
+            child: Padding(padding: padding, child: child),
+          ),
+        ),
+      );
+    }
+
     return Container(
       margin: margin,
       decoration: BoxDecoration(
@@ -325,10 +360,12 @@ class ClassBadge extends StatelessWidget {
       return ClipRRect(
         borderRadius: BorderRadius.circular(radius ?? size * .3),
         child: CachedNetworkImage(
-          imageUrl: avatarUrl!,
+          imageUrl: avatarUrl!.toDirectImageUrl,
           width: size,
           height: size,
           fit: BoxFit.cover,
+          memCacheWidth: (size * 2.5).round(),
+          memCacheHeight: (size * 2.5).round(),
           errorWidget: (context, url, error) => _buildInitials(),
         ),
       );
@@ -462,13 +499,16 @@ class SchoolAvatar extends HookWidget {
       CurvedAnimation(parent: rippleController, curve: Curves.easeOut),
     );
 
+    final cacheSize = (radius * 2 * 2.5).round();
     Widget avatar = resolvedAvatarUrl != null && resolvedAvatarUrl.isNotEmpty
         ? ClipOval(
             child: CachedNetworkImage(
-              imageUrl: resolvedAvatarUrl,
+              imageUrl: resolvedAvatarUrl.toDirectImageUrl,
               width: radius * 2,
               height: radius * 2,
               fit: BoxFit.cover,
+              memCacheWidth: cacheSize,
+              memCacheHeight: cacheSize,
               placeholder: (context, url) => Container(
                 color: Colors.grey.withValues(alpha: 0.1),
               ),
@@ -1513,6 +1553,75 @@ class StaggeredList extends StatelessWidget {
           child: children[index],
         );
       },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PAGE HEADER (Standardized for mobile)
+// ─────────────────────────────────────────────────────────────────
+class PageHeader extends StatelessWidget {
+  const PageHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.padding,
+    this.titleStyle,
+    this.subtitleStyle,
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final EdgeInsetsGeometry? padding;
+  final TextStyle? titleStyle;
+  final TextStyle? subtitleStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: padding ?? const EdgeInsets.fromLTRB(20, 56, 20, 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (subtitle != null) ...[
+                  Text(
+                    subtitle!,
+                    style: subtitleStyle ??
+                        const TextStyle(
+                          color: SchoolColors.muted,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+                Text(
+                  title,
+                  style: titleStyle ??
+                      TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        height: 1.1,
+                        letterSpacing: -0.5,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: 12),
+            trailing!,
+          ],
+        ],
+      ),
     );
   }
 }

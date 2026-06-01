@@ -98,6 +98,62 @@
       }
     }
   },
+  "more": "More",
+  "additionalSections": "Additional sections",
+  "loadingProfile": "Loading profile...",
+  "authCheck": "Checking authorization...",
+  "technicalError": "Technical error",
+  "close": "Close",
+  "viewErrorDetails": "View error details",
+  "loginWithMainAccount": "Log in with main account",
+  "retry": "Retry",
+  "joiningClass": "Joining class...",
+  "viewFullError": "View full error",
+  "unableToJoinServerErr": "Unable to join: Server responded with error.",
+  "errorJoiningClass": "An error occurred while joining the class.",
+  "invalidLinkOrExpired": "Invalid link or invite code has expired.",
+  "classNotExists": "The class does not exist.",
+  "networkError": "Network error. Please check your internet connection.",
+  "joiningWait": "Joining...",
+  "enterClassroom": "Enter classroom",
+  "totalAssignmentsCount": "{count} assignments total",
+  "@totalAssignmentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roomWithNumber": "Room {number}",
+  "@roomWithNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "editedPhotoAttached": "Edited photo attached to message",
+  "avatarUpdated": "Avatar updated",
+  "errorPrefix": "Error: {error}",
+  "errorClearingChat": "Error clearing chat: {error}",
+  "errorDeletingClass": "Error deleting class: {error}",
+  "@errorPrefix": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "reload": "Reload",
+  "loadingSystemSettings": "Loading system settings...",
+  "uploadError": "Upload error: {error}",
+  "@uploadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "searchMessages": "Search messages",
   "you": "You",
   "classmate": "Classmate",
@@ -792,5 +848,44 @@
   "invalidCode": "Invalid code",
   "previewNotAvailableOnThis": "Preview not available on this platform",
   "teacher1": "TEACHER",
-  "classText": "Class"
+  "classText": "Class",
+  "cloudStorageManagement": "Cloud Storage Management",
+  "loadingCloudStorageStats": "Loading cloud storage statistics...",
+  "googleDriveSubtitle": "Stores library resources and large lessons",
+  "cloudinarySubtitle": "Stores images, short videos, and feed posts",
+  "firebaseStorageSubtitle": "Stores auxiliary files, avatars, and configuration images",
+  "cleaningUpStorage": "Cleaning up storage...",
+  "cleanUpRedundantData": "Clean up redundant data on system",
+  "confirmCleanup": "Confirm Cleanup",
+  "confirmCleanupDesc": "The system will scan and clean up orphan files (garbage files) that have been deleted in the app but still exist on cloud services (Google Drive, Cloudinary, Firebase). This process may take 1-2 minutes.",
+  "startCleanup": "Start Cleanup",
+  "cleanupSuccess": "Cleanup successful! Deleted {count} redundant files, freed up {size}.",
+  "@cleanupSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "cleanupFailed": "Cleanup failed: {error}",
+  "@cleanupFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "searchTasks": "Search tasks",
+  "personalizationAndAccountManagement": "Personalization and account management",
+  "cabinetWithNumber": "Room {number}",
+  "@cabinetWithNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -94,7 +94,7 @@ class TeldriveStorageProvider implements StorageProvider {
 
     final response = await _dio.post(
       '/api/uploads/$uploadId',
-      data: Stream.fromIterable([bytes]),
+      data: bytes,
       queryParameters: {
         'fileName': fileName,
         'partNo': 1,
@@ -105,6 +105,7 @@ class TeldriveStorageProvider implements StorageProvider {
           'Content-Length': bytes.length,
           'Content-Type': 'application/octet-stream',
         },
+        responseType: ResponseType.json,
       ),
       onSendProgress: (sent, total) {
         if (onProgress != null && total > 0) {

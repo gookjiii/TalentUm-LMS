@@ -29,7 +29,7 @@ enum _FeedFilter { all, pinned, mine, liked }
 class _FeedScreenState extends State<FeedScreen> {
   _FeedFilter _filter = _FeedFilter.all;
 
-  bool get _isTeacher => widget.appState.role == 'teacher';
+  bool get _isTeacher => widget.appState.isTeacher;
 
   @override
   Widget build(BuildContext context) {

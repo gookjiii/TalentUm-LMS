@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'safe_firestore.dart';
+import 'storage_provider.dart';
 
 mixin SchoolRepositoryLibrary {
   FirebaseFirestore get firestore;
@@ -24,16 +25,32 @@ mixin SchoolRepositoryLibrary {
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> libraryMaterialsForClass(
-    String classId,
-  ) {
-    return firestore
+    String classId, {
+    int? limit,
+  }) {
+    var query = firestore
         .collection('library_materials')
         .where('classId', isEqualTo: classId)
-        .orderBy('createdAt', descending: true)
-        .safeSnapshots();
+        .orderBy('createdAt', descending: true);
+    if (limit != null) {
+      query = query.limit(limit);
+    }
+    return query.safeSnapshots();
   }
 
   Future<void> deleteLibraryMaterial(String materialId) async {
-    await firestore.collection('library_materials').doc(materialId).delete();
+    final docRef = firestore.collection('library_materials').doc(materialId);
+    final doc = await docRef.get();
+    if (doc.exists) {
+      final fileUrl = doc.data()?['fileUrl'] as String?;
+      if (fileUrl != null && fileUrl.isNotEmpty) {
+        try {
+          await CloudinaryStorageProvider.libraryProvider().deleteFile(fileUrl);
+        } catch (e) {
+          // Ignore file deletion errors to allow doc deletion
+        }
+      }
+      await docRef.delete();
+    }
   }
 }

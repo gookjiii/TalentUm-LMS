@@ -80,45 +80,19 @@ class _TeacherTodayState extends State<TeacherToday> {
             : l10n.goodEvening;
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 56, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        date,
-                        style: const TextStyle(
-                          color: SchoolColors.muted,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$greeting, $firstName 👋',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          height: 1.1,
-                          color: Theme.of(context).colorScheme.onSurface,
-                          letterSpacing: 0.0,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SchoolAvatar(
-                  name: name,
-                  avatarUrl: avatarUrl,
-                  radius: 23,
-                  onTap: widget.onProfileTap,
-                ),
-              ],
+            PageHeader(
+              title: '$greeting, $firstName 👋',
+              subtitle: date,
+              trailing: SchoolAvatar(
+                name: name,
+                avatarUrl: avatarUrl,
+                radius: 23,
+                onTap: widget.onProfileTap,
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
             _TeacherKpiRow(repo: repo, classes: widget.classes),
             const SizedBox(height: 24),
             SectionHeader(
@@ -805,6 +779,7 @@ class _TeacherTodayScheduleState extends State<_TeacherTodaySchedule> {
       subject: clsSubject,
       timeLabel: '${_fmt(it.startMinute)} – ${_fmt(it.endMinute)}',
       roomLabel: it.room,
+      note: it.note,
       color: colorFromHex(it.color, SchoolColors.primary),
       isLive: isLive,
       isDone: isDone,
@@ -840,10 +815,12 @@ class TeacherTodayClassRow extends StatefulWidget {
     required this.onAction,
     required this.repo,
     required this.classId,
+    this.note,
   });
 
   final String name, subject, timeLabel;
   final String? roomLabel;
+  final String? note;
   final Color color;
   final bool isLive, isDone, isCancelled;
   final int students;
@@ -875,6 +852,12 @@ class _TeacherTodayClassRowState extends State<TeacherTodayClassRow> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final primaryTitle = widget.subject.isNotEmpty ? widget.subject : widget.name;
+    final subtitle = widget.subject.isNotEmpty ? widget.name : '';
+    final room = widget.roomLabel?.trim();
+
     return SchoolCard(
       padding: EdgeInsets.zero,
       onTap: widget.onTap,
@@ -898,10 +881,10 @@ class _TeacherTodayClassRowState extends State<TeacherTodayClassRow> {
                 child: Row(
                   children: [
                     ClassBadge(
-                      name: widget.name,
+                      name: primaryTitle,
                       color: widget.color,
-                      size: 44,
-                      radius: 11,
+                      size: 46,
+                      radius: 12,
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -909,32 +892,81 @@ class _TeacherTodayClassRowState extends State<TeacherTodayClassRow> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${widget.timeLabel} · ${l10n.studentsCount(widget.students)}',
-                            style: const TextStyle(
+                            '${widget.timeLabel}${room != null ? ' · ${l10n.cabinetWithNumber(room)}' : ''}',
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: SchoolColors.muted,
+                              color: isDark
+                                  ? SchoolColors.darkMuted
+                                  : SchoolColors.muted,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            widget.name,
+                            primaryTitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
-                          Text(
-                            widget.subject,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: SchoolColors.muted,
-                            ),
+                          Row(
+                            children: [
+                              if (subtitle.isNotEmpty)
+                                Text(
+                                  subtitle,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? SchoolColors.darkTextSecondary
+                                        : SchoolColors.textSecondary,
+                                  ),
+                                ),
+                              if (subtitle.isNotEmpty)
+                                Text(
+                                  ' · ',
+                                  style: TextStyle(
+                                    color: SchoolColors.muted.withOpacity(0.5),
+                                  ),
+                                ),
+                              Text(
+                                l10n.studentsCount(widget.students),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark
+                                      ? SchoolColors.darkMuted
+                                      : SchoolColors.muted,
+                                ),
+                              ),
+                            ],
                           ),
+                          if (widget.note != null &&
+                              widget.note!.trim().isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: widget.color.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: widget.color.withValues(alpha: 0.15),
+                                ),
+                              ),
+                              child: Text(
+                                widget.note!.trim(),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: widget.color,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

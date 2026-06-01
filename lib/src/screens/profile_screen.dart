@@ -10,6 +10,7 @@ import 'package:school_world/l10n/app_localizations.dart';
 import '../../main.dart';
 import '../theme.dart';
 import '../widgets/school_widgets.dart';
+import '../utils/string_extensions.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -362,7 +363,7 @@ class _ProfileHeroState extends State<_ProfileHero> {
                             child: ClipOval(
                               child: widget.avatarUrl != null
                                   ? CachedNetworkImage(
-                                      imageUrl: widget.avatarUrl!,
+                                      imageUrl: widget.avatarUrl!.toDirectImageUrl,
                                       fit: BoxFit.cover,
                                       placeholder: (_, __) => Container(
                                         color: Colors.white.withValues(

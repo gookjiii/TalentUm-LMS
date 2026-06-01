@@ -1,4 +1,5 @@
 import 'package:school_world/l10n/app_localizations.dart';
+import 'package:school_world/main.dart';
 import 'dart:math' as math;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -16,6 +17,7 @@ import 'package:school_world/src/widgets/image_viewer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/src/features/chat/data/reactions_notifier.dart';
 import 'package:school_world/src/features/chat/presentation/widgets/chat_bubble/inline_video_player.dart';
+import 'package:school_world/src/utils/string_extensions.dart';
 
 class ChatBubbleBuilders {
   final FirebaseChatController? chatController;
@@ -24,6 +26,7 @@ class ChatBubbleBuilders {
   final void Function(Message, {Offset? position}) showMessageOptions;
   final void Function(Message) onReply;
   final void Function(String) openAttachment;
+  final void Function(ImageMessage)? onImageTap;
   final String? roomId;
   final Color classColor;
 
@@ -34,6 +37,7 @@ class ChatBubbleBuilders {
     required this.showMessageOptions,
     required this.onReply,
     required this.openAttachment,
+    this.onImageTap,
     required this.roomId,
     this.classColor = SchoolColors.primary,
   });
@@ -311,10 +315,16 @@ class ChatBubbleBuilders {
           Stack(
             children: [
               GestureDetector(
-                onTap: () => showDialog(
-                  context: context,
-                  builder: (_) => ImageViewer(imageUrl: message.source),
-                ),
+                onTap: () {
+                  if (onImageTap != null) {
+                    onImageTap!(message);
+                  } else {
+                    showDialog(
+                      context: context,
+                      builder: (_) => ImageViewer(imageUrl: message.source.toDirectImageUrl),
+                    );
+                  }
+                },
                 child: MouseRegion(
                   cursor: SystemMouseCursors.click,
                   child: ClipRRect(
@@ -325,9 +335,10 @@ class ChatBubbleBuilders {
                       bottomRight: Radius.circular(msgText == null ? 16 : 4),
                     ),
                     child: CachedNetworkImage(
-                      imageUrl: message.source,
+                      imageUrl: message.source.toDirectImageUrl,
                       width: imageWidth,
                       fit: BoxFit.cover,
+                      memCacheWidth: (imageWidth * 2.5).round(),
                       placeholder: (context, url) => Container(
                         width: imageWidth,
                         height: 120,
@@ -805,326 +816,254 @@ class ChatBubbleBuilders {
     final isDeleted = metadata?['isDeleted'] == true;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final maxBubbleWidth = screenWidth < 700 ? screenWidth * .72 : 520.0;
-    return _BubbleEntrance(
-      child: StatefulBuilder(
-        builder: (context, setState) {
-          double dragOffset = 0.0;
-          bool isHovered = false;
-          return MouseRegion(
-            onEnter: (_) => setState(() => isHovered = true),
-            onExit: (_) => setState(() => isHovered = false),
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onLongPressStart: isDeleted ? null : onLongPress,
-              onHorizontalDragUpdate: isDeleted
-                  ? null
-                  : (details) {
-                      setState(() {
-                        final delta = details.primaryDelta ?? 0;
-                        dragOffset += delta * 0.45;
-                        // Limit drag distance
-                        if (isSentByMe) {
-                          dragOffset = dragOffset.clamp(-80.0, 10.0);
-                        } else {
-                          dragOffset = dragOffset.clamp(-10.0, 80.0);
-                        }
-                      });
-                    },
-              onHorizontalDragEnd: isDeleted
-                  ? null
-                  : (details) {
-                      if (dragOffset.abs() >= 45) {
-                        onReply?.call();
-                        HapticFeedback.lightImpact();
-                      }
-                      setState(() => dragOffset = 0.0);
-                    },
-              child: Opacity(
-                opacity: isDeleted ? 0.6 : 1.0,
-                child: Stack(
-                  clipBehavior: Clip.none,
+
+    final performanceMode = AppScope.of(context).appState.performanceMode;
+
+    final shellContent = _SwipeToReplyWrapper(
+      isDeleted: isDeleted,
+      isSentByMe: isSentByMe,
+      classColor: classColor,
+      onLongPress: onLongPress,
+      onReply: onReply,
+      builder: (context, isHovered, dragOffset) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment:
+                isSentByMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+            children: [
+              if (!isSentByMe) ...[
+                Padding(
+                  padding: EdgeInsets.only(
+                    top: (replyText != null) ? 48 : 24,
+                  ),
+                  child: SchoolAvatar(name: authorId, userId: authorId, radius: 14),
+                ),
+                const SizedBox(width: 7),
+              ],
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: isSentByMe
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
-                    // Swipe-to-reply background icon
-                    if (dragOffset.abs() > 5 && !isDeleted)
-                      Positioned.fill(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Align(
-                            alignment: isSentByMe
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Transform.translate(
-                              offset: Offset(isSentByMe ? 60 : -60, 0),
-                              child: Transform.scale(
-                                scale: (dragOffset.abs() / 50).clamp(0.0, 1.0),
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: classColor.withOpacity(0.2),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.reply_rounded,
-                                    color: classColor,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                    if (!isSentByMe)
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          left: 4,
+                          bottom: 4,
                         ),
-                      ),
-                    AnimatedContainer(
-                      duration: Duration(
-                        milliseconds: dragOffset == 0 ? 400 : 0,
-                      ),
-                      curve: Curves.elasticOut,
-                      transform: Matrix4.translationValues(dragOffset, 0, 0),
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: isSentByMe
-                              ? MainAxisAlignment.end
-                              : MainAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (!isSentByMe) ...[
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  top: (replyText != null) ? 48 : 24,
-                                ),
-                                child: SchoolAvatar(name: authorId, userId: authorId, radius: 14),
-                              ),
-                              const SizedBox(width: 7),
-                            ],
-                            Flexible(
-                              child: Column(
-                                crossAxisAlignment: isSentByMe
-                                    ? CrossAxisAlignment.end
-                                    : CrossAxisAlignment.start,
-                                children: [
-                                  if (!isSentByMe)
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        left: 4,
-                                        bottom: 4,
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Semantics(
-                                            label: AppLocalizations.of(context)!.sender,
-                                            child: FutureBuilder<User?>(
-                                              future: resolveUser(authorId),
-                                              builder: (ctx, snap) {
-                                                final authorName =
-                                                    snap.data?.name ?? '';
-                                                return Text(
-                                                  authorName,
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: classColor,
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                          TeacherTag(userId: authorId),
-                                        ],
-                                      ),
-                                    ),
-                                  if (replyText != null)
-                                    Semantics(
-                                      label: AppLocalizations.of(context)!.replyToAMessage,
-                                      child: ReplyContext(
-                                        text: replyText,
-                                        isMe: isSentByMe,
-                                        isDeleted:
-                                            metadata?['isReplyDeleted'] == true,
-                                        onTap:
-                                            (metadata?['replyToId']
-                                                    as String?) ==
-                                                null
-                                            ? null
-                                            : () => chatController
-                                                  ?.scrollToMessage(
-                                                    metadata!['replyToId']
-                                                        as String,
-                                                  ),
-                                      ),
-                                    ),
-                                  Semantics(
-                                    container: true,
-                                    label: AppLocalizations.of(context)!.messageText,
-                                    child: LayoutBuilder(
-                                      builder: (context, constraints) {
-                                        return Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Stack(
-                                              clipBehavior: Clip.none,
-                                              children: [
-                                                AnimatedScale(
-                                                  scale: isHovered && !isDeleted
-                                                      ? 1.015
-                                                      : 1.0,
-                                                  duration: const Duration(
-                                                    milliseconds: 200,
-                                                  ),
-                                                  curve: Curves.easeOutCubic,
-                                                  child: AnimatedContainer(
-                                                    duration: const Duration(
-                                                      milliseconds: 250,
-                                                    ),
-                                                    curve: Curves.easeOutCubic,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius: BorderRadius.only(
-                                                        topLeft:
-                                                            const Radius.circular(
-                                                              18,
-                                                            ),
-                                                        topRight:
-                                                            const Radius.circular(
-                                                              18,
-                                                            ),
-                                                        bottomLeft:
-                                                            Radius.circular(
-                                                              isSentByMe
-                                                                  ? 18
-                                                                  : 2,
-                                                            ),
-                                                        bottomRight:
-                                                            Radius.circular(
-                                                              isSentByMe
-                                                                  ? 2
-                                                                  : 18,
-                                                            ),
-                                                      ),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: isSentByMe
-                                                              ? const Color(
-                                                                  0xFF2563EB,
-                                                                ).withOpacity(
-                                                                  isHovered
-                                                                      ? 0.30
-                                                                      : 0.18,
-                                                                )
-                                                              : Colors.black
-                                                                    .withOpacity(
-                                                                      isHovered
-                                                                          ? 0.08
-                                                                          : 0.04,
-                                                                    ),
-                                                          blurRadius: isHovered
-                                                              ? (isSentByMe
-                                                                    ? 18
-                                                                    : 10)
-                                                              : (isSentByMe
-                                                                    ? 10
-                                                                    : 5),
-                                                          offset: Offset(
-                                                            0,
-                                                            isHovered ? 4 : 2,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    clipBehavior:
-                                                        Clip.antiAlias,
-                                                    child: ConstrainedBox(
-                                                      constraints:
-                                                          BoxConstraints(
-                                                            maxWidth: math.max(
-                                                              40.0,
-                                                              math.min(
-                                                                maxBubbleWidth,
-                                                                constraints
-                                                                    .maxWidth,
-                                                              ),
-                                                            ),
-                                                            minWidth: math.min(
-                                                              40.0,
-                                                              constraints
-                                                                  .maxWidth,
-                                                            ),
-                                                          ),
-                                                      child: child,
-                                                    ),
-                                                  ),
-                                                ),
-                                                if (isSentByMe &&
-                                                    isHovered &&
-                                                    !isDeleted)
-                                                  Positioned(
-                                                    left: -32,
-                                                    top: 0,
-                                                    bottom: 0,
-                                                    child: IconButton(
-                                                      icon: const Icon(
-                                                        Icons.reply_rounded,
-                                                        size: 18,
-                                                        color:
-                                                            SchoolColors.muted,
-                                                      ),
-                                                      onPressed: onReply,
-                                                      padding: EdgeInsets.zero,
-                                                      constraints:
-                                                          const BoxConstraints(),
-                                                    ),
-                                                  ),
-                                                if (!isSentByMe &&
-                                                    isHovered &&
-                                                    !isDeleted)
-                                                  Positioned(
-                                                    right: -32,
-                                                    top: 0,
-                                                    bottom: 0,
-                                                    child: IconButton(
-                                                      icon: const Icon(
-                                                        Icons.reply_rounded,
-                                                        size: 18,
-                                                        color:
-                                                            SchoolColors.muted,
-                                                      ),
-                                                      onPressed: onReply,
-                                                      padding: EdgeInsets.zero,
-                                                      constraints:
-                                                          const BoxConstraints(),
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  if (!isDeleted)
-                                    _ReactionsArea(
-                                      roomId: roomId,
-                                      messageId: messageId,
-                                      myUid: myUid,
-                                      metadata: metadata,
-                                      isSentByMe: isSentByMe,
-                                    ),
-                                ],
+                            Semantics(
+                              label: AppLocalizations.of(context)!.sender,
+                              child: _SenderName(
+                                authorId: authorId,
+                                resolveUser: resolveUser,
+                                classColor: classColor,
                               ),
                             ),
-                            if (isSentByMe) const SizedBox(width: 10),
+                            TeacherTag(userId: authorId),
                           ],
                         ),
                       ),
+                    if (replyText != null)
+                      Semantics(
+                        label: AppLocalizations.of(context)!.replyToAMessage,
+                        child: ReplyContext(
+                          text: replyText,
+                          isMe: isSentByMe,
+                          isDeleted: metadata?['isReplyDeleted'] == true,
+                          onTap: (metadata?['replyToId'] as String?) == null
+                              ? null
+                              : () => chatController?.scrollToMessage(
+                                    metadata!['replyToId'] as String,
+                                  ),
+                        ),
+                      ),
+                    Semantics(
+                      container: true,
+                      label: AppLocalizations.of(context)!.messageText,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  if (performanceMode)
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: const Radius.circular(18),
+                                          topRight: const Radius.circular(18),
+                                          bottomLeft: Radius.circular(
+                                            isSentByMe ? 18 : 2,
+                                          ),
+                                          bottomRight: Radius.circular(
+                                            isSentByMe ? 2 : 18,
+                                          ),
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: isSentByMe
+                                                ? const Color(0xFF2563EB)
+                                                    .withOpacity(0.18)
+                                                : Colors.black
+                                                    .withOpacity(0.04),
+                                            blurRadius: isSentByMe ? 10 : 5,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      clipBehavior: Clip.antiAlias,
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          maxWidth: math.max(
+                                            40.0,
+                                            math.min(
+                                              maxBubbleWidth,
+                                              constraints.maxWidth,
+                                            ),
+                                          ),
+                                          minWidth: math.min(
+                                            40.0,
+                                            constraints.maxWidth,
+                                          ),
+                                        ),
+                                        child: child,
+                                      ),
+                                    )
+                                  else ...[
+                                    AnimatedScale(
+                                      scale: isHovered && !isDeleted
+                                          ? 1.015
+                                          : 1.0,
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      curve: Curves.easeOutCubic,
+                                      child: AnimatedContainer(
+                                        duration: const Duration(
+                                          milliseconds: 250,
+                                        ),
+                                        curve: Curves.easeOutCubic,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: const Radius.circular(18),
+                                            topRight: const Radius.circular(18),
+                                            bottomLeft: Radius.circular(
+                                              isSentByMe ? 18 : 2,
+                                            ),
+                                            bottomRight: Radius.circular(
+                                              isSentByMe ? 2 : 18,
+                                            ),
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: isSentByMe
+                                                  ? const Color(0xFF2563EB)
+                                                      .withOpacity(
+                                                      isHovered ? 0.30 : 0.18,
+                                                    )
+                                                  : Colors.black.withOpacity(
+                                                      isHovered ? 0.08 : 0.04,
+                                                    ),
+                                              blurRadius: isHovered
+                                                  ? (isSentByMe ? 18 : 10)
+                                                  : (isSentByMe ? 10 : 5),
+                                              offset: Offset(
+                                                0,
+                                                isHovered ? 4 : 2,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        clipBehavior: Clip.antiAlias,
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxWidth: math.max(
+                                              40.0,
+                                              math.min(
+                                                maxBubbleWidth,
+                                                constraints.maxWidth,
+                                              ),
+                                            ),
+                                            minWidth: math.min(
+                                              40.0,
+                                              constraints.maxWidth,
+                                            ),
+                                          ),
+                                          child: child,
+                                        ),
+                                      ),
+                                    ),
+                                    if (isSentByMe && isHovered && !isDeleted)
+                                      Positioned(
+                                        left: -32,
+                                        top: 0,
+                                        bottom: 0,
+                                        child: IconButton(
+                                          icon: const Icon(
+                                            Icons.reply_rounded,
+                                            size: 18,
+                                            color: SchoolColors.muted,
+                                          ),
+                                          onPressed: onReply,
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                        ),
+                                      ),
+                                    if (!isSentByMe && isHovered && !isDeleted)
+                                      Positioned(
+                                        right: -32,
+                                        top: 0,
+                                        bottom: 0,
+                                        child: IconButton(
+                                          icon: const Icon(
+                                            Icons.reply_rounded,
+                                            size: 18,
+                                            color: SchoolColors.muted,
+                                          ),
+                                          onPressed: onReply,
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                        ),
+                                      ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
+                    if (!isDeleted)
+                      _ReactionsArea(
+                        roomId: roomId,
+                        messageId: messageId,
+                        myUid: myUid,
+                        metadata: metadata,
+                        isSentByMe: isSentByMe,
+                      ),
                   ],
                 ),
               ),
-            ),
-          );
-        },
-      ),
+              if (isSentByMe) const SizedBox(width: 10),
+            ],
+          ),
+        );
+      },
     );
+
+    if (performanceMode) {
+      return shellContent;
+    } else {
+      return _BubbleEntrance(child: shellContent);
+    }
   }
 
   Widget buildHighlightedText(
@@ -1388,11 +1327,42 @@ class ChatBubbleBuilders {
       onLongPress: (details) =>
           showMessageOptions(message, position: details.globalPosition),
       onReply: () => onReply(message),
-      child: _AudioBubble(
-        url: message.source,
-        duration: Duration(milliseconds: durationMs),
-        isSentByMe: isSentByMe,
-        createdAt: _toDate(message.createdAt),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSentByMe ? null : SchoolColors.chatBubbleOther,
+          gradient: isSentByMe
+              ? const LinearGradient(
+                  colors: [
+                    SchoolColors.chatBubbleStart,
+                    SchoolColors.chatBubbleEnd,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          border: isSentByMe
+              ? null
+              : Border.all(
+                  color: SchoolColors.chatBubbleOtherBorder,
+                  width: 1,
+                ),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(20),
+            topRight: const Radius.circular(20),
+            bottomLeft: isSentByMe
+                ? const Radius.circular(20)
+                : const Radius.circular(4),
+            bottomRight: isSentByMe
+                ? const Radius.circular(4)
+                : const Radius.circular(20),
+          ),
+        ),
+        child: _AudioBubble(
+          url: message.source,
+          duration: Duration(milliseconds: durationMs),
+          isSentByMe: isSentByMe,
+          createdAt: _toDate(message.createdAt),
+        ),
       ),
     );
   }
@@ -1459,6 +1429,13 @@ class _ReactionsArea extends ConsumerWidget {
             .read(reactionsProvider(roomId!).notifier)
             .toggle(messageId: messageId, emoji: emoji, userId: myUid),
       );
+    }
+
+    final isPerformance = AppScope.of(context).appState.performanceMode;
+    if (isPerformance) {
+      return row != null
+          ? KeyedSubtree(key: const ValueKey('has'), child: row)
+          : const SizedBox.shrink();
     }
 
     // SizeTransition inside AnimatedSwitcher caused the pill to render at the
@@ -2161,3 +2138,186 @@ class _InlinePollOptionState extends State<_InlinePollOption> {
     );
   }
 }
+
+class _SwipeToReplyWrapper extends StatefulWidget {
+  const _SwipeToReplyWrapper({
+    required this.isDeleted,
+    required this.isSentByMe,
+    required this.classColor,
+    this.onLongPress,
+    this.onReply,
+    required this.builder,
+  });
+
+  final bool isDeleted;
+  final bool isSentByMe;
+  final Color classColor;
+  final void Function(LongPressStartDetails)? onLongPress;
+  final VoidCallback? onReply;
+  final Widget Function(BuildContext context, bool isHovered, double dragOffset) builder;
+
+  @override
+  State<_SwipeToReplyWrapper> createState() => _SwipeToReplyWrapperState();
+}
+
+class _SwipeToReplyWrapperState extends State<_SwipeToReplyWrapper> {
+  double _dragOffset = 0.0;
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPerformance = AppScope.of(context).appState.performanceMode;
+    if (isPerformance) {
+      return GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onLongPressStart: widget.isDeleted ? null : widget.onLongPress,
+        child: widget.builder(context, false, 0.0),
+      );
+    }
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onLongPressStart: widget.isDeleted ? null : widget.onLongPress,
+        onHorizontalDragUpdate: widget.isDeleted
+            ? null
+            : (details) {
+                setState(() {
+                  final delta = details.primaryDelta ?? 0;
+                  _dragOffset += delta * 0.45;
+                  if (widget.isSentByMe) {
+                    _dragOffset = _dragOffset.clamp(-80.0, 10.0);
+                  } else {
+                    _dragOffset = _dragOffset.clamp(-10.0, 80.0);
+                  }
+                });
+              },
+        onHorizontalDragEnd: widget.isDeleted
+            ? null
+            : (details) {
+                if (_dragOffset.abs() >= 45) {
+                  widget.onReply?.call();
+                  HapticFeedback.lightImpact();
+                }
+                setState(() => _dragOffset = 0.0);
+              },
+        child: Opacity(
+          opacity: widget.isDeleted ? 0.6 : 1.0,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              if (_dragOffset.abs() > 5 && !widget.isDeleted)
+                Positioned.fill(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Align(
+                      alignment: widget.isSentByMe
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Transform.translate(
+                        offset: Offset(widget.isSentByMe ? 60 : -60, 0),
+                        child: Transform.scale(
+                          scale: (_dragOffset.abs() / 50).clamp(0.0, 1.0),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: widget.classColor.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.reply_rounded,
+                              color: widget.classColor,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              AnimatedContainer(
+                duration: Duration(
+                  milliseconds: _dragOffset == 0 ? 400 : 0,
+                ),
+                curve: Curves.elasticOut,
+                transform: Matrix4.translationValues(_dragOffset, 0, 0),
+                child: widget.builder(context, _isHovered, _dragOffset),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SenderName extends StatefulWidget {
+  const _SenderName({
+    required this.authorId,
+    required this.resolveUser,
+    required this.classColor,
+  });
+
+  final String authorId;
+  final Future<User?> Function(String) resolveUser;
+  final Color classColor;
+
+  static final Map<String, String> _senderNamesCache = {};
+
+  @override
+  State<_SenderName> createState() => _SenderNameState();
+}
+
+class _SenderNameState extends State<_SenderName> {
+  String? _cachedName;
+
+  @override
+  void initState() {
+    super.initState();
+    _cachedName = _SenderName._senderNamesCache[widget.authorId];
+    if (_cachedName == null) {
+      _resolve();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _SenderName oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.authorId != widget.authorId) {
+      _cachedName = _SenderName._senderNamesCache[widget.authorId];
+      if (_cachedName == null) {
+        _resolve();
+      }
+    }
+  }
+
+  Future<void> _resolve() async {
+    try {
+      final user = await widget.resolveUser(widget.authorId);
+      if (user != null && mounted) {
+        final name = user.name ?? '';
+        _SenderName._senderNamesCache[widget.authorId] = name;
+        setState(() {
+          _cachedName = name;
+        });
+      }
+    } catch (_) {
+      // Keep silent
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      _cachedName ?? '',
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: widget.classColor,
+      ),
+    );
+  }
+}
+

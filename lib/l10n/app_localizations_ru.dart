@@ -199,6 +199,102 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get more => 'Ещё';
+
+  @override
+  String get additionalSections => 'Дополнительные разделы';
+
+  @override
+  String get loadingProfile => 'Загрузка профиля...';
+
+  @override
+  String get authCheck => 'Проверка авторизации...';
+
+  @override
+  String get technicalError => 'Техническая ошибка';
+
+  @override
+  String get close => 'Закрыть';
+
+  @override
+  String get viewErrorDetails => 'Показать детали ошибки';
+
+  @override
+  String get loginWithMainAccount => 'Войти через основной аккаунт';
+
+  @override
+  String get retry => 'Попробовать снова';
+
+  @override
+  String get joiningClass => 'Вступление в класс...';
+
+  @override
+  String get viewFullError => 'Посмотреть полную ошибку';
+
+  @override
+  String get unableToJoinServerErr => 'Не удалось вступить: ошибка сервера.';
+
+  @override
+  String get errorJoiningClass => 'Произошла ошибка при вступлении в класс.';
+
+  @override
+  String get invalidLinkOrExpired => 'Неверная ссылка или код приглашения истек.';
+
+  @override
+  String get classNotExists => 'Класс не существует.';
+
+  @override
+  String get networkError => 'Ошибка сети. Пожалуйста, проверьте интернет-соединение.';
+
+  @override
+  String get joiningWait => 'Вступление...';
+
+  @override
+  String get enterClassroom => 'Войти в класс';
+
+  @override
+  String totalAssignmentsCount(int count) {
+    return '$count заданий всего';
+  }
+
+  @override
+  String roomWithNumber(String number) {
+    return 'Room $number';
+  }
+
+  @override
+  String get editedPhotoAttached => 'Измененное фото прикреплено к сообщению';
+
+  @override
+  String get avatarUpdated => 'Аватар успешно обновлен';
+
+  @override
+  String errorPrefix(String error) {
+    return 'Ошибка: $error';
+  }
+
+  @override
+  String errorClearingChat(Object error) {
+    return 'Ошибка при очистке чата: $error';
+  }
+
+  @override
+  String errorDeletingClass(Object error) {
+    return 'Ошибка при удалении класса: $error';
+  }
+
+  @override
+  String get reload => 'Перезагрузить';
+
+  @override
+  String get loadingSystemSettings => 'Загрузка настроек системы...';
+
+  @override
+  String uploadError(String error) {
+    return 'Ошибка загрузки: $error';
+  }
+
+  @override
   String get searchMessages => 'Поиск сообщений';
 
   @override
@@ -441,9 +537,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get saveChanges => 'Сохранить изменения';
-
-  @override
-  String get avatarUpdated => 'Аватар успешно обновлен';
 
   @override
   String failedToUploadAvatar(Object error) {
@@ -1950,9 +2043,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get showThisQrCodeTo => 'Покажите этот QR-код ученикам или отправьте им прямую ссылку.';
 
   @override
-  String get close => 'Закрыть';
-
-  @override
   String get linkCopied => 'Ссылка скопирована!';
 
   @override
@@ -2134,4 +2224,55 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get classText => 'Класс';
+
+  @override
+  String get cloudStorageManagement => 'Управление облачным хранилищем';
+
+  @override
+  String get loadingCloudStorageStats => 'Загрузка статистики облачного хранилища...';
+
+  @override
+  String get googleDriveSubtitle => 'Хранение ресурсов библиотеки и крупных уроков';
+
+  @override
+  String get cloudinarySubtitle => 'Хранение изображений, коротких видео и постов ленты';
+
+  @override
+  String get firebaseStorageSubtitle => 'Хранение вспомогательных файлов, аватаров и конфигурационных изображений';
+
+  @override
+  String get cleaningUpStorage => 'Очистка хранилища...';
+
+  @override
+  String get cleanUpRedundantData => 'Очистить избыточные данные в системе';
+
+  @override
+  String get confirmCleanup => 'Подтверждение очистки';
+
+  @override
+  String get confirmCleanupDesc => 'Система просканирует и удалит потерянные файлы (мусорные файлы), которые были удалены в приложении, но все еще существуют в облачных сервисах (Google Drive, Cloudinary, Firebase). Этот процесс может занять 1–2 минуты.';
+
+  @override
+  String get startCleanup => 'Начать очистку';
+
+  @override
+  String cleanupSuccess(String count, String size) {
+    return 'Очистка выполнена успешно! Удалено $count избыточных файлов, освобождено $size.';
+  }
+
+  @override
+  String cleanupFailed(String error) {
+    return 'Ошибка очистки: $error';
+  }
+
+  @override
+  String get searchTasks => 'Поиск задач';
+
+  @override
+  String get personalizationAndAccountManagement => 'Персонализация и управление аккаунтом';
+
+  @override
+  String cabinetWithNumber(String number) {
+    return 'Кабинет $number';
+  }
 }

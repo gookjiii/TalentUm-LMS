@@ -9,6 +9,7 @@ import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/utils/open_external_url.dart';
 import 'package:school_world/src/widgets/image_viewer.dart';
 import 'package:school_world/src/widgets/document_preview_dialog.dart';
+import '../utils/string_extensions.dart';
 
 
 /// Formatting helper for file sizes.
@@ -126,7 +127,8 @@ class FilePreviewWidget extends StatelessWidget {
       }
     } else if (isRemote && url.isNotEmpty) {
       final isDoc = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv'].contains(_extension.toLowerCase());
-      if (isDoc) {
+      final isVideo = ['mp4', 'mov', 'webm', 'avi', 'mkv'].contains(_extension.toLowerCase());
+      if (isDoc || isVideo) {
         showDialog(
           context: context,
           builder: (_) => DocumentPreviewDialog(
@@ -164,7 +166,7 @@ class FilePreviewWidget extends StatelessWidget {
     if (isImage) {
       if (isRemote) {
         previewThumbnail = CachedNetworkImage(
-          imageUrl: url,
+          imageUrl: url.toDirectImageUrl,
           fit: BoxFit.cover,
           width: 56,
           height: 56,

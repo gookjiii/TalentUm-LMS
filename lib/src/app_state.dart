@@ -16,6 +16,10 @@ class SchoolAppState extends ChangeNotifier {
     _pushNotifications = box.get('pushNotifications', defaultValue: true) as bool;
     _soundAndVibe = box.get('soundAndVibe', defaultValue: true) as bool;
     _quietModeUpdates = box.get('quietModeUpdates', defaultValue: true) as bool;
+    _performanceMode = box.get('performanceMode', defaultValue: false) as bool;
+
+    // Set initial image cache bounds reactively based on stored performanceMode
+    _applyImageCacheLimits();
   }
 
   String? currentRole;
@@ -31,6 +35,7 @@ class SchoolAppState extends ChangeNotifier {
   bool _pushNotifications = true;
   bool _soundAndVibe = true;
   bool _quietModeUpdates = true;
+  bool _performanceMode = false;
 
   String? get role => currentRole;
   bool get isLeadTeacher =>
@@ -40,6 +45,7 @@ class SchoolAppState extends ChangeNotifier {
   bool get isParent => currentRole == 'parent';
   Locale? get locale => _locale;
   bool get isDarkMode => _isDarkMode;
+  bool get performanceMode => _performanceMode;
 
   int _teacherTabIndex = 0;
   int get teacherTabIndex => _teacherTabIndex;
@@ -165,5 +171,29 @@ class SchoolAppState extends ChangeNotifier {
     _quietModeUpdates = value;
     Hive.box('app_settings').put('quietModeUpdates', value);
     notifyListeners();
+  }
+
+  void setPerformanceMode(bool value) {
+    if (_performanceMode == value) return;
+    _performanceMode = value;
+    Hive.box('app_settings').put('performanceMode', value);
+    _applyImageCacheLimits();
+    notifyListeners();
+  }
+
+  void _applyImageCacheLimits() {
+    try {
+      if (_performanceMode) {
+        // High performance / Low-end graphics mode: limit RAM usage
+        PaintingBinding.instance.imageCache.maximumSize = 400; // items
+        PaintingBinding.instance.imageCache.maximumSizeBytes = 40 * 1024 * 1024; // 40 MB
+      } else {
+        // Normal mode
+        PaintingBinding.instance.imageCache.maximumSize = 2000; // items
+        PaintingBinding.instance.imageCache.maximumSizeBytes = 200 * 1024 * 1024; // 200 MB
+      }
+    } catch (e) {
+      debugPrint('Error applying image cache limits: $e');
+    }
   }
 }

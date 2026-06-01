@@ -18,9 +18,14 @@ class _AuthScreenState extends State<AuthScreen>
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
+  final _phoneController = TextEditingController(text: '+7');
+  final _otpController = TextEditingController();
   bool _obscurePassword = true;
   bool _loading = false;
   bool _isSignUp = false;
+  bool _isPhoneMode = false;
+  String _verificationId = '';
+  bool _otpSent = false;
 
   late AnimationController _modeAnimCtrl;
   late Animation<double> _modeFade;
@@ -41,6 +46,8 @@ class _AuthScreenState extends State<AuthScreen>
     _emailController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
+    _phoneController.dispose();
+    _otpController.dispose();
     _modeAnimCtrl.dispose();
     super.dispose();
   }
@@ -67,6 +74,18 @@ class _AuthScreenState extends State<AuthScreen>
               nameController: _nameController,
               emailController: _emailController,
               passwordController: _passwordController,
+              isPhoneMode: _isPhoneMode,
+              phoneController: _phoneController,
+              otpController: _otpController,
+              otpSent: _otpSent,
+              onSendOtp: _sendOtp,
+              onVerifyOtp: _verifyOtp,
+              onTogglePhoneMode: () => setState(() {
+                _isPhoneMode = !_isPhoneMode;
+                _otpSent = false;
+                _phoneController.text = '+7';
+                _otpController.clear();
+              }),
               onTogglePassword: () =>
                   setState(() => _obscurePassword = !_obscurePassword),
               onSubmit: _isSignUp ? _signUp : _signIn,
@@ -83,6 +102,123 @@ class _AuthScreenState extends State<AuthScreen>
         },
       ),
     );
+  }
+
+  Future<void> _sendOtp() async {
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty || phone == '+7') {
+      _showMessage(_getEnterPhoneNumberFirstText(context));
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      await AppScope.of(context).repository.verifyPhone(
+        phoneNumber: phone,
+        codeSent: (String verificationId, int? resendToken) {
+          setState(() {
+            _verificationId = verificationId;
+            _otpSent = true;
+            _loading = false;
+          });
+          _showMessage(_getOtpSentSuccessText(context));
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          setState(() => _loading = false);
+          _showMessage(_friendlyError(e.message ?? e.toString()));
+        },
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          try {
+            final cred = await FirebaseAuth.instance.signInWithCredential(
+              credential,
+            );
+            await _onLoginSuccess(cred.user);
+          } catch (e) {
+            _showMessage(_friendlyError(e.toString()));
+          } finally {
+            setState(() => _loading = false);
+          }
+        },
+      );
+    } catch (e) {
+      setState(() => _loading = false);
+      _showMessage(_friendlyError(e.toString()));
+    }
+  }
+
+  Future<void> _verifyOtp() async {
+    final code = _otpController.text.trim();
+    if (code.isEmpty) {
+      _showMessage(_getEnterOtpFirstText(context));
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      final cred = await AppScope.of(context).repository
+          .signInWithPhoneCredential(
+            verificationId: _verificationId,
+            smsCode: code,
+          );
+      await _onLoginSuccess(cred.user);
+    } catch (e) {
+      if (mounted) _showMessage(_friendlyError(e.toString()));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _onLoginSuccess(User? user) async {
+    if (user == null) return;
+
+    final repo = AppScope.of(context).repository;
+
+    final doc = await repo.firestore.collection('users').doc(user.uid).get();
+    if (!mounted) return;
+    if (!doc.exists) {
+      final nameController = TextEditingController();
+      final submittedName = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: Text(_getWelcomeOnboardingText(context)),
+          content: TextField(
+            controller: nameController,
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.fullName,
+              prefixIcon: const Icon(Icons.person_outline_rounded),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                final name = nameController.text.trim();
+                if (name.isNotEmpty) {
+                  Navigator.pop(context, name);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(_getEnterNameErrorText(context))),
+                  );
+                }
+              },
+              child: Text(AppLocalizations.of(context)!.saveChanges1),
+            ),
+          ],
+        ),
+      );
+
+      if (submittedName != null && submittedName.isNotEmpty) {
+        await repo.createProfile(
+          uid: user.uid,
+          name: submittedName,
+          role: 'student',
+          email: user.email ?? user.phoneNumber ?? '',
+        );
+      }
+    }
   }
 
   Future<void> _signIn() async {
@@ -136,7 +272,10 @@ class _AuthScreenState extends State<AuthScreen>
         _showMessage('Письмо для сброса пароля отправлено на $email');
       }
     } on FirebaseAuthException catch (e) {
-      if (mounted) _showMessage(e.message ?? AppLocalizations.of(context)!.passwordResetError);
+      if (mounted)
+        _showMessage(
+          e.message ?? AppLocalizations.of(context)!.passwordResetError,
+        );
     }
   }
 
@@ -150,14 +289,16 @@ class _AuthScreenState extends State<AuthScreen>
     if (raw.contains('wrong-password') || raw.contains('invalid-credential')) {
       return AppLocalizations.of(context)!.invalidEmailOrPassword;
     }
-    if (raw.contains('user-not-found')) return AppLocalizations.of(context)!.userNotFound;
+    if (raw.contains('user-not-found'))
+      return AppLocalizations.of(context)!.userNotFound;
     if (raw.contains('email-already-in-use')) {
       return AppLocalizations.of(context)!.thisEmailIsAlreadyRegistered;
     }
     if (raw.contains('weak-password')) {
       return AppLocalizations.of(context)!.passwordIsTooWeakMinimum;
     }
-    if (raw.contains('network-request-failed')) return AppLocalizations.of(context)!.unknownKey15;
+    if (raw.contains('network-request-failed'))
+      return AppLocalizations.of(context)!.unknownKey15;
     return AppLocalizations.of(context)!.somethingWentWrongTryAgain;
   }
 }
@@ -343,9 +484,15 @@ class _FeaturePills extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final features = [
-      (Icons.chat_bubble_outline_rounded, AppLocalizations.of(context)!.realtimeClassChat),
+      (
+        Icons.chat_bubble_outline_rounded,
+        AppLocalizations.of(context)!.realtimeClassChat,
+      ),
       (Icons.campaign_outlined, AppLocalizations.of(context)!.adsAndFeed),
-      (Icons.assignment_outlined, AppLocalizations.of(context)!.assignmentsAndAssessments),
+      (
+        Icons.assignment_outlined,
+        AppLocalizations.of(context)!.assignmentsAndAssessments,
+      ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,6 +553,13 @@ class _AuthForm extends StatelessWidget {
     required this.nameController,
     required this.emailController,
     required this.passwordController,
+    required this.isPhoneMode,
+    required this.phoneController,
+    required this.otpController,
+    required this.otpSent,
+    required this.onSendOtp,
+    required this.onVerifyOtp,
+    required this.onTogglePhoneMode,
     required this.onTogglePassword,
     required this.onSubmit,
     required this.onToggleMode,
@@ -418,6 +572,13 @@ class _AuthForm extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController emailController;
   final TextEditingController passwordController;
+  final bool isPhoneMode;
+  final TextEditingController phoneController;
+  final TextEditingController otpController;
+  final bool otpSent;
+  final VoidCallback onSendOtp;
+  final VoidCallback onVerifyOtp;
+  final VoidCallback onTogglePhoneMode;
   final VoidCallback onTogglePassword;
   final VoidCallback onSubmit;
   final VoidCallback onToggleMode;
@@ -427,15 +588,157 @@ class _AuthForm extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    if (isPhoneMode) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Center(child: SchoolLogo(size: 72)),
+          const SizedBox(height: 20),
+          CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            streamFactory: () =>
+                AppScope.of(context).repository.systemSettingsStream(),
+            builder: (context, snapshot) {
+              final appName =
+                  snapshot.data?.get('appName') as String? ?? 'TalentUm';
+              return Text(
+                appName,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _getLoginWithPhoneText(context),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              color: isDark
+                  ? SchoolColors.darkTextSecondary
+                  : SchoolColors.textSecondary,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.0,
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          TextField(
+            controller: phoneController,
+            keyboardType: TextInputType.phone,
+            textInputAction: otpSent
+                ? TextInputAction.next
+                : TextInputAction.done,
+            enabled: !loading && !otpSent,
+            onSubmitted: (_) {
+              if (!otpSent) onSendOtp();
+            },
+            decoration: InputDecoration(
+              labelText: _getPhoneText(context),
+              prefixIcon: const Icon(Icons.phone_outlined),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          AnimatedSize(
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeInOutCubic,
+            child: otpSent
+                ? Column(
+                    children: [
+                      TextField(
+                        controller: otpController,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        enabled: !loading,
+                        onSubmitted: (_) => onVerifyOtp(),
+                        decoration: InputDecoration(
+                          labelText: _getEnterOtpText(context),
+                          prefixIcon: const Icon(Icons.lock_clock_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: SchoolColors.primary.withValues(
+                    alpha: loading ? 0.0 : 0.35,
+                  ),
+                  blurRadius: loading ? 0 : 20,
+                  offset: loading ? Offset.zero : const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: FilledButton(
+              onPressed: loading ? null : (otpSent ? onVerifyOtp : onSendOtp),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: loading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            otpSent
+                                ? Icons.verified_user_rounded
+                                : Icons.send_rounded,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            otpSent
+                                ? _getVerifyAndLoginText(context)
+                                : _getSendOtpText(context),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          TextButton(
+            onPressed: onTogglePhoneMode,
+            child: Text(
+              _getLoginWithEmailText(context),
+              style: const TextStyle(
+                color: SchoolColors.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Logo + App name
         const Center(child: SchoolLogo(size: 72)),
         const SizedBox(height: 20),
         CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          streamFactory: () => AppScope.of(context).repository.systemSettingsStream(),
+          streamFactory: () =>
+              AppScope.of(context).repository.systemSettingsStream(),
           builder: (context, snapshot) {
             final appName =
                 snapshot.data?.get('appName') as String? ?? 'TalentUm';
@@ -452,7 +755,9 @@ class _AuthForm extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          isSignUp ? AppLocalizations.of(context)!.createAnAccount : AppLocalizations.of(context)!.welcomeBack,
+          isSignUp
+              ? AppLocalizations.of(context)!.createAnAccount
+              : AppLocalizations.of(context)!.welcomeBack,
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 15,
@@ -465,7 +770,6 @@ class _AuthForm extends StatelessWidget {
         ),
         const SizedBox(height: 32),
 
-        // Name field (sign-up only) with AnimatedSize
         AnimatedSize(
           duration: const Duration(milliseconds: 280),
           curve: Curves.easeInOutCubic,
@@ -487,7 +791,6 @@ class _AuthForm extends StatelessWidget {
               : const SizedBox.shrink(),
         ),
 
-        // Email
         TextField(
           controller: emailController,
           keyboardType: TextInputType.emailAddress,
@@ -499,7 +802,6 @@ class _AuthForm extends StatelessWidget {
         ),
         const SizedBox(height: 14),
 
-        // Password
         TextField(
           controller: passwordController,
           obscureText: obscurePassword,
@@ -523,7 +825,6 @@ class _AuthForm extends StatelessWidget {
           ),
         ),
 
-        // Forgot password
         if (!isSignUp) ...[
           const SizedBox(height: 4),
           Align(
@@ -544,11 +845,9 @@ class _AuthForm extends StatelessWidget {
         ],
         const SizedBox(height: 20),
 
-        // Primary submit button
         _SubmitButton(isSignUp: isSignUp, loading: loading, onSubmit: onSubmit),
         const SizedBox(height: 14),
 
-        // Toggle mode
         TextButton(
           onPressed: onToggleMode,
           child: RichText(
@@ -562,16 +861,32 @@ class _AuthForm extends StatelessWidget {
               ),
               children: [
                 TextSpan(
-                  text: isSignUp ? AppLocalizations.of(context)!.alreadyHaveAnAccount : AppLocalizations.of(context)!.dontHaveAnAccount,
+                  text: isSignUp
+                      ? AppLocalizations.of(context)!.alreadyHaveAnAccount
+                      : AppLocalizations.of(context)!.dontHaveAnAccount,
                 ),
                 TextSpan(
-                  text: isSignUp ? AppLocalizations.of(context)!.login : AppLocalizations.of(context)!.register,
+                  text: isSignUp
+                      ? AppLocalizations.of(context)!.login
+                      : AppLocalizations.of(context)!.register,
                   style: const TextStyle(
                     color: SchoolColors.primary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        TextButton(
+          onPressed: onTogglePhoneMode,
+          child: Text(
+            _getLoginWithPhoneText(context),
+            style: const TextStyle(
+              color: SchoolColors.primary,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
@@ -604,7 +919,9 @@ class _SubmitButtonState extends State<_SubmitButton> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: SchoolColors.primary.withValues(alpha: widget.loading ? 0.0 : 0.35),
+            color: SchoolColors.primary.withValues(
+              alpha: widget.loading ? 0.0 : 0.35,
+            ),
             blurRadius: widget.loading ? 0 : 20,
             offset: widget.loading ? Offset.zero : const Offset(0, 6),
           ),
@@ -635,11 +952,92 @@ class _SubmitButtonState extends State<_SubmitButton> {
                       size: 20,
                     ),
                     const SizedBox(width: 10),
-                    Text(widget.isSignUp ? AppLocalizations.of(context)!.createAnAccount : AppLocalizations.of(context)!.login),
+                    Text(
+                      widget.isSignUp
+                          ? AppLocalizations.of(context)!.createAnAccount
+                          : AppLocalizations.of(context)!.login,
+                    ),
                   ],
                 ),
         ),
       ),
     );
   }
+}
+
+String _getPhoneText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') return 'Номер телефона';
+  if (locale == 'vi') return 'Số điện thoại';
+  return 'Phone number';
+}
+
+String _getSendOtpText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') return 'Отправить OTP';
+  if (locale == 'vi') return 'Gửi mã OTP';
+  return 'Send OTP';
+}
+
+String _getEnterOtpText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') return 'Введите код OTP';
+  if (locale == 'vi') return 'Nhập mã OTP';
+  return 'Enter OTP Code';
+}
+
+String _getVerifyAndLoginText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') return 'Войти';
+  if (locale == 'vi') return 'Xác thực & Đăng nhập';
+  return 'Verify & Login';
+}
+
+String _getLoginWithPhoneText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') return 'Войти по номеру телефона';
+  if (locale == 'vi') return 'Đăng nhập bằng số điện thoại';
+  return 'Login with phone';
+}
+
+String _getLoginWithEmailText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') return 'Войти по Email';
+  if (locale == 'vi') return 'Đăng nhập bằng Email';
+  return 'Login with email';
+}
+
+String _getEnterPhoneNumberFirstText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') return 'Пожалуйста, введите номер телефона';
+  if (locale == 'vi') return 'Vui lòng nhập số điện thoại trước';
+  return 'Please enter phone number first';
+}
+
+String _getEnterOtpFirstText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') return 'Пожалуйста, введите код OTP';
+  if (locale == 'vi') return 'Vui lòng nhập mã OTP';
+  return 'Please enter OTP code';
+}
+
+String _getOtpSentSuccessText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') return 'OTP код отправлен!';
+  if (locale == 'vi') return 'Mã OTP đã được gửi thành công!';
+  return 'OTP code sent successfully!';
+}
+
+String _getWelcomeOnboardingText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') return 'Добро пожаловать! Пожалуйста, введите ваше ФИО';
+  if (locale == 'vi') return 'Chào mừng bạn! Vui lòng nhập Họ và tên của bạn';
+  return 'Welcome! Please enter your Full Name';
+}
+
+String _getEnterNameErrorText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') return 'Имя không được để trống';
+  if (locale == 'vi') return 'Tên không được để trống';
+  return 'Name cannot be empty';
 }

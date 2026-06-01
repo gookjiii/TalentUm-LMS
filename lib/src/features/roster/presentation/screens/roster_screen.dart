@@ -17,23 +17,33 @@ class RosterScreen extends StatefulWidget {
 
 class _RosterScreenState extends State<RosterScreen> {
   Stream<DocumentSnapshot<Map<String, dynamic>>>? _classStream;
-  bool _initialized = false;
+  String? _currentClassId;
+  int _visibleCount = 20;
+
+  void _updateStreamIfNeeded() {
+    final appState = AppScope.of(context).appState;
+    final effectiveClassId = widget.classId ?? appState.selectedClassId;
+    if (effectiveClassId != _currentClassId && effectiveClassId != null) {
+      final repo = AppScope.of(context).repository;
+      _classStream = repo.firestore
+          .collection('classes')
+          .doc(effectiveClassId)
+          .snapshots();
+      _currentClassId = effectiveClassId;
+      _visibleCount = 20;
+    }
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_initialized) {
-      final repo = AppScope.of(context).repository;
-      final appState = AppScope.of(context).appState;
-      final effectiveClassId = widget.classId ?? appState.selectedClassId;
-      if (effectiveClassId != null) {
-        _classStream = repo.firestore
-            .collection('classes')
-            .doc(effectiveClassId)
-            .snapshots();
-        _initialized = true;
-      }
-    }
+    _updateStreamIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant RosterScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _updateStreamIfNeeded();
   }
 
   @override
@@ -61,29 +71,45 @@ class _RosterScreenState extends State<RosterScreen> {
           final studentIds = List<String>.from(data['studentIds'] ?? []);
           final adminIds = List<String>.from(data['adminIds'] ?? []);
 
+          final visibleStudents = studentIds.take(_visibleCount).toList();
+
           return Column(
             children: [
               _MembersHeader(count: 1 + studentIds.length),
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 40),
-                  children: [
-                    _TeacherCard(teacherId: teacherId),
-                    ...studentIds.map(
-                      (id) => _MemberCard(
-                        studentId: id,
-                        classId: effectiveClassId,
-                        isAdmin: adminIds.contains(id),
-                        onToggleAdmin: () => _toggleAdmin(
-                          effectiveClassId,
-                          id,
-                          adminIds.contains(id),
-                        ),
-                        onRemove: () =>
-                            _confirmRemove(context, effectiveClassId, id),
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification scrollInfo) {
+                    if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+                      setState(() {
+                        _visibleCount += 20;
+                      });
+                    }
+                    return false;
+                  },
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 40),
+                    children: [
+                      _TeacherCard(
+                        key: ValueKey(teacherId),
+                        teacherId: teacherId,
                       ),
-                    ),
-                  ],
+                      ...visibleStudents.map(
+                        (id) => _MemberCard(
+                          key: ValueKey(id),
+                          studentId: id,
+                          classId: effectiveClassId,
+                          isAdmin: adminIds.contains(id),
+                          onToggleAdmin: () => _toggleAdmin(
+                            effectiveClassId,
+                            id,
+                            adminIds.contains(id),
+                          ),
+                          onRemove: () =>
+                              _confirmRemove(context, effectiveClassId, id),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -144,37 +170,18 @@ class _MembersHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 56, 32, 20),
-      child: Row(
+    final appState = AppScope.of(context).appState;
+
+    return PageHeader(
+      title: l10n.classRoster,
+      subtitle: l10n.totalParticipants(count),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.classRoster,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                Text(
-                  l10n.totalParticipants(count),
-                  style: const TextStyle(
-                    color: SchoolColors.muted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (AppScope.of(context).appState.isTeacher) ...[
+          if (appState.isTeacher)
             IconButton.filledTonal(
               onPressed: () {
-                final classId = AppScope.of(context).appState.selectedClassId;
+                final classId = appState.selectedClassId;
                 if (classId != null) {
                   showDialog(
                     context: context,
@@ -183,14 +190,13 @@ class _MembersHeader extends StatelessWidget {
                 }
               },
               icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
-              tooltip: AppLocalizations.of(context)!.addAStudent,
+              tooltip: l10n.addAStudent,
             ),
+          if (appState.isLeadTeacher) ...[
             const SizedBox(width: 8),
-          ],
-          if (AppScope.of(context).appState.isLeadTeacher)
             IconButton.filledTonal(
               onPressed: () {
-                final classId = AppScope.of(context).appState.selectedClassId;
+                final classId = appState.selectedClassId;
                 if (classId != null) {
                   Navigator.push(
                     context,
@@ -202,6 +208,7 @@ class _MembersHeader extends StatelessWidget {
               },
               icon: const Icon(Icons.settings_suggest_rounded, size: 20),
             ),
+          ],
         ],
       ),
     );
@@ -209,7 +216,7 @@ class _MembersHeader extends StatelessWidget {
 }
 
 class _TeacherCard extends StatefulWidget {
-  const _TeacherCard({required this.teacherId});
+  const _TeacherCard({super.key, required this.teacherId});
   final String teacherId;
 
   @override
@@ -227,6 +234,15 @@ class _TeacherCardState extends State<_TeacherCard> {
       final repo = AppScope.of(context).repository;
       _userFuture = repo.getUserData(widget.teacherId);
       _initialized = true;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _TeacherCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.teacherId != widget.teacherId) {
+      final repo = AppScope.of(context).repository;
+      _userFuture = repo.getUserData(widget.teacherId);
     }
   }
 
@@ -323,6 +339,7 @@ class _TeacherCardState extends State<_TeacherCard> {
 
 class _MemberCard extends StatefulWidget {
   const _MemberCard({
+    super.key,
     required this.studentId,
     required this.classId,
     required this.isAdmin,
@@ -348,6 +365,15 @@ class _MemberCardState extends State<_MemberCard> {
       final repo = AppScope.of(context).repository;
       _userFuture = repo.getUserData(widget.studentId);
       _initialized = true;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _MemberCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.studentId != widget.studentId) {
+      final repo = AppScope.of(context).repository;
+      _userFuture = repo.getUserData(widget.studentId);
     }
   }
 
@@ -445,8 +471,12 @@ class _MemberCardState extends State<_MemberCard> {
                       ),
                       onSelected: (val) {
                         if (val == 'profile') _showUserInfo(context, data!);
-                        if (val == 'edit_name') _editStudentName(context, data!);
-                        if (val == 'admin') widget.onToggleAdmin();
+                        if (val == 'edit_name' && appState.isLeadTeacher) {
+                          _editStudentName(context, data!);
+                        }
+                        if (val == 'admin' && appState.isLeadTeacher) {
+                          widget.onToggleAdmin();
+                        }
                         if (val == 'remove') widget.onRemove();
                       },
                       itemBuilder: (context) => [
@@ -454,18 +484,20 @@ class _MemberCardState extends State<_MemberCard> {
                           value: 'profile',
                           child: Text(l10n.profile),
                         ),
-                        PopupMenuItem(
-                          value: 'edit_name',
-                          child: Text(AppLocalizations.of(context)!.editName),
-                        ),
-                        PopupMenuItem(
-                          value: 'admin',
-                          child: Text(
-                            widget.isAdmin
-                                ? AppLocalizations.of(context)!.removeAdminRights
-                                : AppLocalizations.of(context)!.makeAsAdministrator,
+                        if (appState.isLeadTeacher)
+                          PopupMenuItem(
+                            value: 'edit_name',
+                            child: Text(AppLocalizations.of(context)!.editName),
                           ),
-                        ),
+                        if (appState.isLeadTeacher)
+                          PopupMenuItem(
+                            value: 'admin',
+                            child: Text(
+                              widget.isAdmin
+                                  ? AppLocalizations.of(context)!.removeAdminRights
+                                  : AppLocalizations.of(context)!.makeAsAdministrator,
+                            ),
+                          ),
                         PopupMenuItem(
                           value: 'remove',
                           child: Text(

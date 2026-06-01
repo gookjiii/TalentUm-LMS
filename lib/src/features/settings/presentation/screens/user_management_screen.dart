@@ -253,6 +253,60 @@ class _UserListTile extends StatelessWidget {
                 await repo.firestore.collection('users').doc(id).update({
                   'isBanned': false,
                 });
+              } else if (val == 'delete_user') {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(_getDeleteAccountText(context)),
+                    content: Text(_getDeleteConfirmText(context, name)),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(AppLocalizations.of(context)!.cancel),
+                      ),
+                      TextButton(
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text(AppLocalizations.of(context)!.delete),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  if (context.mounted) {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+
+                  try {
+                    await repo.deleteUserAccount(id);
+                    if (context.mounted) {
+                      Navigator.pop(context); // Dismiss loading spinner
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(_getAccountDeletedText(context)),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      Navigator.pop(context); // Dismiss loading spinner
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            AppLocalizations.of(context)!.errorPrefix(e.toString()),
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                }
               }
             },
             itemBuilder: (context) => [
@@ -286,6 +340,16 @@ class _UserListTile extends StatelessWidget {
                   child: Text(
                     AppLocalizations.of(context)!.unblock,
                     style: TextStyle(color: Colors.green),
+                  ),
+                ),
+              ],
+              if (id != repo.uid) ...[
+                const PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 'delete_user',
+                  child: Text(
+                    _getDeleteAccountText(context),
+                    style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -337,4 +401,34 @@ class _RoleBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+String _getDeleteAccountText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') {
+    return 'Удалить аккаунт';
+  } else if (locale == 'vi') {
+    return 'Xóa tài khoản';
+  }
+  return 'Delete account';
+}
+
+String _getDeleteConfirmText(BuildContext context, String name) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') {
+    return 'Вы уверены, что хотите навсегда удалить аккаунт $name?';
+  } else if (locale == 'vi') {
+    return 'Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản của $name không?';
+  }
+  return 'Are you sure you want to permanently delete $name\'s account?';
+}
+
+String _getAccountDeletedText(BuildContext context) {
+  final locale = Localizations.localeOf(context).languageCode;
+  if (locale == 'ru') {
+    return 'Аккаунт успешно удален';
+  } else if (locale == 'vi') {
+    return 'Đã xóa tài khoản thành công';
+  }
+  return 'Account deleted successfully';
 }

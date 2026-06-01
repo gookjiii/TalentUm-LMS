@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'teldrive_storage_provider.dart';
+import 'google_drive_storage_provider.dart';
 
 abstract class StorageProvider {
   Future<Map<String, dynamic>> uploadFile(
@@ -88,16 +90,72 @@ class CloudinaryStorageProvider implements StorageProvider {
   static const configuredUploadPreset = String.fromEnvironment(
     'CLOUDINARY_UPLOAD_PRESET',
   );
-
+  static const configuredTeldriveBaseUrl = String.fromEnvironment(
+    'TELDRIVE_BASE_URL',
+  );
+  static const configuredTeldriveApiKey = String.fromEnvironment(
+    'TELDRIVE_API_KEY',
+  );
+  static const configuredTeldriveChannelId = String.fromEnvironment(
+    'TELDRIVE_CHANNEL_ID',
+  );
+  static const configuredGoogleDriveProxyUrl = String.fromEnvironment(
+    'GOOGLE_DRIVE_PROXY_URL',
+  );
+ 
   static bool get isConfigured =>
       configuredCloudName.isNotEmpty && configuredUploadPreset.isNotEmpty;
 
+  static bool get isTeldriveConfigured =>
+      configuredTeldriveBaseUrl.isNotEmpty &&
+      configuredTeldriveApiKey.isNotEmpty &&
+      configuredTeldriveChannelId.isNotEmpty;
+
+  static bool get isGoogleDriveConfigured =>
+      configuredGoogleDriveProxyUrl.isNotEmpty;
+ 
   static StorageProvider fromEnvironmentOrFirebase() {
+    if (isGoogleDriveConfigured) {
+      return GoogleDriveStorageProvider(
+        backendBaseUrl: configuredGoogleDriveProxyUrl,
+      );
+    }
+    if (isTeldriveConfigured) {
+      final channelId = int.tryParse(configuredTeldriveChannelId) ?? 0;
+      return TeldriveStorageProvider(
+        baseUrl: configuredTeldriveBaseUrl,
+        apiKey: configuredTeldriveApiKey,
+        channelId: channelId,
+      );
+    }
     if (!isConfigured) return FirebaseStorageProvider();
     return CloudinaryStorageProvider(
       cloudName: configuredCloudName,
       uploadPreset: configuredUploadPreset,
     );
+  }
+
+  /// Storage provider for chat: always Cloudinary (images/videos).
+  /// Falls back to Firebase if Cloudinary is not configured.
+  static StorageProvider chatProvider() {
+    if (isConfigured) {
+      return CloudinaryStorageProvider(
+        cloudName: configuredCloudName,
+        uploadPreset: configuredUploadPreset,
+      );
+    }
+    return FirebaseStorageProvider();
+  }
+
+  /// Storage provider for library: always Google Drive.
+  /// Falls back to the default provider chain if Google Drive is not configured.
+  static StorageProvider libraryProvider() {
+    if (isGoogleDriveConfigured) {
+      return GoogleDriveStorageProvider(
+        backendBaseUrl: configuredGoogleDriveProxyUrl,
+      );
+    }
+    return fromEnvironmentOrFirebase();
   }
 
   @override
@@ -176,30 +234,45 @@ class CloudinaryStorageProvider implements StorageProvider {
       final end = (start + chunkSize < totalSize) ? start + chunkSize : totalSize;
       final chunkLength = end - start;
       
-      final multipartFile = await getChunk(start, end);
+      var multipartFile = await getChunk(start, end);
 
       try {
-        lastResponse = await _dio.post(
-          uploadUrl,
-          data: FormData.fromMap({
-            'file': multipartFile,
-            'upload_preset': _uploadPreset,
-            'folder': folder,
-          }),
-          options: Options(
-            headers: {
-              'X-Unique-Upload-Id': uniqueUploadId,
-              'Content-Range': 'bytes $start-${end - 1}/$totalSize',
-            },
-          ),
-          onSendProgress: (sent, total) {
-            if (onProgress != null && chunkLength > 0) {
-               onProgress((bytesUploaded + sent) / totalSize);
+        const maxRetries = 3;
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            lastResponse = await _dio.post(
+              uploadUrl,
+              data: FormData.fromMap({
+                'file': multipartFile,
+                'upload_preset': _uploadPreset,
+                'folder': folder,
+              }),
+              options: Options(
+                headers: {
+                  'X-Unique-Upload-Id': uniqueUploadId,
+                  'Content-Range': 'bytes $start-${end - 1}/$totalSize',
+                },
+              ),
+              onSendProgress: (sent, total) {
+                if (onProgress != null && chunkLength > 0) {
+                   onProgress((bytesUploaded + sent) / totalSize);
+                }
+              },
+            );
+            break; // success
+          } on DioException catch (e) {
+            // Only retry on network-layer errors (no HTTP response from server)
+            if (e.response != null || attempt == maxRetries) {
+              throw Exception('Cloudinary error: ${e.response?.statusCode} - ${e.response?.data}');
             }
-          },
-        );
-      } on DioException catch (e) {
-        throw Exception('Cloudinary error: ${e.response?.statusCode} - ${e.response?.data}');
+            // Exponential backoff: 500ms, 1s, 2s
+            await Future.delayed(Duration(milliseconds: 500 * attempt));
+            // Re-create the chunk for retry since the stream may be consumed
+            multipartFile = await getChunk(start, end);
+          }
+        }
+      } catch (e) {
+        rethrow;
       }
       
       bytesUploaded += chunkLength;
@@ -224,8 +297,45 @@ class CloudinaryStorageProvider implements StorageProvider {
   String _filename(String path) => path.split('/').last;
 
   @override
-  Future<void> deleteFile(String path) async {
-    debugPrint('Cloudinary delete requires a signed backend call: $path');
+  Future<void> deleteFile(String pathOrUrl) async {
+    // Attempt to extract the public ID from the URL.
+    // Cloudinary URLs usually look like: .../upload/v12345/folder/file.ext
+    try {
+      if (!pathOrUrl.contains('cloudinary.com')) return;
+      final uri = Uri.parse(pathOrUrl);
+      final segments = uri.pathSegments;
+      final uploadIndex = segments.indexOf('upload');
+      if (uploadIndex != -1 && uploadIndex + 2 < segments.length) {
+        // public_id is everything after the version string (v123...), minus the extension
+        final publicIdWithExt = segments.sublist(uploadIndex + 2).join('/');
+        final publicId = publicIdWithExt.contains('.') 
+            ? publicIdWithExt.substring(0, publicIdWithExt.lastIndexOf('.'))
+            : publicIdWithExt;
+
+        final resourceType = pathOrUrl.contains('/video/') ? 'video' : 'image';
+        
+        const apiSecret = String.fromEnvironment('APP_API_SECRET');
+        const proxyUrl = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
+        
+        if (proxyUrl.isNotEmpty) {
+          await _dio.post(
+            '$proxyUrl/api/upload/delete_cloudinary',
+            data: {
+              'publicId': publicId,
+              'resourceType': resourceType,
+            },
+            options: Options(
+              headers: {
+                'Authorization': 'Bearer $apiSecret',
+              },
+            ),
+          );
+          debugPrint('Cloudinary file deleted: $publicId');
+        }
+      }
+    } catch (e) {
+      debugPrint('Cloudinary delete error: $e');
+    }
   }
 }
 

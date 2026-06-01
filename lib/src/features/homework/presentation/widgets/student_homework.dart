@@ -24,6 +24,7 @@ class _StudentHomeworkState extends State<StudentHomework> {
   Stream<QuerySnapshot<Map<String, dynamic>>>? _assignmentsStream;
   Stream<QuerySnapshot<Map<String, dynamic>>>? _submissionsStream;
   bool _initialized = false;
+  int _limit = 20;
 
   @override
   void didChangeDependencies() {
@@ -38,6 +39,7 @@ class _StudentHomeworkState extends State<StudentHomework> {
   void didUpdateWidget(covariant StudentHomework oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.classId != widget.classId) {
+      _limit = 20;
       _initStreams();
     }
   }
@@ -45,11 +47,18 @@ class _StudentHomeworkState extends State<StudentHomework> {
   void _initStreams() {
     final repo = AppScope.of(context).repository;
     setState(() {
-      _assignmentsStream = repo.assignmentsForClass(widget.classId);
+      _assignmentsStream = repo.assignmentsForClass(widget.classId, limit: _limit);
       _submissionsStream = repo.firestore
           .collection('submissions')
           .where('studentId', isEqualTo: repo.uid)
           .safeSnapshots();
+    });
+  }
+
+  void _loadMore() {
+    setState(() {
+      _limit += 20;
+      _initStreams();
     });
   }
 
@@ -119,109 +128,117 @@ class _StudentHomeworkState extends State<StudentHomework> {
               alignment: Alignment.topCenter,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 900),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                StatusChip(
-                                  label: AppLocalizations.of(context)!.studyHomework,
-                                  color: SchoolColors.primary,
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  AppLocalizations.of(context)!.myTasks,
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: -0.5,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: _searchController,
-                        onChanged: (v) => setState(() => _searchQuery = v),
-                        decoration: InputDecoration(
-                          hintText: AppLocalizations.of(context)!.searchForTasks,
-                          prefixIcon: const Icon(Icons.search),
-                          filled: true,
-                          fillColor:
-                              Theme.of(context).brightness == Brightness.dark
-                              ? SchoolColors.darkSurface
-                              : Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                      if (urgentAssignment != null &&
-                          _filter == 'All' &&
-                          _searchQuery.isEmpty) ...[
-                        const SizedBox(height: 32),
-                        SectionHeader(title: AppLocalizations.of(context)!.focusMode),
-                        const SizedBox(height: 12),
-                        FocusAssignmentCard(doc: urgentAssignment),
-                      ],
-                      const SizedBox(height: 32),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification scrollInfo) {
+                    if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+                      _loadMore();
+                    }
+                    return false;
+                  },
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            FilterChipItem(
-                              label: AppLocalizations.of(context)!.all,
-                              active: _filter == 'All',
-                              onTap: () => setState(() => _filter = 'All'),
-                            ),
-                            FilterChipItem(
-                              label: AppLocalizations.of(context)!.waiting,
-                              active: _filter == 'Pending',
-                              onTap: () => setState(() => _filter = 'Pending'),
-                            ),
-                            FilterChipItem(
-                              label: AppLocalizations.of(context)!.delivered,
-                              active: _filter == 'Submitted',
-                              onTap: () =>
-                                  setState(() => _filter = 'Submitted'),
-                            ),
-                            FilterChipItem(
-                              label: AppLocalizations.of(context)!.rated,
-                              active: _filter == 'Graded',
-                              onTap: () => setState(() => _filter = 'Graded'),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  StatusChip(
+                                    label: AppLocalizations.of(context)!.studyHomework,
+                                    color: SchoolColors.primary,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    AppLocalizations.of(context)!.myTasks,
+                                    style: TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: -0.5,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      if (loading)
-                        const ShimmerHomeworkList(count: 5)
-                      else if (filteredAssignments.isEmpty)
-                        const NoHomeworkEmptyState()
-                      else
-                        ...filteredAssignments.map(
-                          (doc) => HomeworkCard(
-                            doc: doc,
-                            submission: submissionMap[doc.id],
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: _searchController,
+                          onChanged: (v) => setState(() => _searchQuery = v),
+                          decoration: InputDecoration(
+                            hintText: AppLocalizations.of(context)!.searchForTasks,
+                            prefixIcon: const Icon(Icons.search),
+                            filled: true,
+                            fillColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? SchoolColors.darkSurface
+                                : Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                            ),
                           ),
                         ),
-                    ],
+                        if (urgentAssignment != null &&
+                            _filter == 'All' &&
+                            _searchQuery.isEmpty) ...[
+                          const SizedBox(height: 32),
+                          SectionHeader(title: AppLocalizations.of(context)!.focusMode),
+                          const SizedBox(height: 12),
+                          FocusAssignmentCard(doc: urgentAssignment),
+                        ],
+                        const SizedBox(height: 32),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              FilterChipItem(
+                                label: AppLocalizations.of(context)!.all,
+                                active: _filter == 'All',
+                                onTap: () => setState(() => _filter = 'All'),
+                              ),
+                              FilterChipItem(
+                                label: AppLocalizations.of(context)!.waiting,
+                                active: _filter == 'Pending',
+                                onTap: () => setState(() => _filter = 'Pending'),
+                              ),
+                              FilterChipItem(
+                                label: AppLocalizations.of(context)!.delivered,
+                                active: _filter == 'Submitted',
+                                onTap: () =>
+                                    setState(() => _filter = 'Submitted'),
+                              ),
+                              FilterChipItem(
+                                label: AppLocalizations.of(context)!.rated,
+                                active: _filter == 'Graded',
+                                onTap: () => setState(() => _filter = 'Graded'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        if (loading)
+                          const ShimmerHomeworkList(count: 5)
+                        else if (filteredAssignments.isEmpty)
+                          const NoHomeworkEmptyState()
+                        else
+                          ...filteredAssignments.map(
+                            (doc) => HomeworkCard(
+                              doc: doc,
+                              submission: submissionMap[doc.id],
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),

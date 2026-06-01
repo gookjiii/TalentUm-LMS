@@ -13,6 +13,7 @@ import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/utils/open_external_url.dart';
 import 'package:school_world/src/widgets/image_viewer.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
+import 'package:school_world/src/utils/string_extensions.dart';
 
 class ChatResourceSidebar extends StatefulWidget {
   const ChatResourceSidebar({
@@ -173,6 +174,30 @@ class _ChatResourceSidebarState extends State<ChatResourceSidebar>
             ),
           ),
         ],
+      );
+    }
+
+    bool isPerformance = false;
+    try {
+      isPerformance = AppScope.of(context).appState.performanceMode;
+    } catch (_) {}
+
+    if (isPerformance) {
+      return Material(
+        color: isDark
+            ? const Color(0xFF0F172A)
+            : const Color(0xFFF8FAFC),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: _classColor.withOpacity(0.4),
+                width: 2.0,
+              ),
+            ),
+          ),
+          child: content,
+        ),
       );
     }
 
@@ -486,7 +511,7 @@ class _MediaGridItemState extends State<_MediaGridItem> {
             ? openExternalUrl(widget.url)
             : showDialog(
                 context: context,
-                builder: (_) => ImageViewer(imageUrl: widget.url),
+                builder: (_) => ImageViewer(imageUrl: widget.url.toDirectImageUrl),
               ),
         child: AnimatedScale(
           scale: _isHovered ? 1.05 : 1.0,
@@ -516,8 +541,10 @@ class _MediaGridItemState extends State<_MediaGridItem> {
                 fit: StackFit.expand,
                 children: [
                   CachedNetworkImage(
-                    imageUrl: widget.url,
+                    imageUrl: widget.url.toDirectImageUrl,
                     fit: BoxFit.cover,
+                    memCacheWidth: 200,
+                    memCacheHeight: 200,
                     placeholder: (context, url) => Container(
                       color: isDark
                           ? Colors.white.withOpacity(0.05)
@@ -719,10 +746,12 @@ class _FileCardItemState extends State<_FileCardItem> {
     Widget thumbnail;
     if (_isImage && widget.url.isNotEmpty) {
       thumbnail = CachedNetworkImage(
-        imageUrl: widget.url,
+        imageUrl: widget.url.toDirectImageUrl,
         fit: BoxFit.cover,
         width: 48,
         height: 48,
+        memCacheWidth: 120,
+        memCacheHeight: 120,
         placeholder: (_, __) => Container(color: Colors.grey.withOpacity(0.1)),
         errorWidget: (_, __, ___) => Container(
           color: Colors.grey.withOpacity(0.1),
@@ -814,7 +843,7 @@ class _FileCardItemState extends State<_FileCardItem> {
                 if (_isImage && widget.url.isNotEmpty) {
                   showDialog(
                     context: context,
-                    builder: (_) => ImageViewer(imageUrl: widget.url),
+                    builder: (_) => ImageViewer(imageUrl: widget.url.toDirectImageUrl),
                   );
                 } else if (widget.url.isNotEmpty) {
                   openExternalUrl(widget.url);

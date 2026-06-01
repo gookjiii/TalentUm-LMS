@@ -16,6 +16,16 @@ final storageProvider = Provider<StorageProvider>((ref) {
   return CloudinaryStorageProvider.fromEnvironmentOrFirebase();
 });
 
+/// Cloudinary-backed provider for chat (images, videos, audio).
+final chatStorageProvider = Provider<StorageProvider>((ref) {
+  return CloudinaryStorageProvider.chatProvider();
+});
+
+/// Google Drive-backed provider for library materials.
+final libraryStorageProvider = Provider<StorageProvider>((ref) {
+  return CloudinaryStorageProvider.libraryProvider();
+});
+
 final authStateProvider = StreamProvider<User?>((ref) {
   final repo = ref.watch(repositoryProvider);
   return repo.authState();
@@ -29,6 +39,8 @@ final uidProvider = Provider<String?>((ref) {
 final schoolAppStateProvider = ChangeNotifierProvider<SchoolAppState>((ref) {
   return SchoolAppState();
 });
+
+const String appApiSecret = String.fromEnvironment('APP_API_SECRET');
 
 final preloadedChatControllerProvider =
     ChangeNotifierProvider.family<FirebaseChatController, String>((ref, roomId) {
@@ -49,7 +61,7 @@ final preloadedChatControllerProvider =
 final studentClassesStreamProvider = StreamProvider<List<Map<String, dynamic>>>(
   (ref) {
     final uid = ref.watch(uidProvider);
-    if (uid == null) return Stream.value([]);
+    if (uid == null) return const Stream.empty();
     final repo = ref.watch(repositoryProvider);
     return repo.studentClassesCached();
   },
@@ -58,11 +70,11 @@ final studentClassesStreamProvider = StreamProvider<List<Map<String, dynamic>>>(
 final teacherClassesStreamProvider = StreamProvider<List<Map<String, dynamic>>>(
   (ref) {
     final uid = ref.watch(uidProvider);
-    if (uid == null) return Stream.value([]);
-    final appState = ref.watch(schoolAppStateProvider);
+    if (uid == null) return const Stream.empty();
+    final isLeadTeacher = ref.watch(schoolAppStateProvider.select((s) => s.isLeadTeacher));
     final repo = ref.watch(repositoryProvider);
     
-    if (appState.isLeadTeacher) {
+    if (isLeadTeacher) {
       return repo.firestore
           .collection('classes')
           .snapshots()

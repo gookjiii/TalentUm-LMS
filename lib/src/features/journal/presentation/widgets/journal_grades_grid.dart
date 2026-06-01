@@ -27,6 +27,7 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
   final ScrollController _horizontalController = ScrollController();
   final ScrollController _verticalHeaderController = ScrollController();
   final ScrollController _verticalBodyController = ScrollController();
+  int _visibleStudentsCount = 15;
 
   @override
   void initState() {
@@ -37,6 +38,20 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
           _verticalHeaderController.jumpTo(_verticalBodyController.offset);
         }
       }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant JournalGradesGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.classId != widget.classId) {
+      _visibleStudentsCount = 15;
+    }
+  }
+
+  void _loadMoreStudents() {
+    setState(() {
+      _visibleStudentsCount += 15;
     });
   }
 
@@ -94,7 +109,11 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
             ? allStudentIds.where((id) => id == widget.studentIdFilter).toList()
             : allStudentIds;
 
-        _fetchStudentNames(studentIds);
+        final paginatedStudentIds = widget.studentIdFilter != null
+            ? studentIds
+            : studentIds.take(_visibleStudentsCount).toList();
+
+        _fetchStudentNames(paginatedStudentIds);
 
         return columnsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -132,7 +151,7 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                   );
                 }
 
-                return _buildCustomGrid(context, columns, studentIds, marksMap);
+                return _buildCustomGrid(context, columns, paginatedStudentIds, marksMap);
               },
             );
           },
@@ -255,116 +274,125 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
               ),
               // BODY
               Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Sticky Left Column (Students)
-                    SizedBox(
-                      width: studentColWidth,
-                      child: ListView.builder(
-                        controller: _verticalHeaderController,
-                        physics: const ClampingScrollPhysics(),
-                        itemCount: studentIds.length,
-                        itemBuilder: (context, index) {
-                          final studentId = studentIds[index];
-                          final user = _usersCache[studentId];
-                          final name = user?['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey1;
-                          final isLast = index == studentIds.length - 1;
-
-                          return Container(
-                            height: cellHeight,
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            alignment: Alignment.centerLeft,
-                            decoration: BoxDecoration(
-                              border: Border(
-                                right: BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
-                                bottom: isLast ? BorderSide.none : BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification scrollInfo) {
+                    if (scrollInfo.metrics.axis == Axis.vertical &&
+                        scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+                      _loadMoreStudents();
+                    }
+                    return false;
+                  },
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Sticky Left Column (Students)
+                      SizedBox(
+                        width: studentColWidth,
+                        child: ListView.builder(
+                          controller: _verticalHeaderController,
+                          physics: const ClampingScrollPhysics(),
+                          itemCount: studentIds.length,
+                          itemBuilder: (context, index) {
+                            final studentId = studentIds[index];
+                            final user = _usersCache[studentId];
+                            final name = user?['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey1;
+                            final isLast = index == studentIds.length - 1;
+  
+                            return Container(
+                              height: cellHeight,
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              alignment: Alignment.centerLeft,
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  right: BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+                                  bottom: isLast ? BorderSide.none : BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
+                                ),
                               ),
-                            ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 12,
-                                  backgroundColor: SchoolColors.primary.withValues(alpha: 0.1),
-                                  child: Text(
-                                    name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: SchoolColors.primary),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 12,
+                                    backgroundColor: SchoolColors.primary.withValues(alpha: 0.1),
+                                    child: Text(
+                                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: SchoolColors.primary),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    name,
-                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      name,
+                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                    // Scrollable Grid (Marks)
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        controller: _horizontalController,
-                        physics: const ClampingScrollPhysics(),
-                        child: SizedBox(
-                          width: columns.length * cellWidth,
-                          child: ListView.builder(
-                            controller: _verticalBodyController,
-                            physics: const ClampingScrollPhysics(),
-                            itemCount: studentIds.length,
-                            itemBuilder: (context, index) {
-                              final studentId = studentIds[index];
-                              final isLast = index == studentIds.length - 1;
-
-                              return Container(
-                                height: cellHeight,
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    bottom: isLast ? BorderSide.none : BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
+                      // Scrollable Grid (Marks)
+                      Expanded(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          controller: _horizontalController,
+                          physics: const ClampingScrollPhysics(),
+                          child: SizedBox(
+                            width: columns.length * cellWidth,
+                            child: ListView.builder(
+                              controller: _verticalBodyController,
+                              physics: const ClampingScrollPhysics(),
+                              itemCount: studentIds.length,
+                              itemBuilder: (context, index) {
+                                final studentId = studentIds[index];
+                                final isLast = index == studentIds.length - 1;
+  
+                                return Container(
+                                  height: cellHeight,
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: isLast ? BorderSide.none : BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
+                                    ),
                                   ),
-                                ),
-                                child: Row(
-                                  children: columns.map((col) {
-                                    final colId = col.id;
-                                    final mark = marksMap[studentId]?[colId] ?? '';
-                                    final user = _usersCache[studentId];
-                                    final studentName = user?['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey1;
-                                    final colData = col.data()!;
-                                    final date = (colData['date'] as Timestamp).toDate();
-                                    final topic = colData['topic']?.toString() ?? '';
-
-                                    final isTeacher = ref.watch(schoolAppStateProvider).isTeacher;
-                                    return SizedBox(
-                                      width: cellWidth,
-                                      height: cellHeight,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: _MarkCell(
-                                          initialValue: mark,
-                                          isDark: isDark,
-                                          onChanged: (val) => _updateMark(studentId, colId, val),
-                                          enabled: isTeacher,
-                                          studentName: studentName,
-                                          date: date,
-                                          topic: topic,
+                                  child: Row(
+                                    children: columns.map((col) {
+                                      final colId = col.id;
+                                      final mark = marksMap[studentId]?[colId] ?? '';
+                                      final user = _usersCache[studentId];
+                                      final studentName = user?['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey1;
+                                      final colData = col.data()!;
+                                      final date = (colData['date'] as Timestamp).toDate();
+                                      final topic = colData['topic']?.toString() ?? '';
+  
+                                      final isTeacher = ref.watch(schoolAppStateProvider).isTeacher;
+                                      return SizedBox(
+                                        width: cellWidth,
+                                        height: cellHeight,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: _MarkCell(
+                                            initialValue: mark,
+                                            isDark: isDark,
+                                            onChanged: (val) => _updateMark(studentId, colId, val),
+                                            enabled: isTeacher,
+                                            studentName: studentName,
+                                            date: date,
+                                            topic: topic,
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              );
-                            },
+                                      );
+                                    }).toList(),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -576,44 +604,48 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
             ),
             const SizedBox(width: 16),
 
-            // Right Side: Beautiful Color-Coded Rating Badge
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: cleanMark.isNotEmpty ? gradeColor.withValues(alpha: 0.12) : Colors.transparent,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: cleanMark.isNotEmpty ? gradeColor.withValues(alpha: 0.3) : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.08)),
-                      width: 2,
+            // Right Side: Beautiful Color-Coded Rating Badge with Fixed Width for perfect vertical alignment
+            SizedBox(
+              width: 120,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: cleanMark.isNotEmpty ? gradeColor.withValues(alpha: 0.12) : Colors.transparent,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: cleanMark.isNotEmpty ? gradeColor.withValues(alpha: 0.3) : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.08)),
+                        width: 2,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      cleanMark.isNotEmpty ? cleanMark : '-',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                        color: cleanMark.isNotEmpty ? gradeColor : (isDark ? Colors.white30 : Colors.black26),
+                      ),
                     ),
                   ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    cleanMark.isNotEmpty ? cleanMark : '-',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18,
-                      color: cleanMark.isNotEmpty ? gradeColor : (isDark ? Colors.white30 : Colors.black26),
+                  if (gradeDesc.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      gradeDesc,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: gradeColor,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                ),
-                if (gradeDesc.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    gradeDesc,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: gradeColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ],
         ),

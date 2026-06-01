@@ -8,6 +8,7 @@ import 'package:school_world/src/firebase/school_repository.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/utils/open_external_url.dart';
+import 'package:school_world/src/utils/string_extensions.dart';
 
 class PostCard extends StatefulWidget {
   const PostCard({
@@ -150,7 +151,7 @@ class _PostCardState extends State<PostCard> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: CachedNetworkImage(
-                  imageUrl: attachments.first['url'],
+                  imageUrl: (attachments.first['url'] as String).toDirectImageUrl,
                   height: 240,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -563,7 +564,7 @@ class _AttachmentCarousel extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: CachedNetworkImage(
-              imageUrl: images[i],
+              imageUrl: images[i].toDirectImageUrl,
               width: 300,
               fit: BoxFit.cover,
             ),

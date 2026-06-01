@@ -49,12 +49,16 @@ mixin SchoolRepositoryAssignments {
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> assignmentsForClass(
-    String classId,
-  ) {
-    return firestore
+    String classId, {
+    int? limit,
+  }) {
+    var query = firestore
         .collection('assignments')
-        .where('classId', isEqualTo: classId)
-        .safeSnapshots();
+        .where('classId', isEqualTo: classId);
+    if (limit != null) {
+      query = query.limit(limit);
+    }
+    return query.safeSnapshots();
   }
 
   Future<void> gradeSubmission({

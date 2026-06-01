@@ -5,6 +5,7 @@ import 'package:school_world/src/firebase/safe_firestore.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
+import 'package:school_world/src/firebase/storage_provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class FirebaseChatController extends InMemoryChatController with ChangeNotifier {
@@ -45,10 +46,18 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
     this.onMessagesUpdated,
   }) : _topicId = topicId;
 
-  void setTopicId(String? topicId) {
+  String? _topicName;
+  String? get currentTopicName => _topicName;
+
+  void setTopicId(String? topicId, {String? topicName}) {
     if (_topicId == topicId) return;
     _topicId = topicId;
+    _topicName = topicName;
     _allMessages = []; // Clear current messages for new topic
+    _oldestLoadedDoc = null;
+    _hasMoreOlder = true;
+    _isLoadingOlder = false;
+    _applySearch(animated: false);
     stopListening();
     startListening();
   }
@@ -81,19 +90,31 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
     // 1. Load from cache immediately for instant UI
     _loadFromCache();
 
+    Query<Map<String, dynamic>> query = firestore
+        .collection('rooms')
+        .doc(roomId)
+        .collection('messages')
+        .orderBy('createdAt', descending: true);
+
+    if (_topicId != null) {
+      query = query.where('metadata.topicId', isEqualTo: _topicId);
+    }
+
     // 2. Subscribe to the most recent _pageSize messages with realtime updates.
     _sub = safeFirebaseStream(
-      firestore
-          .collection('rooms')
-          .doc(roomId)
-          .collection('messages')
-          .orderBy('createdAt', descending: true)
-          .limit(_pageSize)
-          .snapshots(),
+      query.limit(_pageSize).snapshots(),
     ).listen(
       _onSnapshot,
       onError: (e) {
-        // Non-fatal: stream will retry on reconnect
+        debugPrint('FirebaseChatController stream error: $e');
+        if (e.toString().contains('FAILED_PRECONDITION')) {
+          debugPrint(
+            '\n=== IMPORTANT: INDEX REQUIRED ===\n'
+            'You need to create a Firestore Composite Index to filter topics!\n'
+            'Check your Firebase console or Flutter debug output for the direct index creation link!\n'
+            '=================================\n',
+          );
+        }
       },
     );
   }
@@ -164,11 +185,17 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
     if (_oldestLoadedDoc == null) return;
     _isLoadingOlder = true;
     try {
-      final snap = await firestore
+      Query<Map<String, dynamic>> query = firestore
           .collection('rooms')
           .doc(roomId)
           .collection('messages')
-          .orderBy('createdAt', descending: true)
+          .orderBy('createdAt', descending: true);
+
+      if (_topicId != null) {
+        query = query.where('metadata.topicId', isEqualTo: _topicId);
+      }
+
+      final snap = await query
           .startAfterDocument(_oldestLoadedDoc!)
           .limit(_pageSize)
           .get();
@@ -760,6 +787,24 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
     final index = _allMessages.indexWhere((m) => m.id == messageId);
     if (index != -1) {
       final message = _allMessages[index];
+      
+      // Delete physical file if it's an image or file
+      if (message is ImageMessage) {
+        final url = message.source;
+        if (url.isNotEmpty) {
+          try {
+            await CloudinaryStorageProvider.chatProvider().deleteFile(url);
+          } catch (_) {}
+        }
+      } else if (message is FileMessage) {
+        final url = message.source;
+        if (url.isNotEmpty) {
+          try {
+            await CloudinaryStorageProvider.chatProvider().deleteFile(url);
+          } catch (_) {}
+        }
+      }
+
       final metadata = Map<String, dynamic>.from(message.metadata ?? {});
       metadata['isDeleted'] = true;
       metadata['deletedAt'] = DateTime.now().millisecondsSinceEpoch;

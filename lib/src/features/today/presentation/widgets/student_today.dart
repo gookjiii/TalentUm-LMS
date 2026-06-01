@@ -11,8 +11,8 @@ import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:school_world/main.dart';
 
-import 'package:school_world/src/features/grades/presentation/screens/grades_screen.dart';
 import 'package:school_world/src/screens/settings_screen.dart';
+import 'package:school_world/src/screens/student_shell.dart';
 import 'package:school_world/src/features/today/presentation/widgets/learning_streak_widget.dart';
 
 class StudentToday extends ConsumerWidget {
@@ -53,8 +53,12 @@ class StudentToday extends ConsumerWidget {
         : l10n.goodEvening;
 
     final todaySchedules = ref.watch(studentTodaySchedulesProvider);
-    final classNames = {
-      for (final c in classes) c['id'].toString(): c['name']?.toString() ?? 'Класс',
+    final classInfo = {
+      for (final c in classes)
+        c['id'].toString(): (
+          name: c['name']?.toString() ?? 'Класс',
+          subject: c['subject']?.toString() ?? '',
+        ),
     };
 
     ResolvedScheduleItem? upcomingClass;
@@ -73,59 +77,28 @@ class StudentToday extends ConsumerWidget {
     }).length;
 
     return ListView(
-      padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       children: [
-        // ── Header ────────────────────────────────────────────────
-        FadeIn(
-          delay: Duration.zero,
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      date,
-                      style: const TextStyle(
-                        color: SchoolColors.muted,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$greeting, $name 👋',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        height: 1.1,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
+        PageHeader(
+          title: '$greeting, $name 👋',
+          subtitle: date,
+          trailing: SchoolAvatar(
+            name: name,
+            avatarUrl: avatarUrl,
+            radius: 23,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (ctx) => SettingsScreen(
+                  repository: AppScope.of(ctx).repository,
+                  appState: AppScope.of(ctx).appState,
                 ),
               ),
-              SchoolAvatar(
-                name: name,
-                avatarUrl: avatarUrl,
-                radius: 23,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (ctx) => SettingsScreen(
-                      repository: AppScope.of(ctx).repository,
-                      appState: AppScope.of(ctx).appState,
-                    ),
-                  ),
-                ),
-                showBorder: true,
-              ),
-            ],
+            ),
+            showBorder: true,
           ),
         ),
-        const SizedBox(height: 20),
-
-        // ── Stats row ─────────────────────────────────────────────
+        const SizedBox(height: 8),
         FadeIn(
           delay: const Duration(milliseconds: 60),
           child: _StatsRow(
@@ -142,7 +115,7 @@ class StudentToday extends ConsumerWidget {
             delay: const Duration(milliseconds: 80),
             child: _UpcomingClassReminder(
               item: upcomingClass,
-              className: classNames[upcomingClass.classId] ?? 'Класс',
+              className: classInfo[upcomingClass.classId]?.name ?? 'Класс',
             ),
           ),
           const SizedBox(height: 12),
@@ -198,10 +171,14 @@ class StudentToday extends ConsumerWidget {
                   )
                 : StaggeredList(
                     children: todaySchedules.take(3).map(
-                      (item) => StudentScheduleCard(
-                        item: item,
-                        className: classNames[item.classId] ?? 'Класс',
-                      ),
+                      (item) {
+                        final info = classInfo[item.classId];
+                        return StudentScheduleCard(
+                          item: item,
+                          className: info?.name ?? 'Класс',
+                          subject: info?.subject ?? '',
+                        );
+                      },
                     ).toList(),
                   ),
           ),
@@ -237,13 +214,15 @@ class StudentToday extends ConsumerWidget {
                 color: SchoolColors.accent,
               ),
               QuickTile(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RosterGradesScreen()),
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (_) => JoinClassDialog(
+                    repository: AppScope.of(context).repository,
+                  ),
                 ),
-                icon: Icons.school_outlined,
-                label: l10n.myGrades,
-                color: SchoolColors.green,
+                icon: Icons.group_add_outlined,
+                label: l10n.joinAClass,
+                color: SchoolColors.secondary,
               ),
             ],
           ),
@@ -656,10 +635,12 @@ class StudentScheduleCard extends StatefulWidget {
     super.key,
     required this.item,
     required this.className,
+    required this.subject,
   });
 
   final ResolvedScheduleItem item;
   final String className;
+  final String subject;
 
   @override
   State<StudentScheduleCard> createState() => _StudentScheduleCardState();
@@ -684,12 +665,15 @@ class _StudentScheduleCardState extends State<StudentScheduleCard> {
     final subjectColor = widget.item.cancelled
         ? Colors.grey
         : (isNow
-              ? SchoolColors.green
-              : isNext
-              ? SchoolColors.orange
-              : isDark
-              ? SchoolColors.darkMuted
-              : SchoolColors.muted);
+            ? SchoolColors.green
+            : isNext
+                ? SchoolColors.orange
+                : isDark
+                    ? SchoolColors.darkMuted
+                    : SchoolColors.muted);
+
+    final primaryTitle = widget.subject.isNotEmpty ? widget.subject : widget.className;
+    final subtitle = widget.subject.isNotEmpty ? widget.className : '';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -742,7 +726,7 @@ class _StudentScheduleCardState extends State<StudentScheduleCard> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '$startLabel · Кабинет $room',
+                                    '$startLabel · ${AppLocalizations.of(context)!.cabinetWithNumber(room)}',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
@@ -754,13 +738,24 @@ class _StudentScheduleCardState extends State<StudentScheduleCard> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    widget.className,
+                                    primaryTitle,
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w800,
                                       letterSpacing: -0.3,
                                     ),
                                   ),
+                                  if (subtitle.isNotEmpty)
+                                    Text(
+                                      subtitle,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark
+                                            ? SchoolColors.darkTextSecondary
+                                            : SchoolColors.textSecondary,
+                                      ),
+                                    ),
                                   if (widget.item.note != null &&
                                       widget.item.note!.trim().isNotEmpty) ...[
                                     const SizedBox(height: 8),

@@ -5,6 +5,7 @@ import 'package:school_world/src/theme.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_web/webview_flutter_web.dart'; // ADDED
+import 'package:url_launcher/url_launcher.dart';
 
 class DocumentPreviewDialog extends StatefulWidget {
   final String url;
@@ -26,14 +27,45 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
   bool _isWebViewSupported = false;
 
   bool get isPdf => widget.fileName.toLowerCase().endsWith('.pdf');
+  
+  bool get isVideo {
+    final ext = widget.fileName.toLowerCase().split('.').last;
+    return ['mp4', 'mov', 'avi', 'webm', 'mkv'].contains(ext);
+  }
+
+  String get _embedUrl {
+    if (widget.url.contains('drive.google.com')) {
+      String? fileId;
+      if (widget.url.contains('/file/d/')) {
+        final parts = widget.url.split('/file/d/');
+        if (parts.length > 1) {
+          fileId = parts[1].split('/').first.split('?').first;
+        }
+      } else if (widget.url.contains('id=')) {
+        try {
+          final uri = Uri.parse(widget.url);
+          fileId = uri.queryParameters['id'];
+        } catch (_) {}
+      }
+      
+      if (fileId != null && fileId.isNotEmpty) {
+        return 'https://drive.google.com/file/d/$fileId/preview';
+      }
+    }
+    if (isPdf || isVideo) {
+      return widget.url;
+    }
+    return 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(widget.url)}';
+  }
 
   @override
   void initState() {
     super.initState();
     
-    if (!isPdf) {
-      final docsPreviewUrl = 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(widget.url)}';
-      
+    // Use WebView for non-PDFs on all platforms, and for PDFs on Web to bypass CORS and memory issues with heavy files
+    final useWebView = !isPdf || kIsWeb;
+
+    if (useWebView) {
       _isWebViewSupported = kIsWeb || 
           defaultTargetPlatform == TargetPlatform.android || 
           defaultTargetPlatform == TargetPlatform.iOS;
@@ -68,14 +100,12 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
           _isLoading = false;
         }
         
-        _controller!.loadRequest(Uri.parse(docsPreviewUrl));
+        _controller!.loadRequest(Uri.parse(_embedUrl));
       } else {
         _isLoading = false;
       }
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -115,6 +145,13 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                   ),
                 ),
                 IconButton(
+                  onPressed: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
+                  icon: const Icon(Icons.open_in_new_rounded, color: SchoolColors.primary, size: 22),
+                  splashRadius: 24,
+                  tooltip: 'Open in Google Drive',
+                ),
+                const SizedBox(width: 8),
+                IconButton(
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close_rounded),
                   splashRadius: 24,
@@ -128,8 +165,8 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
           // Preview Area
           Flexible(
             child: AspectRatio(
-              aspectRatio: 1 / 1.414, // A4 document ratio
-              child: isPdf 
+              aspectRatio: isVideo ? 16 / 9 : 1 / 1.414, // 16:9 for videos, A4 document ratio for others
+              child: (isPdf && !kIsWeb) 
               ? SfPdfViewer.network(
                   widget.url,
                   canShowScrollHead: false,

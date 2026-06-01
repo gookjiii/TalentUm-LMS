@@ -26,6 +26,7 @@ class TeacherSidebar extends StatelessWidget {
     required this.onCopyGuestLink,
     required this.onSelectClass,
     this.onCreateClass,
+    this.onProfileTap,
   });
 
   final bool extended;
@@ -39,6 +40,7 @@ class TeacherSidebar extends StatelessWidget {
   final void Function(String, String) onCopyGuestLink;
   final ValueChanged<String> onSelectClass;
   final VoidCallback? onCreateClass;
+  final VoidCallback? onProfileTap;
 
   @override
   Widget build(BuildContext context) {
@@ -88,14 +90,38 @@ class TeacherSidebar extends StatelessWidget {
                     ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(14, 24, 14, 10),
-                    child: Text(
-                      l10n.myClasses.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white.withValues(alpha: 0.3),
-                        letterSpacing: 1.2,
-                      ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.myClasses.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white.withValues(alpha: 0.3),
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ),
+                        if (AppScope.of(context).appState.isLeadTeacher)
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: IconButton(
+                              onPressed: onCreateClass,
+                              icon: const Icon(Icons.add_rounded, size: 14),
+                              color: Colors.white.withValues(alpha: 0.4),
+                              padding: EdgeInsets.zero,
+                              tooltip: l10n.createClass,
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.white.withValues(alpha: 0.08),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                   for (final c in classes)
@@ -119,12 +145,6 @@ class TeacherSidebar extends StatelessWidget {
                         c['inviteCode'] ?? '',
                       ),
                     ),
-                  // Create class button
-                  if (AppScope.of(context).appState.isLeadTeacher)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-                      child: _CreateClassButton(onTap: onCreateClass, l10n: l10n),
-                    ),
                 ],
               ],
             ),
@@ -141,7 +161,11 @@ class TeacherSidebar extends StatelessWidget {
             const SizedBox(height: 4),
           ],
           _SidebarDivider(),
-          _TeacherUserCard(extended: extended, onSignOut: repo.signOut),
+          _TeacherUserCard(
+            extended: extended,
+            onSignOut: repo.signOut,
+            onTap: onProfileTap,
+          ),
         ],
       ),
     );
@@ -348,6 +372,7 @@ class _TeacherClassItem extends StatefulWidget {
     required this.onCopyLink,
     this.avatarUrl,
     required this.isLead,
+    this.isVirtual = false,
   });
 
   final String name, subject;
@@ -356,6 +381,7 @@ class _TeacherClassItem extends StatefulWidget {
   final VoidCallback onTap, onDeleteChat, onDeleteClass, onCopyLink;
   final String? avatarUrl;
   final bool isLead;
+  final bool isVirtual;
 
   @override
   State<_TeacherClassItem> createState() => _TeacherClassItemState();
@@ -396,12 +422,27 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
             ),
             child: Row(
               children: [
-                ClassBadge(
-                  name: widget.name,
-                  color: widget.color,
-                  size: 32,
-                  avatarUrl: widget.avatarUrl,
-                ),
+                if (widget.isVirtual)
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: widget.color.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.person_outline_rounded,
+                      size: 18,
+                      color: widget.color,
+                    ),
+                  )
+                else
+                  ClassBadge(
+                    name: widget.name,
+                    color: widget.color,
+                    size: 32,
+                    avatarUrl: widget.avatarUrl,
+                  ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -434,7 +475,7 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
                     ],
                   ),
                 ),
-                if (widget.selected || _hovered)
+                if (!widget.isVirtual && (widget.selected || _hovered))
                   PopupMenuButton<String>(
                     icon: Icon(
                       Icons.more_vert_rounded,
@@ -527,64 +568,6 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
   }
 }
 
-class _CreateClassButton extends StatefulWidget {
-  const _CreateClassButton({required this.onTap, required this.l10n});
-  final VoidCallback? onTap;
-  final AppLocalizations l10n;
-
-  @override
-  State<_CreateClassButton> createState() => _CreateClassButtonState();
-}
-
-class _CreateClassButtonState extends State<_CreateClassButton> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: _hovered
-                  ? Colors.white.withValues(alpha: 0.20)
-                  : Colors.white.withValues(alpha: 0.09),
-              width: 1,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            color: _hovered
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.transparent,
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.add_rounded,
-                color: Colors.white.withValues(alpha: _hovered ? 0.7 : 0.45),
-                size: 18,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                widget.l10n.createClass,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: _hovered ? 0.7 : 0.45),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _AdminModeToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -627,15 +610,21 @@ class _AdminModeToggle extends StatelessWidget {
 }
 
 class _TeacherUserCard extends StatelessWidget {
-  const _TeacherUserCard({required this.extended, required this.onSignOut});
+  const _TeacherUserCard({
+    required this.extended,
+    required this.onSignOut,
+    this.onTap,
+  });
 
   final bool extended;
   final VoidCallback onSignOut;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final repo = AppScope.of(context).repository;
     final l10n = AppLocalizations.of(context)!;
+    final isLead = AppScope.of(context).appState.isLeadTeacher;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: repo.userDocStream(),
@@ -648,70 +637,76 @@ class _TeacherUserCard extends StatelessWidget {
         final avatarUrl = data['avatarUrl'] as String?;
 
         return Padding(
-          padding: const EdgeInsets.all(12),
-          child: Container(
-            padding: EdgeInsets.all(extended ? 12 : 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.07),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: extended
-                  ? MainAxisAlignment.start
-                  : MainAxisAlignment.center,
-              children: [
-                SchoolAvatar(
-                  name: name,
-                  avatarUrl: avatarUrl,
-                  radius: extended ? 18 : 15,
-                  showBorder: true,
+          padding: EdgeInsets.symmetric(
+            horizontal: extended ? 12 : 4,
+            vertical: 12,
+          ),
+          child: GestureDetector(
+            onTap: onTap,
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: EdgeInsets.all(extended ? 12 : 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.07),
+                  width: 1,
                 ),
-                if (extended) ...[
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          AppScope.of(context).appState.isLeadTeacher
-                              ? 'Lead Teacher'
-                              : l10n.teacher,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.45),
-                          ),
-                        ),
-                      ],
-                    ),
+              ),
+              child: Row(
+                mainAxisAlignment: extended
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
+                children: [
+                  SchoolAvatar(
+                    name: name,
+                    avatarUrl: avatarUrl,
+                    radius: extended ? 18 : 15,
+                    showBorder: true,
                   ),
-                  IconButton(
-                    onPressed: onSignOut,
-                    icon: const Icon(
-                      Icons.logout_rounded,
-                      size: 17,
-                      color: SchoolColors.red,
+                  if (extended) ...[
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            isLead ? 'Lead Teacher' : l10n.teacher,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white.withValues(alpha: 0.45),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    tooltip: AppLocalizations.of(context)!.logOut,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  ),
+                    IconButton(
+                      onPressed: onSignOut,
+                      icon: const Icon(
+                        Icons.logout_rounded,
+                        size: 17,
+                        color: SchoolColors.red,
+                      ),
+                      tooltip: l10n.logOut,
+                      padding: EdgeInsets.zero,
+                      constraints:
+                          const BoxConstraints(minWidth: 32, minHeight: 32),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         );

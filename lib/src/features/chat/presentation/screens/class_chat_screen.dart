@@ -19,6 +19,7 @@ import 'package:school_world/src/firebase/school_repository.dart';
 import 'package:school_world/src/features/chat/data/reactions_notifier.dart';
 import 'package:school_world/src/utils/open_external_url.dart';
 import 'package:school_world/src/widgets/image_viewer.dart';
+import 'package:school_world/src/features/chat/presentation/screens/photo_editor_screen.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/providers/connectivity_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -146,6 +147,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
           showMessageOptions: _showMessageOptions,
           onReply: (msg) => setState(() => _replyingTo = msg),
           openAttachment: _openAttachment,
+          onImageTap: _handleImageTap,
           roomId: _roomId ?? '',
           classColor: _classColor ?? Colors.blue,
         );
@@ -199,20 +201,28 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
         roomId = 'global_teachers_lounge';
         roomName = AppLocalizations.of(context)!.teachersRoom;
         color = SchoolColors.primary;
-        
-        final roomDoc = await widget.repository.firestore.collection('rooms').doc(roomId).get();
+
+        final roomDoc = await widget.repository.firestore
+            .collection('rooms')
+            .doc(roomId)
+            .get();
         if (!roomDoc.exists) {
-          await widget.repository.firestore.collection('rooms').doc(roomId).set({
-            'name': roomName,
-            'type': 'group',
-            'userIds': [id],
-            'metadata': {'isTeachersLounge': true},
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+          await widget.repository.firestore.collection('rooms').doc(roomId).set(
+            {
+              'name': roomName,
+              'type': 'group',
+              'userIds': [id],
+              'metadata': {'isTeachersLounge': true},
+              'createdAt': FieldValue.serverTimestamp(),
+            },
+          );
         } else {
-          await widget.repository.firestore.collection('rooms').doc(roomId).set({
-            'userIds': FieldValue.arrayUnion([id]),
-          }, SetOptions(merge: true));
+          await widget.repository.firestore.collection('rooms').doc(roomId).set(
+            {
+              'userIds': FieldValue.arrayUnion([id]),
+            },
+            SetOptions(merge: true),
+          );
         }
       } else {
         final classDoc = await widget.repository.firestore
@@ -226,7 +236,9 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
 
         teacherId = classDoc.data()?['teacherId'] as String?;
         roomId = classDoc.data()?['chatRoomId'] as String?;
-        roomName = classDoc.data()?['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey8;
+        roomName =
+            classDoc.data()?['name']?.toString() ??
+            AppLocalizations.of(context)!.unknownKey8;
         color = parseHexColor(classDoc.data()?['coverColor']);
       }
 
@@ -288,6 +300,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
         showMessageOptions: _showMessageOptions,
         onReply: (msg) => setState(() => _replyingTo = msg),
         openAttachment: _openAttachment,
+        onImageTap: _handleImageTap,
         roomId: roomId,
         classColor: color,
       );
@@ -336,7 +349,10 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
     if (_userCache.containsKey(userId)) return _userCache[userId];
     try {
       final d = await widget.repository.resolveUserCached(userId);
-      final name = '${d['firstName'] ?? ''} ${d['lastName'] ?? ''}'.trim();
+      var name = '${d['firstName'] ?? ''} ${d['lastName'] ?? ''}'.trim();
+      if (name.isEmpty) {
+        name = (d['name'] ?? '').toString().trim();
+      }
       final user = User(
         id: userId,
         name: name.isEmpty ? null : name,
@@ -366,7 +382,9 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
               children: [
                 TextField(
                   controller: questionCtrl,
-                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.question),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.question,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 for (int i = 0; i < opts.length; i++)
@@ -440,15 +458,87 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
       final XFile? photo = await picker.pickImage(source: ImageSource.camera);
       if (photo == null || !mounted) return;
       final bytes = await photo.readAsBytes();
+
+      if (mounted) {
+        final editedBytes = await Navigator.push<Uint8List?>(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                PhotoEditorScreen(imageBytes: bytes, imageName: photo.name),
+          ),
+        );
+        if (editedBytes != null && mounted) {
+          final file = PlatformFile(
+            name: photo.name,
+            size: editedBytes.length,
+            bytes: editedBytes,
+          );
+          setState(
+            () => _pendingAttachment = PickedChatAttachment.fromFile(file),
+          );
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _onEditPendingAttachment() async {
+    final attachment = _pendingAttachment;
+    if (attachment == null || attachment.type != AttachmentType.image) return;
+
+    try {
+      Uint8List? bytes = attachment.file.bytes;
+      if (bytes == null && !kIsWeb && attachment.file.path != null) {
+        bytes = await File(attachment.file.path!).readAsBytes();
+      }
+      if (bytes == null) return;
+
+      if (mounted) {
+        final editedBytes = await Navigator.push<Uint8List?>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PhotoEditorScreen(
+              imageBytes: bytes!,
+              imageName: attachment.name,
+            ),
+          ),
+        );
+        if (editedBytes != null && mounted) {
+          final file = PlatformFile(
+            name: attachment.name,
+            size: editedBytes.length,
+            bytes: editedBytes,
+          );
+          setState(() {
+            _pendingAttachment = PickedChatAttachment.fromFile(file);
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _handleImageTap(ImageMessage m) async {
+    final editedBytes = await showDialog<Uint8List?>(
+      context: context,
+      builder: (_) => ImageViewer(imageUrl: m.source),
+    );
+    if (editedBytes != null && mounted) {
+      final name = 'edited_${DateTime.now().millisecondsSinceEpoch}.png';
       final file = PlatformFile(
-        name: photo.name,
-        size: bytes.length,
-        bytes: bytes,
-        path: photo.path,
+        name: name,
+        size: editedBytes.length,
+        bytes: editedBytes,
       );
-      setState(() => _pendingAttachment = PickedChatAttachment.fromFile(file));
-    } catch (_) {
-      // Camera unavailable or permission denied — fail silently
+      setState(() {
+        _pendingAttachment = PickedChatAttachment.fromFile(file);
+      });
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.editedPhotoAttached),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -595,7 +685,8 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
     final theme = Theme.of(context);
     final emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '👏'];
     final isMe = msg.authorId == widget.repository.uid;
-    final isLeadOfClass = widget.appState.isTeacher ||
+    final isLeadOfClass =
+        widget.appState.isTeacher ||
         (_classTeacherId != null && _classTeacherId == widget.repository.uid);
 
     if (position == null) {
@@ -1005,10 +1096,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
             imageMessageBuilder: _bubbleBuilders.buildImageMessage,
             fileMessageBuilder: _bubbleBuilders.buildFileMessage,
             audioMessageBuilder: _bubbleBuilders.buildAudioMessage,
-            onImageTap: (m) => showDialog(
-              context: context,
-              builder: (_) => ImageViewer(imageUrl: m.source),
-            ),
+            onImageTap: _handleImageTap,
             onMessageLongPress: _showMessageOptions,
             onMessageSwipe: (msg) => setState(() => _replyingTo = msg),
           ),
@@ -1018,12 +1106,38 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
           onSend: _handleSend,
           onAttachment: () async {
             final res = await FilePicker.platform.pickFiles(withData: true);
-            if (res != null)
-              setState(
-                () => _pendingAttachment = PickedChatAttachment.fromFile(
-                  res.files.first,
-                ),
-              );
+            if (res != null) {
+              final picked = PickedChatAttachment.fromFile(res.files.first);
+              if (picked.type == AttachmentType.image) {
+                Uint8List? bytes = res.files.first.bytes;
+                if (bytes == null && !kIsWeb && res.files.first.path != null) {
+                  bytes = await File(res.files.first.path!).readAsBytes();
+                }
+                if (bytes != null && context.mounted) {
+                  final editedBytes = await Navigator.push<Uint8List?>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PhotoEditorScreen(
+                        imageBytes: bytes!,
+                        imageName: res.files.first.name,
+                      ),
+                    ),
+                  );
+                  if (editedBytes != null && mounted) {
+                    final file = PlatformFile(
+                      name: res.files.first.name,
+                      size: editedBytes.length,
+                      bytes: editedBytes,
+                    );
+                    setState(() {
+                      _pendingAttachment = PickedChatAttachment.fromFile(file);
+                    });
+                  }
+                }
+              } else {
+                setState(() => _pendingAttachment = picked);
+              }
+            }
           },
           onCamera: kIsWeb ? null : _onCamera,
           onCreatePoll: _isTeacher ? _showCreatePollDialog : null,
@@ -1033,6 +1147,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
           onCancelEditing: () => setState(() => _editingMessage = null),
           pendingAttachment: _pendingAttachment,
           onCancelAttachment: () => setState(() => _pendingAttachment = null),
+          onEditAttachment: _onEditPendingAttachment,
           isUploading: _uploading,
           className: _roomName ?? '',
           onTypingChanged: (typing) =>
@@ -1112,7 +1227,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
                 currentUserId: widget.repository.uid ?? '',
                 onTopicChanged: (tid) {
                   _persistChatContext();
-                  Navigator.pop(context);
+                  _scaffoldKey.currentState?.closeDrawer();
                   setState(() {});
                 },
               ),

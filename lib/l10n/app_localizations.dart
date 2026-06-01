@@ -455,6 +455,174 @@ abstract class AppLocalizations {
   /// **'{count} students'**
   String studentsCount(int count);
 
+  /// No description provided for @more.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get more;
+
+  /// No description provided for @additionalSections.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional sections'**
+  String get additionalSections;
+
+  /// No description provided for @loadingProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading profile...'**
+  String get loadingProfile;
+
+  /// No description provided for @authCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking authorization...'**
+  String get authCheck;
+
+  /// No description provided for @technicalError.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical error'**
+  String get technicalError;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @viewErrorDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View error details'**
+  String get viewErrorDetails;
+
+  /// No description provided for @loginWithMainAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in with main account'**
+  String get loginWithMainAccount;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @joiningClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining class...'**
+  String get joiningClass;
+
+  /// No description provided for @viewFullError.
+  ///
+  /// In en, this message translates to:
+  /// **'View full error'**
+  String get viewFullError;
+
+  /// No description provided for @unableToJoinServerErr.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to join: Server responded with error.'**
+  String get unableToJoinServerErr;
+
+  /// No description provided for @errorJoiningClass.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while joining the class.'**
+  String get errorJoiningClass;
+
+  /// No description provided for @invalidLinkOrExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid link or invite code has expired.'**
+  String get invalidLinkOrExpired;
+
+  /// No description provided for @classNotExists.
+  ///
+  /// In en, this message translates to:
+  /// **'The class does not exist.'**
+  String get classNotExists;
+
+  /// No description provided for @networkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please check your internet connection.'**
+  String get networkError;
+
+  /// No description provided for @joiningWait.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining...'**
+  String get joiningWait;
+
+  /// No description provided for @enterClassroom.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter classroom'**
+  String get enterClassroom;
+
+  /// No description provided for @totalAssignmentsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} assignments total'**
+  String totalAssignmentsCount(int count);
+
+  /// No description provided for @roomWithNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Room {number}'**
+  String roomWithNumber(String number);
+
+  /// No description provided for @editedPhotoAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited photo attached to message'**
+  String get editedPhotoAttached;
+
+  /// No description provided for @avatarUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar updated successfully'**
+  String get avatarUpdated;
+
+  /// No description provided for @errorPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String errorPrefix(String error);
+
+  /// No description provided for @errorClearingChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Error clearing chat: {error}'**
+  String errorClearingChat(Object error);
+
+  /// No description provided for @errorDeletingClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Error deleting class: {error}'**
+  String errorDeletingClass(Object error);
+
+  /// No description provided for @reload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get reload;
+
+  /// No description provided for @loadingSystemSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading system settings...'**
+  String get loadingSystemSettings;
+
+  /// No description provided for @uploadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload error: {error}'**
+  String uploadError(String error);
+
   /// No description provided for @searchMessages.
   ///
   /// In en, this message translates to:
@@ -934,12 +1102,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Changes'**
   String get saveChanges;
-
-  /// No description provided for @avatarUpdated.
-  ///
-  /// In en, this message translates to:
-  /// **'Avatar updated successfully'**
-  String get avatarUpdated;
 
   /// No description provided for @failedToUploadAvatar.
   ///
@@ -3917,12 +4079,6 @@ abstract class AppLocalizations {
   /// **'Show this QR code to your students or send them a direct link.'**
   String get showThisQrCodeTo;
 
-  /// No description provided for @close.
-  ///
-  /// In en, this message translates to:
-  /// **'Close'**
-  String get close;
-
   /// No description provided for @linkCopied.
   ///
   /// In en, this message translates to:
@@ -4288,6 +4444,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Class'**
   String get classText;
+
+  /// No description provided for @cloudStorageManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud Storage Management'**
+  String get cloudStorageManagement;
+
+  /// No description provided for @loadingCloudStorageStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading cloud storage statistics...'**
+  String get loadingCloudStorageStats;
+
+  /// No description provided for @googleDriveSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stores library resources and large lessons'**
+  String get googleDriveSubtitle;
+
+  /// No description provided for @cloudinarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stores images, short videos, and feed posts'**
+  String get cloudinarySubtitle;
+
+  /// No description provided for @firebaseStorageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stores auxiliary files, avatars, and configuration images'**
+  String get firebaseStorageSubtitle;
+
+  /// No description provided for @cleaningUpStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleaning up storage...'**
+  String get cleaningUpStorage;
+
+  /// No description provided for @cleanUpRedundantData.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean up redundant data on system'**
+  String get cleanUpRedundantData;
+
+  /// No description provided for @confirmCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Cleanup'**
+  String get confirmCleanup;
+
+  /// No description provided for @confirmCleanupDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'The system will scan and clean up orphan files (garbage files) that have been deleted in the app but still exist on cloud services (Google Drive, Cloudinary, Firebase). This process may take 1-2 minutes.'**
+  String get confirmCleanupDesc;
+
+  /// No description provided for @startCleanup.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Cleanup'**
+  String get startCleanup;
+
+  /// No description provided for @cleanupSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup successful! Deleted {count} redundant files, freed up {size}.'**
+  String cleanupSuccess(String count, String size);
+
+  /// No description provided for @cleanupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup failed: {error}'**
+  String cleanupFailed(String error);
+
+  /// No description provided for @searchTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tasks'**
+  String get searchTasks;
+
+  /// No description provided for @personalizationAndAccountManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Personalization and account management'**
+  String get personalizationAndAccountManagement;
+
+  /// No description provided for @cabinetWithNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Room {number}'**
+  String cabinetWithNumber(String number);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

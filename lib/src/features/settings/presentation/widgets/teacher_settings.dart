@@ -72,14 +72,18 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Аватар обновлен / Avatar updated')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.avatarUpdated)),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка загрузки / Upload error: $e')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.uploadError(e.toString()),
+            ),
+          ),
         );
       }
     } finally {
@@ -166,23 +170,24 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 800),
             child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 56, 20, 40),
-          children: [
-            Text(
-              l10n.profile,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 16),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+              children: [
+                PageHeader(
+                  title: l10n.settings,
+                  subtitle: l10n.personalizationAndAccountManagement,
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                ),
 
-            // Profile Card
-            _ProfileCard(
-              name: name,
-              avatarUrl: avatarUrl,
-              sub: 'Старший учитель · $school',
-              isTeacher: true,
-              classesCount: _classesCount,
-              onEditAvatar: _uploadingAvatar ? null : _pickAndUploadAvatar,
-            ),
+                // Profile Card
+                _ProfileCard(
+                  name: name,
+                  avatarUrl: avatarUrl,
+                  sub:
+                      '${appState.isLeadTeacher ? 'Lead Teacher' : l10n.teacher} · $school',
+                  isTeacher: true,
+                  classesCount: _classesCount,
+                  onEditAvatar: _uploadingAvatar ? null : _pickAndUploadAvatar,
+                ),
 
             const SizedBox(height: 12),
 
@@ -296,6 +301,20 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                   right: _CustomToggle(
                     on: appState.isDarkMode,
                     onChanged: (v) => appState.toggleDarkMode(),
+                  ),
+                ),
+                _SettingsRow(
+                  icon: Icons.speed_rounded,
+                  color: SchoolColors.yellow,
+                  label: Localizations.localeOf(context).languageCode == 'ru'
+                      ? 'Режим высокой производительности'
+                      : 'High Performance Mode',
+                  sub: Localizations.localeOf(context).languageCode == 'ru'
+                      ? 'Снижает графическую нагрузку для слабых устройств'
+                      : 'Reduces graphics load for low-end devices',
+                  right: _CustomToggle(
+                    on: appState.performanceMode,
+                    onChanged: (v) => appState.setPerformanceMode(v),
                   ),
                 ),
                 _SettingsRow(

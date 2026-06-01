@@ -1,3 +1,4 @@
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import '../../main.dart';
@@ -92,14 +93,14 @@ class _GuestJoinScreenState extends State<GuestJoinScreen> {
                                 showDialog(
                                   context: context,
                                   builder: (c) => AlertDialog(
-                                    title: const Text('Lỗi kỹ thuật'),
+                                    title: Text(AppLocalizations.of(context)!.technicalError),
                                     content: SingleChildScrollView(
                                       child: Text(_rawError!),
                                     ),
                                     actions: [
                                       TextButton(
                                         onPressed: () => Navigator.pop(c),
-                                        child: const Text('Đóng'),
+                                        child: Text(AppLocalizations.of(context)!.close),
                                       ),
                                     ],
                                   ),
@@ -138,14 +139,16 @@ class _GuestJoinScreenState extends State<GuestJoinScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.chat_bubble_outline),
-                    label: Text(_loading ? 'Đang tham gia...' : 'Vào lớp học'),
+                    label: Text(_loading
+                        ? AppLocalizations.of(context)!.joiningWait
+                        : AppLocalizations.of(context)!.enterClassroom),
                   ),
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: () {
                       AppScope.of(context).appState.markJoined();
                     },
-                    child: const Text('Đăng nhập bằng tài khoản chính'),
+                    child: Text(AppLocalizations.of(context)!.loginWithMainAccount),
                   ),
                   const SizedBox(height: 20),
                   const Divider(),
@@ -170,8 +173,9 @@ class _GuestJoinScreenState extends State<GuestJoinScreen> {
                           _lastError = null;
                           _rawError = null;
                         });
+                        _join();
                       },
-                      child: const Text('Thử lại'),
+                      child: Text(AppLocalizations.of(context)!.retry),
                     ),
                 ],
               ),
@@ -193,6 +197,7 @@ class _GuestJoinScreenState extends State<GuestJoinScreen> {
       _lastError = null;
       _rawError = null;
     });
+    final l10n = AppLocalizations.of(context)!;
     try {
       final scope = AppScope.of(context);
       final result = await scope.repository.joinClassAsGuest(
@@ -207,19 +212,19 @@ class _GuestJoinScreenState extends State<GuestJoinScreen> {
         scope.appState.setRole('student');
       } else {
         setState(
-          () => _lastError = 'Không thể tham gia: Máy chủ phản hồi lỗi.',
+          () => _lastError = AppLocalizations.of(context)!.unableToJoinServerErr,
         );
       }
     } catch (error) {
       String message = error.toString();
-      String userFriendly = 'Đã có lỗi xảy ra khi tham gia lớp học.';
+      String userFriendly = l10n.errorJoiningClass;
 
       if (message.contains('permission-denied')) {
-        userFriendly = 'Liên kết không hợp lệ hoặc mã mời đã hết hạn.';
+        userFriendly = l10n.invalidLinkOrExpired;
       } else if (message.contains('not-found')) {
-        userFriendly = 'Lớp học không tồn tại.';
+        userFriendly = l10n.classNotExists;
       } else if (message.contains('network-request-failed')) {
-        userFriendly = 'Lỗi kết nối mạng. Vui lòng kiểm tra lại internet.';
+        userFriendly = l10n.networkError;
       }
 
       if (mounted) {

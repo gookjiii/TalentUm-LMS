@@ -223,7 +223,7 @@ class _ChatClassListState extends State<_ChatClassList> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Aurora Animated Gradient Background
+          // Background
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -237,34 +237,36 @@ class _ChatClassListState extends State<_ChatClassList> {
               ),
             ),
           ),
-          Positioned(
-            top: -150,
-            left: -150,
-            child: Container(
-              width: 400,
-              height: 400,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [Color(0x1F2563EB), Color(0x002563EB)],
+          if (!widget.appState.performanceMode) ...[
+            Positioned(
+              top: -150,
+              left: -150,
+              child: Container(
+                width: 400,
+                height: 400,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [Color(0x1F2563EB), Color(0x002563EB)],
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            bottom: -150,
-            right: -150,
-            child: Container(
-              width: 400,
-              height: 400,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [Color(0x1F7C3AED), Color(0x007C3AED)],
+            Positioned(
+              bottom: -150,
+              right: -150,
+              child: Container(
+                width: 400,
+                height: 400,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [Color(0x1F7C3AED), Color(0x007C3AED)],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
 
           SafeArea(
             child: Column(

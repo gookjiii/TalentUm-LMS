@@ -24,6 +24,7 @@ class ChatInput extends StatefulWidget {
     required this.onCancelEditing,
     this.pendingAttachment,
     required this.onCancelAttachment,
+    this.onEditAttachment,
     this.onCreatePoll,
     this.isUploading = false,
     required this.className,
@@ -41,6 +42,7 @@ class ChatInput extends StatefulWidget {
   final VoidCallback onCancelEditing;
   final PickedChatAttachment? pendingAttachment;
   final VoidCallback onCancelAttachment;
+  final VoidCallback? onEditAttachment;
   final VoidCallback? onCreatePoll;
   final bool isUploading;
   final String className;
@@ -333,6 +335,7 @@ class _ChatInputState extends State<ChatInput> {
                       child: PendingAttachmentPreview(
                         attachment: widget.pendingAttachment!,
                         onCancel: widget.onCancelAttachment,
+                        onEdit: widget.onEditAttachment,
                       ),
                     ),
             ),

@@ -2,6 +2,7 @@ import 'package:school_world/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/src/theme.dart';
+import 'package:school_world/src/widgets/school_widgets.dart';
 
 
 import '../widgets/journal_grades_grid.dart';
@@ -43,38 +44,13 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
       backgroundColor: Colors.transparent,
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppLocalizations.of(context)!.coolMagazine,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.studentId != null
-                            ? AppLocalizations.of(context)!.myGradesAndSubjects
-                            : AppLocalizations.of(context)!.academicPerformanceAndSubjects,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.white70 : SchoolColors.muted,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (ref.watch(schoolAppStateProvider).isTeacher)
-                  SizedBox(
+          PageHeader(
+            title: AppLocalizations.of(context)!.coolMagazine,
+            subtitle: widget.studentId != null
+                ? AppLocalizations.of(context)!.myGradesAndSubjects
+                : AppLocalizations.of(context)!.academicPerformanceAndSubjects,
+            trailing: ref.watch(schoolAppStateProvider).isTeacher
+                ? SizedBox(
                     height: 44,
                     child: FilledButton.icon(
                       onPressed: () => _showAddLessonDialog(context, ref),
@@ -82,7 +58,10 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                       label: Text(AppLocalizations.of(context)!.addALesson),
                       style: FilledButton.styleFrom(
                         backgroundColor: SchoolColors.primary,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         shape: RoundedRectangleBorder(
@@ -90,11 +69,10 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
+                  )
+                : null,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Container(

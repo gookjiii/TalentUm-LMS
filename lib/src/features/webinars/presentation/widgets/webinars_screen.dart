@@ -12,76 +12,108 @@ import '../webinars_providers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 
-class WebinarsScreen extends ConsumerWidget {
+class WebinarsScreen extends ConsumerStatefulWidget {
   const WebinarsScreen({super.key, required this.classId});
   final String classId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final webinarsAsync = ref.watch(webinarsProvider(classId));
+  ConsumerState<WebinarsScreen> createState() => _WebinarsScreenState();
+}
+
+class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
+  int _limit = 20;
+
+  @override
+  void didUpdateWidget(covariant WebinarsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.classId != widget.classId) {
+      setState(() {
+        _limit = 20;
+      });
+    }
+  }
+
+  void _loadMore() {
+    setState(() {
+      _limit += 20;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final webinarsAsync = ref.watch(webinarsProvider((widget.classId, _limit)));
     final appState = ref.watch(schoolAppStateProvider);
     final repo = ref.watch(repositoryProvider);
     final isTeacher = appState.isTeacher;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: repo.firestore.collection('classes').doc(classId).snapshots(),
+      stream: repo.firestore.collection('classes').doc(widget.classId).snapshots(),
       builder: (context, classSnap) {
         final isLeadOfClass = appState.isLeadTeacher;
 
         return Scaffold(
           backgroundColor: Colors.transparent,
-          body: CustomScrollView(
-            slivers: [
-              SliverPadding(
-                padding: EdgeInsets.all(24),
-                sliver: SliverToBoxAdapter(
-                  child: SectionHeader(
+          body: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification scrollInfo) {
+              if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+                _loadMore();
+              }
+              return false;
+            },
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: PageHeader(
                     title: AppLocalizations.of(context)!.webinars,
-                    action: isTeacher ? AppLocalizations.of(context)!.add : null,
-                    onActionTap: isTeacher
-                        ? () => _showAddDialog(context, ref)
+                    subtitle: AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
+                    trailing: isTeacher
+                        ? IconButton.filledTonal(
+                            onPressed: () => _showAddDialog(context, ref),
+                            icon: const Icon(Icons.add_rounded),
+                            tooltip: AppLocalizations.of(context)!.add,
+                          )
                         : null,
                   ),
                 ),
-              ),
-              webinarsAsync.when(
-                data: (docs) {
-                  if (docs.isEmpty) {
-                    return SliverFillRemaining(
-                      child: EmptyState(
-                        icon: Icons.ondemand_video_outlined,
-                        title: AppLocalizations.of(context)!.noWebinars,
-                        subtitle:
-                            AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
+                webinarsAsync.when(
+                  data: (docs) {
+                    if (docs.isEmpty) {
+                      return SliverFillRemaining(
+                        child: EmptyState(
+                          icon: Icons.ondemand_video_outlined,
+                          title: AppLocalizations.of(context)!.noWebinars,
+                          subtitle:
+                              AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
+                        ),
+                      );
+                    }
+  
+                    return SliverPadding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final data = docs[index].data();
+                          final id = docs[index].id;
+                          return _WebinarTile(
+                            id: id,
+                            title: data['title'] ?? AppLocalizations.of(context)!.unknownKey7,
+                            description: data['description'],
+                            videoUrl: data['videoUrl'] ?? '',
+                            canDelete: isLeadOfClass,
+                            onDelete: () => _deleteWebinar(context, ref, id),
+                          );
+                        }, childCount: docs.length),
                       ),
                     );
-                  }
-
-                  return SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: 24),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final data = docs[index].data();
-                        final id = docs[index].id;
-                        return _WebinarTile(
-                          id: id,
-                          title: data['title'] ?? AppLocalizations.of(context)!.unknownKey7,
-                          description: data['description'],
-                          videoUrl: data['videoUrl'] ?? '',
-                          canDelete: isLeadOfClass,
-                          onDelete: () => _deleteWebinar(context, ref, id),
-                        );
-                      }, childCount: docs.length),
-                    ),
-                  );
-                },
-                loading: () => const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
+                  },
+                  loading: () => const SliverFillRemaining(
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (err, stack) => SliverFillRemaining(
+                      child: Center(child: Text('Ошибка: $err'))),
                 ),
-                error: (err, stack) => SliverFillRemaining(
-                    child: Center(child: Text('Ошибка: $err'))),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -91,7 +123,7 @@ class WebinarsScreen extends ConsumerWidget {
   void _showAddDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => _AddWebinarDialog(classId: classId),
+      builder: (context) => _AddWebinarDialog(classId: widget.classId),
     );
   }
 
@@ -235,6 +267,21 @@ class _WebinarTile extends StatelessWidget {
             return 'https://vk.com/video_ext.php?oid=$oid&id=$id&hash=$hash';
           }
           return 'https://vk.com/video_ext.php?oid=$oid&id=$id';
+        }
+      }
+    }
+
+    // 4. Google Drive
+    if (cleanUrl.contains('drive.google.com')) {
+      final regExp = RegExp(
+        r'drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      );
+      final match = regExp.firstMatch(cleanUrl);
+      if (match != null && match.groupCount >= 1) {
+        final fileId = match.group(1);
+        if (fileId != null) {
+          return 'https://drive.google.com/file/d/$fileId/preview';
         }
       }
     }
@@ -670,7 +717,7 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
           _isUploading = true;
         });
 
-        final storage = ref.read(storageProvider);
+        final storage = ref.read(libraryStorageProvider);
         final path = 'classes/${widget.classId}/webinars/${DateTime.now().millisecondsSinceEpoch}_${_selectedFile!.name}';
 
         Map<String, dynamic> result;
