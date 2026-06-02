@@ -43,7 +43,10 @@ final schoolAppStateProvider = ChangeNotifierProvider<SchoolAppState>((ref) {
 const String appApiSecret = String.fromEnvironment('APP_API_SECRET');
 
 final preloadedChatControllerProvider =
-    ChangeNotifierProvider.family<FirebaseChatController, String>((ref, roomId) {
+    ChangeNotifierProvider.family<FirebaseChatController, String>((
+      ref,
+      roomId,
+    ) {
       final uid = ref.watch(uidProvider);
       final repo = ref.watch(repositoryProvider);
       final controller = FirebaseChatController(
@@ -71,16 +74,27 @@ final teacherClassesStreamProvider = StreamProvider<List<Map<String, dynamic>>>(
   (ref) {
     final uid = ref.watch(uidProvider);
     if (uid == null) return const Stream.empty();
-    final isLeadTeacher = ref.watch(schoolAppStateProvider.select((s) => s.isLeadTeacher));
+
+    final isTeacher = ref.watch(
+      schoolAppStateProvider.select((s) => s.isTeacher),
+    );
+    if (!isTeacher) return const Stream.empty();
+
+    final isLeadTeacher = ref.watch(
+      schoolAppStateProvider.select((s) => s.isLeadTeacher),
+    );
     final repo = ref.watch(repositoryProvider);
-    
+
     if (isLeadTeacher) {
       return repo.firestore
           .collection('classes')
           .snapshots()
-          .map((snap) => snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList());
+          .map(
+            (snap) =>
+                snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList(),
+          );
     }
-    
+
     return repo.teacherClassesCached();
   },
 );
@@ -122,3 +136,13 @@ final userDocumentProvider = StreamProvider<Map<String, dynamic>>((ref) {
       .snapshots()
       .map((doc) => doc.data() ?? {});
 });
+
+final userDataProvider = StreamProvider.autoDispose
+    .family<Map<String, dynamic>?, String>((ref, userId) {
+      final repo = ref.watch(repositoryProvider);
+      return repo.firestore
+          .collection('users')
+          .doc(userId)
+          .snapshots()
+          .map((doc) => doc.data());
+    });

@@ -6,7 +6,7 @@ import 'package:school_world/src/firebase/school_repository.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/features/feed/presentation/widgets/feed_widgets.dart';
-import 'profile_screen.dart';
+import 'settings_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({
@@ -75,7 +75,10 @@ class _FeedScreenState extends State<FeedScreen> {
                             onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const ProfileScreen(),
+                                builder: (_) => SettingsScreen(
+                                  repository: widget.repository,
+                                  appState: widget.appState,
+                                ),
                               ),
                             ),
                           ),

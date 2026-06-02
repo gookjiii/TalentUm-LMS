@@ -40,7 +40,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
   bool _uploadingAvatar = false;
 
   Future<void> _pickAndUploadAvatar() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.image,
       withData: true,
     );
@@ -605,7 +605,6 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
             child: GlassCard(
-              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -678,7 +677,6 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
             child: GlassCard(
-              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -765,7 +763,6 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
               return ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: GlassCard(
-                  padding: const EdgeInsets.all(24),
                   child: exporting
                       ? Column(
                           mainAxisSize: MainAxisSize.min,

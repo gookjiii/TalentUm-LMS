@@ -10,6 +10,15 @@ final libraryMaterialsProvider =
       final uid = ref.watch(uidProvider);
       if (uid == null) return Stream.value([]);
       final repo = ref.watch(repositoryProvider);
+      final classesAsync = ref.watch(studentClassesStreamProvider);
+      final classIds = classesAsync.value?.map((c) => c['id'] as String).toList() ?? [];
+
+      if (arg.$1.isEmpty) {
+        if (classIds.isEmpty) return Stream.value([]);
+        return repo
+            .libraryMaterialsForClasses(classIds, limit: arg.$2)
+            .map((snapshot) => snapshot.docs);
+      }
       return repo
           .libraryMaterialsForClass(arg.$1, limit: arg.$2)
           .map((snapshot) => snapshot.docs);

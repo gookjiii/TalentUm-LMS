@@ -12,6 +12,8 @@ import '../library_providers.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:school_world/src/widgets/image_viewer.dart';
+import 'package:pdf_manipulator/pdf_manipulator.dart';
+import 'package:school_world/src/services/ilovepdf_service.dart';
 
 
 class LibraryScreen extends ConsumerStatefulWidget {
@@ -43,15 +45,23 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final materialsAsync = ref.watch(libraryMaterialsProvider((widget.classId, _limit)));
+    final effectiveClassId =
+        ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ??
+            widget.classId;
+    final materialsAsync =
+        ref.watch(libraryMaterialsProvider((effectiveClassId, _limit)));
     final appState = ref.watch(schoolAppStateProvider);
     final repo = ref.watch(repositoryProvider);
     final isTeacher = appState.isTeacher;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: repo.firestore.collection('classes').doc(widget.classId).snapshots(),
+      stream: repo.firestore
+          .collection('classes')
+          .doc(effectiveClassId)
+          .snapshots(),
       builder: (context, classSnap) {
         final isLeadOfClass = appState.isLeadTeacher;
+        final className = classSnap.data?.data()?['name']?.toString();
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -65,16 +75,39 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             child: CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(
-                  child: PageHeader(
-                    title: AppLocalizations.of(context)!.library,
-                    subtitle: AppLocalizations.of(context)!.studyMaterialsAndLecturesWill,
-                    trailing: isTeacher
-                        ? IconButton.filledTonal(
-                            onPressed: () => _showUploadDialog(context, ref),
-                            icon: const Icon(Icons.add_rounded),
-                            tooltip: AppLocalizations.of(context)!.add,
-                          )
-                        : null,
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final allClassAsync = ref.watch(isTeacher ? teacherClassesStreamProvider : studentClassesStreamProvider);
+                      final allVisibleClasses = allClassAsync.value ?? [];
+                      
+                      return PageHeader(
+                        title: AppLocalizations.of(context)!.library,
+                        subtitle: AppLocalizations.of(context)!
+                            .studyMaterialsAndLecturesWill,
+                        classContext: className,
+                        onClassContextTap: allVisibleClasses.length > 1
+                            ? () {
+                                showClassSwitcher(
+                                  context: context,
+                                  classes: allVisibleClasses,
+                                  currentClassId: effectiveClassId,
+                                  onSelect: (id) {
+                                    ref
+                                        .read(schoolAppStateProvider)
+                                        .selectClass(id);
+                                  },
+                                );
+                              }
+                            : null,
+                        trailing: isTeacher
+                            ? IconButton.filledTonal(
+                                onPressed: () => _showUploadDialog(context, ref, effectiveClassId),
+                                icon: const Icon(Icons.add_rounded),
+                                tooltip: AppLocalizations.of(context)!.add,
+                              )
+                            : null,
+                      );
+                    },
                   ),
                 ),
                 materialsAsync.when(
@@ -84,12 +117,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         child: EmptyState(
                           icon: Icons.library_books_outlined,
                           title: AppLocalizations.of(context)!.theLibraryIsEmpty,
-                          subtitle:
-                              AppLocalizations.of(context)!.studyMaterialsAndLecturesWill,
+                          subtitle: AppLocalizations.of(context)!
+                              .studyMaterialsAndLecturesWill,
                         ),
                       );
                     }
-  
+
                     return SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       sliver: SliverList(
@@ -98,7 +131,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           final id = docs[index].id;
                           return _MaterialTile(
                             id: id,
-                            title: data['title'] ?? AppLocalizations.of(context)!.unknownKey7,
+                            title: data['title'] ??
+                                AppLocalizations.of(context)!.unknownKey7,
                             description: data['description'],
                             fileUrl: data['fileUrl'] ?? '',
                             fileName: data['fileName'],
@@ -113,7 +147,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     child: Center(child: CircularProgressIndicator()),
                   ),
                   error: (err, stack) => SliverFillRemaining(
-                      child: Center(child: Text('Ошибка: $err'))),
+                    child: Center(child: Text('Ошибка: $err')),
+                  ),
                 ),
               ],
             ),
@@ -123,10 +158,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
-  void _showUploadDialog(BuildContext context, WidgetRef ref) {
+  void _showUploadDialog(BuildContext context, WidgetRef ref, String classId) {
     showDialog(
       context: context,
-      builder: (context) => _UploadMaterialDialog(classId: widget.classId),
+      builder: (context) => _UploadMaterialDialog(classId: classId),
     );
   }
 
@@ -376,6 +411,7 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
   PlatformFile? _selectedFile;
   bool _isUploading = false;
   double _uploadProgress = 0;
+  bool _compressPdf = true;
 
   @override
   Widget build(BuildContext context) {
@@ -454,6 +490,16 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
               icon: const Icon(Icons.attach_file_rounded),
               label: Text(AppLocalizations.of(context)!.selectFile),
             ),
+          if (_selectedFile != null && _selectedFile!.name.toLowerCase().endsWith('.pdf'))
+            CheckboxListTile(
+              value: _compressPdf,
+              onChanged: (val) => setState(() => _compressPdf = val ?? true),
+              title: Text(AppLocalizations.of(context)!.compressPdfTitle),
+              subtitle: Text(AppLocalizations.of(context)!.compressPdfSubtitle),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              activeColor: SchoolColors.primary,
+            ),
           if (_isUploading) ...[
             const SizedBox(height: 16),
             LinearProgressIndicator(value: _uploadProgress),
@@ -481,7 +527,7 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(withData: true, 
       type: FileType.custom,
       allowedExtensions: [
         'pdf',
@@ -531,15 +577,44 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
 
       Map<String, dynamic> result;
       if (kIsWeb) {
+        Uint8List finalBytes = _selectedFile!.bytes!;
+        if (_compressPdf && _selectedFile!.name.toLowerCase().endsWith('.pdf') && _selectedFile!.size > 50 * 1024 * 1024) {
+          try {
+            finalBytes = await ILovePdfService().compressPdf(finalBytes, _selectedFile!.name);
+          } catch (e) {
+            debugPrint('Lỗi nén PDF Web: $e');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+            }
+          }
+        }
         result = await storage.uploadFileWeb(
           path,
-          _selectedFile!.bytes!,
+          finalBytes,
           onProgress: (p) => setState(() => _uploadProgress = p),
         );
       } else {
+        File fileToUpload = File(_selectedFile!.path!);
+        if (_compressPdf && _selectedFile!.name.toLowerCase().endsWith('.pdf') && _selectedFile!.size > 50 * 1024 * 1024) {
+          try {
+            final compressedPath = await PdfManipulator().pdfCompressor(
+              params: PDFCompressorParams(
+                pdfPath: _selectedFile!.path!,
+                imageQuality: 50,
+                imageScale: 0.5,
+              ),
+            );
+            if (compressedPath != null && compressedPath.isNotEmpty) {
+               fileToUpload = File(compressedPath);
+            }
+          } catch (e) {
+            debugPrint('Lỗi nén PDF: $e');
+          }
+        }
+        
         result = await storage.uploadFile(
           path,
-          File(_selectedFile!.path!),
+          fileToUpload,
           onProgress: (p) => setState(() => _uploadProgress = p),
         );
       }

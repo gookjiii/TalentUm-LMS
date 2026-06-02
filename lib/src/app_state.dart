@@ -1,6 +1,9 @@
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io' show Platform;
 import 'firebase/push_notification_manager.dart';
 
 class SchoolAppState extends ChangeNotifier {
@@ -16,7 +19,13 @@ class SchoolAppState extends ChangeNotifier {
     _pushNotifications = box.get('pushNotifications', defaultValue: true) as bool;
     _soundAndVibe = box.get('soundAndVibe', defaultValue: true) as bool;
     _quietModeUpdates = box.get('quietModeUpdates', defaultValue: true) as bool;
-    _performanceMode = box.get('performanceMode', defaultValue: false) as bool;
+
+    if (box.containsKey('performanceMode')) {
+      _performanceMode = box.get('performanceMode') as bool;
+    } else {
+      // Auto-detect on first run
+      _autoDetectLowEndDevice();
+    }
 
     // Set initial image cache bounds reactively based on stored performanceMode
     _applyImageCacheLimits();
@@ -26,6 +35,41 @@ class SchoolAppState extends ChangeNotifier {
   String? selectedClassId;
   String? lastChatClassId;
   String? lastChatTopicId;
+
+  Future<void> _autoDetectLowEndDevice() async {
+    if (kIsWeb) return;
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      bool isLowEnd = false;
+
+      if (Platform.isAndroid) {
+        // RAM auto-detect removed due to device_info_plus lacking memTotal
+        // A user can manually toggle performance mode if needed
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        // detect older iPhones (e.g., iPhone 8 and older have < 3GB RAM)
+        final machine = iosInfo.utsname.machine;
+        if (machine.contains('iPhone8') || 
+            machine.contains('iPhone9') || 
+            machine.contains('iPhone10') ||
+            machine.contains('iPhone11')) { // 11 has 4GB, but we might want to be conservative
+           // Actually, let's just stick to iPhone 8 and older (3GB or less)
+           if (machine.contains('iPhone8') || machine.contains('iPhone9') || machine.contains('iPhone10')) {
+             isLowEnd = true;
+           }
+        }
+      }
+
+      if (isLowEnd) {
+        _performanceMode = true;
+        _applyImageCacheLimits();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error auto-detecting device capability: $e');
+    }
+  }
+
   String? selectedAssignmentId;
   String? selectedChildId;
   String onboardingRole = 'student';
@@ -99,6 +143,15 @@ class SchoolAppState extends ChangeNotifier {
     box.delete('lastChatClassId');
     box.delete('lastChatTopicId');
     notifyListeners();
+  }
+
+  bool _isChatRoomMobileOpen = false;
+  bool get isChatRoomMobileOpen => _isChatRoomMobileOpen;
+  
+  void setChatRoomMobileOpen(bool value) {
+    if (_isChatRoomMobileOpen == value) return;
+    _isChatRoomMobileOpen = value;
+    Future.microtask(() => notifyListeners());
   }
 
   void resetSession() {

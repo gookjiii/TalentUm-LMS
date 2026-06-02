@@ -6,9 +6,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:school_world/src/firebase/storage_provider.dart';
+import 'package:school_world/src/firebase/push_notification_manager.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-class FirebaseChatController extends InMemoryChatController with ChangeNotifier {
+class FirebaseChatController extends InMemoryChatController
+    with ChangeNotifier {
   final FirebaseFirestore firestore;
   final ValueNotifier<int> searchRevision = ValueNotifier<int>(0);
   bool _isDisposed = false;
@@ -53,12 +55,12 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
     if (_topicId == topicId) return;
     _topicId = topicId;
     _topicName = topicName;
-    _allMessages = []; // Clear current messages for new topic
     _oldestLoadedDoc = null;
     _hasMoreOlder = true;
     _isLoadingOlder = false;
-    _applySearch(animated: false);
     stopListening();
+    // Do not clear messages synchronously to prevent UI flash.
+    // startListening -> _loadFromCache will overwrite _allMessages and notify listeners.
     startListening();
   }
 
@@ -101,9 +103,7 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
     }
 
     // 2. Subscribe to the most recent _pageSize messages with realtime updates.
-    _sub = safeFirebaseStream(
-      query.limit(_pageSize).snapshots(),
-    ).listen(
+    _sub = safeFirebaseStream(query.limit(_pageSize).snapshots()).listen(
       _onSnapshot,
       onError: (e) {
         debugPrint('FirebaseChatController stream error: $e');
@@ -123,7 +123,8 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
     try {
       if (!Hive.isBoxOpen('chat_cache')) return;
       final box = Hive.box('chat_cache');
-      final cached = box.get('msgs_$roomId');
+      final cacheKey = _topicId == null ? 'msgs_$roomId' : 'msgs_${roomId}_$_topicId';
+      final cached = box.get(cacheKey);
       if (cached != null && cached is String) {
         final List<dynamic> list = jsonDecode(cached);
         final cachedMessages = list
@@ -166,12 +167,15 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
               : (m is FileMessage ? m.source : null),
           'name': m is FileMessage ? m.name : null,
           'text': m is TextMessage ? m.text : (m.metadata?['text'] ?? ''),
-          'size': m is ImageMessage ? m.size : (m is FileMessage ? m.size : null),
+          'size': m is ImageMessage
+              ? m.size
+              : (m is FileMessage ? m.size : null),
           'metadata': _toJsonSafe(m.metadata),
           'createdAt': m.createdAt?.millisecondsSinceEpoch,
         };
       }).toList();
-      box.put('msgs_$roomId', jsonEncode(toSave));
+      final cacheKey = _topicId == null ? 'msgs_$roomId' : 'msgs_${roomId}_$_topicId';
+      box.put(cacheKey, jsonEncode(toSave));
     } catch (_) {}
   }
 
@@ -210,7 +214,10 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
       _oldestLoadedDoc = snap.docs.last;
       final List<Message> olderMessages = snap.docs.reversed
           .map<Message>(
-            (dynamic doc) => toMessage(doc.id, _sanitizeFirestoreValue(doc.data()) as Map<String, dynamic>),
+            (dynamic doc) => toMessage(
+              doc.id,
+              _sanitizeFirestoreValue(doc.data()) as Map<String, dynamic>,
+            ),
           )
           .toList();
       _allMessages = [...olderMessages, ..._allMessages];
@@ -475,7 +482,9 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
     if (kIsWeb) {
       try {
         final dynamic jsObj = value;
-        if (jsObj != null && jsObj.seconds != null && jsObj.nanoseconds != null) {
+        if (jsObj != null &&
+            jsObj.seconds != null &&
+            jsObj.nanoseconds != null) {
           return Timestamp(jsObj.seconds as int, jsObj.nanoseconds as int);
         }
       } catch (_) {}
@@ -522,7 +531,7 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
 
     final type = d['type'] as String? ?? 'text';
     if (type == 'audio') meta['type'] = 'audio';
-    
+
     final statusStr = (meta['status'] as String?) ?? (d['status'] as String?);
     final status = switch (statusStr) {
       'sending' => MessageStatus.sending,
@@ -630,6 +639,8 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
       await firestore.collection('rooms').doc(roomId).set({
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+
+      _sendPushNotification(authorId, 'Новое сообщение', text);
     } catch (e) {
       // Update local status to error
       final index = _allMessages.indexWhere((m) => m.id == messageId);
@@ -719,6 +730,12 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
       await firestore.collection('rooms').doc(roomId).set({
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+
+      _sendPushNotification(
+        authorId,
+        'Новое сообщение',
+        type == 'image' ? '🖼️ Изображение' : '📄 Файл',
+      );
     } catch (e) {
       // Update local status to error
       final index = _allMessages.indexWhere((m) => m.id == messageId);
@@ -763,7 +780,8 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
           updatedAt: DateTime.now(),
         );
 
-        _allMessages = List<Message>.from(_allMessages)..[index] = editedMessage;
+        _allMessages = List<Message>.from(_allMessages)
+          ..[index] = editedMessage;
         await _applySearch(animated: false);
         _saveToCache();
         onMessagesUpdated?.call(List.unmodifiable(messages));
@@ -787,7 +805,7 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
     final index = _allMessages.indexWhere((m) => m.id == messageId);
     if (index != -1) {
       final message = _allMessages[index];
-      
+
       // Delete physical file if it's an image or file
       if (message is ImageMessage) {
         final url = message.source;
@@ -925,6 +943,12 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
       await firestore.collection('rooms').doc(roomId).set({
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+
+      _sendPushNotification(
+        authorId,
+        'Новое сообщение',
+        '🎤 Голосовое сообщение',
+      );
     } catch (e) {
       _allMessages.removeWhere((m) => m.id == messageId);
       await _applySearch(animated: false);
@@ -958,7 +982,10 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
   }
 
   @override
-  Future<void> setMessages(List<Message> messages, {bool animated = false}) async {
+  Future<void> setMessages(
+    List<Message> messages, {
+    bool animated = false,
+  }) async {
     await super.setMessages(messages, animated: animated);
     notifyListeners();
   }
@@ -969,5 +996,45 @@ class FirebaseChatController extends InMemoryChatController with ChangeNotifier 
     searchRevision.dispose();
     stopListening();
     super.dispose();
+  }
+
+  Future<void> _sendPushNotification(
+    String authorId,
+    String title,
+    String body,
+  ) async {
+    try {
+      final roomSnap = await firestore.collection('rooms').doc(roomId).get();
+      if (!roomSnap.exists) return;
+
+      final data = roomSnap.data();
+      if (data == null) return;
+
+      final List<dynamic> userIdsRaw = data['userIds'] ?? [];
+      final List<String> targetUserIds = userIdsRaw
+          .map((id) => id.toString())
+          .where((id) => id != authorId)
+          .toList();
+
+      if (targetUserIds.isEmpty) return;
+
+      String finalTitle = title;
+      if (data['name'] != null) {
+        finalTitle = '${data['name']} - $title';
+      }
+
+      await PushNotificationManager.sendPushNotification(
+        userIds: targetUserIds,
+        title: finalTitle,
+        body: body,
+        data: {
+          'roomId': roomId,
+          if (data['metadata']?['classId'] != null)
+            'classId': data['metadata']['classId'],
+        },
+      );
+    } catch (e) {
+      debugPrint('Error triggering push notification for room $roomId: $e');
+    }
   }
 }

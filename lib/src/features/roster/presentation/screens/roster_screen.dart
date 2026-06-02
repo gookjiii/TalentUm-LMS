@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/main.dart';
+import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/features/classroom/presentation/screens/class_settings_screen.dart';
@@ -171,46 +173,74 @@ class _MembersHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final appState = AppScope.of(context).appState;
+    final repo = AppScope.of(context).repository;
+    final classId = appState.selectedClassId;
 
-    return PageHeader(
-      title: l10n.classRoster,
-      subtitle: l10n.totalParticipants(count),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (appState.isTeacher)
-            IconButton.filledTonal(
-              onPressed: () {
-                final classId = appState.selectedClassId;
-                if (classId != null) {
-                  showDialog(
-                    context: context,
-                    builder: (_) => _AddStudentDialog(classId: classId),
-                  );
-                }
-              },
-              icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
-              tooltip: l10n.addAStudent,
-            ),
-          if (appState.isLeadTeacher) ...[
-            const SizedBox(width: 8),
-            IconButton.filledTonal(
-              onPressed: () {
-                final classId = appState.selectedClassId;
-                if (classId != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ClassSettingsScreen(classId: classId),
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: classId != null 
+          ? repo.firestore.collection('classes').doc(classId).snapshots()
+          : const Stream.empty(),
+      builder: (context, classSnap) {
+        final className = classSnap.data?.data()?['name']?.toString();
+        
+        return Consumer(
+          builder: (context, ref, _) {
+            final allClassAsync = ref.watch(appState.isTeacher ? teacherClassesStreamProvider : studentClassesStreamProvider);
+            final allVisibleClasses = allClassAsync.value ?? [];
+            
+            return PageHeader(
+              title: l10n.classRoster,
+              subtitle: l10n.totalParticipants(count),
+              classContext: className,
+              onClassContextTap: allVisibleClasses.length > 1 ? () {
+                showClassSwitcher(
+                  context: context,
+                  classes: allVisibleClasses,
+                  currentClassId: classId,
+                  onSelect: (id) {
+                    appState.selectClass(id);
+                  },
+                );
+              } : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (appState.isTeacher)
+                    IconButton.filledTonal(
+                      onPressed: () {
+                        if (classId != null) {
+                          showDialog(
+                            context: context,
+                            builder: (_) => _AddStudentDialog(classId: classId),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
+                      tooltip: l10n.addAStudent,
                     ),
-                  );
-                }
-              },
-              icon: const Icon(Icons.settings_suggest_rounded, size: 20),
-            ),
-          ],
-        ],
-      ),
+                  if (appState.isLeadTeacher) ...[
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      onPressed: () {
+                        if (classId != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ClassSettingsScreen(classId: classId),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.settings_suggest_rounded, size: 20),
+                      tooltip: l10n.classSettings,
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

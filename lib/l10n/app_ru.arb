@@ -887,5 +887,27 @@
         "type": "String"
       }
     }
-  }
+  },
+  "importList": "Импорт списка",
+  "pasteClassNamesSeparated": "Вставьте названия классов, разделенные переносом строки",
+  "import": "Импорт",
+  "quickSubmit": "Быстрая сдача",
+  "viewMore": "Подробнее",
+  "writeYourAnswerHere": "Напишите ваш ответ здесь...",
+  "attachPhoto": "Прикрепить фото",
+  "linkingCode": "Код для привязки",
+  "showThisCodeToYourParent": "Покажите этот код родителю для связки аккаунтов",
+  "familyTimeline": "ЛЕНТА СОБЫТИЙ СЕМЬИ",
+  "noActivityYet": "Активности пока нет.",
+  "receivedGrade": "получил(а) оценку",
+  "submittedAssignment": "сдал(а) задание",
+  "submittedSuccessfully": "Успешно отправлено!",
+  "selectClass": "Выбрать класс",
+  "previousWeek": "Предыдущая tuần",
+  "nextWeek": "Следующая tuần",
+  "youHaveNoTasksYet": "У вас пока нет заданий.",
+  "upcomingAssignment": "Предстоящее задание",
+  "deadline": "Крайний срок",
+  "compressPdfTitle": "Сжать PDF (только для файлов > 50МБ)",
+  "compressPdfSubtitle": "Уменьшает размер файла, но может немного снизить качество изображения"
 }

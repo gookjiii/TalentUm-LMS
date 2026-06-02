@@ -38,12 +38,12 @@ class HomeworkScreen extends StatelessWidget {
                     ),
                     child: IconButton(
                       onPressed: () => _createAssignment(context),
+                      tooltip: AppLocalizations.of(context)!.createATask,
                       icon: const Icon(
                         Icons.add_rounded,
                         color: Colors.white,
                         size: 22,
                       ),
-                      tooltip: AppLocalizations.of(context)!.newTask,
                       constraints: const BoxConstraints(
                         minWidth: 38,
                         minHeight: 38,

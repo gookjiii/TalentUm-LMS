@@ -2275,4 +2275,70 @@ class AppLocalizationsRu extends AppLocalizations {
   String cabinetWithNumber(String number) {
     return 'Кабинет $number';
   }
+
+  @override
+  String get importList => 'Импорт списка';
+
+  @override
+  String get pasteClassNamesSeparated => 'Вставьте названия классов, разделенные переносом строки';
+
+  @override
+  String get import => 'Импорт';
+
+  @override
+  String get quickSubmit => 'Быстрая сдача';
+
+  @override
+  String get viewMore => 'Подробнее';
+
+  @override
+  String get writeYourAnswerHere => 'Напишите ваш ответ здесь...';
+
+  @override
+  String get attachPhoto => 'Прикрепить фото';
+
+  @override
+  String get linkingCode => 'Код для привязки';
+
+  @override
+  String get showThisCodeToYourParent => 'Покажите этот код родителю для связки аккаунтов';
+
+  @override
+  String get familyTimeline => 'ЛЕНТА СОБЫТИЙ СЕМЬИ';
+
+  @override
+  String get noActivityYet => 'Активности пока нет.';
+
+  @override
+  String get receivedGrade => 'получил(а) оценку';
+
+  @override
+  String get submittedAssignment => 'сдал(а) задание';
+
+  @override
+  String get submittedSuccessfully => 'Успешно отправлено!';
+
+  @override
+  String get selectClass => 'Выбрать класс';
+
+  @override
+  String get previousWeek => 'Предыдущая tuần';
+
+  @override
+  String get nextWeek => 'Следующая tuần';
+
+  @override
+  String get youHaveNoTasksYet => 'У вас пока нет заданий.';
+
+  @override
+  String get upcomingAssignment => 'Предстоящее задание';
+
+  @override
+  String get deadline => 'Крайний срок';
+
+  @override
+  String get compressPdfTitle => 'Сжать PDF (только для файлов > 50МБ)';
+
+  @override
+  String get compressPdfSubtitle => 'Уменьшает размер файла, но может немного снизить качество изображения';
 }

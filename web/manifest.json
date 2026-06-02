@@ -1,17 +1,17 @@
 {
-    "name": "School World",
-    "short_name": "School World",
-    "description": "Платформа для учителей и учеников: лента, домашние задания, расписание и чат класса.",
+    "name": "TalentUm",
+    "short_name": "TalentUm",
+    "description": "Elite Digital Campus: classes, assignments, schedule, and school chat.",
     "start_url": "/",
     "display": "standalone",
     "display_override": [
         "standalone",
         "minimal-ui"
     ],
-    "background_color": "#FFFFFF",
-    "theme_color": "#FFFFFF",
+    "background_color": "#F8FAFC",
+    "theme_color": "#7C3AED",
     "orientation": "portrait-primary",
-    "lang": "ru",
+    "lang": "en-US",
     "categories": [
         "education",
         "productivity"
@@ -19,9 +19,9 @@
     "prefer_related_applications": false,
     "shortcuts": [
         {
-            "name": "Лента",
-            "short_name": "Лента",
-            "description": "Объявления и новости классов",
+            "name": "Timeline",
+            "short_name": "Timeline",
+            "description": "Class announcements and news",
             "url": "/?tab=feed",
             "icons": [
                 {
@@ -31,9 +31,9 @@
             ]
         },
         {
-            "name": "Задания",
-            "short_name": "Задания",
-            "description": "Домашние задания",
+            "name": "My Tasks",
+            "short_name": "Tasks",
+            "description": "Assignments and homework",
             "url": "/?tab=homework",
             "icons": [
                 {

@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/main.dart';
+import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 
@@ -68,30 +70,52 @@ class _TeacherFeedState extends State<TeacherFeed> {
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: PageHeader(
-              title: AppLocalizations.of(context)!.ribbon,
-              subtitle: AppLocalizations.of(context)!.declarationsForYourClasses,
-              trailing: FilledButton.icon(
-                onPressed: () {
-                  if (_composerKey.currentContext != null) {
-                    Scrollable.ensureVisible(
-                      _composerKey.currentContext!,
-                      duration: const Duration(milliseconds: 500),
-                      curve: Curves.easeInOut,
-                    );
-                  }
-                },
-                style: FilledButton.styleFrom(
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+            child: Consumer(
+              builder: (context, ref, _) {
+                final allClassAsync = ref.watch(teacherClassesStreamProvider);
+                final allVisibleClasses = allClassAsync.value ?? [];
+                final effectiveClassId = ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ?? widget.classId;
+                final currentClassName = allVisibleClasses.firstWhere((c) => c['id'] == effectiveClassId, orElse: () => {})['name']?.toString();
+
+                return PageHeader(
+                  title: AppLocalizations.of(context)!.ribbon,
+                  subtitle: AppLocalizations.of(context)!.declarationsForYourClasses,
+                  classContext: currentClassName,
+                  onClassContextTap: allVisibleClasses.length > 1
+                      ? () {
+                          showClassSwitcher(
+                            context: context,
+                            classes: allVisibleClasses,
+                            currentClassId: effectiveClassId,
+                            onSelect: (id) {
+                              ref.read(schoolAppStateProvider).selectClass(id);
+                            },
+                          );
+                        }
+                      : null,
+                  trailing: FilledButton.icon(
+                    onPressed: () {
+                      if (_composerKey.currentContext != null) {
+                        Scrollable.ensureVisible(
+                          _composerKey.currentContext!,
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeInOut,
+                        );
+                      }
+                    },
+                    style: FilledButton.styleFrom(
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                    ),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: Text(AppLocalizations.of(context)!.newPost),
                   ),
-                ),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: Text(AppLocalizations.of(context)!.newPost),
-              ),
+                );
+              },
             ),
           ),
           SliverToBoxAdapter(
@@ -173,12 +197,15 @@ class _TeacherFeedState extends State<TeacherFeed> {
                     );
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16),
-                      child: PostCard(
-                        doc: doc,
-                        classData: classData,
-                        canManage: true,
+                      child: RepaintBoundary(
+                        child: PostCard(
+                          doc: doc,
+                          classData: classData,
+                          canManage: true,
+                        ),
                       ),
                     );
+
                   }, childCount: posts.length),
                 ),
               );
@@ -340,7 +367,7 @@ class _InlineComposerState extends State<_InlineComposer> {
                 button: true,
                 child: IconButton(
                   onPressed: () async {
-                    final result = await FilePicker.platform.pickFiles(
+                    final result = await FilePicker.pickFiles(
                       type: FileType.image,
                       withData: true,
                     );

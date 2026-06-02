@@ -33,6 +33,8 @@ import '../widgets/pinned_banner/pinned_banner.dart';
 import '../widgets/resource_sidebar/resource_sidebar.dart';
 import '../widgets/topic_sidebar.dart';
 
+import 'package:school_world/src/widgets/skeletal_loaders.dart';
+
 class ClassChatScreen extends ConsumerStatefulWidget {
   const ClassChatScreen({
     super.key,
@@ -156,11 +158,12 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
     }
   }
 
-  void _persistChatContext() {
+  void _persistChatContext([FirebaseChatController? controller]) {
+    final ctrl = controller ?? _chatController;
     widget.appState.selectClass(widget.classId);
     widget.appState.saveChatContext(
       classId: widget.classId,
-      topicId: _chatController?.currentTopicId,
+      topicId: ctrl?.currentTopicId,
     );
   }
 
@@ -291,7 +294,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
         controller.setTopicId(widget.initialTopicId);
       }
 
-      _persistChatContext();
+      _persistChatContext(controller);
 
       _bubbleBuilders = ChatBubbleBuilders(
         chatController: controller,
@@ -1053,8 +1056,60 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isMobile = screenWidth < 700;
 
-    if (_loading)
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_loading) {
+      return Scaffold(
+        body: Column(
+          children: [
+            // Skeleton Header
+            SafeArea(
+              bottom: false,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor.withOpacity(0.08),
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const SkeletalLoader(
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SkeletalLoader(width: 140, height: 16),
+                        const SizedBox(height: 8),
+                        const SkeletalLoader(width: 90, height: 12),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Skeleton Messages
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                itemCount: 8,
+                itemBuilder: (context, index) =>
+                    ChatMessageSkeleton(isMe: index % 3 == 0),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     if (_errorMessage != null) {
       return Scaffold(
         body: Center(
@@ -1105,7 +1160,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
           controller: _textController,
           onSend: _handleSend,
           onAttachment: () async {
-            final res = await FilePicker.platform.pickFiles(withData: true);
+            final res = await FilePicker.pickFiles(withData: true);
             if (res != null) {
               final picked = PickedChatAttachment.fromFile(res.files.first);
               if (picked.type == AttachmentType.image) {
@@ -1228,7 +1283,10 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
                 onTopicChanged: (tid) {
                   _persistChatContext();
                   _scaffoldKey.currentState?.closeDrawer();
-                  setState(() {});
+                  setState(() {
+                    _replyingTo = null;
+                    _editingMessage = null;
+                  });
                 },
               ),
             )
@@ -1266,7 +1324,10 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
                       currentUserId: widget.repository.uid ?? '',
                       onTopicChanged: (tid) {
                         _persistChatContext();
-                        setState(() {});
+                        setState(() {
+                          _replyingTo = null;
+                          _editingMessage = null;
+                        });
                       },
                     ),
                   ),

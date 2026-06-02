@@ -353,15 +353,20 @@ class _ReactionPillState extends State<ReactionPill>
                     : theme.colorScheme.outlineVariant,
                 width: widget.mine ? 1.5 : 1.0,
               ),
-              boxShadow: widget.mine
-                  ? [
-                      BoxShadow(
-                        color: const Color(0xFF2563EB).withOpacity(0.18),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null,
+              boxShadow: [
+                if (widget.mine)
+                  BoxShadow(
+                    color: const Color(0xFF2563EB).withOpacity(0.18),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                else
+                  const BoxShadow(
+                    color: Colors.transparent,
+                    blurRadius: 0,
+                    offset: Offset.zero,
+                  ),
+              ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

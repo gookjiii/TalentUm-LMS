@@ -1,9 +1,12 @@
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'dart:convert';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
+import '../widgets/family_activity_feed.dart';
 
 class ParentHomeScreen extends StatefulWidget {
   const ParentHomeScreen({super.key});
@@ -67,6 +70,15 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                   ),
                 ),
               ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(32, 12, 32, 16),
+                  child: SectionHeader(
+                    title: AppLocalizations.of(context)!.familyTimeline,
+                  ),
+                ),
+              ),
+              FamilyActivityFeed(childIds: childIds),
               const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           );
@@ -94,7 +106,6 @@ class _ChildProgressCard extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: 20),
           child: SchoolCard(
-            padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -119,7 +130,7 @@ class _ChildProgressCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '7-й класс AppLocalizations.of(context)!.unknownKey10',
+                            AppLocalizations.of(context)!.student,
                             style: TextStyle(
                               color: SchoolColors.muted,
                               fontSize: 12,
@@ -366,12 +377,90 @@ class _NoChildrenState extends StatelessWidget {
             style: TextStyle(color: SchoolColors.muted),
           ),
           SizedBox(height: 32),
-          FilledButton.icon(
-            onPressed: () => _showLinkChildDialog(context),
-            icon: Icon(Icons.add_rounded),
-            label: Text(AppLocalizations.of(context)!.tieTheBaby),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _scanQR(context),
+                icon: const Icon(Icons.qr_code_scanner_rounded),
+                label: Text(AppLocalizations.of(context)!.scanQrCode),
+              ),
+              const SizedBox(width: 12),
+              FilledButton.icon(
+                onPressed: () => _showLinkChildDialog(context),
+                icon: const Icon(Icons.add_rounded),
+                label: Text(AppLocalizations.of(context)!.tieTheBaby),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  void _scanQR(BuildContext context) async {
+    final result = await Navigator.push<String?>(
+      context,
+      MaterialPageRoute(builder: (_) => const _QRScannerScreen()),
+    );
+    if (result != null && context.mounted) {
+      try {
+        final data = jsonDecode(result);
+        if (data['type'] == 'link_child' && data['email'] != null) {
+          _performLink(context, data['email'].toString());
+        }
+      } catch (_) {
+        // invalid QR
+      }
+    }
+  }
+
+  Future<void> _performLink(BuildContext context, String email) async {
+    final repo = AppScope.of(context).repository;
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final snap = await repo.firestore
+          .collection('users')
+          .where('email', isEqualTo: email.trim().toLowerCase())
+          .limit(1)
+          .get();
+
+      if (snap.docs.isEmpty) throw l10n.userWithThisEmailWas;
+
+      final childId = snap.docs.first.id;
+      await repo.firestore.collection('users').doc(repo.uid).update({
+        'childIds': FieldValue.arrayUnion([childId]),
+      });
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.theChildIsSuccessfullyAttached)),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+}
+
+class _QRScannerScreen extends StatelessWidget {
+  const _QRScannerScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.scanQrCode)),
+      body: MobileScanner(
+        onDetect: (capture) {
+          final List<Barcode> barcodes = capture.barcodes;
+          if (barcodes.isNotEmpty) {
+            Navigator.pop(context, barcodes.first.rawValue);
+          }
+        },
       ),
     );
   }

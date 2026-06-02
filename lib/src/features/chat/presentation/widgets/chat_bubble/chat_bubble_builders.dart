@@ -108,10 +108,7 @@ class ChatBubbleBuilders {
         decoration: BoxDecoration(
           color: isSentByMe ? null : SchoolColors.chatBubbleOther,
           border: !isSentByMe
-              ? Border.all(
-                  color: SchoolColors.chatBubbleOtherBorder,
-                  width: 1,
-                )
+              ? Border.all(color: SchoolColors.chatBubbleOtherBorder, width: 1)
               : null,
           gradient: isSentByMe
               ? const LinearGradient(
@@ -124,22 +121,22 @@ class ChatBubbleBuilders {
                 )
               : null,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
+            topLeft: const Radius.circular(22),
+            topRight: const Radius.circular(22),
             bottomLeft: isSentByMe
-                ? const Radius.circular(20)
-                : const Radius.circular(4),
+                ? const Radius.circular(22)
+                : const Radius.circular(6),
             bottomRight: isSentByMe
-                ? const Radius.circular(4)
-                : const Radius.circular(20),
+                ? const Radius.circular(6)
+                : const Radius.circular(22),
           ),
           boxShadow: [
             BoxShadow(
               color: isSentByMe
-                  ? const Color(0xFF2563EB).withOpacity(0.22)
-                  : Colors.black.withOpacity(0.04),
-              blurRadius: isSentByMe ? 12 : 5,
-              offset: const Offset(0, 3),
+                  ? const Color(0xFF2563EB).withOpacity(0.15)
+                  : Colors.black.withOpacity(0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -228,14 +225,14 @@ class ChatBubbleBuilders {
             width: 1.5,
           ),
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
+            topLeft: const Radius.circular(22),
+            topRight: const Radius.circular(22),
             bottomLeft: isSentByMe
-                ? const Radius.circular(20)
-                : const Radius.circular(4),
+                ? const Radius.circular(22)
+                : const Radius.circular(6),
             bottomRight: isSentByMe
-                ? const Radius.circular(4)
-                : const Radius.circular(20),
+                ? const Radius.circular(6)
+                : const Radius.circular(22),
           ),
         ),
         child: Column(
@@ -321,7 +318,9 @@ class ChatBubbleBuilders {
                   } else {
                     showDialog(
                       context: context,
-                      builder: (_) => ImageViewer(imageUrl: message.source.toDirectImageUrl),
+                      builder: (_) => ImageViewer(
+                        imageUrl: message.source.toDirectImageUrl,
+                      ),
                     );
                   }
                 },
@@ -329,10 +328,10 @@ class ChatBubbleBuilders {
                   cursor: SystemMouseCursors.click,
                   child: ClipRRect(
                     borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(16),
-                      topRight: const Radius.circular(16),
-                      bottomLeft: Radius.circular(msgText == null ? 16 : 4),
-                      bottomRight: Radius.circular(msgText == null ? 16 : 4),
+                      topLeft: const Radius.circular(18),
+                      topRight: const Radius.circular(18),
+                      bottomLeft: Radius.circular(msgText == null ? 18 : 6),
+                      bottomRight: Radius.circular(msgText == null ? 18 : 6),
                     ),
                     child: CachedNetworkImage(
                       imageUrl: message.source.toDirectImageUrl,
@@ -502,10 +501,13 @@ class ChatBubbleBuilders {
     final msgText = message.metadata?['text'] as String?;
 
     // --- Audio / Voice message ---
-    final isAudio = message.metadata?['type'] == 'audio' ||
+    final isAudio =
+        message.metadata?['type'] == 'audio' ||
         message.mimeType?.startsWith('audio/') == true ||
-        RegExp(r'\.(m4a|mp3|ogg|aac|wav|opus|webm)$', caseSensitive: false)
-            .hasMatch(message.name);
+        RegExp(
+          r'\.(m4a|mp3|ogg|aac|wav|opus|webm)$',
+          caseSensitive: false,
+        ).hasMatch(message.name);
 
     if (isAudio) {
       final durationMs = message.metadata?['durationMs'] as int? ?? 0;
@@ -540,14 +542,14 @@ class ChatBubbleBuilders {
                     width: 1,
                   ),
             borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(20),
-              topRight: const Radius.circular(20),
+              topLeft: const Radius.circular(22),
+              topRight: const Radius.circular(22),
               bottomLeft: isSentByMe
-                  ? const Radius.circular(20)
-                  : const Radius.circular(4),
+                  ? const Radius.circular(22)
+                  : const Radius.circular(6),
               bottomRight: isSentByMe
-                  ? const Radius.circular(4)
-                  : const Radius.circular(20),
+                  ? const Radius.circular(6)
+                  : const Radius.circular(22),
             ),
           ),
           child: _AudioBubble(
@@ -560,11 +562,14 @@ class ChatBubbleBuilders {
       );
     }
 
-    final isVideo = message.mimeType?.startsWith('video/') == true ||
-        RegExp(r'\.(mp4|mov|webm|mkv)$', caseSensitive: false).hasMatch(message.name);
+    final isVideo =
+        message.mimeType?.startsWith('video/') == true ||
+        RegExp(
+          r'\.(mp4|mov|webm|mkv)$',
+          caseSensitive: false,
+        ).hasMatch(message.name);
     final screenWidth = MediaQuery.sizeOf(context).width;
     final videoWidth = screenWidth < 520 ? screenWidth * .62 : 260.0;
-
 
     return buildBubbleShell(
       context: context,
@@ -582,12 +587,14 @@ class ChatBubbleBuilders {
           if (isVideo)
             ClipRRect(
               borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(20),
-                topRight: const Radius.circular(20),
-                bottomLeft:
-                    isSentByMe ? const Radius.circular(20) : Radius.zero,
-                bottomRight:
-                    isSentByMe ? Radius.zero : const Radius.circular(20),
+                topLeft: const Radius.circular(22),
+                topRight: const Radius.circular(22),
+                bottomLeft: isSentByMe
+                    ? const Radius.circular(22)
+                    : Radius.zero,
+                bottomRight: isSentByMe
+                    ? Radius.zero
+                    : const Radius.circular(22),
               ),
               child: SizedBox(
                 width: videoWidth,
@@ -643,10 +650,11 @@ class ChatBubbleBuilders {
                           chatController?.searchQuery ?? '',
                           isSentByMe,
                           isCurrentMatch:
-                              chatController?.searchResults.isNotEmpty == true &&
+                              chatController?.searchResults.isNotEmpty ==
+                                  true &&
                               chatController?.searchIndex != -1 &&
-                              chatController?.searchResults[
-                                      chatController!.searchIndex] ==
+                              chatController?.searchResults[chatController!
+                                      .searchIndex] ==
                                   message.id,
                         ),
                         Text(
@@ -667,8 +675,9 @@ class ChatBubbleBuilders {
                     onPressed: () => openAttachment(message.source),
                     icon: const Icon(Icons.download_rounded, size: 20),
                     style: IconButton.styleFrom(
-                      backgroundColor: (isSentByMe ? Colors.white : Colors.black)
-                          .withOpacity(isSentByMe ? 0.18 : 0.05),
+                      backgroundColor:
+                          (isSentByMe ? Colors.white : Colors.black)
+                              .withOpacity(isSentByMe ? 0.18 : 0.05),
                       foregroundColor: isSentByMe
                           ? Colors.white
                           : SchoolColors.primary,
@@ -830,15 +839,18 @@ class ChatBubbleBuilders {
           padding: const EdgeInsets.only(bottom: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment:
-                isSentByMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: isSentByMe
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             children: [
               if (!isSentByMe) ...[
                 Padding(
-                  padding: EdgeInsets.only(
-                    top: (replyText != null) ? 48 : 24,
+                  padding: EdgeInsets.only(top: (replyText != null) ? 48 : 24),
+                  child: SchoolAvatar(
+                    name: authorId,
+                    userId: authorId,
+                    radius: 14,
                   ),
-                  child: SchoolAvatar(name: authorId, userId: authorId, radius: 14),
                 ),
                 const SizedBox(width: 7),
               ],
@@ -850,10 +862,7 @@ class ChatBubbleBuilders {
                   children: [
                     if (!isSentByMe)
                       Padding(
-                        padding: const EdgeInsets.only(
-                          left: 4,
-                          bottom: 4,
-                        ),
+                        padding: const EdgeInsets.only(left: 4, bottom: 4),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -879,8 +888,8 @@ class ChatBubbleBuilders {
                           onTap: (metadata?['replyToId'] as String?) == null
                               ? null
                               : () => chatController?.scrollToMessage(
-                                    metadata!['replyToId'] as String,
-                                  ),
+                                  metadata!['replyToId'] as String,
+                                ),
                         ),
                       ),
                     Semantics(
@@ -910,10 +919,12 @@ class ChatBubbleBuilders {
                                         boxShadow: [
                                           BoxShadow(
                                             color: isSentByMe
-                                                ? const Color(0xFF2563EB)
-                                                    .withOpacity(0.18)
-                                                : Colors.black
-                                                    .withOpacity(0.04),
+                                                ? const Color(
+                                                    0xFF2563EB,
+                                                  ).withOpacity(0.18)
+                                                : Colors.black.withOpacity(
+                                                    0.04,
+                                                  ),
                                             blurRadius: isSentByMe ? 10 : 5,
                                             offset: const Offset(0, 2),
                                           ),
@@ -965,8 +976,9 @@ class ChatBubbleBuilders {
                                           boxShadow: [
                                             BoxShadow(
                                               color: isSentByMe
-                                                  ? const Color(0xFF2563EB)
-                                                      .withOpacity(
+                                                  ? const Color(
+                                                      0xFF2563EB,
+                                                    ).withOpacity(
                                                       isHovered ? 0.30 : 0.18,
                                                     )
                                                   : Colors.black.withOpacity(
@@ -1129,11 +1141,7 @@ class ChatBubbleBuilders {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final regExp = RegExp(r'(`[^`]+`|\*[^*]+\*|_[^_]+_|~[^~]+~)');
-    final matches = regExp.allMatches(text);
-
     final List<InlineSpan> spans = [];
-    int lastEnd = 0;
 
     void addHighlightedTextSegment(String segment, TextStyle style) {
       if (segment.isEmpty) return;
@@ -1174,129 +1182,134 @@ class ChatBubbleBuilders {
       }
     }
 
-    void addTextSegment(String segment, TextStyle style) {
+    void addMarkdownSegment(String segment, TextStyle style) {
       if (segment.isEmpty) return;
 
-      final urlRegExp = RegExp(r'(https?://[^\s]+)');
-      final matches = urlRegExp.allMatches(segment);
+      final mdRegExp = RegExp(r'(`[^`]+`|\*[^*]+\*|_[^_]+_|~[^~]+~)');
+      final matches = mdRegExp.allMatches(segment);
 
       if (matches.isEmpty) {
         addHighlightedTextSegment(segment, style);
         return;
       }
 
-      int lastUrlEnd = 0;
+      int lastMdEnd = 0;
       for (final match in matches) {
-        if (match.start > lastUrlEnd) {
+        if (match.start > lastMdEnd) {
           addHighlightedTextSegment(
-            segment.substring(lastUrlEnd, match.start),
+            segment.substring(lastMdEnd, match.start),
             style,
           );
         }
 
-        final urlStr = match.group(0)!;
-        spans.add(
-          TextSpan(
-            text: urlStr,
-            style: style.copyWith(
-              color: isSentByMe
-                  ? Colors.white.withOpacity(0.95)
-                  : SchoolColors.primary,
-              decoration: TextDecoration.underline,
-              fontWeight: FontWeight.bold,
-            ),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () async {
-                final uri = Uri.parse(urlStr);
-                try {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                } catch (e) {
-                  try {
-                    await launchUrl(uri);
-                  } catch (e2) {
-                    debugPrint('Could not launch $urlStr: $e2');
-                  }
-                }
-              },
-          ),
-        );
-        lastUrlEnd = match.end;
-      }
+        final matchedStr = match.group(0)!;
+        final char = matchedStr[0];
+        final innerContent = matchedStr.substring(1, matchedStr.length - 1);
 
-      if (lastUrlEnd < segment.length) {
-        addHighlightedTextSegment(segment.substring(lastUrlEnd), style);
-      }
-    }
-
-    for (final match in matches) {
-      if (match.start > lastEnd) {
-        addTextSegment(text.substring(lastEnd, match.start), baseStyle);
-      }
-
-      final matchedStr = match.group(0)!;
-      final char = matchedStr[0];
-      final innerContent = matchedStr.substring(1, matchedStr.length - 1);
-
-      if (char == '`') {
-        spans.add(
-          WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              decoration: BoxDecoration(
-                color: isSentByMe
-                    ? Colors.black.withOpacity(0.22)
-                    : (isDark
-                          ? const Color(0xFF1E293B)
-                          : const Color(0xFFF1F5FD)),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
+        if (char == '`') {
+          spans.add(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                decoration: BoxDecoration(
                   color: isSentByMe
-                      ? Colors.white.withOpacity(0.18)
+                      ? Colors.black.withOpacity(0.22)
                       : (isDark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFDBEAFE)),
-                  width: 0.8,
+                            ? const Color(0xFF1E293B)
+                            : const Color(0xFFF1F5FD)),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: isSentByMe
+                        ? Colors.white.withOpacity(0.18)
+                        : (isDark
+                              ? const Color(0xFF334155)
+                              : const Color(0xFFDBEAFE)),
+                    width: 0.8,
+                  ),
                 ),
-              ),
-              child: Text(
-                innerContent,
-                style: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: isSentByMe
-                      ? Colors.white
-                      : (isDark
-                            ? const Color(0xFFE2E8F0)
-                            : const Color(0xFF1D4ED8)),
+                child: Text(
+                  innerContent,
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: isSentByMe
+                        ? Colors.white
+                        : (isDark
+                              ? const Color(0xFFE2E8F0)
+                              : const Color(0xFF1D4ED8)),
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      } else {
-        TextStyle style = baseStyle;
-        if (char == '*') {
-          style = baseStyle.copyWith(fontWeight: FontWeight.w900);
-        } else if (char == '_') {
-          style = baseStyle.copyWith(fontStyle: FontStyle.italic);
-        } else if (char == '~') {
-          style = baseStyle.copyWith(
-            decoration: TextDecoration.lineThrough,
-            decorationColor: style.color?.withOpacity(0.6),
-            decorationThickness: 1.5,
           );
+        } else {
+          TextStyle mdStyle = style;
+          if (char == '*') {
+            mdStyle = style.copyWith(fontWeight: FontWeight.w900);
+          } else if (char == '_') {
+            mdStyle = style.copyWith(fontStyle: FontStyle.italic);
+          } else if (char == '~') {
+            mdStyle = style.copyWith(
+              decoration: TextDecoration.lineThrough,
+              decorationColor: style.color?.withOpacity(0.6),
+              decorationThickness: 1.5,
+            );
+          }
+          addHighlightedTextSegment(innerContent, mdStyle);
         }
-        addTextSegment(innerContent, style);
+
+        lastMdEnd = match.end;
       }
 
-      lastEnd = match.end;
+      if (lastMdEnd < segment.length) {
+        addHighlightedTextSegment(segment.substring(lastMdEnd), style);
+      }
     }
 
-    if (lastEnd < text.length) {
-      addTextSegment(text.substring(lastEnd), baseStyle);
+    // Top-level parsing: URLs first!
+    final urlRegExp = RegExp(r'(https?://[^\s]+)');
+    final matches = urlRegExp.allMatches(text);
+
+    int lastUrlEnd = 0;
+    for (final match in matches) {
+      if (match.start > lastUrlEnd) {
+        addMarkdownSegment(text.substring(lastUrlEnd, match.start), baseStyle);
+      }
+
+      final urlStr = match.group(0)!;
+      spans.add(
+        TextSpan(
+          text: urlStr,
+          style: baseStyle.copyWith(
+            color: isSentByMe
+                ? Colors.white.withOpacity(0.95)
+                : SchoolColors.primary,
+            decoration: TextDecoration.underline,
+            fontWeight: FontWeight.bold,
+          ),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () async {
+              final uri = Uri.parse(urlStr);
+              try {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } catch (e) {
+                try {
+                  await launchUrl(uri);
+                } catch (e2) {
+                  debugPrint('Could not launch $urlStr: $e2');
+                }
+              }
+            },
+        ),
+      );
+      lastUrlEnd = match.end;
+    }
+
+    if (lastUrlEnd < text.length) {
+      addMarkdownSegment(text.substring(lastUrlEnd), baseStyle);
     }
 
     return spans;
@@ -1342,10 +1355,7 @@ class ChatBubbleBuilders {
               : null,
           border: isSentByMe
               ? null
-              : Border.all(
-                  color: SchoolColors.chatBubbleOtherBorder,
-                  width: 1,
-                ),
+              : Border.all(color: SchoolColors.chatBubbleOtherBorder, width: 1),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
@@ -1803,7 +1813,8 @@ class _InlinePollCardState extends State<_InlinePollCard> {
   @override
   void didUpdateWidget(covariant _InlinePollCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.pollId != widget.pollId || oldWidget.roomId != widget.roomId) {
+    if (oldWidget.pollId != widget.pollId ||
+        oldWidget.roomId != widget.roomId) {
       _initStream();
     }
   }
@@ -1819,7 +1830,9 @@ class _InlinePollCardState extends State<_InlinePollCard> {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = widget.isSentByMe ? Colors.white : const Color(0xFF0F172A);
+    final textColor = widget.isSentByMe
+        ? Colors.white
+        : const Color(0xFF0F172A);
     final mutedTextColor = widget.isSentByMe
         ? Colors.white.withOpacity(0.7)
         : const Color(0xFF64748B);
@@ -1969,7 +1982,9 @@ class _InlinePollCardState extends State<_InlinePollCard> {
                               'votes.${widget.myUid}': FieldValue.delete(),
                             });
                           } else {
-                            await ref.update({'votes.${widget.myUid}': opt['id']});
+                            await ref.update({
+                              'votes.${widget.myUid}': opt['id'],
+                            });
                           }
                         }
                       : null,
@@ -2154,7 +2169,8 @@ class _SwipeToReplyWrapper extends StatefulWidget {
   final Color classColor;
   final void Function(LongPressStartDetails)? onLongPress;
   final VoidCallback? onReply;
-  final Widget Function(BuildContext context, bool isHovered, double dragOffset) builder;
+  final Widget Function(BuildContext context, bool isHovered, double dragOffset)
+  builder;
 
   @override
   State<_SwipeToReplyWrapper> createState() => _SwipeToReplyWrapperState();
@@ -2238,9 +2254,7 @@ class _SwipeToReplyWrapperState extends State<_SwipeToReplyWrapper> {
                   ),
                 ),
               AnimatedContainer(
-                duration: Duration(
-                  milliseconds: _dragOffset == 0 ? 400 : 0,
-                ),
+                duration: Duration(milliseconds: _dragOffset == 0 ? 400 : 0),
                 curve: Curves.elasticOut,
                 transform: Matrix4.translationValues(_dragOffset, 0, 0),
                 child: widget.builder(context, _isHovered, _dragOffset),
@@ -2320,4 +2334,3 @@ class _SenderNameState extends State<_SenderName> {
     );
   }
 }
-

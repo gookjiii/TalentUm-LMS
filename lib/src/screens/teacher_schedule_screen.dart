@@ -6,7 +6,7 @@ import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/providers/app_providers.dart';
 
 import '../../main.dart';
-import '../models/schedule.dart';
+import '../models/schedule.dart' hide colorFromHex;
 import '../theme.dart';
 
 /// Google-Calendar style weekly schedule editor for teachers.
@@ -84,228 +84,34 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              DateFormat('MMMM yyyy', l10n.localeName).format(_weekStart),
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+            IconButton(
+              tooltip: l10n.previousWeek,
+              onPressed: () => setState(
+                () => _weekStart = _weekStart.subtract(const Duration(days: 7)),
+              ),
+              icon: const Icon(Icons.chevron_left, size: 28),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
             ),
-            if (appState.isTeacher) ...[
-              const SizedBox(width: 16),
-              Flexible(
-                child: classesAsync.when(
-                  data: (classes) {
-                    final classIds = classes.map((c) => c['id'] as String).toList();
-                    if (_selectedClassId != null && !classIds.contains(_selectedClassId)) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) setState(() => _selectedClassId = null);
-                      });
-                    }
-                    final safeSelectedId = classIds.contains(_selectedClassId) ? _selectedClassId : null;
-
-                    return Container(
-                      height: 38,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? SchoolColors.darkSurfaceElevated
-                            : Colors.grey.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isDark
-                              ? SchoolColors.darkBorder
-                              : Colors.grey.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String?>(
-                          value: safeSelectedId,
-                          isExpanded: true,
-                          dropdownColor: isDark ? SchoolColors.darkSurface : null,
-                          hint: Text(
-                            AppLocalizations.of(context)!.mySchedule,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          style: TextStyle(
-                            color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          items: [
-                            DropdownMenuItem<String?>(
-                              value: null,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.person_outline_rounded,
-                                    size: 16,
-                                    color: SchoolColors.primary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      AppLocalizations.of(context)!.mySchedule,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            for (final c in classes)
-                              DropdownMenuItem<String?>(
-                                value: c['id'] as String,
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        color: parseHexColor(c['coverColor']),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        c['name']?.toString() ?? AppLocalizations.of(context)!.classText,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedClassId = val;
-                            });
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                  loading: () => const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
+            const SizedBox(width: 8),
+            Text(
+              DateFormat('MMM yyyy', l10n.localeName).format(_weekStart),
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              tooltip: l10n.nextWeek,
+              onPressed: () => setState(
+                () => _weekStart = _weekStart.add(const Duration(days: 7)),
               ),
-            ],
-            // Student class filter dropdown
-            if (widget.readOnly && widget.studentClasses != null && widget.studentClasses!.length > 1) ...[
-              const SizedBox(width: 16),
-              Flexible(
-                child: Builder(
-                  builder: (context) {
-                    final classes = widget.studentClasses!;
-                    final classIds = classes.map((c) => c['id'] as String).toList();
-                    final safeSelectedId = (_selectedClassId != null && classIds.contains(_selectedClassId))
-                        ? _selectedClassId
-                        : null;
-
-                    return Container(
-                      height: 38,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? SchoolColors.darkSurfaceElevated
-                            : Colors.grey.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isDark
-                              ? SchoolColors.darkBorder
-                              : Colors.grey.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String?>(
-                          value: safeSelectedId,
-                          isExpanded: true,
-                          dropdownColor: isDark ? SchoolColors.darkSurface : null,
-                          hint: Text(
-                            l10n.allClasses,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          style: TextStyle(
-                            color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          items: [
-                            DropdownMenuItem<String?>(
-                              value: null,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.dashboard_rounded,
-                                    size: 16,
-                                    color: SchoolColors.primary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      l10n.allClasses,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            for (final c in classes)
-                              DropdownMenuItem<String?>(
-                                value: c['id'] as String,
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        color: parseHexColor(c['coverColor']),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        c['name']?.toString() ?? l10n.classText,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedClassId = val;
-                            });
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+              icon: const Icon(Icons.chevron_right, size: 28),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
           ],
         ),
         actions: [
@@ -322,18 +128,6 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
               });
             },
             icon: const Icon(Icons.today_outlined, size: 22),
-          ),
-          IconButton(
-            onPressed: () => setState(
-              () => _weekStart = _weekStart.subtract(const Duration(days: 7)),
-            ),
-            icon: const Icon(Icons.chevron_left, size: 28),
-          ),
-          IconButton(
-            onPressed: () => setState(
-              () => _weekStart = _weekStart.add(const Duration(days: 7)),
-            ),
-            icon: const Icon(Icons.chevron_right, size: 28),
           ),
           if (!widget.readOnly) ...[
             const SizedBox(width: 8),
@@ -364,7 +158,230 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
           ],
         ],
       ),
-      body: CachedStreamBuilder<List<ScheduleEntry>>(
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (appState.isTeacher || (widget.readOnly && widget.studentClasses != null && widget.studentClasses!.length > 1))
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Row(
+                  children: [
+                    if (appState.isTeacher)
+                      Expanded(
+                        child: classesAsync.when(
+                          data: (classes) {
+                            final classIds = classes.map((c) => c['id'] as String).toList();
+                            if (_selectedClassId != null && !classIds.contains(_selectedClassId)) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (mounted) setState(() => _selectedClassId = null);
+                              });
+                            }
+                            final safeSelectedId = classIds.contains(_selectedClassId) ? _selectedClassId : null;
+  
+                            return Container(
+                              height: 38,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? SchoolColors.darkSurfaceElevated
+                                    : Colors.grey.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isDark
+                                      ? SchoolColors.darkBorder
+                                      : Colors.grey.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String?>(
+                                  value: safeSelectedId,
+                                  isExpanded: true,
+                                  dropdownColor: isDark ? SchoolColors.darkSurface : null,
+                                  hint: Text(
+                                    AppLocalizations.of(context)!.mySchedule,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  style: TextStyle(
+                                    color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  items: [
+                                    DropdownMenuItem<String?>(
+                                      value: null,
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.person_outline_rounded,
+                                            size: 16,
+                                            color: SchoolColors.primary,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              AppLocalizations.of(context)!.mySchedule,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    for (final c in classes)
+                                      DropdownMenuItem<String?>(
+                                        value: c['id'] as String,
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: BoxDecoration(
+                                                color: parseHexColor(c['coverColor']),
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                c['name']?.toString() ?? AppLocalizations.of(context)!.classText,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _selectedClassId = val;
+                                    });
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                          loading: () => const SizedBox(
+                            height: 38,
+                            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                          ),
+                          error: (_, __) => const SizedBox.shrink(),
+                        ),
+                      ),
+                    if (widget.readOnly && widget.studentClasses != null && widget.studentClasses!.length > 1) ...[
+                      if (appState.isTeacher) const SizedBox(width: 16),
+                      Expanded(
+                        child: Builder(
+                          builder: (context) {
+                            final classes = widget.studentClasses!;
+                            final classIds = classes.map((c) => c['id'] as String).toList();
+                            final safeSelectedId = (_selectedClassId != null && classIds.contains(_selectedClassId))
+                                ? _selectedClassId
+                                : null;
+  
+                            return Container(
+                              height: 38,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? SchoolColors.darkSurfaceElevated
+                                    : Colors.grey.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isDark
+                                      ? SchoolColors.darkBorder
+                                      : Colors.grey.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String?>(
+                                  value: safeSelectedId,
+                                  isExpanded: true,
+                                  dropdownColor: isDark ? SchoolColors.darkSurface : null,
+                                  hint: Text(
+                                    l10n.allClasses,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  style: TextStyle(
+                                    color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  items: [
+                                    DropdownMenuItem<String?>(
+                                      value: null,
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.dashboard_rounded,
+                                            size: 16,
+                                            color: SchoolColors.primary,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              l10n.allClasses,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    for (final c in classes)
+                                      DropdownMenuItem<String?>(
+                                        value: c['id'] as String,
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: BoxDecoration(
+                                                color: parseHexColor(c['coverColor']),
+                                                shape: BoxShape.circle,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                c['name']?.toString() ?? l10n.classText,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _selectedClassId = val;
+                                    });
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            Expanded(
+              child: CachedStreamBuilder<List<ScheduleEntry>>(
         streamFactory: () => schedulesStream,
         keys: streamKeys,
         builder: (context, scheduleSnap) {
@@ -381,7 +398,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                 hourHeight: _hourHeight,
                 schedules: schedules,
                 overrides: overrides,
-                classes: classesAsync.value ?? [],
+                classes: appState.isTeacher ? (classesAsync.valueOrNull ?? []) : (widget.studentClasses ?? []),
                 onCellTap: widget.readOnly ? (date, minute) {} : (date, minute) => showScheduleEditor(
                   context,
                   prefillDate: date,
@@ -398,6 +415,11 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
             },
           );
         },
+      ),
+
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -852,6 +874,9 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
   TimeOfDay _start = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _end = const TimeOfDay(hour: 9, minute: 0);
   final _room = TextEditingController();
+  DateTime? _effectiveFrom;
+  DateTime? _effectiveTo;
+  String? _colorOverride;
   bool _saving = false;
 
   @override
@@ -866,6 +891,9 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
       _start = TimeOfDay(hour: e.startMinute ~/ 60, minute: e.startMinute % 60);
       _end = TimeOfDay(hour: e.endMinute ~/ 60, minute: e.endMinute % 60);
       _room.text = e.room ?? '';
+      _effectiveFrom = e.effectiveFrom;
+      _effectiveTo = e.effectiveTo;
+      _colorOverride = e.color;
     } else {
       _classId = widget.prefillClassId;
       _dayOfWeek = widget.prefillDate.weekday;
@@ -910,59 +938,61 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                 ),
               ),
               const SizedBox(height: 16),
-              StreamBuilder<List<Map<String, dynamic>>>(
-                stream: repo.teacherClassesCached(),
-                builder: (context, classSnap) {
-                  if (classSnap.hasError) {
-                    return Padding(
+              Consumer(
+                builder: (context, ref, _) {
+                  final allClassAsync = ref.watch(teacherClassesStreamProvider);
+                  
+                  return allClassAsync.when(
+                    data: (docs) {
+                      if (docs.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Text(
+                            'У вас еще нет созданных классов. Создайте класс во вкладке ${AppLocalizations.of(context)!.unknownKey14} trước khi lập lịch.',
+                            style: const TextStyle(
+                              color: SchoolColors.muted,
+                              fontSize: 13,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        );
+                      }
+                      
+                      final docIds = docs.map((d) => d['id'] as String).toList();
+                      if (_classId == null || !docIds.contains(_classId)) {
+                        _classId = docs.first['id'] as String;
+                      }
+                      
+                      return DropdownButtonFormField<String>(
+                        value: _classId,
+                        decoration: InputDecoration(
+                          labelText: l10n.className,
+                          border: const OutlineInputBorder(),
+                        ),
+                        items: [
+                          for (final d in docs)
+                            DropdownMenuItem(
+                              value: d['id'] as String,
+                              child: Text(d['name']?.toString() ?? d['id'] as String),
+                            ),
+                        ],
+                        onChanged: (v) => setState(() => _classId = v),
+                      );
+                    },
+                    loading: () => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (err, stack) => Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: Text(
-                        'Ошибка загрузки классов: ${classSnap.error}',
+                        'Ошибка загрузки классов: $err',
                         style: const TextStyle(
                           color: SchoolColors.red,
                           fontSize: 12,
                         ),
                       ),
-                    );
-                  }
-                  if (classSnap.connectionState == ConnectionState.waiting && !classSnap.hasData) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8.0),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-                  final docs = classSnap.data ?? [];
-                  if (docs.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Text(
-                        'У вас еще нет созданных классов. Создайте класс во вкладке ${AppLocalizations.of(context)!.unknownKey14} перед составлением расписания.',
-                        style: const TextStyle(
-                          color: SchoolColors.muted,
-                          fontSize: 13,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    );
-                  }
-                  final docIds = docs.map((d) => d['id'] as String).toList();
-                  if (_classId == null || !docIds.contains(_classId)) {
-                    _classId = docs.first['id'] as String;
-                  }
-                  return DropdownButtonFormField<String>(
-                    value: _classId,
-                    decoration: InputDecoration(
-                      labelText: l10n.className,
-                      border: const OutlineInputBorder(),
                     ),
-                    items: [
-                      for (final d in docs)
-                        DropdownMenuItem(
-                          value: d['id'] as String,
-                          child: Text(d['name']?.toString() ?? d['id'] as String),
-                        ),
-                    ],
-                    onChanged: (v) => setState(() => _classId = v),
                   );
                 },
               ),
@@ -1042,6 +1072,92 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                   border: OutlineInputBorder(),
                 ),
               ),
+              if (_recurring) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.start_rounded, size: 18),
+                        label: Text(
+                          _effectiveFrom == null
+                              ? "Effective from"
+                              : DateFormat('d MMM', 'ru').format(_effectiveFrom!),
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _effectiveFrom ?? DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                          );
+                          if (picked != null) {
+                            setState(() => _effectiveFrom = picked);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.event_busy_rounded, size: 18),
+                        label: Text(
+                          _effectiveTo == null
+                              ? "Until"
+                              : DateFormat('d MMM', 'ru').format(_effectiveTo!),
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _effectiveTo ?? DateTime.now().add(const Duration(days: 30)),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                          );
+                          if (picked != null) {
+                            setState(() => _effectiveTo = picked);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Text("Color override:", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 12),
+                  for (final hex in ['7C3AED', '059669', 'F97316', 'DC2626'])
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: InkWell(
+                        onTap: () => setState(() => _colorOverride = '#$hex'),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Color(int.parse('FF$hex', radix: 16)),
+                            shape: BoxShape.circle,
+                            border: _colorOverride == '#$hex'
+                                ? Border.all(color: Colors.white, width: 2)
+                                : null,
+                            boxShadow: [
+                              if (_colorOverride == '#$hex')
+                                BoxShadow(color: Colors.black26, blurRadius: 4),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  IconButton(
+                    onPressed: () => setState(() => _colorOverride = null),
+                    icon: const Icon(Icons.block_rounded, size: 18),
+                    tooltip: "Default",
+                  ),
+                ],
+              ),
               const SizedBox(height: 20),
               Row(
                 children: [
@@ -1098,6 +1214,8 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
     setState(() => _saving = true);
     try {
       final repo = AppScope.of(context).repository;
+      final fmt = DateFormat('yyyy-MM-dd');
+      
       if (widget.existing == null) {
         final draft = ScheduleEntry(
           id: '',
@@ -1108,6 +1226,9 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
           endMinute: _toMin(_end),
           room: _room.text.trim().isEmpty ? null : _room.text.trim(),
           oneOffDate: _recurring ? null : _oneOffDate,
+          effectiveFrom: _recurring ? _effectiveFrom : null,
+          effectiveTo: _recurring ? _effectiveTo : null,
+          color: _colorOverride,
         );
         await repo.createSchedule(draft);
       } else {
@@ -1121,7 +1242,10 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
               ? null
               : (_oneOffDate == null
                     ? null
-                    : DateFormat('yyyy-MM-dd').format(_oneOffDate!)),
+                    : fmt.format(_oneOffDate!)),
+          'effectiveFrom': _recurring && _effectiveFrom != null ? fmt.format(_effectiveFrom!) : null,
+          'effectiveTo': _recurring && _effectiveTo != null ? fmt.format(_effectiveTo!) : null,
+          'color': _colorOverride,
         });
       }
       if (mounted) {
@@ -1136,6 +1260,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
       if (mounted) setState(() => _saving = false);
     }
   }
+
 
   Future<void> _delete() async {
     final repo = AppScope.of(context).repository;

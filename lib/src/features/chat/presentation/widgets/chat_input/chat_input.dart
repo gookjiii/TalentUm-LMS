@@ -131,9 +131,7 @@ class _ChatInputState extends State<ChatInput> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                AppLocalizations.of(context)!.micPermissionDenied,
-              ),
+              content: Text(AppLocalizations.of(context)!.micPermissionDenied),
               duration: const Duration(seconds: 3),
             ),
           );
@@ -258,10 +256,10 @@ class _ChatInputState extends State<ChatInput> {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        isMobile ? 12 : 16,
-        isMobile ? 8 : 12,
-        isMobile ? 12 : 16,
-        (isMobile ? 12 : 16) + MediaQuery.of(context).padding.bottom,
+        isMobile ? 4 : 16,
+        isMobile ? 4 : 12,
+        isMobile ? 4 : 16,
+        (isMobile ? 6 : 16) + MediaQuery.paddingOf(context).bottom,
       ),
       child: Container(
         decoration: BoxDecoration(
@@ -291,7 +289,10 @@ class _ChatInputState extends State<ChatInput> {
                   ),
                 ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 4 : 2,
+          vertical: isMobile ? 2 : 6,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -354,24 +355,8 @@ class _ChatInputState extends State<ChatInput> {
                   ),
                   tooltip: AppLocalizations.of(context)!.attach,
                   padding: EdgeInsets.all(isMobile ? 8 : 10),
-                  constraints: isMobile
-                      ? const BoxConstraints(minWidth: 40, minHeight: 40)
-                      : null,
+                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                 ),
-                if (isMobile && widget.onCamera != null && !isEditing)
-                  IconButton(
-                    onPressed: widget.onCamera,
-                    icon: Icon(
-                      Icons.camera_alt_outlined,
-                      color: theme.colorScheme.primary,
-                    ),
-                    tooltip: AppLocalizations.of(context)!.camera,
-                    padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(
-                      minWidth: 40,
-                      minHeight: 40,
-                    ),
-                  ),
                 if (widget.onCreatePoll != null && !isEditing)
                   IconButton(
                     onPressed: widget.onCreatePoll,
@@ -381,9 +366,7 @@ class _ChatInputState extends State<ChatInput> {
                     ),
                     tooltip: AppLocalizations.of(context)!.survey1,
                     padding: EdgeInsets.all(isMobile ? 8 : 10),
-                    constraints: isMobile
-                        ? const BoxConstraints(minWidth: 40, minHeight: 40)
-                        : null,
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                   ),
                 Expanded(
                   child: Focus(
@@ -426,9 +409,9 @@ class _ChatInputState extends State<ChatInput> {
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 4,
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: isMobile ? 10 : 12,
+                          horizontal: 8,
                         ),
                         isDense: true,
                       ),
@@ -485,12 +468,18 @@ class _ChatInputState extends State<ChatInput> {
                                           // Desktop/web tap-to-start
                                           _startRecording();
                                         } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
                                             SnackBar(
                                               content: Text(
-                                                AppLocalizations.of(context)!.holdToRecordVoice,
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.holdToRecordVoice,
                                               ),
-                                              duration: const Duration(seconds: 1),
+                                              duration: const Duration(
+                                                seconds: 1,
+                                              ),
                                             ),
                                           );
                                         }
@@ -507,11 +496,11 @@ class _ChatInputState extends State<ChatInput> {
                                 color: _isRecording
                                     ? Colors.red
                                     : theme.colorScheme.primary,
-                                padding: EdgeInsets.all(isMobile ? 8 : 10),
+                                padding: EdgeInsets.all(isMobile ? 4 : 8),
                                 constraints: isMobile
                                     ? const BoxConstraints(
-                                        minWidth: 40,
-                                        minHeight: 40,
+                                        minWidth: 32,
+                                        minHeight: 32,
                                       )
                                     : null,
                               ),

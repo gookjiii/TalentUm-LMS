@@ -20,4 +20,16 @@ extension ImageUrlExtension on String {
     }
     return this;
   }
+
+  String toOptimizedCloudinary({bool performance = false}) {
+    if (isEmpty) return this;
+    if (!contains('cloudinary.com')) return this;
+    
+    // Check if it already has transformations
+    if (contains('/upload/')) {
+      final transformation = performance ? 'q_auto,f_auto,w_400/' : 'q_auto,f_auto/';
+      return replaceFirst('/upload/', '/upload/$transformation');
+    }
+    return this;
+  }
 }

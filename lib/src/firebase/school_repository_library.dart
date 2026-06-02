@@ -24,6 +24,22 @@ mixin SchoolRepositoryLibrary {
     });
   }
 
+  Stream<QuerySnapshot<Map<String, dynamic>>> libraryMaterialsForClasses(
+    List<String> classIds, {
+    int? limit,
+  }) {
+    if (classIds.isEmpty) return const Stream.empty();
+    
+    var query = firestore
+        .collection('library_materials')
+        .where('classId', whereIn: classIds.take(30).toList())
+        .orderBy('createdAt', descending: true);
+    if (limit != null) {
+      query = query.limit(limit);
+    }
+    return query.safeSnapshots();
+  }
+
   Stream<QuerySnapshot<Map<String, dynamic>>> libraryMaterialsForClass(
     String classId, {
     int? limit,

@@ -14,6 +14,18 @@ export 'cached_stream_builder.dart';
 // ─────────────────────────────────────────────────────────────────
 // HOVERABLE
 // ─────────────────────────────────────────────────────────────────
+Color colorFromHex(String? hex, [Color fallback = SchoolColors.primary]) {
+  if (hex == null || hex.isEmpty) return fallback;
+  final s = hex.replaceAll('#', '');
+  if (s.length != 6 && s.length != 8) return fallback;
+  try {
+    final v = int.parse(s.length == 6 ? 'FF$s' : s, radix: 16);
+    return Color(v);
+  } catch (_) {
+    return fallback;
+  }
+}
+
 class Hoverable extends HookWidget {
   const Hoverable({
     super.key,
@@ -34,7 +46,10 @@ class Hoverable extends HookWidget {
       cursor: cursor,
       onEnter: (_) => isHovered.value = true,
       onExit: (_) => isHovered.value = false,
-      child: GestureDetector(onTap: onTap, child: builder(isHovered.value)),
+      child: Semantics(
+        button: onTap != null,
+        child: GestureDetector(onTap: onTap, child: builder(isHovered.value)),
+      ),
     );
   }
 }
@@ -103,6 +118,7 @@ class SchoolLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final performanceMode = AppScope.of(context).appState.performanceMode;
     return ClipRRect(
       borderRadius: BorderRadius.circular(size * .28),
       child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -116,7 +132,9 @@ class SchoolLogo extends StatelessWidget {
           if (logoUrl != null && logoUrl.isNotEmpty) {
             final cacheSize = (size * 2.5).round();
             return CachedNetworkImage(
-              imageUrl: logoUrl.toDirectImageUrl,
+              imageUrl: logoUrl.toDirectImageUrl.toOptimizedCloudinary(
+                performance: performanceMode,
+              ),
               width: size,
               height: size,
               fit: BoxFit.cover,
@@ -162,7 +180,7 @@ class SchoolCard extends HookWidget {
   const SchoolCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(16),
+    this.padding,
     this.margin,
     this.onTap,
     this.color,
@@ -172,7 +190,7 @@ class SchoolCard extends HookWidget {
   });
 
   final Widget child;
-  final EdgeInsets padding;
+  final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
   final VoidCallback? onTap;
   final Color? color;
@@ -183,47 +201,76 @@ class SchoolCard extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final isHovered = useState(false);
+    final resolvedPadding =
+        padding ??
+        (MediaQuery.sizeOf(context).width < 600
+            ? const EdgeInsets.all(16)
+            : const EdgeInsets.all(24));
+    final isPressed = useState(false);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeColor =
         color ?? (isDark ? SchoolColors.darkSurface : Colors.white);
-    final resolvedBorderColor = borderColor ??
+    final resolvedBorderColor =
+        borderColor ??
         (color == null
             ? (isHovered.value
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.25)
-                : (isDark
-                    ? SchoolColors.darkBorder
-                    : SchoolColors.border))
+                  ? Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.25)
+                  : (isDark ? SchoolColors.darkBorder : SchoolColors.border))
             : Colors.white.withValues(alpha: 0.15));
+
+    Matrix4 transform = Matrix4.identity();
+    if (onTap != null && !AppScope.of(context).appState.performanceMode) {
+      if (isPressed.value) {
+        transform.translate(0, 1.0, 0); // Tactile push
+      } else if (isHovered.value) {
+        transform.translate(0, -3.0, 0); // Pull up on hover
+      }
+    }
+
+    final isPerformance = AppScope.of(context).appState.performanceMode;
 
     return MouseRegion(
       onEnter: onTap != null ? (_) => isHovered.value = true : null,
       onExit: onTap != null ? (_) => isHovered.value = false : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        margin: margin,
-        transform: (onTap != null && isHovered.value)
-            ? (Matrix4.identity()..translate(0, -3.0, 0))
-            : Matrix4.identity(),
-        transformAlignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(borderRadius),
-          border: Border.all(color: resolvedBorderColor, width: 1),
-          boxShadow: boxShadow ?? [
-            if (isHovered.value && onTap != null)
-              SchoolColors.cardShadowHover
-            else
-              SchoolColors.cardShadow,
-          ],
-        ),
-        child: Material(
-          color: themeColor,
-          borderRadius: BorderRadius.circular(borderRadius),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
+      child: GestureDetector(
+        onTapDown: onTap != null ? (_) => isPressed.value = true : null,
+        onTapUp: onTap != null ? (_) => isPressed.value = false : null,
+        onTapCancel: onTap != null ? () => isPressed.value = false : null,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: isPerformance
+              ? Duration.zero
+              : const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          margin: margin,
+          transform: transform,
+          transformAlignment: Alignment.center,
+          decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(borderRadius),
-            child: Padding(padding: padding, child: child),
+            border: Border.all(color: resolvedBorderColor, width: 1.2),
+            boxShadow: (isPerformance || boxShadow != null)
+                ? boxShadow
+                : [
+                    if (isHovered.value && onTap != null && !isPressed.value)
+                      SchoolColors.cardShadowHover
+                    else
+                      SchoolColors.cardShadow,
+                  ],
+          ),
+          child: Material(
+            color: themeColor,
+            borderRadius: BorderRadius.circular(borderRadius),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(borderRadius),
+              child: Semantics(
+                button: onTap != null,
+                child: Padding(padding: resolvedPadding, child: child),
+              ),
+            ),
           ),
         ),
       ),
@@ -238,7 +285,7 @@ class GlassCard extends StatelessWidget {
   const GlassCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(20),
+    this.padding,
     this.borderRadius = 20.0,
     this.color,
     this.onTap,
@@ -246,7 +293,7 @@ class GlassCard extends StatelessWidget {
   });
 
   final Widget child;
-  final EdgeInsets padding;
+  final EdgeInsetsGeometry? padding;
   final double borderRadius;
   final Color? color;
   final VoidCallback? onTap;
@@ -254,8 +301,14 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedPadding =
+        padding ??
+        (MediaQuery.sizeOf(context).width < 600
+            ? const EdgeInsets.all(16)
+            : const EdgeInsets.all(24));
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = color ??
+    final bg =
+        color ??
         (isDark
             ? Colors.white.withValues(alpha: 0.04)
             : Colors.white.withValues(alpha: 0.65));
@@ -278,13 +331,15 @@ class GlassCard extends StatelessWidget {
           ),
         ),
         child: Material(
-          color: color ?? (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+          color:
+              color ??
+              (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
           borderRadius: BorderRadius.circular(borderRadius),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(borderRadius),
-            child: Padding(padding: padding, child: child),
+            child: Padding(padding: resolvedPadding, child: child),
           ),
         ),
       );
@@ -295,14 +350,15 @@ class GlassCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(borderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
-            blurRadius: 30,
-            spreadRadius: -5,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        boxShadow: isPerformance
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(borderRadius),
@@ -311,22 +367,42 @@ class GlassCard extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(borderRadius),
+              // Liquid Glass Refraction: 1px inner border
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.white.withValues(alpha: 0.4),
-                width: 1,
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : SchoolColors.border.withValues(alpha: 0.6),
+                width: 1.0,
               ),
             ),
-            child: Material(
-              color: bg,
-              borderRadius: BorderRadius.circular(borderRadius),
-              clipBehavior: Clip.antiAlias,
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(borderRadius),
-                child: Padding(padding: padding, child: child),
-              ),
+            child: Stack(
+              children: [
+                // Inner highlight for refraction
+                if (!isPerformance)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(borderRadius),
+                        border: Border.all(
+                          color: Colors.white.withValues(
+                            alpha: isDark ? 0.05 : 0.3,
+                          ),
+                          width: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                Material(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: onTap,
+                    borderRadius: BorderRadius.circular(borderRadius),
+                    child: Padding(padding: resolvedPadding, child: child),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -356,11 +432,14 @@ class ClassBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final performanceMode = AppScope.of(context).appState.performanceMode;
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(radius ?? size * .3),
         child: CachedNetworkImage(
-          imageUrl: avatarUrl!.toDirectImageUrl,
+          imageUrl: avatarUrl!.toDirectImageUrl.toOptimizedCloudinary(
+            performance: performanceMode,
+          ),
           width: size,
           height: size,
           fit: BoxFit.cover,
@@ -456,6 +535,8 @@ class SchoolAvatar extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final repo = AppScope.of(context).repository;
+    final appState = AppScope.of(context).appState;
+    final isPerformance = appState.performanceMode;
     final isHovered = useState(false);
 
     final userStream = useMemoized(
@@ -468,12 +549,15 @@ class SchoolAvatar extends HookWidget {
 
     final Map<String, dynamic> userData = userSnap.data?.data() ?? {};
     final String resolvedName = userData['name'] as String? ?? name;
-    final String? resolvedAvatarUrl = userData['avatarUrl'] as String? ?? avatarUrl;
+    final String? resolvedAvatarUrl =
+        userData['avatarUrl'] as String? ?? avatarUrl;
 
     final c = _resolveColorForName(color, resolvedName);
-    
+
     final statusStream = useMemoized(
-      () => userId != null ? repo.userStatusStream(userId!) : const Stream<Map<String, dynamic>>.empty(),
+      () => userId != null
+          ? repo.userStatusStream(userId!)
+          : const Stream<Map<String, dynamic>>.empty(),
       [userId],
     );
     final statusSnap = useStream(statusStream);
@@ -482,36 +566,38 @@ class SchoolAvatar extends HookWidget {
     final rippleController = useAnimationController(
       duration: const Duration(milliseconds: 2000),
     );
-    
+
     useEffect(() {
-      if (isOnline) {
+      if (isOnline && !isPerformance) {
         rippleController.repeat();
       } else {
         rippleController.stop();
       }
       return null;
-    }, [isOnline]);
+    }, [isOnline, isPerformance]);
 
-    final rippleScale = Tween<double>(begin: 1.0, end: 1.3).animate(
-      CurvedAnimation(parent: rippleController, curve: Curves.easeOut),
-    );
-    final rippleOpacity = Tween<double>(begin: 0.6, end: 0.0).animate(
-      CurvedAnimation(parent: rippleController, curve: Curves.easeOut),
-    );
+    final rippleScale = Tween<double>(
+      begin: 1.0,
+      end: 1.3,
+    ).animate(CurvedAnimation(parent: rippleController, curve: Curves.easeOut));
+    final rippleOpacity = Tween<double>(
+      begin: 0.6,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: rippleController, curve: Curves.easeOut));
 
     final cacheSize = (radius * 2 * 2.5).round();
     Widget avatar = resolvedAvatarUrl != null && resolvedAvatarUrl.isNotEmpty
         ? ClipOval(
             child: CachedNetworkImage(
-              imageUrl: resolvedAvatarUrl.toDirectImageUrl,
+              imageUrl: resolvedAvatarUrl.toDirectImageUrl
+                  .toOptimizedCloudinary(performance: isPerformance),
               width: radius * 2,
               height: radius * 2,
               fit: BoxFit.cover,
               memCacheWidth: cacheSize,
               memCacheHeight: cacheSize,
-              placeholder: (context, url) => Container(
-                color: Colors.grey.withValues(alpha: 0.1),
-              ),
+              placeholder: (context, url) =>
+                  Container(color: Colors.grey.withValues(alpha: 0.1)),
               errorWidget: (_, __, ___) => _buildDefaultAvatar(c, resolvedName),
             ),
           )
@@ -521,10 +607,7 @@ class SchoolAvatar extends HookWidget {
       avatar = Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(
-            color: Colors.white,
-            width: 2,
-          ),
+          border: Border.all(color: Colors.white, width: 2),
         ),
         child: avatar,
       );
@@ -718,12 +801,14 @@ class _PulseDot extends HookWidget {
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
 
-    final scale = Tween<double>(begin: 0.8, end: 1.2).animate(
-      CurvedAnimation(parent: controller, curve: Curves.easeInOut),
-    );
-    final opacity = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: controller, curve: Curves.easeInOut),
-    );
+    final scale = Tween<double>(
+      begin: 0.8,
+      end: 1.2,
+    ).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOut));
+    final opacity = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOut));
 
     return AnimatedBuilder(
       animation: controller,
@@ -853,28 +938,31 @@ class SectionHeader extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w800,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.45),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.45),
               letterSpacing: 1.1,
             ),
           ),
         ),
         if (action != null && action!.isNotEmpty)
-          TextButton(
-            onPressed: onActionTap,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              action!,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: SchoolColors.primary,
+          Semantics(
+            label: action,
+            button: true,
+            child: TextButton(
+              onPressed: onActionTap,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                minimumSize: const Size(44, 44),
+                tapTargetSize: MaterialTapTargetSize.padded,
+              ),
+              child: Text(
+                action!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: SchoolColors.primary,
+                ),
               ),
             ),
           ),
@@ -907,6 +995,7 @@ class QuickTile extends HookWidget {
     final isPressed = useState(false);
     final isHovered = useState(false);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isPerformance = AppScope.of(context).appState.performanceMode;
 
     return MouseRegion(
       onEnter: onTap != null ? (_) => isHovered.value = true : null,
@@ -917,90 +1006,90 @@ class QuickTile extends HookWidget {
         onTapCancel: onTap != null ? () => isPressed.value = false : null,
         onTap: onTap,
         child: AnimatedScale(
-          scale: isPressed.value ? 0.95 : (isHovered.value ? 1.03 : 1.0),
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOutBack,
-          child: SchoolCard(
-            padding: const EdgeInsets.all(14),
-            onTap: null,
-            borderRadius: 20,
-            color: isHovered.value
-                ? (isDark
-                    ? color.withValues(alpha: 0.1)
-                    : color.withValues(alpha: 0.04))
-                : null,
-            borderColor: isHovered.value
-                ? color.withValues(alpha: 0.35)
-                : null,
-            boxShadow: [
-              if (isHovered.value)
-                BoxShadow(
-                  color: color.withValues(alpha: isDark ? 0.15 : 0.08),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
-                )
-              else
-                SchoolColors.cardShadow,
-            ],
-            child: Stack(
-              children: [
-                SingleChildScrollView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: isHovered.value
-                                ? [
-                                    color.withValues(alpha: 0.25),
-                                    color.withValues(alpha: 0.12),
-                                  ]
-                                : [
-                                    color.withValues(alpha: 0.15),
-                                    color.withValues(alpha: 0.08),
-                                  ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            if (isHovered.value)
-                              BoxShadow(
-                                color: color.withValues(alpha: 0.2),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              )
-                          ],
-                        ),
-                        child: Icon(icon, color: color, size: 20),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        label,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.2,
-                          fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (badge != null)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: _BadgeCount(count: badge!),
+          scale: isPressed.value
+              ? 0.95
+              : (isHovered.value && !isPerformance ? 1.03 : 1.0),
+          duration: isPerformance
+              ? Duration.zero
+              : const Duration(milliseconds: 150),
+          curve: Curves.easeOutCubic,
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? SchoolColors.darkSurface : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isHovered.value
+                    ? color.withValues(alpha: 0.3)
+                    : (isDark ? SchoolColors.darkBorder : SchoolColors.border),
+                width: 1.0,
+              ),
+              boxShadow: [
+                if (isHovered.value && !isPerformance)
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  )
+                else if (!isPerformance)
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
               ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Material(
+              color: isHovered.value
+                  ? color.withValues(alpha: isDark ? 0.1 : 0.04)
+                  : Colors.transparent,
+              child: Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                color.withValues(alpha: 0.2),
+                                color.withValues(alpha: 0.1),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(icon, color: color, size: 20),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          label,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.2,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (badge != null)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: _BadgeCount(count: badge!),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1090,61 +1179,95 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? Theme.of(context).colorScheme.primary;
+    final c = color ?? SchoolColors.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [c.withValues(alpha: 0.12), c.withValues(alpha: 0.0)],
-                ),
-                shape: BoxShape.circle,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start, // Asymmetric
+            children: [
+              Stack(
+                children: [
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: c.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: isDark ? SchoolColors.darkSurface : Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: c.withValues(alpha: 0.2),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: c.withValues(alpha: 0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Icon(icon, size: 32, color: c),
+                  ),
+                ],
               ),
-              child: Icon(icon, size: 44, color: c.withValues(alpha: 0.4)),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 32),
               Text(
-                subtitle!,
-                textAlign: TextAlign.center,
+                title,
                 style: TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.55),
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  height: 1.1,
+                  letterSpacing: -0.5,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-            ],
-            if (action != null && actionLabel != null) ...[
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: action,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(160, 48),
+              if (subtitle != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  subtitle!,
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.6,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
                 ),
-                child: Text(actionLabel!),
-              ),
+              ],
+              if (action != null && actionLabel != null) ...[
+                const SizedBox(height: 32),
+                FilledButton.icon(
+                  onPressed: action,
+                  icon: const Icon(Icons.add_rounded, size: 20),
+                  label: Text(actionLabel!),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 52),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -1172,21 +1295,22 @@ class AnimatedCounter extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final animation = useAnimationController(duration: duration)
-      ..forward();
+    final isPerformance = AppScope.of(context).appState.performanceMode;
+    if (isPerformance) {
+      return Text('$prefix$value$suffix', style: style);
+    }
+    final animation = useAnimationController(duration: duration)..forward();
     final tween = useMemoized(
-      () => IntTween(begin: 0, end: value).animate(
-        CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-      ),
+      () => IntTween(
+        begin: 0,
+        end: value,
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
       [value],
     );
 
     return AnimatedBuilder(
       animation: tween,
-      builder: (_, __) => Text(
-        '$prefix${tween.value}$suffix',
-        style: style,
-      ),
+      builder: (_, __) => Text('$prefix${tween.value}$suffix', style: style),
     );
   }
 }
@@ -1204,27 +1328,33 @@ class BrandedLoader extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).colorScheme.primary,
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              const SizedBox(
+                width: 64,
+                height: 64,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    SchoolColors.primary,
+                  ),
+                ),
               ),
-            ),
+              const SchoolLogo(size: 40),
+            ],
           ),
           if (message != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Text(
               message!,
               style: TextStyle(
                 fontSize: 14,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.6),
-                fontWeight: FontWeight.w500,
+                letterSpacing: 0.2,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -1253,28 +1383,32 @@ class FadeIn extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = useAnimationController(duration: duration);
+    final isPerformance = AppScope.of(context).appState.performanceMode;
+    final controller = useAnimationController(
+      duration: isPerformance ? Duration.zero : duration,
+    );
     final opacity = CurvedAnimation(parent: controller, curve: Curves.easeOut);
     final slide = Tween<Offset>(
       begin: Offset(offset.dx / 100, offset.dy / 100),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: controller, curve: Curves.easeOutCubic),
-    );
+    ).animate(CurvedAnimation(parent: controller, curve: Curves.easeOutCubic));
 
     useEffect(() {
-      Future.delayed(delay, () {
-        if (controller.isCompleted == false) controller.forward();
-      });
+      if (isPerformance) {
+        controller.value = 1.0;
+      } else {
+        Future.delayed(delay, () {
+          if (controller.isCompleted == false) controller.forward();
+        });
+      }
       return null;
     }, []);
 
+    if (isPerformance) return child;
+
     return FadeTransition(
       opacity: opacity,
-      child: SlideTransition(
-        position: slide,
-        child: child,
-      ),
+      child: SlideTransition(position: slide, child: child),
     );
   }
 }
@@ -1466,26 +1600,18 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-    
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+
     _opacityAnimation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeInOut,
     );
-    
+
     _slideAnimation = Tween<Offset>(
       begin: widget.slideOffset,
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutCubic,
-      ),
-    );
-    
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
     _controller.forward();
   }
 
@@ -1505,14 +1631,20 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
 
   @override
   Widget build(BuildContext context) {
+    bool isPerformance = false;
+    try {
+      isPerformance = AppScope.of(context).appState.performanceMode;
+    } catch (_) {}
+
+    if (isPerformance) {
+      return IndexedStack(index: widget.index, children: widget.children);
+    }
+
     return FadeTransition(
       opacity: _opacityAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: IndexedStack(
-          index: widget.index,
-          children: widget.children,
-        ),
+        child: IndexedStack(index: widget.index, children: widget.children),
       ),
     );
   }
@@ -1541,11 +1673,13 @@ class StaggeredList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isPerformance = AppScope.of(context).appState.performanceMode;
     return ListView.builder(
       shrinkWrap: shrinkWrap,
       physics: physics ?? const NeverScrollableScrollPhysics(),
       itemCount: children.length,
       itemBuilder: (context, index) {
+        if (isPerformance) return children[index];
         return FadeIn(
           duration: duration,
           delay: delayStep * index,
@@ -1565,6 +1699,8 @@ class PageHeader extends StatelessWidget {
     super.key,
     required this.title,
     this.subtitle,
+    this.classContext,
+    this.onClassContextTap,
     this.trailing,
     this.padding,
     this.titleStyle,
@@ -1573,6 +1709,8 @@ class PageHeader extends StatelessWidget {
 
   final String title;
   final String? subtitle;
+  final String? classContext;
+  final VoidCallback? onClassContextTap;
   final Widget? trailing;
   final EdgeInsetsGeometry? padding;
   final TextStyle? titleStyle;
@@ -1580,47 +1718,318 @@ class PageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: padding ?? const EdgeInsets.fromLTRB(20, 56, 20, 16),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (subtitle != null) ...[
-                  Text(
-                    subtitle!,
-                    style: subtitleStyle ??
-                        const TextStyle(
-                          color: SchoolColors.muted,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                ],
-                Text(
-                  title,
-                  style: titleStyle ??
-                      TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        height: 1.1,
-                        letterSpacing: -0.5,
-                        color: Theme.of(context).colorScheme.onSurface,
+          if (classContext != null) ...[
+            _ContextBadge(
+              label: classContext!,
+              onTap: onClassContextTap,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 12),
+          ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (subtitle != null) ...[
+                      Text(
+                        subtitle!,
+                        style:
+                            subtitleStyle ??
+                            TextStyle(
+                              color: isDark
+                                  ? SchoolColors.darkMuted
+                                  : SchoolColors.muted,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
+                      const SizedBox(height: 4),
+                    ],
+                    Text(
+                      title,
+                      style:
+                          titleStyle ??
+                          TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            height: 1.1,
+                            letterSpacing: -0.5,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+              if (trailing != null) ...[const SizedBox(width: 12), trailing!],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContextBadge extends StatelessWidget {
+  const _ContextBadge({required this.label, this.onTap, required this.isDark});
+
+  final String label;
+  final VoidCallback? onTap;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    const color = SchoolColors.primary;
+    final widget = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            onTap != null ? Icons.swap_horiz_rounded : Icons.school_rounded,
+            size: 14,
+            color: color,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w900,
+              color: SchoolColors.primary,
+              letterSpacing: 0.5,
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: 12),
-            trailing!,
+          if (onTap != null) ...[
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 16,
+              color: color.withValues(alpha: 0.6),
+            ),
           ],
         ],
+      ),
+    );
+
+    if (onTap == null) return widget;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: widget,
+    );
+  }
+}
+
+void showClassSwitcher({
+  required BuildContext context,
+  required List<Map<String, dynamic>> classes,
+  required String? currentClassId,
+  required ValueChanged<String> onSelect,
+}) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final l10n = AppLocalizations.of(context)!;
+
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (context) => Container(
+      decoration: BoxDecoration(
+        color: isDark ? SchoolColors.darkSurface : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        12,
+        24,
+        MediaQuery.viewPaddingOf(context).bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: SchoolColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            l10n.selectClass.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.0,
+              color: SchoolColors.muted,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  for (final cls in classes) ...[
+                    _SwitcherItem(
+                      name: cls['name']?.toString() ?? '...',
+                      color: colorFromHex(
+                        cls['coverColor'] as String?,
+                        SchoolColors.primary,
+                      ),
+                      isSelected: cls['id'] == currentClassId,
+                      onTap: () {
+                        Navigator.pop(context);
+                        onSelect(cls['id'] as String);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _SwitcherItem extends StatelessWidget {
+  const _SwitcherItem({
+    required this.name,
+    required this.color,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String name;
+  final Color color;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: isSelected ? color.withValues(alpha: 0.1) : Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected
+                  ? color.withValues(alpha: 0.3)
+                  : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              ClassBadge(name: name, color: color, size: 40, radius: 10),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  name,
+                  style: TextStyle(
+                    fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: SchoolColors.primary,
+                  size: 20,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class EmptyStateWidget extends StatelessWidget {
+  const EmptyStateWidget({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 32),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: isDark ? SchoolColors.darkSurface : Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [SchoolColors.elevation2],
+              ),
+              child: Icon(
+                icon,
+                size: 64,
+                color: SchoolColors.primary.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: SchoolColors.muted,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

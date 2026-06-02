@@ -74,7 +74,13 @@ Future<void> main() async {
     await Hive.openBox('app_settings');
     await Hive.openBox('data_cache');
     await Hive.openBox('chat_cache');
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    try {
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    } catch (e) {
+      if (!e.toString().contains('duplicate-app')) {
+        rethrow;
+      }
+    }
     if (!kIsWeb) {
       FirebaseFirestore.instance.settings = const Settings(
         persistenceEnabled: true,
@@ -134,7 +140,7 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
     final activeLocale = ref.watch(
       schoolAppStateProvider.select((state) => state.locale),
     );
-    final appState = ref.watch(schoolAppStateProvider);
+    final appState = ref.watch(schoolAppStateProvider.notifier);
     final repository = ref.watch(repositoryProvider);
     final guestParams = getGuestInviteParams();
     if (guestParams != null) {

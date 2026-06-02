@@ -151,11 +151,20 @@ class _PostCardState extends State<PostCard> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: CachedNetworkImage(
-                  imageUrl: (attachments.first['url'] as String).toDirectImageUrl,
+                  imageUrl: (attachments.first['url'] as String)
+                      .toDirectImageUrl
+                      .toOptimizedCloudinary(
+                        performance:
+                            AppScope.of(context).appState.performanceMode,
+                      ),
                   height: 240,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  placeholder: (c, u) => Container(color: Colors.grey[200]),
+                  memCacheWidth:
+                      AppScope.of(context).appState.performanceMode ? 500 : 900,
+                  placeholder: (c, u) => Container(
+                    color: Colors.grey.withValues(alpha: 0.1),
+                  ),
                 ),
               ),
             ),
@@ -526,6 +535,8 @@ class _PostMenu extends StatelessWidget {
     final repo = AppScope.of(context).repository;
     final pinned = doc.data()['pinned'] == true;
     return PopupMenuButton<String>(
+      tooltip: AppLocalizations.of(context)!.unknownKey6,
+      icon: const Icon(Icons.more_horiz_rounded, color: SchoolColors.muted),
       onSelected: (val) {
         if (val == 'pin')
           repo.firestore.collection('posts').doc(doc.id).update({

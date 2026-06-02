@@ -22,6 +22,19 @@ mixin SchoolRepositoryWebinars {
     });
   }
 
+  Stream<QuerySnapshot<Map<String, dynamic>>> webinarsForClasses(List<String> classIds, {int? limit}) {
+    if (classIds.isEmpty) return const Stream.empty();
+    
+    var query = firestore
+        .collection('webinars')
+        .where('classId', whereIn: classIds.take(30).toList())
+        .orderBy('createdAt', descending: true);
+    if (limit != null) {
+      query = query.limit(limit);
+    }
+    return query.safeSnapshots();
+  }
+
   Stream<QuerySnapshot<Map<String, dynamic>>> webinarsForClass(String classId, {int? limit}) {
     var query = firestore
         .collection('webinars')

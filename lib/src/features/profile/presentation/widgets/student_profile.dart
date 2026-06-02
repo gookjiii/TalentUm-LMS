@@ -359,7 +359,7 @@ class _StudentProfileState extends State<StudentProfile> {
   }
 
   Future<void> _pickAndUploadAvatar(BuildContext context) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.image,
       withData: true,
     );

@@ -2,9 +2,11 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/main.dart';
+import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/widgets/file_preview.dart';
@@ -197,6 +199,7 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
   
                 if (_selectedId == null) {
                   return _AssignmentSummaryView(
+                    classId: widget.classId,
                     docs: docs,
                     onSelect: (id) => setState(() => _selectedId = id),
                     onCreate: () => _createAssignment(context),
@@ -333,7 +336,7 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                       onPressed: uploading
                           ? null
                           : () async {
-                              final res = await FilePicker.platform.pickFiles(
+                              final res = await FilePicker.pickFiles(
                                 allowMultiple: true,
                                 withData: true,
                               );
@@ -434,10 +437,12 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
 
 class _AssignmentSummaryView extends StatefulWidget {
   const _AssignmentSummaryView({
+    required this.classId,
     required this.docs,
     required this.onSelect,
     required this.onCreate,
   });
+  final String classId;
   final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs;
   final ValueChanged<String> onSelect;
   final VoidCallback onCreate;
@@ -462,24 +467,46 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        PageHeader(
-          title: AppLocalizations.of(context)!.quests,
-          subtitle: AppLocalizations.of(context)!
-              .totalAssignmentsCount(widget.docs.length),
-          trailing: FilledButton.icon(
-            onPressed: widget.onCreate,
-            style: FilledButton.styleFrom(
-              minimumSize: Size.zero,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
+        Consumer(
+          builder: (context, ref, _) {
+            final allClassAsync = ref.watch(teacherClassesStreamProvider);
+            final allVisibleClasses = allClassAsync.value ?? [];
+            final effectiveClassId = ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ?? widget.classId;
+            final currentClassName = allVisibleClasses.firstWhere((c) => c['id'] == effectiveClassId, orElse: () => {})['name']?.toString();
+
+            return PageHeader(
+              title: AppLocalizations.of(context)!.quests,
+              subtitle: AppLocalizations.of(context)!
+                  .totalAssignmentsCount(widget.docs.length),
+              classContext: currentClassName,
+              onClassContextTap: allVisibleClasses.length > 1
+                  ? () {
+                      showClassSwitcher(
+                        context: context,
+                        classes: allVisibleClasses,
+                        currentClassId: effectiveClassId,
+                        onSelect: (id) {
+                          ref.read(schoolAppStateProvider).selectClass(id);
+                        },
+                      );
+                    }
+                  : null,
+              trailing: FilledButton.icon(
+                onPressed: widget.onCreate,
+                style: FilledButton.styleFrom(
+                  minimumSize: Size.zero,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: Text(AppLocalizations.of(context)!.createATask),
               ),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: Text(AppLocalizations.of(context)!.createATask),
-          ),
-          padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
+              padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
+            );
+          },
         ),
         const SizedBox(height: 24),
         Padding(

@@ -40,6 +40,11 @@ service cloud.firestore {
 
     // --- Collection Rules ---
 
+    // Allow collection group queries for admin stats
+    match /{path=**}/messages/{messageId} {
+      allow read: if isTeacher();
+    }
+
     match /users/{userId} {
       // Allow any signed-in user to read profiles (needed for resolving names/avatars in chat and class lists)
       allow read: if signedIn();

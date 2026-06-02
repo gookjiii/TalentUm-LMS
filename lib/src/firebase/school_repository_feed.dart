@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'safe_firestore.dart';
 import 'storage_provider.dart';
+import 'package:school_world/src/firebase/push_notification_manager.dart';
 
 mixin SchoolRepositoryFeed {
   FirebaseFirestore get firestore;
@@ -20,6 +21,37 @@ mixin SchoolRepositoryFeed {
       'pinned': pinned,
       'attachments': attachments,
     });
+    
+    _sendClassNotification(classId, 'Новый пост', content);
+  }
+
+  Future<void> _sendClassNotification(String classId, String title, String body) async {
+    try {
+      final classDoc = await firestore.collection('classes').doc(classId).get();
+      if (!classDoc.exists) return;
+      final data = classDoc.data()!;
+      final List<dynamic> studentIds = data['studentIds'] ?? [];
+      final List<dynamic> parentIds = data['parentIds'] ?? [];
+      
+      final targetUserIds = [...studentIds, ...parentIds]
+          .map((id) => id.toString())
+          .toSet()
+          .toList();
+          
+      if (targetUserIds.isEmpty) return;
+      
+      final className = data['name'] ?? '';
+      final finalTitle = className.isNotEmpty ? '$className - $title' : title;
+      
+      await PushNotificationManager.sendPushNotification(
+        userIds: targetUserIds,
+        title: finalTitle,
+        body: body,
+        data: {'classId': classId},
+      );
+    } catch (e) {
+      // ignore
+    }
   }
 
   Future<void> setPostPinned(String postId, bool pinned) async {

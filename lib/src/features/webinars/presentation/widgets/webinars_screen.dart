@@ -41,15 +41,19 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final webinarsAsync = ref.watch(webinarsProvider((widget.classId, _limit)));
+    final effectiveClassId =
+        ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ??
+            widget.classId;
+    final webinarsAsync = ref.watch(webinarsProvider((effectiveClassId, _limit)));
     final appState = ref.watch(schoolAppStateProvider);
     final repo = ref.watch(repositoryProvider);
     final isTeacher = appState.isTeacher;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: repo.firestore.collection('classes').doc(widget.classId).snapshots(),
+      stream: repo.firestore.collection('classes').doc(effectiveClassId).snapshots(),
       builder: (context, classSnap) {
         final isLeadOfClass = appState.isLeadTeacher;
+        final className = classSnap.data?.data()?['name']?.toString();
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -63,16 +67,38 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
             child: CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(
-                  child: PageHeader(
-                    title: AppLocalizations.of(context)!.webinars,
-                    subtitle: AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
-                    trailing: isTeacher
-                        ? IconButton.filledTonal(
-                            onPressed: () => _showAddDialog(context, ref),
-                            icon: const Icon(Icons.add_rounded),
-                            tooltip: AppLocalizations.of(context)!.add,
-                          )
-                        : null,
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final allClassAsync = ref.watch(isTeacher ? teacherClassesStreamProvider : studentClassesStreamProvider);
+                      final allVisibleClasses = allClassAsync.value ?? [];
+                      
+                      return PageHeader(
+                        title: AppLocalizations.of(context)!.webinars,
+                        subtitle: AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
+                        classContext: className,
+                        onClassContextTap: allVisibleClasses.length > 1
+                            ? () {
+                                showClassSwitcher(
+                                  context: context,
+                                  classes: allVisibleClasses,
+                                  currentClassId: effectiveClassId,
+                                  onSelect: (id) {
+                                    ref
+                                        .read(schoolAppStateProvider)
+                                        .selectClass(id);
+                                  },
+                                );
+                              }
+                            : null,
+                        trailing: isTeacher
+                            ? IconButton.filledTonal(
+                                onPressed: () => _showAddDialog(context, ref, effectiveClassId),
+                                icon: const Icon(Icons.add_rounded),
+                                tooltip: AppLocalizations.of(context)!.add,
+                              )
+                            : null,
+                      );
+                    },
                   ),
                 ),
                 webinarsAsync.when(
@@ -120,10 +146,10 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
     );
   }
 
-  void _showAddDialog(BuildContext context, WidgetRef ref) {
+  void _showAddDialog(BuildContext context, WidgetRef ref, String classId) {
     showDialog(
       context: context,
-      builder: (context) => _AddWebinarDialog(classId: widget.classId),
+      builder: (context) => _AddWebinarDialog(classId: classId),
     );
   }
 
@@ -688,7 +714,7 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
   }
 
   Future<void> _pickVideo() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(withData: true, 
       type: FileType.custom,
       allowedExtensions: ['mp4', 'mov', 'avi', 'webm', 'mkv'],
     );

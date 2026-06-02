@@ -887,5 +887,27 @@
         "type": "String"
       }
     }
-  }
+  },
+  "importList": "Import list",
+  "pasteClassNamesSeparated": "Paste class names separated by new lines",
+  "import": "Import",
+  "quickSubmit": "Quick submit",
+  "viewMore": "View more",
+  "writeYourAnswerHere": "Write your answer here...",
+  "attachPhoto": "Attach photo",
+  "linkingCode": "Linking Code",
+  "showThisCodeToYourParent": "Show this code to your parent to link accounts",
+  "familyTimeline": "FAMILY TIMELINE",
+  "noActivityYet": "No activity yet.",
+  "receivedGrade": "received a grade",
+  "submittedAssignment": "submitted an assignment",
+  "submittedSuccessfully": "Submitted successfully!",
+  "selectClass": "Select Class",
+  "previousWeek": "Previous week",
+  "nextWeek": "Next week",
+  "youHaveNoTasksYet": "You have no tasks yet.",
+  "upcomingAssignment": "Upcoming assignment",
+  "deadline": "Deadline",
+  "compressPdfTitle": "Compress PDF (only for files > 50MB)",
+  "compressPdfSubtitle": "Reduces file size but may slightly reduce image quality"
 }

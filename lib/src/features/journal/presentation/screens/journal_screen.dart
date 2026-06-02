@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 import '../widgets/journal_grades_grid.dart';
@@ -39,39 +40,70 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveClassId =
+        ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ??
+            widget.classId;
+    final repo = ref.watch(repositoryProvider);
+    final appState = ref.watch(schoolAppStateProvider);
+    final isTeacher = appState.isTeacher;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Column(
-        children: [
-          PageHeader(
-            title: AppLocalizations.of(context)!.coolMagazine,
-            subtitle: widget.studentId != null
-                ? AppLocalizations.of(context)!.myGradesAndSubjects
-                : AppLocalizations.of(context)!.academicPerformanceAndSubjects,
-            trailing: ref.watch(schoolAppStateProvider).isTeacher
-                ? SizedBox(
-                    height: 44,
-                    child: FilledButton.icon(
-                      onPressed: () => _showAddLessonDialog(context, ref),
-                      icon: const Icon(Icons.add_rounded, size: 20),
-                      label: Text(AppLocalizations.of(context)!.addALesson),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: SchoolColors.primary,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  )
-                : null,
-          ),
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: repo.firestore.collection('classes').doc(effectiveClassId).snapshots(),
+      builder: (context, classSnap) {
+        final className = classSnap.data?.data()?['name']?.toString();
+        
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Column(
+            children: [
+              Consumer(
+                builder: (context, ref, _) {
+                  final allClassAsync = ref.watch(isTeacher ? teacherClassesStreamProvider : studentClassesStreamProvider);
+                  final allVisibleClasses = allClassAsync.value ?? [];
+                  
+                  return PageHeader(
+                    title: AppLocalizations.of(context)!.coolMagazine,
+                    subtitle: widget.studentId != null
+                        ? AppLocalizations.of(context)!.myGradesAndSubjects
+                        : AppLocalizations.of(context)!.academicPerformanceAndSubjects,
+                    classContext: className,
+                    onClassContextTap: allVisibleClasses.length > 1
+                        ? () {
+                            showClassSwitcher(
+                              context: context,
+                              classes: allVisibleClasses,
+                              currentClassId: effectiveClassId,
+                              onSelect: (id) {
+                                ref.read(schoolAppStateProvider).selectClass(id);
+                              },
+                            );
+                          }
+                        : null,
+                    trailing: isTeacher
+                        ? SizedBox(
+                            height: 44,
+                            child: FilledButton.icon(
+                              onPressed: () => _showAddLessonDialog(context, ref, effectiveClassId),
+                              icon: const Icon(Icons.add_rounded, size: 20),
+                              label: Text(AppLocalizations.of(context)!.addALesson),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: SchoolColors.primary,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          )
+                        : null,
+                  );
+                },
+              ),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -114,19 +146,21 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
               controller: _tabController,
               children: [
                 JournalGradesGrid(
-                  classId: widget.classId,
+                  classId: effectiveClassId,
                   studentIdFilter: widget.studentId,
                 ),
-                JournalTopicsList(classId: widget.classId),
+                JournalTopicsList(classId: effectiveClassId),
               ],
             ),
           ),
         ],
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Future<void> _showAddLessonDialog(BuildContext context, WidgetRef ref) async {
+  Future<void> _showAddLessonDialog(BuildContext context, WidgetRef ref, String classId) async {
     final dateController = TextEditingController(text: _formatDate(DateTime.now()));
     final topicController = TextEditingController();
     final homeworkController = TextEditingController();
@@ -205,7 +239,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
     if (result == true) {
       try {
         await repo.addJournalColumn(
-          classId: widget.classId,
+          classId: classId,
           date: selectedDate,
           topic: topicController.text,
           homework: homeworkController.text,

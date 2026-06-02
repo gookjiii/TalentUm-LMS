@@ -130,7 +130,10 @@ class _TopicSidebarState extends State<TopicSidebar> {
                           icon: Icons.tag_rounded,
                           isActive: activeTopicId == doc.id,
                           onTap: () {
-                            widget.chatController.setTopicId(doc.id, topicName: data['name'] ?? 'Без названия');
+                            widget.chatController.setTopicId(
+                              doc.id,
+                              topicName: data['name'] ?? 'Без названия',
+                            );
                             widget.onTopicChanged?.call(doc.id);
                           },
                           onDelete: widget.isTeacher
@@ -245,6 +248,7 @@ class _TopicItem extends StatefulWidget {
 
 class _TopicItemState extends State<_TopicItem> {
   bool _hovered = false;
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -255,100 +259,109 @@ class _TopicItemState extends State<_TopicItem> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedScale(
-        scale: _hovered && !widget.isActive ? 1.02 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          decoration: BoxDecoration(
-            color: widget.isActive
-                ? activeColor.withValues(alpha: 0.1)
-                : (isDark
-                    ? Colors.white.withValues(alpha: _hovered ? 0.05 : 0.0)
-                    : Colors.black.withValues(alpha: _hovered ? 0.03 : 0.0)),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _pressed ? 0.97 : (_hovered && !widget.isActive ? 1.02 : 1.0),
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOutCubic,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            decoration: BoxDecoration(
               color: widget.isActive
-                  ? activeColor.withValues(alpha: 0.3)
-                  : Colors.transparent,
-              width: 1,
+                  ? activeColor.withValues(alpha: isDark ? 0.15 : 0.08)
+                  : (isDark
+                        ? Colors.white.withValues(alpha: _hovered ? 0.05 : 0.0)
+                        : Colors.black.withValues(
+                            alpha: _hovered ? 0.03 : 0.0,
+                          )),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: widget.isActive
+                    ? activeColor.withValues(alpha: 0.3)
+                    : Colors.transparent,
+                width: 1,
+              ),
             ),
-          ),
-          child: Material(
-            color: Colors.transparent,
             child: ListTile(
-              onTap: widget.onTap,
               dense: true,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 14,
                 vertical: 2,
               ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                leading: Icon(
-                  widget.icon,
-                  size: 20,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              leading: Icon(
+                widget.icon,
+                size: 20,
+                color: widget.isActive
+                    ? activeColor
+                    : theme.colorScheme.onSurfaceVariant.withValues(
+                        alpha: _hovered ? 1.0 : 0.7,
+                      ),
+              ),
+              title: Text(
+                widget.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: widget.isActive
+                      ? FontWeight.bold
+                      : FontWeight.w500,
+                  fontSize: 14,
                   color: widget.isActive
                       ? activeColor
-                      : theme.colorScheme.onSurfaceVariant.withValues(
-                          alpha: _hovered ? 1.0 : 0.7,
-                        ),
+                      : theme.colorScheme.onSurface,
                 ),
-                title: Text(
-                  widget.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: widget.isActive ? FontWeight.bold : FontWeight.w500,
-                    fontSize: 14,
-                    color: widget.isActive
-                        ? activeColor
-                        : theme.colorScheme.onSurface,
-                  ),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (widget.onDelete != null && (_hovered || widget.isActive))
-                      AnimatedOpacity(
-                        duration: const Duration(milliseconds: 200),
-                        opacity: _hovered || widget.isActive ? 1.0 : 0.0,
-                        child: IconButton(
-                          icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                          color: Colors.redAccent.withValues(alpha: 0.8),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          onPressed: widget.onDelete,
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.onDelete != null)
+                    AnimatedOpacity(
+                      duration: const Duration(milliseconds: 200),
+                      opacity: (_hovered || widget.isActive) ? 1.0 : 0.0,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          size: 18,
                         ),
+                        color: Colors.redAccent.withValues(alpha: 0.8),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: (_hovered || widget.isActive)
+                            ? widget.onDelete
+                            : null,
                       ),
-                    if (widget.isActive && widget.onDelete != null)
-                      const SizedBox(width: 8),
-                    if (widget.isActive)
-                      Container(
-                        width: 4,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          color: activeColor,
-                          borderRadius: BorderRadius.circular(4),
-                          boxShadow: [
-                            BoxShadow(
-                              color: activeColor.withValues(alpha: 0.4),
-                              blurRadius: 4,
-                              offset: const Offset(0, 0),
-                            ),
-                          ],
-                        ),
+                    ),
+                  if (widget.onDelete != null) const SizedBox(width: 8),
+                  if (widget.isActive)
+                    Container(
+                      width: 4,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: activeColor,
+                        borderRadius: BorderRadius.circular(4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: activeColor.withValues(alpha: 0.4),
+                            blurRadius: 4,
+                            offset: const Offset(0, 0),
+                          ),
+                        ],
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
           ),
         ),
+      ),
     );
   }
 }
-

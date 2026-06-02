@@ -692,19 +692,17 @@ class _TeacherUserCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    IconButton(
-                      onPressed: onSignOut,
-                      icon: const Icon(
-                        Icons.logout_rounded,
-                        size: 17,
-                        color: SchoolColors.red,
-                      ),
-                      tooltip: l10n.logOut,
-                      padding: EdgeInsets.zero,
-                      constraints:
-                          const BoxConstraints(minWidth: 32, minHeight: 32),
-                    ),
                   ],
+                  IconButton(
+                    onPressed: onSignOut,
+                    tooltip: l10n.signOut,
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    icon: const Icon(
+                      Icons.logout_rounded,
+                      size: 18,
+                      color: SchoolColors.red,
+                    ),
+                  ),
                 ],
               ),
             ),

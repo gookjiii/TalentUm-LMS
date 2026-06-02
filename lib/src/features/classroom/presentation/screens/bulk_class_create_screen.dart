@@ -11,28 +11,118 @@ class BulkClassCreateScreen extends StatefulWidget {
   State<BulkClassCreateScreen> createState() => _BulkClassCreateScreenState();
 }
 
+class _ClassDraft {
+  final TextEditingController controller;
+  Color color;
+
+  _ClassDraft({required String name, required this.color})
+      : controller = TextEditingController(text: name);
+
+  void dispose() => controller.dispose();
+}
+
 class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
-  final List<TextEditingController> _controllers = [TextEditingController()];
+  final List<_ClassDraft> _drafts = [
+    _ClassDraft(name: '', color: SchoolColors.primary)
+  ];
   bool _loading = false;
 
-  void _addMore() => setState(() => _controllers.add(TextEditingController()));
+  final List<Color> _availableColors = [
+    SchoolColors.primary,
+    SchoolColors.secondary,
+    SchoolColors.accent,
+    SchoolColors.green,
+    SchoolColors.orange,
+    SchoolColors.purple,
+    const Color(0xFFEC4899), // Pink
+    const Color(0xFF06B6D4), // Cyan
+  ];
+
+  void _addMore() => setState(() {
+        final lastColor = _drafts.lastOrNull?.color ?? SchoolColors.primary;
+        final nextIdx = (_availableColors.indexOf(lastColor) + 1) %
+            _availableColors.length;
+        _drafts.add(
+          _ClassDraft(name: '', color: _availableColors[nextIdx]),
+        );
+      });
+
+  void _pasteList() async {
+    final l10n = AppLocalizations.of(context)!;
+    final ctrl = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.importList),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.pasteClassNamesSeparated),
+            const SizedBox(height: 16),
+            TextField(
+              controller: ctrl,
+              maxLines: 6,
+              decoration: const InputDecoration(
+                hintText: "Mathematics 10A\nPhysics 11B\nHistory 9C",
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.unknownKey),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.import),
+          ),
+        ],
+      ),
+    );
+
+    if (ok == true && ctrl.text.trim().isNotEmpty) {
+      final names = ctrl.text
+          .split('\n')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+      if (names.isNotEmpty) {
+        setState(() {
+          _drafts.clear();
+          for (int i = 0; i < names.length; i++) {
+            _drafts.add(
+              _ClassDraft(
+                name: names[i],
+                color: _availableColors[i % _availableColors.length],
+              ),
+            );
+          }
+        });
+      }
+    }
+  }
 
   Future<void> _createAll() async {
-    final names = _controllers
-        .map((c) => c.text.trim())
-        .where((n) => n.isNotEmpty)
+    final validDrafts = _drafts
+        .where((d) => d.controller.text.trim().isNotEmpty)
         .toList();
-    if (names.isEmpty) return;
+    if (validDrafts.isEmpty) return;
 
     setState(() => _loading = true);
     try {
       final repo = AppScope.of(context).repository;
-      for (final name in names) {
-        await repo.createClass(name: name);
+      for (final d in validDrafts) {
+        await repo.createClass(
+          name: d.controller.text.trim(),
+          coverColor: '#${d.color.value.toRadixString(16).substring(2).toUpperCase()}',
+        );
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Создано классов: ${names.length}')),
+          SnackBar(content: Text('Lớp học đã được tạo thành công: ${validDrafts.length}')),
         );
         Navigator.pop(context);
       }
@@ -48,73 +138,186 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
   }
 
   @override
+  void dispose() {
+    for (final d in _drafts) d.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.creatingClasses)),
+      appBar: AppBar(
+        title: Text(l10n.creatingClasses),
+        actions: [
+          TextButton.icon(
+            onPressed: _pasteList,
+            icon: const Icon(Icons.content_paste_rounded, size: 18),
+            label: Text(l10n.importList),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              AppLocalizations.of(context)!.coolFactory,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-            ),
-            Text(
-              AppLocalizations.of(context)!.enterTheNamesOfThe,
-              style: TextStyle(color: SchoolColors.muted, fontSize: 13),
-            ),
-            const SizedBox(height: 24),
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _controllers.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, i) => SchoolCard(
-                padding: EdgeInsets.zero,
-                child: TextField(
-                  controller: _controllers[i],
-                  decoration: InputDecoration(
-                    hintText: 'Напр: 7-й класс AppLocalizations.of(context)!.unknownKey10',
-                    prefixIcon: const Icon(Icons.school_rounded),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    suffixIcon: _controllers.length > 1
-                        ? IconButton(
-                            icon: const Icon(
-                              Icons.remove_circle_outline,
-                              color: Colors.red,
-                            ),
-                            onPressed: () =>
-                                setState(() => _controllers.removeAt(i)),
-                          )
-                        : null,
+            FadeIn(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.coolFactory,
+                    style: AppTextStyle.display(context),
                   ),
-                ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.enterTheNamesOfThe,
+                    style: TextStyle(color: SchoolColors.muted, fontSize: 14),
+                  ),
+                ],
               ),
+            ),
+            const SizedBox(height: 32),
+            StaggeredList(
+              children: [
+                for (int i = 0; i < _drafts.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _ClassDraftRow(
+                      draft: _drafts[i],
+                      onRemove: _drafts.length > 1
+                          ? () => setState(() => _drafts.removeAt(i))
+                          : null,
+                      availableColors: _availableColors,
+                      onColorChange: (c) => setState(() => _drafts[i].color = c),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 16),
             TextButton.icon(
               onPressed: _addMore,
               icon: const Icon(Icons.add_rounded),
-              label: Text(AppLocalizations.of(context)!.addMore),
+              label: Text(l10n.addMore),
             ),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: FilledButton(
-                onPressed: _loading ? null : _createAll,
-                child: _loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(AppLocalizations.of(context)!.createAllClasses),
-              ),
-            ),
+            const SizedBox(height: 60),
           ],
         ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Hero(
+            tag: 'bulk_create_btn',
+            child: FilledButton.icon(
+              onPressed: _loading ? null : _createAll,
+              icon: _loading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.auto_awesome_rounded),
+              label: Text(l10n.createAllClasses),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ClassDraftRow extends StatelessWidget {
+  const _ClassDraftRow({
+    required this.draft,
+    this.onRemove,
+    required this.availableColors,
+    required this.onColorChange,
+  });
+
+  final _ClassDraft draft;
+  final VoidCallback? onRemove;
+  final List<Color> availableColors;
+  final ValueChanged<Color> onColorChange;
+
+  @override
+  Widget build(BuildContext context) {
+    return SchoolCard(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          ListenableBuilder(
+            listenable: draft.controller,
+            builder: (context, _) => ClassBadge(
+              name: draft.controller.text.isEmpty ? "?" : draft.controller.text,
+              color: draft.color,
+              size: 48,
+              radius: 12,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: draft.controller,
+                  decoration: const InputDecoration(
+                    hintText: "E.g. Math 101",
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final color in availableColors)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: InkWell(
+                            onTap: () => onColorChange(color),
+                            child: Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: draft.color == color
+                                    ? Border.all(color: Colors.white, width: 2)
+                                    : null,
+                                boxShadow: [
+                                  if (draft.color == color)
+                                    const BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 4,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onRemove != null)
+            IconButton(
+              icon: const Icon(Icons.remove_circle_outline, color: SchoolColors.red),
+              onPressed: onRemove,
+            ),
+        ],
       ),
     );
   }

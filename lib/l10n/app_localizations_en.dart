@@ -2275,4 +2275,70 @@ class AppLocalizationsEn extends AppLocalizations {
   String cabinetWithNumber(String number) {
     return 'Room $number';
   }
+
+  @override
+  String get importList => 'Import list';
+
+  @override
+  String get pasteClassNamesSeparated => 'Paste class names separated by new lines';
+
+  @override
+  String get import => 'Import';
+
+  @override
+  String get quickSubmit => 'Quick submit';
+
+  @override
+  String get viewMore => 'View more';
+
+  @override
+  String get writeYourAnswerHere => 'Write your answer here...';
+
+  @override
+  String get attachPhoto => 'Attach photo';
+
+  @override
+  String get linkingCode => 'Linking Code';
+
+  @override
+  String get showThisCodeToYourParent => 'Show this code to your parent to link accounts';
+
+  @override
+  String get familyTimeline => 'FAMILY TIMELINE';
+
+  @override
+  String get noActivityYet => 'No activity yet.';
+
+  @override
+  String get receivedGrade => 'received a grade';
+
+  @override
+  String get submittedAssignment => 'submitted an assignment';
+
+  @override
+  String get submittedSuccessfully => 'Submitted successfully!';
+
+  @override
+  String get selectClass => 'Select Class';
+
+  @override
+  String get previousWeek => 'Previous week';
+
+  @override
+  String get nextWeek => 'Next week';
+
+  @override
+  String get youHaveNoTasksYet => 'You have no tasks yet.';
+
+  @override
+  String get upcomingAssignment => 'Upcoming assignment';
+
+  @override
+  String get deadline => 'Deadline';
+
+  @override
+  String get compressPdfTitle => 'Compress PDF (only for files > 50MB)';
+
+  @override
+  String get compressPdfSubtitle => 'Reduces file size but may slightly reduce image quality';
 }

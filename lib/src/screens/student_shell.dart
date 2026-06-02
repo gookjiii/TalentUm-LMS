@@ -1,4 +1,6 @@
 import 'dart:ui' as ui;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,14 +35,15 @@ class _StudentShellState extends ConsumerState<StudentShell> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = ref.watch(repositoryProvider);
     final selectedClassId = ref.watch(
       schoolAppStateProvider.select((state) => state.selectedClassId),
     );
-    final appState = ref.read(schoolAppStateProvider);
+    final lastChatClassId = ref.watch(schoolAppStateProvider.select((s) => s.lastChatClassId));
+
     final classesAsync = ref.watch(studentClassesStreamProvider);
     final l10n = AppLocalizations.of(context)!;
-
+    final repo = AppScope.of(context).repository;
+    final appState = AppScope.of(context).appState;
     return classesAsync.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -144,8 +147,8 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                     icon: Icons.chat_bubble_outline_rounded,
                   ),
 
-                if (hasClasses && selectedId != null)
-                  StudentHomework(classId: selectedId)
+                if (hasClasses && (!wide || selectedId != null))
+                  StudentHomework(classId: wide ? (selectedId ?? '') : '')
                 else
                   _FeatureLockedEmptyState(
                     title: AppLocalizations.of(context)!.quests,
@@ -164,16 +167,16 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                     icon: Icons.calendar_month_outlined,
                   ),
 
-                if (hasClasses && selectedId != null)
-                  LibraryScreen(classId: selectedId)
+                if (hasClasses && (!wide || selectedId != null))
+                  LibraryScreen(classId: wide ? (selectedId ?? '') : '')
                 else
                   _FeatureLockedEmptyState(
                     title: AppLocalizations.of(context)!.library,
                     icon: Icons.library_books_outlined,
                   ),
 
-                if (hasClasses && selectedId != null)
-                  WebinarsScreen(classId: selectedId)
+                if (hasClasses && (!wide || selectedId != null))
+                  WebinarsScreen(classId: wide ? (selectedId ?? '') : '')
                 else
                   _FeatureLockedEmptyState(
                     title: AppLocalizations.of(context)!.webinars,
@@ -196,7 +199,9 @@ class _StudentShellState extends ConsumerState<StudentShell> {
 
             return Scaffold(
               backgroundColor: Theme.of(context).colorScheme.surface,
-              body: Row(
+              body: SafeArea(
+                bottom: false,
+                child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (wide)
@@ -226,10 +231,14 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                     ),
                 ],
               ),
+              ),
               bottomNavigationBar: wide
                   ? null
                   : Builder(
                       builder: (context) {
+                        if (_tabIndex == 2 && lastChatClassId != null) {
+                          return const SizedBox.shrink();
+                        }
                         // 0=Today, 2=Chat, 3=Homework, 4=Schedule; More opens sheet
                         const mobileIndices = [0, 2, 3, 4];
                         final mobileNavItems = mobileIndices.map((i) => navItems[i]).toList();
@@ -323,14 +332,37 @@ class _StudentShellState extends ConsumerState<StudentShell> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (ctx) => Scaffold(
-            appBar: AppBar(
-              title: Text(_getStudentTabTitle(index, l10n)),
-            ),
-            body: Container(
-              color: Theme.of(ctx).colorScheme.surface,
-              child: _getStudentTabWidget(index, selectedId, repo, appState, classes),
-            ),
+          builder: (ctx) => Consumer(
+            builder: (ctx, ref, _) {
+              final currentId = ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ?? selectedId;
+              
+              return Scaffold(
+                appBar: AppBar(
+                  title: Text(_getStudentTabTitle(index, l10n)),
+                  centerTitle: true,
+                  actions: [
+                    if (classes.length > 1)
+                      IconButton(
+                        icon: const Icon(Icons.swap_horiz_rounded),
+                        onPressed: () {
+                          showClassSwitcher(
+                            context: ctx,
+                            classes: classes,
+                            currentClassId: currentId ?? '',
+                            onSelect: (id) {
+                              ref.read(schoolAppStateProvider).selectClass(id);
+                            },
+                          );
+                        },
+                      ),
+                  ],
+                ),
+                body: Container(
+                  color: Theme.of(ctx).colorScheme.surface,
+                  child: _getStudentTabWidget(index, currentId, repo, appState, classes),
+                ),
+              );
+            },
           ),
         ),
       );
@@ -369,9 +401,9 @@ class _StudentShellState extends ConsumerState<StudentShell> {
           studentClasses: classes,
         );
       case 5:
-        return LibraryScreen(classId: selectedId ?? '');
+        return LibraryScreen(classId: '');
       case 6:
-        return WebinarsScreen(classId: selectedId ?? '');
+        return WebinarsScreen(classId: '');
       case 7:
         return JournalScreen(
           classId: selectedId ?? '',
@@ -397,21 +429,69 @@ class _FeatureLockedEmptyState extends StatelessWidget {
   }
 }
 
-class JoinClassEmptyState extends StatelessWidget {
+class JoinClassEmptyState extends ConsumerWidget {
   const JoinClassEmptyState({super.key});
+  
   @override
-  Widget build(BuildContext context) {
-    return EmptyState(
-      icon: Icons.school_outlined,
-      title: AppLocalizations.of(context)!.joinYourFirstClass,
-      subtitle:
-          AppLocalizations.of(context)!.enterTheTeacherInvitationCode,
-      actionLabel: AppLocalizations.of(context)!.enterInvitationCode,
-      action: () => showDialog(
-        context: context,
-        builder: (_) =>
-            JoinClassDialog(repository: AppScope.of(context).repository),
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final user = FirebaseAuth.instance.currentUser;
+    final userAsync = ref.watch(userDocumentProvider);
+    final userData = userAsync.value ?? {};
+    final rawName = userData['name']?.toString() ?? user?.displayName ?? l10n.student;
+    final name = rawName.trim().isNotEmpty
+        ? rawName.split(RegExp(r'\s+')).first
+        : l10n.student;
+    final avatarUrl = userData['avatarUrl']?.toString();
+
+    final now = DateTime.now();
+    final date = DateFormat('EEEE, MMMM d', l10n.localeName).format(now);
+    final hour = now.hour;
+    final greeting = hour < 12
+        ? l10n.goodMorning
+        : hour < 17
+        ? l10n.goodAfternoon
+        : l10n.goodEvening;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: PageHeader(
+            title: '$greeting, $name',
+            subtitle: date,
+            trailing: SchoolAvatar(
+              name: name,
+              avatarUrl: avatarUrl,
+              radius: 23,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (ctx) => SettingsScreen(
+                    repository: AppScope.of(ctx).repository,
+                    appState: AppScope.of(ctx).appState,
+                  ),
+                ),
+              ),
+              showBorder: true,
+            ),
+          ),
+        ),
+        Expanded(
+          child: EmptyState(
+            icon: Icons.school_outlined,
+            title: AppLocalizations.of(context)!.joinYourFirstClass,
+            subtitle:
+                AppLocalizations.of(context)!.enterTheTeacherInvitationCode,
+            actionLabel: AppLocalizations.of(context)!.enterInvitationCode,
+            action: () => showDialog(
+              context: context,
+              builder: (_) =>
+                  JoinClassDialog(repository: AppScope.of(context).repository),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

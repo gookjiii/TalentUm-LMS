@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:school_world/main.dart';
 import 'package:school_world/src/features/chat/presentation/screens/photo_editor_screen.dart';
 import '../utils/string_extensions.dart';
 
@@ -61,6 +62,7 @@ class _ImageViewerState extends State<ImageViewer> {
 
   @override
   Widget build(BuildContext context) {
+    final performanceMode = AppScope.of(context).appState.performanceMode;
     return Dialog(
       backgroundColor: Colors.black,
       insetPadding: EdgeInsets.zero,
@@ -71,7 +73,7 @@ class _ImageViewerState extends State<ImageViewer> {
               minScale: 0.5,
               maxScale: 4.0,
               child: CachedNetworkImage(
-                imageUrl: widget.imageUrl.toDirectImageUrl,
+                imageUrl: widget.imageUrl.toDirectImageUrl.toOptimizedCloudinary(performance: performanceMode),
                 fit: BoxFit.contain,
                 placeholder: (context, url) => const Center(
                   child: CircularProgressIndicator(

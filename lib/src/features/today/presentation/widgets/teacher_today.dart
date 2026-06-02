@@ -7,7 +7,7 @@ import 'package:school_world/src/firebase/school_repository.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/widgets/file_preview.dart';
-import 'package:school_world/src/models/schedule.dart';
+import 'package:school_world/src/models/schedule.dart' hide colorFromHex;
 
 class TeacherToday extends StatefulWidget {
   const TeacherToday({
@@ -79,28 +79,35 @@ class _TeacherTodayState extends State<TeacherToday> {
             ? l10n.goodAfternoon
             : l10n.goodEvening;
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          children: [
-            PageHeader(
-              title: '$greeting, $firstName 👋',
-              subtitle: date,
-              trailing: SchoolAvatar(
-                name: name,
-                avatarUrl: avatarUrl,
-                radius: 23,
-                onTap: widget.onProfileTap,
+        return CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: PageHeader(
+                title: '$greeting, $firstName',
+                subtitle: date,
+                trailing: SchoolAvatar(
+                  name: name,
+                  avatarUrl: avatarUrl,
+                  radius: 23,
+                  onTap: widget.onProfileTap,
+                ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
             _TeacherKpiRow(repo: repo, classes: widget.classes),
-            const SizedBox(height: 24),
-            SectionHeader(
-              title: l10n.todaysClasses.toUpperCase(),
-              action: l10n.viewAll,
-              onActionTap: () => widget.onTabSelect(8),
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: SectionHeader(
+                  title: l10n.todaysClasses.toUpperCase(),
+                  action: l10n.viewAll,
+                  onActionTap: () => widget.onTabSelect(8),
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
+            const SliverToBoxAdapter(child: SizedBox(height: 12)),
             _TeacherTodaySchedule(
               repo: repo,
               now: now,
@@ -110,55 +117,72 @@ class _TeacherTodayState extends State<TeacherToday> {
               onDeleteClass: widget.onDeleteClass,
               onOpenSchedule: () => widget.onTabSelect(8),
             ),
-            const SizedBox(height: 24),
-            SectionHeader(
-              title: AppLocalizations.of(context)!.quickLinks1,
-              action: "",
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: SectionHeader(
+                  title: AppLocalizations.of(context)!.quickLinks1,
+                  action: "",
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
-            GridView.count(
-              crossAxisCount: MediaQuery.sizeOf(context).width >= 700 ? 4 : 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.5,
-              children: [
-                QuickTile(
-                  onTap: () => widget.onTabSelect(5),
-                  icon: Icons.library_books_outlined,
-                  label: AppLocalizations.of(context)!.library,
-                  color: SchoolColors.primary,
+            const SliverToBoxAdapter(child: SizedBox(height: 12)),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: MediaQuery.sizeOf(context).width >= 700 ? 4 : 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1.5,
                 ),
-                QuickTile(
-                  onTap: () => widget.onTabSelect(6),
-                  icon: Icons.ondemand_video_outlined,
-                  label: AppLocalizations.of(context)!.webinars,
-                  color: SchoolColors.accent,
-                ),
-                // Journal is at index 7. For regular teachers it's in nav bar, but we can put it here as well.
-                QuickTile(
-                  onTap: () => widget.onTabSelect(7),
-                  icon: Icons.book_outlined,
-                  label: AppLocalizations.of(context)!.magazine,
-                  color: SchoolColors.green,
-                ),
-                QuickTile(
-                  onTap: () => widget.onTabSelect(9),
-                  icon: Icons.people_outline,
-                  label: AppLocalizations.of(context)!.participants,
-                  color: SchoolColors.orange,
-                ),
-              ],
+                delegate: SliverChildListDelegate([
+                  QuickTile(
+                    onTap: () => widget.onTabSelect(5),
+                    icon: Icons.library_books_outlined,
+                    label: AppLocalizations.of(context)!.library,
+                    color: SchoolColors.primary,
+                  ),
+                  QuickTile(
+                    onTap: () => widget.onTabSelect(6),
+                    icon: Icons.ondemand_video_outlined,
+                    label: AppLocalizations.of(context)!.webinars,
+                    color: SchoolColors.accent,
+                  ),
+                  QuickTile(
+                    onTap: () => widget.onTabSelect(7),
+                    icon: Icons.book_outlined,
+                    label: AppLocalizations.of(context)!.magazine,
+                    color: SchoolColors.green,
+                  ),
+                  QuickTile(
+                    onTap: () => widget.onTabSelect(9),
+                    icon: Icons.people_outline,
+                    label: AppLocalizations.of(context)!.participants,
+                    color: SchoolColors.orange,
+                  ),
+                ]),
+              ),
             ),
-            const SizedBox(height: 24),
-            SectionHeader(
-              title: l10n.needsReviewToday.toUpperCase(),
-              action: "",
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: SectionHeader(
+                  title: l10n.needsReviewToday.toUpperCase(),
+                  action: "",
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
-            const _NeedsAttentionCard(),
-            const SizedBox(height: 24),
+            const SliverToBoxAdapter(child: SizedBox(height: 12)),
+            const SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              sliver: SliverToBoxAdapter(
+                child: RepaintBoundary(child: _NeedsAttentionCard()),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         );
       },
@@ -204,38 +228,42 @@ class _TeacherKpiRowState extends State<_TeacherKpiRow> {
     );
     final l10n = AppLocalizations.of(context)!;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cols = constraints.maxWidth > 600 ? 4 : 2;
-        return GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: cols,
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 200,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           childAspectRatio: 1.15,
-          children: [
-            StreamBuilder<QuerySnapshot>(
-              stream: _submissionsStream,
-              builder: (context, snapshot) {
-                final count = snapshot.data?.docs.length ?? 0;
-                return _KpiCard(
+        ),
+        delegate: SliverChildListDelegate([
+          StreamBuilder<QuerySnapshot>(
+            stream: _submissionsStream,
+            builder: (context, snapshot) {
+              final count = snapshot.data?.docs.length ?? 0;
+              return RepaintBoundary(
+                child: _KpiCard(
                   label: l10n.ungraded.toUpperCase(),
                   value: count.toString(),
                   delta: "+$count ${l10n.today.toLowerCase()}",
                   color: SchoolColors.red,
                   icon: Icons.assignment_turned_in_outlined,
-                );
-              },
-            ),
-            _KpiCard(
+                ),
+              );
+            },
+          ),
+          RepaintBoundary(
+            child: _KpiCard(
               label: l10n.totalStudents.toUpperCase(),
               value: studentCount.toString(),
               delta: l10n.studentsCount(studentCount),
               color: SchoolColors.primary,
               icon: Icons.people_outline_rounded,
             ),
-            _KpiCard(
+          ),
+          RepaintBoundary(
+            child: _KpiCard(
               label: l10n.chooseYourClasses.split(' ')[1].toUpperCase(),
               value: widget.classes.length.toString(),
               delta:
@@ -243,20 +271,22 @@ class _TeacherKpiRowState extends State<_TeacherKpiRow> {
               color: SchoolColors.green,
               icon: Icons.school_outlined,
             ),
-            FutureBuilder<QuerySnapshot>(
-              future: _gradedFuture,
-              builder: (context, snapshot) {
-                final docs = snapshot.data?.docs ?? [];
-                double avg = 0;
-                if (docs.isNotEmpty) {
-                  final sum = docs.fold<double>(0, (acc, d) {
-                    final g = d.data() as Map<String, dynamic>;
-                    return acc +
-                        (double.tryParse(g['grade']?.toString() ?? '0') ?? 0);
-                  });
-                  avg = sum / docs.length;
-                }
-                return _KpiCard(
+          ),
+          FutureBuilder<QuerySnapshot>(
+            future: _gradedFuture,
+            builder: (context, snapshot) {
+              final docs = snapshot.data?.docs ?? [];
+              double avg = 0;
+              if (docs.isNotEmpty) {
+                final sum = docs.fold<double>(0, (acc, d) {
+                  final g = d.data() as Map<String, dynamic>;
+                  return acc +
+                      (double.tryParse(g['grade']?.toString() ?? '0') ?? 0);
+                });
+                avg = sum / docs.length;
+              }
+              return RepaintBoundary(
+                child: _KpiCard(
                   label: l10n.avgGrade.toUpperCase(),
                   value: avg == 0 ? "—" : avg.toStringAsFixed(1),
                   delta: docs.isEmpty
@@ -264,12 +294,12 @@ class _TeacherKpiRowState extends State<_TeacherKpiRow> {
                       : "${docs.length} ${l10n.grade.toLowerCase()}",
                   color: SchoolColors.yellow,
                   icon: Icons.star_outline_rounded,
-                );
-              },
-            ),
-          ],
-        );
-      },
+                ),
+              );
+            },
+          ),
+        ]),
+      ),
     );
   }
 }
@@ -336,11 +366,12 @@ class _KpiCard extends StatelessWidget {
           const Spacer(),
           Text(
             value,
-            style: const TextStyle(
+            style: AppTextStyle.mono(
               fontSize: 26,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
+            ).copyWith(
               height: 1,
-              letterSpacing: -0.5,
+              letterSpacing: -1,
             ),
           ),
           const SizedBox(height: 4),
@@ -742,18 +773,29 @@ class _TeacherTodayScheduleState extends State<_TeacherTodaySchedule> {
             );
 
             if (todayItems.isEmpty) {
-              return _NoClassesEmptyState(
-                onOpenSchedule: widget.onOpenSchedule,
+              return SliverToBoxAdapter(
+                child: _NoClassesEmptyState(
+                  onOpenSchedule: widget.onOpenSchedule,
+                ),
               );
             }
 
-            return Column(
-              children: [
-                for (final it in todayItems) ...[
-                  _buildClassItem(context, it),
-                  const SizedBox(height: 10),
-                ],
-              ],
+            return SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final it = todayItems[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: RepaintBoundary(
+                        child: _buildClassItem(context, it),
+                      ),
+                    );
+                  },
+                  childCount: todayItems.length,
+                ),
+              ),
             );
           },
         );
@@ -789,6 +831,7 @@ class _TeacherTodayScheduleState extends State<_TeacherTodaySchedule> {
       onAction: () => widget.onSelectClass(it.classId), // Navigation for now
       repo: widget.repo,
       classId: it.classId,
+      startMinute: it.startMinute,
     );
   }
 
@@ -815,6 +858,7 @@ class TeacherTodayClassRow extends StatefulWidget {
     required this.onAction,
     required this.repo,
     required this.classId,
+    required this.startMinute,
     this.note,
   });
 
@@ -827,6 +871,7 @@ class TeacherTodayClassRow extends StatefulWidget {
   final VoidCallback onTap, onAction;
   final SchoolRepository repo;
   final String classId;
+  final int startMinute;
 
   @override
   State<TeacherTodayClassRow> createState() => _TeacherTodayClassRowState();
@@ -857,6 +902,10 @@ class _TeacherTodayClassRowState extends State<TeacherTodayClassRow> {
     final primaryTitle = widget.subject.isNotEmpty ? widget.subject : widget.name;
     final subtitle = widget.subject.isNotEmpty ? widget.name : '';
     final room = widget.roomLabel?.trim();
+
+    final now = DateTime.now();
+    final nowMin = now.hour * 60 + now.minute;
+    final minutesUntil = widget.startMinute - nowMin;
 
     return SchoolCard(
       padding: EdgeInsets.zero,
@@ -997,34 +1046,28 @@ class _TeacherTodayClassRowState extends State<TeacherTodayClassRow> {
                       },
                     ),
                     if (widget.isLive)
-                      SizedBox(
-                        height: 36,
-                        child: FilledButton(
-                          onPressed: widget.onAction,
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            minimumSize: Size.zero,
-                          ),
-                          child: Text(
-                            l10n.signIn,
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        ),
+                      const StatusChip(
+                        label: 'LIVE',
+                        color: SchoolColors.primary,
+                        pulseDot: true,
+                      )
+                    else if (widget.isDone)
+                      StatusChip(
+                        label: l10n.done.toUpperCase(),
+                        color: SchoolColors.muted,
+                        icon: Icons.check_circle_outline_rounded,
+                      )
+                    else if (minutesUntil > 0 && minutesUntil <= 60)
+                      StatusChip(
+                        label: l10n.inMin(minutesUntil).toUpperCase(),
+                        color: SchoolColors.secondary,
+                        icon: Icons.access_time_rounded,
                       )
                     else
-                      SizedBox(
-                        height: 36,
-                        child: OutlinedButton(
-                          onPressed: widget.onAction,
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            minimumSize: Size.zero,
-                          ),
-                          child: Text(
-                            l10n.previewClassAction.split(' ')[0],
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        ),
+                      StatusChip(
+                        label: l10n.upcoming.toUpperCase(),
+                        color: SchoolColors.muted,
+                        icon: Icons.event_note_rounded,
                       ),
                   ],
                 ),
@@ -1044,6 +1087,8 @@ class _NoClassesEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isVietnamese = l10n.localeName == 'vi';
+
     return SchoolCard(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       child: Column(
@@ -1055,7 +1100,7 @@ class _NoClassesEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            l10n.noClassesScheduled,
+            isVietnamese ? "Bạn không có lịch dạy hôm nay 🎉" : l10n.noClassesScheduled,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 15,
@@ -1073,3 +1118,4 @@ class _NoClassesEmptyState extends StatelessWidget {
     );
   }
 }
+

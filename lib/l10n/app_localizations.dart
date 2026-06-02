@@ -4534,6 +4534,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Room {number}'**
   String cabinetWithNumber(String number);
+
+  /// No description provided for @importList.
+  ///
+  /// In en, this message translates to:
+  /// **'Import list'**
+  String get importList;
+
+  /// No description provided for @pasteClassNamesSeparated.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste class names separated by new lines'**
+  String get pasteClassNamesSeparated;
+
+  /// No description provided for @import.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get import;
+
+  /// No description provided for @quickSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick submit'**
+  String get quickSubmit;
+
+  /// No description provided for @viewMore.
+  ///
+  /// In en, this message translates to:
+  /// **'View more'**
+  String get viewMore;
+
+  /// No description provided for @writeYourAnswerHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your answer here...'**
+  String get writeYourAnswerHere;
+
+  /// No description provided for @attachPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach photo'**
+  String get attachPhoto;
+
+  /// No description provided for @linkingCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Linking Code'**
+  String get linkingCode;
+
+  /// No description provided for @showThisCodeToYourParent.
+  ///
+  /// In en, this message translates to:
+  /// **'Show this code to your parent to link accounts'**
+  String get showThisCodeToYourParent;
+
+  /// No description provided for @familyTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'FAMILY TIMELINE'**
+  String get familyTimeline;
+
+  /// No description provided for @noActivityYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity yet.'**
+  String get noActivityYet;
+
+  /// No description provided for @receivedGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'received a grade'**
+  String get receivedGrade;
+
+  /// No description provided for @submittedAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'submitted an assignment'**
+  String get submittedAssignment;
+
+  /// No description provided for @submittedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted successfully!'**
+  String get submittedSuccessfully;
+
+  /// No description provided for @selectClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Class'**
+  String get selectClass;
+
+  /// No description provided for @previousWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous week'**
+  String get previousWeek;
+
+  /// No description provided for @nextWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Next week'**
+  String get nextWeek;
+
+  /// No description provided for @youHaveNoTasksYet.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no tasks yet.'**
+  String get youHaveNoTasksYet;
+
+  /// No description provided for @upcomingAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming assignment'**
+  String get upcomingAssignment;
+
+  /// No description provided for @deadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Deadline'**
+  String get deadline;
+
+  /// No description provided for @compressPdfTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Compress PDF (only for files > 50MB)'**
+  String get compressPdfTitle;
+
+  /// No description provided for @compressPdfSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduces file size but may slightly reduce image quality'**
+  String get compressPdfSubtitle;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -139,13 +139,16 @@ class _PinnedBannerState extends State<PinnedBanner> {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                AppLocalizations.of(context)!.pinnedMessage,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 11,
-                                  letterSpacing: 0.1,
+                              Flexible(
+                                child: Text(
+                                  AppLocalizations.of(context)!.pinnedMessage,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 11,
+                                    letterSpacing: 0.1,
+                                  ),
                                 ),
                               ),
                               if (pinnedIds.length > 1) ...[

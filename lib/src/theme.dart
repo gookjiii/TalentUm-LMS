@@ -19,16 +19,17 @@ class SchoolColors {
   static const accent = Color(0xFF059669);
   static const accentContainer = Color(0xFFD1FAE5);
 
-  // ── Semantic ──────────────────────────────────────────────────
-  static const green = Color(0xFF059669);
+  // ── Semantic Colors (WCAG AA Compliant on White) ──────────────
+  static const green = Color(0xFF059669); // Emerald 600
   static const greenContainer = Color(0xFFD1FAE5);
-  static const red = Color(0xFFDC2626);
+  static const red = Color(0xFFDC2626); // Red 600
   static const redContainer = Color(0xFFFEE2E2);
-  static const orange = Color(0xFFF97316);
+  static const orange = Color(0xFFB45309); // Amber 700
   static const orangeContainer = Color(0xFFFFEDD5);
   static const yellow = Color(0xFFFBBC04);
-  static const purple = Color(0xFF7C3AED);
+  static const purple = Color(0xFF7C3AED); // Primary
   static const purpleContainer = Color(0xFFEDE9FE);
+
 
   // ── Light-mode Neutrals ───────────────────────────────────────
   static const bg = Color(0xFFF9FAFC);
@@ -93,6 +94,25 @@ class SchoolColors {
     offset: const Offset(0, 8),
   );
 
+  // ── Elevation System ───────────────────────────────────────────
+  static BoxShadow elevation1 = BoxShadow(
+    color: Colors.black.withValues(alpha: 0.05),
+    blurRadius: 10,
+    offset: const Offset(0, 4),
+  );
+  
+  static BoxShadow elevation2 = BoxShadow(
+    color: Colors.black.withValues(alpha: 0.08),
+    blurRadius: 20,
+    offset: const Offset(0, 8),
+  );
+
+  static BoxShadow elevation3 = BoxShadow(
+    color: Colors.black.withValues(alpha: 0.12),
+    blurRadius: 30,
+    offset: const Offset(0, 12),
+  );
+
   static BoxShadow glassShadow = BoxShadow(
     color: Colors.black.withValues(alpha: 0.04),
     blurRadius: 40,
@@ -112,6 +132,7 @@ class AppSpacing {
   static const double lg = 24.0;
   static const double xl = 32.0;
   static const double xxl = 48.0;
+  static const double xxxl = 64.0;
 }
 
 class AppRadius {
@@ -130,7 +151,20 @@ class AppTextStyle {
   static const bodyMd = TextStyle(fontSize: 15, fontWeight: FontWeight.w500);
   static const titleSm = TextStyle(fontSize: 18, fontWeight: FontWeight.w700);
   static const titleLg = TextStyle(fontSize: 24, fontWeight: FontWeight.w800);
-  static const display = TextStyle(fontSize: 28, fontWeight: FontWeight.w900);
+  
+  static TextStyle display(BuildContext context) => GoogleFonts.inter(
+        fontSize: 28,
+        fontWeight: FontWeight.w900,
+        letterSpacing: -0.3,
+        color: Theme.of(context).colorScheme.onSurface,
+      );
+
+  static TextStyle mono({double fontSize = 13, FontWeight fontWeight = FontWeight.w500, Color? color}) => 
+      GoogleFonts.jetBrainsMono(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────

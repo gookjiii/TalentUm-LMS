@@ -3,8 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import '../../main.dart';
-
 class PushNotificationManager {
   static bool _listenersInitialized = false;
 
@@ -241,6 +241,40 @@ class PushNotificationManager {
       }
     } catch (e) {
       debugPrint('Error routing on message tap: $e');
+    }
+  }
+
+  /// Sends a push notification payload via the Vercel Backend endpoint.
+  static Future<void> sendPushNotification({
+    List<String>? tokens,
+    List<String>? userIds,
+    required String title,
+    required String body,
+    Map<String, dynamic>? data,
+  }) async {
+    if ((tokens == null || tokens.isEmpty) && (userIds == null || userIds.isEmpty)) return;
+    try {
+      const proxyUrl = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
+      if (proxyUrl.isEmpty) return;
+
+      final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+      if (idToken == null) return;
+
+      await Dio().post(
+        '$proxyUrl/api/notifications/send',
+        data: {
+          if (tokens != null && tokens.isNotEmpty) 'tokens': tokens,
+          if (userIds != null && userIds.isNotEmpty) 'userIds': userIds,
+          'title': title,
+          'body': body,
+          'data': data,
+        },
+        options: Options(
+          headers: {'Authorization': 'Bearer $idToken'},
+        ),
+      );
+    } catch (e) {
+      debugPrint('Push send error: $e');
     }
   }
 }

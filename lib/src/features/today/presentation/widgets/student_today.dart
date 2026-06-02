@@ -76,86 +76,123 @@ class StudentToday extends ConsumerWidget {
       return !s.cancelled && n.isAfter(s.start) && n.isBefore(s.end);
     }).length;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      children: [
-        PageHeader(
-          title: '$greeting, $name 👋',
-          subtitle: date,
-          trailing: SchoolAvatar(
-            name: name,
-            avatarUrl: avatarUrl,
-            radius: 23,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (ctx) => SettingsScreen(
-                  repository: AppScope.of(ctx).repository,
-                  appState: AppScope.of(ctx).appState,
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: PageHeader(
+              title: '$greeting, $name',
+              subtitle: date,
+              trailing: SchoolAvatar(
+                name: name,
+                avatarUrl: avatarUrl,
+                radius: 23,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (ctx) => SettingsScreen(
+                      repository: AppScope.of(ctx).repository,
+                      appState: AppScope.of(ctx).appState,
+                    ),
+                  ),
                 ),
+                showBorder: true,
               ),
             ),
-            showBorder: true,
           ),
         ),
-        const SizedBox(height: 8),
-        FadeIn(
-          delay: const Duration(milliseconds: 60),
-          child: _StatsRow(
-            classCount: classes.length,
-            todayLessons: todaySchedules.length,
-            activeLessons: activeLessons,
+        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: FadeIn(
+              delay: const Duration(milliseconds: 60),
+              child: _StatsRow(
+                classCount: classes.length,
+                todayLessons: todaySchedules.length,
+                activeLessons: activeLessons,
+              ),
+            ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
         // ── Upcoming class reminder ────────────────────────────────
         if (upcomingClass != null) ...[
-          FadeIn(
-            delay: const Duration(milliseconds: 80),
-            child: _UpcomingClassReminder(
-              item: upcomingClass,
-              className: classInfo[upcomingClass.classId]?.name ?? 'Класс',
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: FadeIn(
+                delay: const Duration(milliseconds: 80),
+                child: _UpcomingClassReminder(
+                  item: upcomingClass,
+                  className: classInfo[upcomingClass.classId]?.name ?? 'Класс',
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
         ],
 
         // ── Streak / homework progress ─────────────────────────────
-        FadeIn(
-          delay: const Duration(milliseconds: 100),
-          child: const LearningStreakWidget(),
-        ),
-        const SizedBox(height: 12),
-        FadeIn(
-          delay: const Duration(milliseconds: 120),
-          child: StreakCard(
-            classIds: classes.map((c) => c['id'] as String).toList(),
-            onTap: onHomeworkTap,
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: FadeIn(
+              delay: Duration(milliseconds: 100),
+              child: LearningStreakWidget(),
+            ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SliverToBoxAdapter(child: SizedBox(height: 12)),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: FadeIn(
+              delay: const Duration(milliseconds: 120),
+              child: StreakCard(
+                classIds: classes.map((c) => (c['id'] ?? '').toString()).toList(),
+                onTap: onHomeworkTap,
+              ),
+            ),
+          ),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
         // ── Today's classes ───────────────────────────────────────
         if (!showSidebar) ...[
-          FadeIn(
-            delay: const Duration(milliseconds: 160),
-            child: SectionHeader(
-              title: l10n.todaysClasses.toUpperCase(),
-              action: l10n.viewAll,
-              onActionTap: () => onTabSelect(4),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: FadeIn(
+                delay: const Duration(milliseconds: 160),
+                child: SectionHeader(
+                  title: l10n.todaysClasses.toUpperCase(),
+                  action: l10n.viewAll,
+                  onActionTap: () => onTabSelect(4),
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 12),
-          FadeIn(
-            delay: const Duration(milliseconds: 180),
-            child: todaySchedules.isEmpty
-                ? SchoolCard(
-                    padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          if (todaySchedules.isEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: FadeIn(
+                  delay: const Duration(milliseconds: 180),
+                  child: SchoolCard(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 32,
+                      horizontal: 16,
+                    ),
                     child: Center(
                       child: Column(
                         children: [
-                          const Icon(Icons.calendar_today_outlined, size: 32, color: SchoolColors.muted),
+                          const Icon(Icons.calendar_today_outlined,
+                              size: 32, color: SchoolColors.muted),
                           const SizedBox(height: 10),
                           Text(
                             l10n.noLessonsForToday,
@@ -168,66 +205,95 @@ class StudentToday extends ConsumerWidget {
                         ],
                       ),
                     ),
-                  )
-                : StaggeredList(
-                    children: todaySchedules.take(3).map(
-                      (item) {
-                        final info = classInfo[item.classId];
-                        return StudentScheduleCard(
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final item = todaySchedules[index];
+                    if (index >= 3) return null;
+                    final info = classInfo[item.classId];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: RepaintBoundary(
+                        child: StudentScheduleCard(
                           item: item,
                           className: info?.name ?? 'Класс',
                           subject: info?.subject ?? '',
-                        );
-                      },
-                    ).toList(),
-                  ),
-          ),
-          const SizedBox(height: 24),
+                        ),
+                      ),
+                    );
+                  },
+                  childCount:
+                      todaySchedules.length > 3 ? 3 : todaySchedules.length,
+                ),
+              ),
+            ),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
 
         // ── Quick links ───────────────────────────────────────────
-        FadeIn(
-          delay: const Duration(milliseconds: 220),
-          child: SectionHeader(title: l10n.quickLinks),
-        ),
-        const SizedBox(height: 12),
-        FadeIn(
-          delay: const Duration(milliseconds: 240),
-          child: GridView.count(
-            crossAxisCount: MediaQuery.sizeOf(context).width >= 700 ? 4 : 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.5,
-            children: [
-              QuickTile(
-                onTap: () => onTabSelect(5),
-                icon: Icons.library_books_outlined,
-                label: l10n.library,
-                color: SchoolColors.primary,
-              ),
-              QuickTile(
-                onTap: () => onTabSelect(6),
-                icon: Icons.ondemand_video_outlined,
-                label: l10n.webinars,
-                color: SchoolColors.accent,
-              ),
-              QuickTile(
-                onTap: () => showDialog(
-                  context: context,
-                  builder: (_) => JoinClassDialog(
-                    repository: AppScope.of(context).repository,
-                  ),
-                ),
-                icon: Icons.group_add_outlined,
-                label: l10n.joinAClass,
-                color: SchoolColors.secondary,
-              ),
-            ],
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: FadeIn(
+              delay: const Duration(milliseconds: 220),
+              child: SectionHeader(title: l10n.quickLinks),
+            ),
           ),
         ),
-        const SizedBox(height: 40),
+        const SliverToBoxAdapter(child: SizedBox(height: 12)),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          sliver: SliverGrid(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: MediaQuery.sizeOf(context).width >= 700 ? 4 : 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.5,
+            ),
+            delegate: SliverChildListDelegate([
+              FadeIn(
+                delay: const Duration(milliseconds: 240),
+                child: QuickTile(
+                  onTap: () => onTabSelect(5),
+                  icon: Icons.library_books_outlined,
+                  label: l10n.library,
+                  color: SchoolColors.primary,
+                ),
+              ),
+              FadeIn(
+                delay: const Duration(milliseconds: 260),
+                child: QuickTile(
+                  onTap: () => onTabSelect(6),
+                  icon: Icons.ondemand_video_outlined,
+                  label: l10n.webinars,
+                  color: SchoolColors.accent,
+                ),
+              ),
+              FadeIn(
+                delay: const Duration(milliseconds: 280),
+                child: QuickTile(
+                  onTap: () => showDialog(
+                    context: context,
+                    builder: (_) => JoinClassDialog(
+                      repository: AppScope.of(context).repository,
+                    ),
+                  ),
+                  icon: Icons.group_add_outlined,
+                  label: l10n.joinAClass,
+                  color: SchoolColors.secondary,
+                ),
+              ),
+            ]),
+          ),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 40)),
       ],
     );
   }
@@ -325,12 +391,11 @@ class _StatMini extends StatelessWidget {
                 children: [
                   Text(
                     value,
-                    style: TextStyle(
+                    style: AppTextStyle.mono(
                       fontSize: 17,
                       fontWeight: FontWeight.w900,
                       color: color,
-                      height: 1.1,
-                    ),
+                    ).copyWith(height: 1.1),
                   ),
                   Text(
                     label,

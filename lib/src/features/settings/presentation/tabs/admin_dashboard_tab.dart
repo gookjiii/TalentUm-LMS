@@ -167,14 +167,14 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _StatFuture(
-                          future: repo.firestore.collection('users').get(),
+                          future: repo.firestore.collection('users').count().get().then((res) => res.count),
                           title: AppLocalizations.of(context)!.totalUsers,
                           icon: Icons.people_rounded,
                           color: SchoolColors.primary,
                         ),
                         const SizedBox(height: 16),
                         _StatFuture(
-                          future: repo.firestore.collection('rooms').get(),
+                          future: repo.firestore.collection('rooms').count().get().then((res) => res.count),
                           title: AppLocalizations.of(context)!.activeChats,
                           icon: Icons.chat_bubble_rounded,
                           color: SchoolColors.green,
@@ -183,11 +183,14 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                         _StatFuture(
                           future: repo.firestore
                               .collectionGroup('messages')
-                              .where(
-                                'createdAt',
-                                isGreaterThanOrEqualTo: startOfToday,
-                              )
-                              .get(),
+                              .where('createdAt', isGreaterThanOrEqualTo: startOfToday)
+                              .count()
+                              .get()
+                              .then((res) => res.count)
+                              .catchError((e) {
+                                debugPrint('Missing index for messages today: $e');
+                                return null;
+                              }),
                           title: AppLocalizations.of(context)!.postsToday,
                           icon: Icons.edit_calendar_rounded,
                           color: SchoolColors.orange,
@@ -199,7 +202,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       children: [
                         Expanded(
                           child: _StatFuture(
-                            future: repo.firestore.collection('users').get(),
+                            future: repo.firestore.collection('users').count().get().then((res) => res.count),
                             title: AppLocalizations.of(context)!.totalUsers,
                             icon: Icons.people_rounded,
                             color: SchoolColors.primary,
@@ -208,7 +211,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                         const SizedBox(width: 16),
                         Expanded(
                           child: _StatFuture(
-                            future: repo.firestore.collection('rooms').get(),
+                            future: repo.firestore.collection('rooms').count().get().then((res) => res.count),
                             title: AppLocalizations.of(context)!.activeChats,
                             icon: Icons.chat_bubble_rounded,
                             color: SchoolColors.green,
@@ -219,11 +222,14 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                           child: _StatFuture(
                             future: repo.firestore
                                 .collectionGroup('messages')
-                                .where(
-                                  'createdAt',
-                                  isGreaterThanOrEqualTo: startOfToday,
-                                )
-                                .get(),
+                                .where('createdAt', isGreaterThanOrEqualTo: startOfToday)
+                                .count()
+                                .get()
+                                .then((res) => res.count)
+                                .catchError((e) {
+                                  debugPrint('Missing index for messages today: $e');
+                                  return null;
+                                }),
                             title: AppLocalizations.of(context)!.postsToday,
                             icon: Icons.auto_graph_rounded,
                             color: SchoolColors.purple,
@@ -395,7 +401,6 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
     final firebasePct = (firebaseUsed / firebaseLimit).clamp(0.0, 1.0);
 
     return SchoolCard(
-      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -543,20 +548,22 @@ class _StatFuture extends StatelessWidget {
     required this.color,
   });
 
-  final Future<QuerySnapshot> future;
+  final Future<int?> future;
   final String title;
   final IconData icon;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<QuerySnapshot>(
+    return FutureBuilder<int?>(
       future: future,
       builder: (context, snapshot) {
-        final count = snapshot.data?.docs.length ?? 0;
+        final count = snapshot.data;
         return _StatCard(
           title: title,
-          value: count.toString(),
+          value: snapshot.hasError || (snapshot.connectionState == ConnectionState.done && count == null)
+              ? 'Err'
+              : (count?.toString() ?? '0'),
           icon: icon,
           color: color,
           loading: snapshot.connectionState == ConnectionState.waiting,
@@ -789,7 +796,7 @@ class _BrandingSettingsCardState extends State<_BrandingSettingsCard> {
   String? _logoUrl;
 
   Future<void> _pickLogo() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    final result = await FilePicker.pickFiles(withData: true, type: FileType.image);
     if (result == null || result.files.isEmpty) return;
 
     setState(() => _loading = true);
@@ -844,7 +851,6 @@ class _BrandingSettingsCardState extends State<_BrandingSettingsCard> {
         }
 
         return SchoolCard(
-          padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -863,6 +869,9 @@ class _BrandingSettingsCardState extends State<_BrandingSettingsCard> {
                                   width: 64,
                                   height: 64,
                                   fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const SchoolLogo(size: 64);
+                                  },
                                 ),
                               )
                             : const SchoolLogo(size: 64),

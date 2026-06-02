@@ -22,6 +22,7 @@ mixin SchoolRepositoryClasses {
     required String name,
     String? subject,
     String? inviteCode,
+    String? coverColor,
   }) async {
     if (uid == null) throw Exception('Not logged in');
 
@@ -39,7 +40,7 @@ mixin SchoolRepositoryClasses {
       'updatedAt': now,
       'studentIds': [],
       'parentIds': [],
-      'coverColor': '#6C5CE7',
+      'coverColor': coverColor ?? '#6C5CE7',
     };
     if (subject != null) classData['subject'] = subject;
     if (inviteCode != null) classData['inviteCode'] = inviteCode;

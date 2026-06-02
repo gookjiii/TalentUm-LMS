@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'safe_firestore.dart';
+import 'package:school_world/src/firebase/push_notification_manager.dart';
 
 mixin SchoolRepositoryAssignments {
   FirebaseFirestore get firestore;
@@ -21,7 +22,41 @@ mixin SchoolRepositoryAssignments {
       'dueDateMs': dueDate.millisecondsSinceEpoch,
       'attachments': attachments,
     });
-    return res.data['assignmentId'] as String;
+    final assignmentId = res.data['assignmentId'] as String;
+    
+    // Fire-and-forget push notification
+    _sendClassNotification(classId, 'Новое задание: $title', description);
+    
+    return assignmentId;
+  }
+
+  Future<void> _sendClassNotification(String classId, String title, String body) async {
+    try {
+      final classDoc = await firestore.collection('classes').doc(classId).get();
+      if (!classDoc.exists) return;
+      final data = classDoc.data()!;
+      final List<dynamic> studentIds = data['studentIds'] ?? [];
+      final List<dynamic> parentIds = data['parentIds'] ?? [];
+      
+      final targetUserIds = [...studentIds, ...parentIds]
+          .map((id) => id.toString())
+          .toSet()
+          .toList();
+          
+      if (targetUserIds.isEmpty) return;
+      
+      final className = data['name'] ?? '';
+      final finalTitle = className.isNotEmpty ? '$className - $title' : title;
+      
+      await PushNotificationManager.sendPushNotification(
+        userIds: targetUserIds,
+        title: finalTitle,
+        body: body,
+        data: {'classId': classId},
+      );
+    } catch (e) {
+      // ignore
+    }
   }
 
   Future<String> createSubmission({
@@ -46,6 +81,23 @@ mixin SchoolRepositoryAssignments {
       'submissionId': submissionId,
       'attachments': attachments,
     });
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> assignmentsForClasses(
+    List<String> classIds, {
+    int? limit,
+  }) {
+    if (classIds.isEmpty) return const Stream.empty();
+    
+    // Firestore whereIn supports up to 30 elements
+    var query = firestore
+        .collection('assignments')
+        .where('classId', whereIn: classIds.take(30).toList());
+        
+    if (limit != null) {
+      query = query.limit(limit);
+    }
+    return query.safeSnapshots();
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> assignmentsForClass(

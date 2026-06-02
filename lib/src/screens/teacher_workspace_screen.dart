@@ -1,5 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,6 +30,8 @@ import '../features/settings/presentation/tabs/admin_dashboard_tab.dart';
 import '../features/library/presentation/widgets/library_screen.dart';
 import '../features/webinars/presentation/widgets/webinars_screen.dart';
 import '../features/journal/presentation/screens/journal_screen.dart';
+
+import 'package:school_world/src/widgets/skeletal_loaders.dart';
 
 class TeacherWorkspaceScreen extends ConsumerStatefulWidget {
   const TeacherWorkspaceScreen({super.key});
@@ -71,16 +75,15 @@ class _TeacherWorkspaceScreenState
 
   @override
   Widget build(BuildContext context) {
-    final repo = ref.watch(repositoryProvider);
     final l10n = AppLocalizations.of(context)!;
-    final appState = ref.read(schoolAppStateProvider);
     final selectedIdFromState = ref.watch(
       schoolAppStateProvider.select((state) => state.selectedClassId),
     );
+    final lastChatClassId = ref.watch(
+      schoolAppStateProvider.select((s) => s.lastChatClassId),
+    );
     final classesAsync = ref.watch(teacherClassesStreamProvider);
 
-    // Show loading whenever the stream is active, even if it has a cached empty value
-    // to prevent "Create your first class" flash
     final isLoading = classesAsync.isLoading;
     final classes = classesAsync.value ?? [];
 
@@ -88,6 +91,8 @@ class _TeacherWorkspaceScreenState
       selectedClassId ?? selectedIdFromState,
       classes,
     );
+    final repo = AppScope.of(context).repository;
+    final appState = AppScope.of(context).appState;
     final hasClasses = classes.isNotEmpty;
 
     return LayoutBuilder(
@@ -166,21 +171,46 @@ class _TeacherWorkspaceScreenState
             l10n,
             classes,
           );
-        };
+        }
 
         // Only the content area shows loading — sidebar/nav are always visible
         final content = isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? Column(
+                children: [
+                  const PageHeader(title: '...', subtitle: '...'),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: 6,
+                      itemBuilder: (context, index) => const Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: ClassCardSkeleton(),
+                      ),
+                    ),
+                  ),
+                ],
+              )
             : FadeIndexedStack(
                 index: _tabIndex,
                 children: [
                   if (!hasClasses)
-                    _TeacherEmptyState(onCreate: _createClass)
+                    _TeacherEmptyState(
+                      onCreate: _createClass,
+                      onProfileTap: onProfileTap,
+                    )
                   else
                     TeacherToday(
                       classes: classes,
                       selectedClassId: activeId ?? '',
-                      onTabSelect: (i) => _handleTabSelection(i, wide, activeId, repo, appState, l10n, classes),
+                      onTabSelect: (i) => _handleTabSelection(
+                        i,
+                        wide,
+                        activeId,
+                        repo,
+                        appState,
+                        l10n,
+                        classes,
+                      ),
                       onSelectClass: (id) {
                         setState(() => selectedClassId = id);
                         appState.selectClass(id);
@@ -188,10 +218,7 @@ class _TeacherWorkspaceScreenState
                       onDeleteClass: _deleteClass,
                       onCopyGuestLink: _copyGuestInviteLink,
                       onCreateClass: _createClass,
-                      onProfileTap: () {
-                        final profileIndex = appState.isLeadTeacher ? 11 : 10;
-                        _handleTabSelection(profileIndex, wide, activeId, repo, appState, l10n, classes);
-                      },
+                      onProfileTap: onProfileTap,
                       showSidebar: showRightSidebar,
                     ),
 
@@ -224,6 +251,10 @@ class _TeacherWorkspaceScreenState
                           appState: appState,
                           classId: 'teachers_lounge',
                           canInitializeRoom: true,
+                          initialTopicId:
+                              appState.lastChatClassId == 'teachers_lounge'
+                              ? appState.lastChatTopicId
+                              : null,
                         )
                       : const SizedBox.expand(),
 
@@ -282,71 +313,83 @@ class _TeacherWorkspaceScreenState
 
         return Scaffold(
           backgroundColor: Theme.of(context).colorScheme.surface,
-          body: Row(
-
-                children: [
-                  if (wide)
-                    RepaintBoundary(
-                      child: _StableSidebar(
-                        extended: extraWide,
-                        tabIndex: _tabIndex,
-                        onSelect: (i) {
-                          setState(() => _tabIndex = i);
-                          ref.read(schoolAppStateProvider).setTeacherTabIndex(i);
-                        },
-                        navItems: navItems,
-                        onDeleteChat: _deleteClassChat,
-                        onDeleteClass: _deleteClass,
-                        onCopyGuestLink: _copyGuestInviteLink,
-                        onSelectClass: (id) {
-                          setState(() => selectedClassId = id);
-                          appState.selectClass(id);
-                        },
-                        onCreateClass: _createClass,
-                        onProfileTap: onProfileTap,
-                      ),
-                    ),
-                  Expanded(child: content),
-                  if (showRightSidebar && hasClasses)
-                    TeacherRightSidebar(classes: classes),
-                ],
-              ),
-              bottomNavigationBar: wide
-                  ? null
-                  : Builder(
-                      builder: (context) {
-                        const mobileIndices = [0, 2, 4, 8]; // Today, Chat, Homework, Schedule
-                        final mobileNavItems = mobileIndices
-                            .map((i) => navItems[i])
-                            .toList();
-                        var mobileSelected = mobileIndices.indexOf(_tabIndex);
-
-                        if (mobileSelected < 0 && !_moreSelected) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted) setState(() => _tabIndex = 0);
-                          });
-                          mobileSelected = 0;
-                        }
-
-                        return _MobileBottomBar(
-                          selectedIndex: _moreSelected ? -1 : mobileSelected,
-                          onSelect: (i) {
-                            HapticFeedback.lightImpact();
-                            setState(() {
-                              _tabIndex = mobileIndices[i];
-                              _moreSelected = false;
-                            });
-                            ref.read(schoolAppStateProvider).setTeacherTabIndex(mobileIndices[i]);
-                          },
-                          items: mobileNavItems,
-                          onMoreTap: () => _showTeacherMoreSheet(context, appState),
-                          moreSelected: _moreSelected,
-                        );
+          body: SafeArea(
+            bottom: false,
+            child: Row(
+              children: [
+                if (wide)
+                  RepaintBoundary(
+                    child: _StableSidebar(
+                      extended: extraWide,
+                      tabIndex: _tabIndex,
+                      onSelect: (i) {
+                        setState(() => _tabIndex = i);
+                        ref.read(schoolAppStateProvider).setTeacherTabIndex(i);
                       },
+                      navItems: navItems,
+                      onDeleteChat: _deleteClassChat,
+                      onDeleteClass: _deleteClass,
+                      onCopyGuestLink: _copyGuestInviteLink,
+                      onSelectClass: (id) {
+                        setState(() => selectedClassId = id);
+                        appState.selectClass(id);
+                      },
+                      onCreateClass: _createClass,
+                      onProfileTap: onProfileTap,
                     ),
-            );
-          },
+                  ),
+                Expanded(child: content),
+                if (showRightSidebar && hasClasses)
+                  TeacherRightSidebar(classes: classes),
+              ],
+            ),
+          ),
+          bottomNavigationBar: wide
+              ? null
+              : Builder(
+                  builder: (context) {
+                    if (_tabIndex == 2 && lastChatClassId != null) {
+                      return const SizedBox.shrink();
+                    }
+                    const mobileIndices = [
+                      0,
+                      2,
+                      4,
+                      8,
+                    ]; // Today, Chat, Homework, Schedule
+                    final mobileNavItems = mobileIndices
+                        .map((i) => navItems[i])
+                        .toList();
+                    var mobileSelected = mobileIndices.indexOf(_tabIndex);
+
+                    if (mobileSelected < 0 && !_moreSelected) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) setState(() => _tabIndex = 0);
+                      });
+                      mobileSelected = 0;
+                    }
+
+                    return _MobileBottomBar(
+                      selectedIndex: _moreSelected ? -1 : mobileSelected,
+                      onSelect: (i) {
+                        HapticFeedback.lightImpact();
+                        setState(() {
+                          _tabIndex = mobileIndices[i];
+                          _moreSelected = false;
+                        });
+                        ref
+                            .read(schoolAppStateProvider)
+                            .setTeacherTabIndex(mobileIndices[i]);
+                      },
+                      items: mobileNavItems,
+                      onMoreTap: () => _showTeacherMoreSheet(context, appState),
+                      moreSelected: _moreSelected,
+                    );
+                  },
+                ),
         );
+      },
+    );
   }
 
   String? _selectedClassIdFromMap(
@@ -414,9 +457,10 @@ class _TeacherWorkspaceScreenState
   }
 
   Future<void> _copyGuestInviteLink(String classId, String inviteCode) async {
-    final baseOrigin = kIsWeb ? Uri.base.origin : 'https://school-wolrd.web.app';
-    final link =
-        '$baseOrigin/#/join?classId=$classId&code=$inviteCode';
+    final baseOrigin = kIsWeb
+        ? Uri.base.origin
+        : 'https://school-wolrd.web.app';
+    final link = '$baseOrigin/#/join?classId=$classId&code=$inviteCode';
 
     await showDialog(
       context: context,
@@ -475,7 +519,9 @@ class _TeacherWorkspaceScreenState
               await Clipboard.setData(ClipboardData(text: link));
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(AppLocalizations.of(context)!.linkCopied)),
+                  SnackBar(
+                    content: Text(AppLocalizations.of(context)!.linkCopied),
+                  ),
                 );
                 Navigator.pop(context);
               }
@@ -504,7 +550,6 @@ class _TeacherWorkspaceScreenState
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
             child: GlassCard(
-              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -683,16 +728,22 @@ class _TeacherWorkspaceScreenState
           ref.invalidate(preloadedChatControllerProvider(roomId));
         }
         Navigator.pop(context); // Dismiss loading spinner
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chatHistoryCleared)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.chatHistoryCleared),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Dismiss loading spinner
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.errorClearingChat(e.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.errorClearingChat(e.toString()),
+            ),
+          ),
+        );
       }
     }
   }
@@ -712,7 +763,6 @@ class _TeacherWorkspaceScreenState
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
             child: GlassCard(
-              padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -850,15 +900,23 @@ class _TeacherWorkspaceScreenState
 
       if (mounted) {
         Navigator.pop(context); // Dismiss loading spinner
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.classDeletedSuccessfully)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.classDeletedSuccessfully,
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Dismiss loading spinner
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.errorDeletingClass(e.toString()))),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.errorDeletingClass(e.toString()),
+            ),
+          ),
         );
       }
     }
@@ -879,14 +937,51 @@ class _TeacherWorkspaceScreenState
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (ctx) => Scaffold(
-            appBar: AppBar(
-              title: Text(_getTabTitle(index, l10n)),
-            ),
-            body: Container(
-              color: Theme.of(ctx).colorScheme.surface,
-              child: _getTabWidget(index, activeId, repo, appState, classes, wide),
-            ),
+          builder: (ctx) => Consumer(
+            builder: (ctx, ref, _) {
+              final currentId =
+                  ref.watch(
+                    schoolAppStateProvider.select((s) => s.selectedClassId),
+                  ) ??
+                  activeId;
+
+              return Scaffold(
+                appBar: AppBar(
+                  title: Text(_getTabTitle(index, l10n)),
+                  centerTitle: true,
+                  actions: [
+                    if (classes.length > 1)
+                      IconButton(
+                        icon: const Icon(Icons.swap_horiz_rounded),
+                        onPressed: () {
+                          showClassSwitcher(
+                            context: ctx,
+                            classes: classes,
+                            currentClassId: currentId ?? '',
+                            onSelect: (id) {
+                              ref.read(schoolAppStateProvider).selectClass(id);
+                              setState(() {
+                                // optional update to parent state if needed
+                              });
+                            },
+                          );
+                        },
+                      ),
+                  ],
+                ),
+                body: Container(
+                  color: Theme.of(ctx).colorScheme.surface,
+                  child: _getTabWidget(
+                    index,
+                    currentId,
+                    repo,
+                    appState,
+                    classes,
+                    wide,
+                  ),
+                ),
+              );
+            },
           ),
         ),
       );
@@ -969,15 +1064,15 @@ class _TeacherWorkspaceScreenState
           appState: appState,
           classId: 'teachers_lounge',
           canInitializeRoom: true,
+          initialTopicId: appState.lastChatClassId == 'teachers_lounge'
+              ? appState.lastChatTopicId
+              : null,
         );
       case 4:
         return TeacherAssignments(
           classId: activeId ?? '',
           className: classes
-              .firstWhere(
-                (c) => c['id'] == activeId,
-                orElse: () => {},
-              )['name']
+              .firstWhere((c) => c['id'] == activeId, orElse: () => {})['name']
               ?.toString(),
         );
       case 5:
@@ -1071,17 +1166,71 @@ class _FeatureLockedEmptyState extends StatelessWidget {
 }
 
 class _TeacherEmptyState extends StatelessWidget {
-  const _TeacherEmptyState({required this.onCreate});
+  const _TeacherEmptyState({
+    required this.onCreate,
+    required this.onProfileTap,
+  });
   final VoidCallback onCreate;
+  final VoidCallback onProfileTap;
+
   @override
   Widget build(BuildContext context) {
+    final repo = AppScope.of(context).repository;
+    final user = repo.auth.currentUser;
+    final l10n = AppLocalizations.of(context)!;
     final isLead = AppScope.of(context).appState.isLeadTeacher;
-    return EmptyState(
-      icon: Icons.school_outlined,
-      title: isLead ? AppLocalizations.of(context)!.createYourFirstClass : AppLocalizations.of(context)!.youDontHaveAnyClasses,
-      subtitle: isLead ? AppLocalizations.of(context)!.addStudentsAndGetStarted : AppLocalizations.of(context)!.waitToBeAddedTo,
-      actionLabel: isLead ? AppLocalizations.of(context)!.createAClass : null,
-      action: isLead ? onCreate : null,
+    final now = DateTime.now();
+    final date = DateFormat('EEEE, MMMM d', l10n.localeName).format(now);
+    final hour = now.hour;
+    final greeting = hour < 12
+        ? l10n.goodMorning
+        : hour < 17
+        ? l10n.goodAfternoon
+        : l10n.goodEvening;
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: repo.userDocStream(),
+      builder: (context, profileSnap) {
+        final profile = profileSnap.data?.data() ?? const <String, dynamic>{};
+        final rawName =
+            profile['name']?.toString() ?? user?.displayName ?? l10n.teacher;
+        final name = rawName.trim().isNotEmpty
+            ? rawName.split(RegExp(r'\s+')).first
+            : l10n.teacher;
+        final avatarUrl = profile['avatarUrl']?.toString();
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: PageHeader(
+                title: '$greeting, $name',
+                subtitle: date,
+                trailing: SchoolAvatar(
+                  name: name,
+                  avatarUrl: avatarUrl,
+                  radius: 23,
+                  onTap: onProfileTap,
+                  showBorder: true,
+                ),
+              ),
+            ),
+            Expanded(
+              child: EmptyState(
+                icon: Icons.school_outlined,
+                title: isLead
+                    ? l10n.createYourFirstClass
+                    : l10n.youDontHaveAnyClasses,
+                subtitle: isLead
+                    ? l10n.addStudentsAndGetStarted
+                    : l10n.waitToBeAddedTo,
+                actionLabel: isLead ? l10n.createAClass : null,
+                action: isLead ? onCreate : null,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -1146,8 +1295,12 @@ class _MobileBottomBar extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: selected
                                   ? (isDark
-                                      ? SchoolColors.primary.withValues(alpha: 0.18)
-                                      : SchoolColors.primary.withValues(alpha: 0.1))
+                                        ? SchoolColors.primary.withValues(
+                                            alpha: 0.18,
+                                          )
+                                        : SchoolColors.primary.withValues(
+                                            alpha: 0.1,
+                                          ))
                                   : Colors.transparent,
                               shape: BoxShape.circle,
                             ),
@@ -1156,8 +1309,11 @@ class _MobileBottomBar extends StatelessWidget {
                               color: selected
                                   ? SchoolColors.primary
                                   : (isDark
-                                      ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
-                                      : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                                        ? SchoolColors.darkTextSecondary
+                                              .withValues(alpha: 0.5)
+                                        : SchoolColors.textSecondary.withValues(
+                                            alpha: 0.5,
+                                          )),
                               size: 24,
                             ),
                           ),
@@ -1197,18 +1353,27 @@ class _MobileBottomBar extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: moreSelected
                                 ? (isDark
-                                    ? SchoolColors.primary.withValues(alpha: 0.18)
-                                    : SchoolColors.primary.withValues(alpha: 0.1))
+                                      ? SchoolColors.primary.withValues(
+                                          alpha: 0.18,
+                                        )
+                                      : SchoolColors.primary.withValues(
+                                          alpha: 0.1,
+                                        ))
                                 : Colors.transparent,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            moreSelected ? Icons.grid_view_rounded : Icons.grid_view_outlined,
+                            moreSelected
+                                ? Icons.grid_view_rounded
+                                : Icons.grid_view_outlined,
                             color: moreSelected
                                 ? SchoolColors.primary
                                 : (isDark
-                                    ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
-                                    : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                                      ? SchoolColors.darkTextSecondary
+                                            .withValues(alpha: 0.5)
+                                      : SchoolColors.textSecondary.withValues(
+                                          alpha: 0.5,
+                                        )),
                             size: 24,
                           ),
                         ),
@@ -1288,8 +1453,12 @@ class _MobileBottomBar extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: selected
                                     ? (isDark
-                                        ? SchoolColors.primary.withValues(alpha: 0.18)
-                                        : SchoolColors.primary.withValues(alpha: 0.1))
+                                          ? SchoolColors.primary.withValues(
+                                              alpha: 0.18,
+                                            )
+                                          : SchoolColors.primary.withValues(
+                                              alpha: 0.1,
+                                            ))
                                     : Colors.transparent,
                                 shape: BoxShape.circle,
                               ),
@@ -1298,8 +1467,10 @@ class _MobileBottomBar extends StatelessWidget {
                                 color: selected
                                     ? SchoolColors.primary
                                     : (isDark
-                                        ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
-                                        : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                                          ? SchoolColors.darkTextSecondary
+                                                .withValues(alpha: 0.5)
+                                          : SchoolColors.textSecondary
+                                                .withValues(alpha: 0.5)),
                                 size: 24,
                               ),
                             ),
@@ -1339,18 +1510,27 @@ class _MobileBottomBar extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: moreSelected
                                   ? (isDark
-                                      ? SchoolColors.primary.withValues(alpha: 0.18)
-                                      : SchoolColors.primary.withValues(alpha: 0.1))
+                                        ? SchoolColors.primary.withValues(
+                                            alpha: 0.18,
+                                          )
+                                        : SchoolColors.primary.withValues(
+                                            alpha: 0.1,
+                                          ))
                                   : Colors.transparent,
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              moreSelected ? Icons.grid_view_rounded : Icons.grid_view_outlined,
+                              moreSelected
+                                  ? Icons.grid_view_rounded
+                                  : Icons.grid_view_outlined,
                               color: moreSelected
                                   ? SchoolColors.primary
                                   : (isDark
-                                      ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
-                                      : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                                        ? SchoolColors.darkTextSecondary
+                                              .withValues(alpha: 0.5)
+                                        : SchoolColors.textSecondary.withValues(
+                                            alpha: 0.5,
+                                          )),
                               size: 24,
                             ),
                           ),
@@ -1445,14 +1625,43 @@ class _TeacherMoreSheet extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final items = [
-      (icon: Icons.campaign_rounded, label: l10n.feed, color: SchoolColors.secondary, index: 1),
-      (icon: Icons.coffee_rounded, label: l10n.teachersRoom, color: SchoolColors.accent, index: 3),
-      (icon: Icons.library_books_rounded, label: l10n.library, color: const Color(0xFF059669), index: 5),
-      (icon: Icons.ondemand_video_rounded, label: l10n.webinars, color: SchoolColors.primary, index: 6),
-      (icon: Icons.book_rounded, label: l10n.magazine, color: SchoolColors.orange, index: 7),
-      (icon: Icons.people_rounded, label: l10n.participants, color: SchoolColors.textSecondary, index: 9),
+      (
+        icon: Icons.campaign_rounded,
+        label: l10n.feed,
+        color: SchoolColors.secondary,
+        index: 1,
+      ),
+      (
+        icon: Icons.library_books_rounded,
+        label: l10n.library,
+        color: const Color(0xFF059669),
+        index: 5,
+      ),
+      (
+        icon: Icons.ondemand_video_rounded,
+        label: l10n.webinars,
+        color: SchoolColors.primary,
+        index: 6,
+      ),
+      (
+        icon: Icons.book_rounded,
+        label: l10n.magazine,
+        color: SchoolColors.orange,
+        index: 7,
+      ),
+      (
+        icon: Icons.people_rounded,
+        label: l10n.participants,
+        color: SchoolColors.textSecondary,
+        index: 9,
+      ),
       if (isLeadTeacher)
-        (icon: Icons.admin_panel_settings_rounded, label: l10n.adminPanel, color: Colors.redAccent, index: 10),
+        (
+          icon: Icons.admin_panel_settings_rounded,
+          label: l10n.adminPanel,
+          color: Colors.redAccent,
+          index: 10,
+        ),
     ];
 
     return Container(
@@ -1484,7 +1693,9 @@ class _TeacherMoreSheet extends StatelessWidget {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 20),
                     decoration: BoxDecoration(
-                      color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                      color: isDark
+                          ? SchoolColors.darkBorder
+                          : SchoolColors.border,
                       borderRadius: BorderRadius.circular(2),
                     ),
                     alignment: Alignment.center,

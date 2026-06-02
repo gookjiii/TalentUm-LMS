@@ -1,13 +1,17 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'teacher_access_card.dart';
 import '../app_state.dart';
 import '../firebase/school_repository.dart';
 import '../theme.dart';
 import '../widgets/school_widgets.dart';
 import '../utils/reload_app.dart';
+import '../../main.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -28,7 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _uploadingAvatar = false;
 
   Future<void> _pickAndUploadAvatar(BuildContext context) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.image,
       withData: true,
     );
@@ -264,9 +268,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _nameController.text = currentName;
               }
 
-              return SchoolCard(
+              final profileCard = SchoolCard(
                 padding: const EdgeInsets.all(20),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Center(
                       child: GestureDetector(
@@ -333,6 +338,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               );
+              
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  profileCard,
+                  if (data['role'] == 'student') ...[
+                    const SizedBox(height: 28),
+                    _SectionLabel(label: isRu ? AppLocalizations.of(context)!.academicPerformanceAndSubjects : 'Academics'),
+                    _StatsRow(data: data, l10n: l10n),
+                    const SizedBox(height: 20),
+                    _LinkingCard(email: widget.repository.auth.currentUser?.email ?? '', l10n: l10n),
+                    const SizedBox(height: 20),
+                    const TeacherAccessCard(),
+                  ],
+                ],
+              );
             },
           ),
 
@@ -343,6 +365,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SchoolCard(
             padding: EdgeInsets.zero,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _ModernSettingTile(
                   icon: Icons.notifications_active_rounded,
@@ -410,6 +433,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SchoolCard(
             padding: EdgeInsets.zero,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _ModernSettingTile(
                   icon: Icons.dark_mode_outlined,
@@ -496,6 +520,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SchoolCard(
             padding: EdgeInsets.zero,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _InfoTile(
                   icon: Icons.info_outline_rounded,
@@ -798,7 +823,7 @@ class _LanguageTile extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
                 size: 20,
               )
-            : const SizedBox(key: ValueKey('none'), width: 20),
+            : const SizedBox.shrink(key: ValueKey('empty')),
       ),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -851,6 +876,193 @@ class _InfoTile extends StatelessWidget {
         ),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    );
+  }
+}
+
+class _StatsRow extends StatelessWidget {
+  const _StatsRow({required this.data, required this.l10n});
+  final Map<String, dynamic> data;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final classIds = List<String>.from(data['classIds'] ?? []);
+    final repo = AppScope.of(context).repository;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _MiniStatCard(
+            icon: Icons.class_outlined,
+            label: l10n.todaysClasses,
+            value: classIds.length,
+            color: SchoolColors.primary,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: FutureBuilder<QuerySnapshot?>(
+            future: classIds.isEmpty
+                ? Future<QuerySnapshot?>.value(null)
+                : repo.firestore
+                      .collection('assignments')
+                      .where('classId', whereIn: classIds)
+                      .get(),
+            builder: (context, snapshot) {
+              final count = snapshot.data?.docs.length ?? 0;
+              return _MiniStatCard(
+                icon: Icons.assignment_outlined,
+                label: l10n.assignments,
+                value: count,
+                color: SchoolColors.orange,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniStatCard extends StatelessWidget {
+  const _MiniStatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final int value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SchoolCard(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GradientIconBox(
+            icon: icon,
+            colors: [color, Color.lerp(color, Colors.white, 0.3) ?? color],
+            size: 44,
+            iconSize: 22,
+          ),
+          const SizedBox(height: 10),
+          AnimatedCounter(
+            value: value,
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              color: SchoolColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LinkingCard extends StatelessWidget {
+  const _LinkingCard({required this.email, required this.l10n});
+  final String email;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final qrData = jsonEncode({'type': 'link_child', 'email': email});
+
+    return GlassCard(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: SchoolColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.qr_code_2_rounded, color: SchoolColors.primary, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.linkingCode,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                    ),
+                    Text(
+                      l10n.showThisCodeToYourParent,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: QrImageView(
+              data: qrData,
+              version: QrVersions.auto,
+              size: 180.0,
+              gapless: false,
+              eyeStyle: const QrEyeStyle(
+                eyeShape: QrEyeShape.circle,
+                color: Color(0xFF0F172A),
+              ),
+              dataModuleStyle: const QrDataModuleStyle(
+                dataModuleShape: QrDataModuleShape.circle,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            email,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+              color: SchoolColors.primary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

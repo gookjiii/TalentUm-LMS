@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/providers/app_providers.dart';
+import 'package:school_world/src/widgets/school_widgets.dart';
 
 import '../../journal_providers.dart';
 
@@ -23,17 +24,17 @@ class JournalGradesGrid extends ConsumerStatefulWidget {
 }
 
 class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
-  final Map<String, Map<String, dynamic>> _usersCache = {};
   final ScrollController _horizontalController = ScrollController();
   final ScrollController _verticalHeaderController = ScrollController();
   final ScrollController _verticalBodyController = ScrollController();
-  int _visibleStudentsCount = 15;
+  int _visibleStudentsCount = 20;
 
   @override
   void initState() {
     super.initState();
     _verticalBodyController.addListener(() {
-      if (_verticalHeaderController.hasClients && _verticalBodyController.hasClients) {
+      if (_verticalHeaderController.hasClients &&
+          _verticalBodyController.hasClients) {
         if (_verticalHeaderController.offset != _verticalBodyController.offset) {
           _verticalHeaderController.jumpTo(_verticalBodyController.offset);
         }
@@ -45,13 +46,13 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
   void didUpdateWidget(covariant JournalGradesGrid oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.classId != widget.classId) {
-      _visibleStudentsCount = 15;
+      _visibleStudentsCount = 20;
     }
   }
 
   void _loadMoreStudents() {
     setState(() {
-      _visibleStudentsCount += 15;
+      _visibleStudentsCount += 20;
     });
   }
 
@@ -63,29 +64,9 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
     super.dispose();
   }
 
-  Future<void> _fetchStudentNames(List<String> studentIds) async {
-    final repo = ref.read(repositoryProvider);
-    bool changed = false;
-    for (final id in studentIds) {
-      if (!_usersCache.containsKey(id)) {
-        final data = await repo.getUserData(id);
-        if (data != null) {
-          _usersCache[id] = data;
-          changed = true;
-        }
-      }
-    }
-    if (changed && mounted) {
-      setState(() {});
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final columnsAsync = ref.watch(journalColumnsProvider(widget.classId));
-
-    // Use a targeted single-doc read for students to satisfy Firestore rules.
-    // For teachers, use the full collection query.
     final marksAsync = widget.studentIdFilter != null
         ? ref.watch(
             journalStudentMarksProvider(
@@ -97,14 +78,16 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
     final repo = ref.watch(repositoryProvider);
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: repo.firestore.collection('classes').doc(widget.classId).snapshots(),
+      stream:
+          repo.firestore.collection('classes').doc(widget.classId).snapshots(),
       builder: (context, classSnap) {
-        if (!classSnap.hasData) return const Center(child: CircularProgressIndicator());
+        if (!classSnap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
         final classData = classSnap.data?.data() ?? {};
         final allStudentIds = List<String>.from(classData['studentIds'] ?? []);
 
-        // In student-filtered mode, show only the current student's row.
         final studentIds = widget.studentIdFilter != null
             ? allStudentIds.where((id) => id == widget.studentIdFilter).toList()
             : allStudentIds;
@@ -112,8 +95,6 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
         final paginatedStudentIds = widget.studentIdFilter != null
             ? studentIds
             : studentIds.take(_visibleStudentsCount).toList();
-
-        _fetchStudentNames(paginatedStudentIds);
 
         return columnsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -129,7 +110,10 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                       widget.studentIdFilter != null
                           ? AppLocalizations.of(context)!.youDontHaveRatingsYet
                           : AppLocalizations.of(context)!.theMagazineIsEmptyAdd,
-                      style: const TextStyle(color: SchoolColors.muted, fontSize: 16),
+                      style: const TextStyle(
+                        color: SchoolColors.muted,
+                        fontSize: 16,
+                      ),
                     ),
                   );
                 }
@@ -141,7 +125,6 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                   marksMap[doc.id] = m.map((k, v) => MapEntry(k, v.toString()));
                 }
 
-                // If in student read-only mode, display a beautiful vertical rating card list.
                 if (widget.studentIdFilter != null) {
                   return _buildStudentGradesList(
                     context,
@@ -151,7 +134,12 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                   );
                 }
 
-                return _buildCustomGrid(context, columns, paginatedStudentIds, marksMap);
+                return _buildCustomGrid(
+                  context,
+                  columns,
+                  paginatedStudentIds,
+                  marksMap,
+                );
               },
             );
           },
@@ -167,9 +155,9 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
     Map<String, Map<String, String>> marksMap,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    const double studentColWidth = 240.0;
-    const double cellWidth = 64.0;
-    const double cellHeight = 56.0;
+    const double studentColWidth = 220.0;
+    const double cellWidth = 60.0;
+    const double cellHeight = 52.0;
     const double headerHeight = 72.0;
 
     return Padding(
@@ -177,53 +165,59 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? SchoolColors.darkSurface : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.1)
+                : SchoolColors.border.withValues(alpha: 0.8),
+            width: 1.2,
           ),
-          boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-          ],
+          boxShadow: isDark ? null : [SchoolColors.glassShadow],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: Column(
             children: [
               // HEADER ROW
               Container(
                 height: headerHeight,
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.02) : SchoolColors.primary.withValues(alpha: 0.03),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.02)
+                      : SchoolColors.primary.withValues(alpha: 0.03),
                   border: Border(
-                    bottom: BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+                    bottom: BorderSide(
+                      color: isDark
+                          ? Colors.white10
+                          : Colors.black.withValues(alpha: 0.05),
+                    ),
                   ),
                 ),
                 child: Row(
                   children: [
-                    // Sticky Top-Left Corner
                     Container(
                       width: studentColWidth,
                       alignment: Alignment.centerLeft,
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       decoration: BoxDecoration(
-                        border: Border(right: BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05))),
+                        border: Border(
+                          right: BorderSide(
+                            color: isDark
+                                ? Colors.white10
+                                : Colors.black.withValues(alpha: 0.05),
+                          ),
+                        ),
                       ),
                       child: Text(
-                        widget.studentIdFilter != null ? AppLocalizations.of(context)!.myRatings : AppLocalizations.of(context)!.student,
+                        AppLocalizations.of(context)!.student.toUpperCase(),
                         style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                          letterSpacing: 0.5,
-                          color: isDark ? Colors.white70 : SchoolColors.muted,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 11,
+                          letterSpacing: 0.8,
+                          color: isDark ? Colors.white60 : SchoolColors.muted,
                         ),
                       ),
                     ),
-                    // Scrollable Header Row
                     Expanded(
                       child: SingleChildScrollView(
                         controller: _horizontalController,
@@ -235,14 +229,17 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                             final date = (data['date'] as Timestamp).toDate();
                             final topic = data['topic']?.toString() ?? '';
                             final homework = data['homework']?.toString() ?? '';
-                            final formattedDate = '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
-                            
+                            final formattedDate =
+                                '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+
                             String tooltipMsg = formattedDate;
                             if (topic.isNotEmpty) {
-                              tooltipMsg += '\n${AppLocalizations.of(context)!.item}: $topic';
+                              tooltipMsg +=
+                                  '\n${AppLocalizations.of(context)!.item}: $topic';
                             }
                             if (homework.isNotEmpty) {
-                              tooltipMsg += '\n${AppLocalizations.of(context)!.homework}: $homework';
+                              tooltipMsg +=
+                                  '\n${AppLocalizations.of(context)!.homework}: $homework';
                             }
 
                             return Tooltip(
@@ -255,11 +252,20 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                                   children: [
                                     Text(
                                       date.day.toString().padLeft(2, '0'),
-                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                                      style: AppTextStyle.mono(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w900,
+                                      ).copyWith(height: 1.1),
                                     ),
                                     Text(
                                       date.month.toString().padLeft(2, '0'),
-                                      style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : SchoolColors.muted, fontWeight: FontWeight.w600),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark
+                                            ? Colors.white54
+                                            : SchoolColors.muted,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -277,7 +283,8 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (ScrollNotification scrollInfo) {
                     if (scrollInfo.metrics.axis == Axis.vertical &&
-                        scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+                        scrollInfo.metrics.pixels >=
+                            scrollInfo.metrics.maxScrollExtent - 200) {
                       _loadMoreStudents();
                     }
                     return false;
@@ -285,7 +292,6 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Sticky Left Column (Students)
                       SizedBox(
                         width: studentColWidth,
                         child: ListView.builder(
@@ -293,47 +299,18 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                           physics: const ClampingScrollPhysics(),
                           itemCount: studentIds.length,
                           itemBuilder: (context, index) {
-                            final studentId = studentIds[index];
-                            final user = _usersCache[studentId];
-                            final name = user?['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey1;
                             final isLast = index == studentIds.length - 1;
-  
-                            return Container(
-                              height: cellHeight,
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              alignment: Alignment.centerLeft,
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  right: BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
-                                  bottom: isLast ? BorderSide.none : BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 12,
-                                    backgroundColor: SchoolColors.primary.withValues(alpha: 0.1),
-                                    child: Text(
-                                      name.isNotEmpty ? name[0].toUpperCase() : '?',
-                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: SchoolColors.primary),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      name,
-                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
+                            return RepaintBoundary(
+                              child: _StudentNameCell(
+                                studentId: studentIds[index],
+                                height: cellHeight,
+                                isDark: isDark,
+                                isLast: isLast,
                               ),
                             );
                           },
                         ),
                       ),
-                      // Scrollable Grid (Marks)
                       Expanded(
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
@@ -348,42 +325,63 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                               itemBuilder: (context, index) {
                                 final studentId = studentIds[index];
                                 final isLast = index == studentIds.length - 1;
-  
-                                return Container(
-                                  height: cellHeight,
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: isLast ? BorderSide.none : BorderSide(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.03)),
+
+                                return RepaintBoundary(
+                                  child: Container(
+                                    height: cellHeight,
+                                    decoration: BoxDecoration(
+                                      border: Border(
+                                        bottom: isLast
+                                            ? BorderSide.none
+                                            : BorderSide(
+                                                color: isDark
+                                                    ? Colors.white.withValues(
+                                                        alpha: 0.04,
+                                                      )
+                                                    : Colors.black.withValues(
+                                                        alpha: 0.03,
+                                                      ),
+                                              ),
+                                      ),
                                     ),
-                                  ),
-                                  child: Row(
-                                    children: columns.map((col) {
-                                      final colId = col.id;
-                                      final mark = marksMap[studentId]?[colId] ?? '';
-                                      final user = _usersCache[studentId];
-                                      final studentName = user?['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey1;
-                                      final colData = col.data()!;
-                                      final date = (colData['date'] as Timestamp).toDate();
-                                      final topic = colData['topic']?.toString() ?? '';
-  
-                                      final isTeacher = ref.watch(schoolAppStateProvider).isTeacher;
-                                      return SizedBox(
-                                        width: cellWidth,
-                                        height: cellHeight,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: _MarkCell(
-                                            initialValue: mark,
-                                            isDark: isDark,
-                                            onChanged: (val) => _updateMark(studentId, colId, val),
-                                            enabled: isTeacher,
-                                            studentName: studentName,
-                                            date: date,
-                                            topic: topic,
+                                    child: Row(
+                                      children: columns.map((col) {
+                                        final colId = col.id;
+                                        final mark =
+                                            marksMap[studentId]?[colId] ?? '';
+                                        final colData = col.data()!;
+                                        final date =
+                                            (colData['date'] as Timestamp)
+                                                .toDate();
+                                        final topic =
+                                            colData['topic']?.toString() ?? '';
+
+                                        final isTeacher = ref.watch(
+                                          schoolAppStateProvider
+                                              .select((s) => s.isTeacher),
+                                        );
+                                        return SizedBox(
+                                          width: cellWidth,
+                                          height: cellHeight,
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 6,
+                                            ),
+                                            child: _MarkCell(
+                                              initialValue: mark,
+                                              isDark: isDark,
+                                              onChanged: (val) =>
+                                                  _updateMark(studentId, colId, val),
+                                              enabled: isTeacher,
+                                              studentId: studentId,
+                                              date: date,
+                                              topic: topic,
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    }).toList(),
+                                        );
+                                      }).toList(),
+                                    ),
                                   ),
                                 );
                               },
@@ -625,7 +623,7 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                     alignment: Alignment.center,
                     child: Text(
                       cleanMark.isNotEmpty ? cleanMark : '-',
-                      style: TextStyle(
+                      style: AppTextStyle.mono(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
                         color: cleanMark.isNotEmpty ? gradeColor : (isDark ? Colors.white30 : Colors.black26),
@@ -654,13 +652,84 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
   }
 }
 
-class _MarkCell extends StatelessWidget {
+class _StudentNameCell extends ConsumerWidget {
+  const _StudentNameCell({
+    required this.studentId,
+    required this.height,
+    required this.isDark,
+    required this.isLast,
+  });
+  final String studentId;
+  final double height;
+  final bool isDark, isLast;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userAsync = ref.watch(userDataProvider(studentId));
+
+    return Container(
+      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      alignment: Alignment.centerLeft,
+      decoration: BoxDecoration(
+        border: Border(
+          right: BorderSide(
+            color:
+                isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+          ),
+          bottom: isLast
+              ? BorderSide.none
+              : BorderSide(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.black.withValues(alpha: 0.03),
+                ),
+        ),
+      ),
+      child: userAsync.when(
+        data: (user) {
+          final name = user?['name']?.toString() ?? '...';
+          return Row(
+            children: [
+              SchoolAvatar(
+                userId: studentId,
+                name: name,
+                radius: 12,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          );
+        },
+        loading: () => const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        error: (_, __) => const Icon(Icons.error_outline, size: 16),
+      ),
+    );
+  }
+}
+
+class _MarkCell extends ConsumerWidget {
   const _MarkCell({
+    super.key,
     required this.initialValue,
     required this.isDark,
     required this.onChanged,
     required this.enabled,
-    required this.studentName,
+    required this.studentId,
     required this.date,
     required this.topic,
   });
@@ -669,7 +738,7 @@ class _MarkCell extends StatelessWidget {
   final bool isDark;
   final ValueChanged<String> onChanged;
   final bool enabled;
-  final String studentName;
+  final String studentId;
   final DateTime date;
   final String topic;
 
@@ -678,29 +747,43 @@ class _MarkCell extends StatelessWidget {
     if (mark == '4') return SchoolColors.primary;
     if (mark == '3') return SchoolColors.orange;
     if (mark == '2') return SchoolColors.red;
-    if (mark.toLowerCase() == AppLocalizations.of(context)!.n1.toLowerCase()) return SchoolColors.red;
+    if (mark.toLowerCase() == AppLocalizations.of(context)!.n1.toLowerCase()) {
+      return SchoolColors.red;
+    }
     return isDark ? Colors.white : Colors.black87;
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final mark = initialValue.trim();
     final color = _getMarkColor(context, mark);
-    final formattedDate = '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
-    
+    final formattedDate =
+        '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+
+    final userAsync = ref.watch(userDataProvider(studentId));
+    final studentName = userAsync.value?['name']?.toString() ?? '...';
+
     String tooltipMsg = '$studentName\n$formattedDate';
     if (topic.isNotEmpty) {
       tooltipMsg += '\n${AppLocalizations.of(context)!.item}: $topic';
     }
     if (mark.isNotEmpty) {
       String markDesc = '';
-      if (mark == '5') markDesc = AppLocalizations.of(context)!.unknownKey2;
-      else if (mark == '4') markDesc = AppLocalizations.of(context)!.unknownKey3;
-      else if (mark == '3') markDesc = AppLocalizations.of(context)!.unknownKey4;
-      else if (mark == '2') markDesc = AppLocalizations.of(context)!.unknownKey5;
-      else if (mark.toLowerCase() == AppLocalizations.of(context)!.n1.toLowerCase()) markDesc = AppLocalizations.of(context)!.absent;
-      
-      tooltipMsg += '\n${AppLocalizations.of(context)!.ratings}: $mark ${markDesc.isNotEmpty ? "($markDesc)" : ""}';
+      if (mark == '5') {
+        markDesc = AppLocalizations.of(context)!.unknownKey2;
+      } else if (mark == '4') {
+        markDesc = AppLocalizations.of(context)!.unknownKey3;
+      } else if (mark == '3') {
+        markDesc = AppLocalizations.of(context)!.unknownKey4;
+      } else if (mark == '2') {
+        markDesc = AppLocalizations.of(context)!.unknownKey5;
+      } else if (mark.toLowerCase() ==
+          AppLocalizations.of(context)!.n1.toLowerCase()) {
+        markDesc = AppLocalizations.of(context)!.absent;
+      }
+
+      tooltipMsg +=
+          '\n${AppLocalizations.of(context)!.ratings}: $mark ${markDesc.isNotEmpty ? "($markDesc)" : ""}';
     }
 
     final cellWidget = Tooltip(
@@ -708,23 +791,24 @@ class _MarkCell extends StatelessWidget {
       preferBelow: false,
       child: Container(
         decoration: BoxDecoration(
-          color: mark.isNotEmpty 
-            ? color.withValues(alpha: 0.1) 
-            : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color:
+              mark.isNotEmpty ? color.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: mark.isNotEmpty 
-              ? color.withValues(alpha: 0.2) 
-              : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
+            color: mark.isNotEmpty
+                ? color.withValues(alpha: 0.2)
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.05)),
             width: 1,
           ),
         ),
         alignment: Alignment.center,
         child: Text(
           mark,
-          style: TextStyle(
+          style: AppTextStyle.mono(
             fontWeight: FontWeight.w900,
-            fontSize: 16,
+            fontSize: 15,
             color: color,
           ),
         ),
@@ -742,9 +826,8 @@ class _MarkCell extends StatelessWidget {
       },
       position: PopupMenuPosition.under,
       offset: const Offset(0, 4),
-      constraints: const BoxConstraints(minWidth: 220, maxWidth: 280),
+      constraints: const BoxConstraints(minWidth: 240, maxWidth: 300),
       itemBuilder: (context) => [
-        // Premium Header detailing Student & Lesson topic
         PopupMenuItem<String>(
           enabled: false,
           child: Column(
@@ -801,20 +884,50 @@ class _MarkCell extends StatelessWidget {
             ],
           ),
         ),
-        _buildPopupItem('5', '5', AppLocalizations.of(context)!.unknownKey2, SchoolColors.green),
-        _buildPopupItem('4', '4', AppLocalizations.of(context)!.unknownKey3, SchoolColors.primary),
-        _buildPopupItem('3', '3', AppLocalizations.of(context)!.unknownKey4, SchoolColors.orange),
-        _buildPopupItem('2', '2', AppLocalizations.of(context)!.unknownKey5, SchoolColors.red),
-        _buildPopupItem(AppLocalizations.of(context)!.n1, AppLocalizations.of(context)!.n1, AppLocalizations.of(context)!.absent, SchoolColors.red),
+        _buildPopupItem(
+          context,
+          '5',
+          '5',
+          AppLocalizations.of(context)!.unknownKey2,
+          SchoolColors.green,
+        ),
+        _buildPopupItem(
+          context,
+          '4',
+          '4',
+          AppLocalizations.of(context)!.unknownKey3,
+          SchoolColors.primary,
+        ),
+        _buildPopupItem(
+          context,
+          '3',
+          '3',
+          AppLocalizations.of(context)!.unknownKey4,
+          SchoolColors.orange,
+        ),
+        _buildPopupItem(
+          context,
+          '2',
+          '2',
+          AppLocalizations.of(context)!.unknownKey5,
+          SchoolColors.red,
+        ),
+        _buildPopupItem(
+          context,
+          AppLocalizations.of(context)!.n1,
+          AppLocalizations.of(context)!.n1,
+          AppLocalizations.of(context)!.absent,
+          SchoolColors.red,
+        ),
         const PopupMenuDivider(height: 8),
         PopupMenuItem<String>(
           value: 'clear',
           child: Row(
             children: [
               Icon(
-                Icons.delete_outline_rounded, 
-                size: 18, 
-                color: isDark ? Colors.white54 : SchoolColors.muted
+                Icons.delete_outline_rounded,
+                size: 18,
+                color: isDark ? Colors.white54 : SchoolColors.muted,
               ),
               const SizedBox(width: 10),
               Text(
@@ -834,6 +947,7 @@ class _MarkCell extends StatelessWidget {
   }
 
   PopupMenuItem<String> _buildPopupItem(
+    BuildContext context,
     String value,
     String displayMark,
     String description,
@@ -854,7 +968,7 @@ class _MarkCell extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               displayMark,
-              style: TextStyle(
+              style: AppTextStyle.mono(
                 color: color,
                 fontWeight: FontWeight.w900,
                 fontSize: 14,

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
-import '../../../../screens/profile_screen.dart';
+import '../../../../screens/settings_screen.dart';
 
 import './feed_widgets.dart';
 
@@ -126,7 +126,10 @@ class _StudentFeedState extends State<StudentFeed> {
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const ProfileScreen(),
+                                  builder: (ctx) => SettingsScreen(
+                                    repository: AppScope.of(ctx).repository,
+                                    appState: AppScope.of(ctx).appState,
+                                  ),
                                 ),
                               ),
                             ),
@@ -195,14 +198,10 @@ class _StudentFeedState extends State<StudentFeed> {
                     if (posts.isEmpty &&
                         snapshot.connectionState != ConnectionState.waiting) {
                       return SliverToBoxAdapter(
-                        child: Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(80),
-                            child: Text(
-                              AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
-                              style: TextStyle(color: SchoolColors.muted),
-                            ),
-                          ),
+                        child: EmptyStateWidget(
+                          icon: Icons.notifications_none_rounded,
+                          title: AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
+                          subtitle: 'Bạn đã xem hết tất cả thông báo rồi!',
                         ),
                       );
                     }
