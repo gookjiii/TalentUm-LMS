@@ -18,6 +18,8 @@ analyzer:
     - "**/*.g.dart"
     - "packages/flutter_chat_ui/**"
     - "packages/flutter_firebase_chat_core/**"
+    - "build/**"
+    - ".dart_tool/**"
   errors:
     deprecated_member_use: ignore
     prefer_const_constructors: ignore
