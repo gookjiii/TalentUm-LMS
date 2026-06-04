@@ -71,7 +71,7 @@ void main() {
       await controller.deleteMessage('msg1');
 
       final doc = await ref.get();
-      expect(doc.data()?['text'], 'Сообщение удалено');
+      expect(doc.data()?['text'], 'Пост удален');
       expect(doc.data()?['metadata']?['isDeleted'], true);
     });
 
