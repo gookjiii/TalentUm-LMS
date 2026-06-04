@@ -132,7 +132,12 @@ jobs:
           pod install --repo-update
         
       - name: Build macOS (release)
-        run: flutter build macos --release
+        run: |
+          flutter build macos --release \
+            --dart-define=GOOGLE_DRIVE_PROXY_URL="https://vercel-talentum-backend.vercel.app" \
+            --dart-define=CLOUDINARY_CLOUD_NAME=dp50nlimq \
+            --dart-define=CLOUDINARY_UPLOAD_PRESET=schoolWorld \
+            --dart-define=APP_API_SECRET=talentum2026secret
 
       - name: Package as DMG (optional)
         run: |
