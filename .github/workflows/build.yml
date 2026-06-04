@@ -231,7 +231,12 @@ jobs:
         run: flutter gen-l10n
 
       - name: Build Web (release)
-        run: flutter build web --release
+        run: |
+          flutter build web --release \
+            --dart-define=GOOGLE_DRIVE_PROXY_URL="https://vercel-talentum-backend.vercel.app" \
+            --dart-define=CLOUDINARY_CLOUD_NAME=dp50nlimq \
+            --dart-define=CLOUDINARY_UPLOAD_PRESET=schoolWorld \
+            --dart-define=APP_API_SECRET=talentum2026secret
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
