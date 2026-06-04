@@ -43,11 +43,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Bootstrap Melos (link local packages)
+        run: dart run melos bootstrap
+
       - name: Generate localizations
         run: flutter gen-l10n
 
       - name: Build APK (release)
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
         env:
           # If you set up signing, add your keystore secrets here
           # KEYSTORE_PATH: ${{ secrets.KEYSTORE_PATH }}
@@ -84,6 +87,9 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Bootstrap Melos (link local packages)
+        run: dart run melos bootstrap
 
       - name: Generate localizations
         run: flutter gen-l10n
@@ -122,6 +128,9 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Bootstrap Melos (link local packages)
+        run: dart run melos bootstrap
 
       - name: Generate localizations
         run: flutter gen-l10n
@@ -186,6 +195,9 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Bootstrap Melos (link local packages)
+        run: dart run melos bootstrap
 
       - name: Generate localizations
         run: flutter gen-l10n
