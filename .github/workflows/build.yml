@@ -43,7 +43,7 @@ jobs:
         run: flutter pub get
 
       - name: Bootstrap Melos (link local packages)
-        run: dart run melos bootstrap
+        run: flutter pub run melos bootstrap
 
       - name: Generate localizations
         run: flutter gen-l10n
@@ -87,7 +87,7 @@ jobs:
         run: flutter pub get
 
       - name: Bootstrap Melos (link local packages)
-        run: dart run melos bootstrap
+        run: flutter pub run melos bootstrap
 
       - name: Generate localizations
         run: flutter gen-l10n
@@ -127,7 +127,7 @@ jobs:
         run: flutter pub get
 
       - name: Bootstrap Melos (link local packages)
-        run: dart run melos bootstrap
+        run: flutter pub run melos bootstrap
 
       - name: Generate localizations
         run: flutter gen-l10n
@@ -193,7 +193,7 @@ jobs:
         run: flutter pub get
 
       - name: Bootstrap Melos (link local packages)
-        run: dart run melos bootstrap
+        run: flutter pub run melos bootstrap
 
       - name: Generate localizations
         run: flutter gen-l10n
