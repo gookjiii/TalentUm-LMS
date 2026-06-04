@@ -42,9 +42,6 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Bootstrap Melos (link local packages)
-        run: flutter pub run melos bootstrap
-
       - name: Generate localizations
         run: flutter gen-l10n
 
@@ -86,9 +83,6 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Bootstrap Melos (link local packages)
-        run: flutter pub run melos bootstrap
-
       - name: Generate localizations
         run: flutter gen-l10n
 
@@ -125,9 +119,6 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Bootstrap Melos (link local packages)
-        run: flutter pub run melos bootstrap
 
       - name: Generate localizations
         run: flutter gen-l10n
@@ -191,9 +182,6 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Bootstrap Melos (link local packages)
-        run: flutter pub run melos bootstrap
 
       - name: Generate localizations
         run: flutter gen-l10n
