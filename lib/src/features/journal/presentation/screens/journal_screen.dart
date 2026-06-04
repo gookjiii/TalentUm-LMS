@@ -41,11 +41,22 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final effectiveClassId =
-        ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ??
-            widget.classId;
+        (ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))?.isNotEmpty == true
+            ? ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))
+            : null) ??
+        (widget.classId.isNotEmpty ? widget.classId : null);
     final repo = ref.watch(repositoryProvider);
     final appState = ref.watch(schoolAppStateProvider);
     final isTeacher = appState.isTeacher;
+
+    // Guard: no valid class selected yet
+    if (effectiveClassId == null) {
+      return EmptyState(
+        icon: Icons.book_outlined,
+        title: AppLocalizations.of(context)!.coolMagazine,
+        subtitle: AppLocalizations.of(context)!.myGradesAndSubjects,
+      );
+    }
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: repo.firestore.collection('classes').doc(effectiveClassId).snapshots(),

@@ -42,12 +42,24 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
   @override
   Widget build(BuildContext context) {
     final effectiveClassId =
-        ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ??
-            widget.classId;
-    final webinarsAsync = ref.watch(webinarsProvider((effectiveClassId, _limit)));
+        (ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))?.isNotEmpty == true
+            ? ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))
+            : null) ??
+        (widget.classId.isNotEmpty ? widget.classId : null);
     final appState = ref.watch(schoolAppStateProvider);
     final repo = ref.watch(repositoryProvider);
     final isTeacher = appState.isTeacher;
+
+    // Guard: no valid class selected yet — show locked empty state
+    if (effectiveClassId == null) {
+      return EmptyState(
+        icon: Icons.ondemand_video_outlined,
+        title: AppLocalizations.of(context)!.webinars,
+        subtitle: AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
+      );
+    }
+
+    final webinarsAsync = ref.watch(webinarsProvider((effectiveClassId, _limit)));
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: repo.firestore.collection('classes').doc(effectiveClassId).snapshots(),

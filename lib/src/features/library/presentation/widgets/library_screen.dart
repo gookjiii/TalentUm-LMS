@@ -46,13 +46,25 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   @override
   Widget build(BuildContext context) {
     final effectiveClassId =
-        ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ??
-            widget.classId;
-    final materialsAsync =
-        ref.watch(libraryMaterialsProvider((effectiveClassId, _limit)));
+        (ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))?.isNotEmpty == true
+            ? ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))
+            : null) ??
+        (widget.classId.isNotEmpty ? widget.classId : null);
     final appState = ref.watch(schoolAppStateProvider);
     final repo = ref.watch(repositoryProvider);
     final isTeacher = appState.isTeacher;
+
+    // Guard: no valid class selected yet
+    if (effectiveClassId == null) {
+      return EmptyState(
+        icon: Icons.library_books_outlined,
+        title: AppLocalizations.of(context)!.library,
+        subtitle: AppLocalizations.of(context)!.studyMaterialsAndLecturesWill,
+      );
+    }
+
+    final materialsAsync =
+        ref.watch(libraryMaterialsProvider((effectiveClassId, _limit)));
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: repo.firestore
