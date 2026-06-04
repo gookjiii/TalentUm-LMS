@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import '../theme.dart';
 
 class SkeletalLoader extends StatelessWidget {
   const SkeletalLoader({
@@ -45,9 +44,7 @@ class ChatMessageSkeleton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Row(
-        mainAxisAlignment: isMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
@@ -55,9 +52,7 @@ class ChatMessageSkeleton extends StatelessWidget {
             const SizedBox(width: 8),
           ],
           Column(
-            crossAxisAlignment: isMe
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
+            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               if (!isMe)
                 const Padding(
@@ -93,26 +88,26 @@ class ClassCardSkeleton extends StatelessWidget {
         ),
       ),
       child: Row(
-        children: [
-          const SkeletalLoader(width: 52, height: 52, borderRadius: 26),
-          const SizedBox(width: 16),
+        children: const [
+          SkeletalLoader(width: 52, height: 52, borderRadius: 26),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const SkeletalLoader(width: 120, height: 16),
-                    const Spacer(),
-                    const SkeletalLoader(
+                    SkeletalLoader(width: 120, height: 16),
+                    Spacer(),
+                    SkeletalLoader(
                       width: 30,
                       height: 16,
                       borderRadius: 8,
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                const SkeletalLoader(width: 180, height: 12),
+                SizedBox(height: 8),
+                SkeletalLoader(width: 180, height: 12),
               ],
             ),
           ),

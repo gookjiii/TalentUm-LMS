@@ -1,34 +1,32 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:school_world/src/features/homework/presentation/widgets/student_homework.dart';
-import 'package:school_world/src/theme.dart';
 import '../../test_utils.dart';
-
-class MockQueryDocumentSnapshot extends Mock implements QueryDocumentSnapshot<Map<String, dynamic>> {}
 
 void main() {
   late MockSchoolRepository mockRepo;
   late MockSchoolAppState mockAppState;
-  late MockQueryDocumentSnapshot mockDoc;
 
   setUp(() {
     mockRepo = MockSchoolRepository();
     mockAppState = MockSchoolAppState();
-    mockDoc = MockQueryDocumentSnapshot();
-
-    when(() => mockDoc.id).thenReturn('test_assignment_id');
-    when(() => mockDoc.data()).thenReturn({
-      'title': 'Test Assignment',
-      'description': 'Test Description',
-      'dueDate': Timestamp.fromDate(DateTime.now().add(const Duration(days: 1))),
-    });
 
     when(() => mockAppState.performanceMode).thenReturn(false);
   });
 
   testWidgets('HomeworkCard renders correct data and opens quick submit', (tester) async {
+    final fakeFirestore = FakeFirebaseFirestore();
+    await fakeFirestore.collection('assignments').doc('test_assignment_id').set({
+      'title': 'Test Assignment',
+      'description': 'Test Description',
+      'dueDate': Timestamp.fromDate(DateTime.now().add(const Duration(days: 1))),
+    });
+    final querySnapshot = await fakeFirestore.collection('assignments').get();
+    final mockDoc = querySnapshot.docs.first;
+
     await tester.pumpWidget(createTestableWidget(
       child: HomeworkCard(doc: mockDoc),
       repository: mockRepo,

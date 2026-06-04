@@ -23,14 +23,14 @@ void main() {
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.school, size: 48, color: SchoolColors.primary),
-              const SizedBox(height: 16),
-              const Text(
+            children: const [
+              Icon(Icons.school, size: 48, color: SchoolColors.primary),
+              SizedBox(height: 16),
+              Text(
                 'Elite Digital Campus',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 'Premium Academic Experience',
                 style: TextStyle(color: SchoolColors.muted),

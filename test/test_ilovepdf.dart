@@ -1,5 +1,4 @@
-import 'dart:io';
-import 'dart:typed_data';
+// ignore_for_file: avoid_print
 import 'package:dio/dio.dart';
 
 Future<void> main() async {

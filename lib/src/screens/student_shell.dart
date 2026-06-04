@@ -38,7 +38,6 @@ class _StudentShellState extends ConsumerState<StudentShell> {
     final selectedClassId = ref.watch(
       schoolAppStateProvider.select((state) => state.selectedClassId),
     );
-    final lastChatClassId = ref.watch(schoolAppStateProvider.select((s) => s.lastChatClassId));
 
     final classesAsync = ref.watch(studentClassesStreamProvider);
     final l10n = AppLocalizations.of(context)!;

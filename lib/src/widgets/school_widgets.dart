@@ -1337,8 +1337,8 @@ class BrandedLoader extends StatelessWidget {
         children: [
           Stack(
             alignment: Alignment.center,
-            children: [
-              const SizedBox(
+            children: const [
+              SizedBox(
                 width: 64,
                 height: 64,
                 child: CircularProgressIndicator(
@@ -1348,7 +1348,7 @@ class BrandedLoader extends StatelessWidget {
                   ),
                 ),
               ),
-              const SchoolLogo(size: 40),
+              SchoolLogo(size: 40),
             ],
           ),
           if (message != null) ...[

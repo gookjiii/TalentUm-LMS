@@ -718,7 +718,7 @@ class _GradientSendButtonState extends State<_GradientSendButton>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
-              colors: [SchoolColors.primaryLight, SchoolColors.primary],
+              colors: const [SchoolColors.primaryLight, SchoolColors.primary],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

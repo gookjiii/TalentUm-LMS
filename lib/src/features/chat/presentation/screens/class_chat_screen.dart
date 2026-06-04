@@ -995,20 +995,20 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
                   ),
                 ),
                 child: Row(
-                  children: [
-                    const SkeletalLoader(
+                  children: const [
+                    SkeletalLoader(
                       width: 44,
                       height: 44,
                       borderRadius: 12,
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SkeletalLoader(width: 140, height: 16),
-                        const SizedBox(height: 8),
-                        const SkeletalLoader(width: 90, height: 12),
+                        SkeletalLoader(width: 140, height: 16),
+                        SizedBox(height: 8),
+                        SkeletalLoader(width: 90, height: 12),
                       ],
                     ),
                   ],

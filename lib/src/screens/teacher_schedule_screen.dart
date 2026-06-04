@@ -42,7 +42,6 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
     final today = DateTime(now.year, now.month, now.day);
     _weekStart = today.subtract(Duration(days: today.weekday - 1));
   }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -951,7 +950,6 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final repo = AppScope.of(context).repository;
     return Container(
       color: Colors.transparent,
       child: Material(
