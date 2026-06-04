@@ -39,11 +39,6 @@ jobs:
           channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
 
-      - name: Checkout external packages (path deps)
-        run: |
-          git clone --depth=1 https://github.com/flyerhq/flutter_chat_ui.git ../flutter_chat_ui
-          git clone --depth=1 https://github.com/flyerhq/flutter_firebase_chat_core.git ../flutter_firebase_chat_core
-
       - name: Get dependencies
         run: flutter pub get
 
@@ -85,11 +80,6 @@ jobs:
       - name: Enable Windows desktop
         run: flutter config --enable-windows-desktop
 
-      - name: Checkout external packages (path deps)
-        run: |
-          git clone --depth=1 https://github.com/flyerhq/flutter_chat_ui.git ../flutter_chat_ui
-          git clone --depth=1 https://github.com/flyerhq/flutter_firebase_chat_core.git ../flutter_firebase_chat_core
-
       - name: Get dependencies
         run: flutter pub get
 
@@ -126,11 +116,6 @@ jobs:
         run: |
           flutter config --enable-macos-desktop
           flutter config --no-enable-swift-package-manager
-
-      - name: Checkout external packages (path deps)
-        run: |
-          git clone --depth=1 https://github.com/flyerhq/flutter_chat_ui.git ../flutter_chat_ui
-          git clone --depth=1 https://github.com/flyerhq/flutter_firebase_chat_core.git ../flutter_firebase_chat_core
 
       - name: Get dependencies
         run: flutter pub get
@@ -194,11 +179,6 @@ jobs:
         with:
           channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
-
-      - name: Checkout external packages (path deps)
-        run: |
-          git clone --depth=1 https://github.com/flyerhq/flutter_chat_ui.git ../flutter_chat_ui
-          git clone --depth=1 https://github.com/flyerhq/flutter_firebase_chat_core.git ../flutter_firebase_chat_core
 
       - name: Get dependencies
         run: flutter pub get
