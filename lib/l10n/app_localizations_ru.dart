@@ -1965,7 +1965,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mySchedule => 'Моё расписание';
 
   @override
-  String get unknownKey14 => 'Классы';
+  String get classes => 'Классы';
+
+  @override
+  String get noClassesTeacherDesc => 'У вас еще нет созданных классов. Создайте класс во вкладке «Классы» перед составлением расписания.';
+
+  @override
+  String errorLoadingClasses(String error) {
+    return 'Ошибка загрузки классов: $error';
+  }
 
   @override
   String get dayOfTheWeek => 'День недели';
@@ -2322,10 +2330,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get selectClass => 'Выбрать класс';
 
   @override
-  String get previousWeek => 'Предыдущая tuần';
+  String get previousWeek => 'Предыдущая неделя';
 
   @override
-  String get nextWeek => 'Следующая tuần';
+  String get nextWeek => 'Следующая неделя';
 
   @override
   String get youHaveNoTasksYet => 'У вас пока нет заданий.';
@@ -2341,4 +2349,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get compressPdfSubtitle => 'Уменьшает размер файла, но может немного снизить качество изображения';
+
+  @override
+  String get effectiveFrom => 'Действует с';
+
+  @override
+  String get untilDate => 'До';
+
+  @override
+  String get colorOverride => 'Цвет:';
 }

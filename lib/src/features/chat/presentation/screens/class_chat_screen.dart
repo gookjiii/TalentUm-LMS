@@ -371,89 +371,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
   String _resolveUserName(String authorId) =>
       _userCache[authorId]?.name ?? AppLocalizations.of(context)!.participant;
 
-  Future<void> _showCreatePollDialog() async {
-    final questionCtrl = TextEditingController();
-    final opts = [TextEditingController(), TextEditingController()];
-    await showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setS) => AlertDialog(
-          title: Text(AppLocalizations.of(context)!.newPoll),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: questionCtrl,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context)!.question,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                for (int i = 0; i < opts.length; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: TextField(
-                      controller: opts[i],
-                      decoration: InputDecoration(
-                        labelText: 'Вариант ${i + 1}',
-                      ),
-                    ),
-                  ),
-                TextButton.icon(
-                  onPressed: opts.length < 6
-                      ? () => setS(() => opts.add(TextEditingController()))
-                      : null,
-                  icon: Icon(Icons.add, size: 16),
-                  label: Text(AppLocalizations.of(context)!.addAnOption),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(AppLocalizations.of(context)!.unknownKey),
-            ),
-            FilledButton(
-              onPressed: () async {
-                final question = questionCtrl.text.trim();
-                final validOpts = opts
-                    .map((c) => c.text.trim())
-                    .where((t) => t.isNotEmpty)
-                    .toList();
-                if (question.isEmpty || validOpts.length < 2) return;
-                final uid = widget.repository.auth.currentUser!.uid;
-                final pollRef = await widget.repository.firestore
-                    .collection('rooms')
-                    .doc(_chatController!.roomId)
-                    .collection('polls')
-                    .add({
-                      'question': question,
-                      'options': [
-                        for (int i = 0; i < validOpts.length; i++)
-                          {'id': 'opt_$i', 'text': validOpts[i]},
-                      ],
-                      'votes': {},
-                      'creatorId': uid,
-                      'createdAt': FieldValue.serverTimestamp(),
-                      'isClosed': false,
-                    });
-                final optLines = validOpts.map((o) => '▫ $o').join('\n');
-                await _chatController!.sendText(
-                  uid,
-                  '📊 Опрос: $question\n$optLines\n\n→ Откройте вкладку «Опросы» для голосования',
-                  metadata: {'isPollAnnouncement': true, 'pollId': pollRef.id},
-                );
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: Text(AppLocalizations.of(context)!.create),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Future<void> _onCamera() async {
     try {
@@ -1195,7 +1113,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
             }
           },
           onCamera: kIsWeb ? null : _onCamera,
-          onCreatePoll: _isTeacher ? _showCreatePollDialog : null,
+
           replyingTo: _replyingTo,
           onCancelReply: () => setState(() => _replyingTo = null),
           editingMessage: _editingMessage,

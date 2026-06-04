@@ -761,7 +761,16 @@
   "pinThisAd": "Pin this ad",
   "publish": "Publish",
   "mySchedule": "My schedule",
-  "unknownKey14": "Классы",
+  "classes": "Classes",
+  "noClassesTeacherDesc": "You haven't created any classes yet. Create a class in the Classes tab before scheduling.",
+  "errorLoadingClasses": "Error loading classes: {error}",
+  "@errorLoadingClasses": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "dayOfTheWeek": "Day of the week",
   "selectDate": "Select date",
   "start": "Start",
@@ -909,5 +918,18 @@
   "upcomingAssignment": "Upcoming assignment",
   "deadline": "Deadline",
   "compressPdfTitle": "Compress PDF (only for files > 50MB)",
-  "compressPdfSubtitle": "Reduces file size but may slightly reduce image quality"
+  "compressPdfSubtitle": "Reduces file size but may slightly reduce image quality",
+  "effectiveFrom": "Effective from",
+  "untilDate": "Until",
+  "colorOverride": "Color override:",
+  "classes": "Classes",
+  "noClassesTeacherDesc": "You haven't created any classes yet. Create a class in the Classes tab before scheduling.",
+  "errorLoadingClasses": "Error loading classes: {error}",
+  "@errorLoadingClasses": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

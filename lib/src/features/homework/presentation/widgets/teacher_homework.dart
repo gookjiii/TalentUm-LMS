@@ -966,10 +966,11 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
 
     return SchoolCard(
       padding: const EdgeInsets.all(24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isMobile = constraints.maxWidth < 600;
+
+          final iconWidget = Container(
             width: 60,
             height: 60,
             decoration: BoxDecoration(
@@ -990,96 +991,99 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
               color: Colors.white,
               size: 28,
             ),
-          ),
-          const SizedBox(width: 24),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    FutureBuilder<Map<String, dynamic>?>(
-                      future: _classFuture,
-                      builder: (context, cSnap) {
-                        final className =
-                            cSnap.data?['name']?.toString() ?? AppLocalizations.of(context)!.classText;
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: SchoolColors.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Row(
-                            children: [
-                              const CircleAvatar(
-                                radius: 2.5,
-                                backgroundColor: SchoolColors.primary,
+          );
+
+          final titleWidget = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  FutureBuilder<Map<String, dynamic>?>(
+                    future: _classFuture,
+                    builder: (context, cSnap) {
+                      final className =
+                          cSnap.data?['name']?.toString() ?? AppLocalizations.of(context)!.classText;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: SchoolColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircleAvatar(
+                              radius: 2.5,
+                              backgroundColor: SchoolColors.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              className,
+                              style: const TextStyle(
+                                color: SchoolColors.primary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(width: 6),
-                              Text(
-                                className,
-                                style: const TextStyle(
-                                  color: SchoolColors.primary,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    SizedBox(width: 12),
-                    Text(
-                      data['createdAt'] != null
-                          ? 'Опубликовано: ${DateFormat('d MMM, HH:mm', 'ru').format((data['createdAt'] as Timestamp).toDate())}'
-                          : AppLocalizations.of(context)!.published,
-                      style: TextStyle(
-                        color: SchoolColors.muted.withValues(alpha: 0.7),
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  data['title'] ?? '',
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.4,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  data['description'] ?? '',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: SchoolColors.muted,
-                    height: 1.5,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (attachments.isNotEmpty) ...[
-                  SizedBox(height: 16),
                   Text(
-                    AppLocalizations.of(context)!.jobFiles,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                  const SizedBox(height: 8),
-                  ...attachments.map(
-                    (file) => FilePreviewWidget(remoteFile: file),
+                    data['createdAt'] != null
+                        ? 'Опубликовано: ${DateFormat('d MMM, HH:mm', 'ru').format((data['createdAt'] as Timestamp).toDate())}'
+                        : AppLocalizations.of(context)!.published,
+                    style: TextStyle(
+                      color: SchoolColors.muted.withValues(alpha: 0.7),
+                      fontSize: 11,
+                    ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                data['title'] ?? '',
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                data['description'] ?? '',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: SchoolColors.muted,
+                  height: 1.5,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (attachments.isNotEmpty) ...[
+                SizedBox(height: 16),
+                Text(
+                  AppLocalizations.of(context)!.jobFiles,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                ...attachments.map(
+                  (file) => FilePreviewWidget(remoteFile: file),
+                ),
               ],
-            ),
-          ),
-          SizedBox(width: 24),
-          Row(
+            ],
+          );
+
+          final statsWidget = Wrap(
+            spacing: 12,
+            runSpacing: 12,
             children: [
               _StatBlock(
                 label: AppLocalizations.of(context)!.term,
@@ -1087,14 +1091,12 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
                 sub: timeStr,
                 color: SchoolColors.red,
               ),
-              SizedBox(width: 12),
               _StatBlock(
                 label: AppLocalizations.of(context)!.points,
                 big: "10",
                 sub: AppLocalizations.of(context)!.max,
                 color: SchoolColors.primary,
               ),
-              const SizedBox(width: 12),
               StreamBuilder<QuerySnapshot>(
                 stream: _submissionsStream,
                 builder: (context, snap) {
@@ -1113,8 +1115,37 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
                 },
               ),
             ],
-          ),
-        ],
+          );
+
+          if (isMobile) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    iconWidget,
+                    const SizedBox(width: 16),
+                    Expanded(child: titleWidget),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                statsWidget,
+              ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              iconWidget,
+              const SizedBox(width: 24),
+              Expanded(child: titleWidget),
+              const SizedBox(width: 24),
+              statsWidget,
+            ],
+          );
+        },
       ),
     );
   }

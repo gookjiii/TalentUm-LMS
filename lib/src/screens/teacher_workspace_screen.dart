@@ -312,6 +312,7 @@ class _TeacherWorkspaceScreenState
               );
 
         return Scaffold(
+          extendBody: true, // Allow content to scroll under the frosted glass bottom bar
           backgroundColor: Theme.of(context).colorScheme.surface,
           body: SafeArea(
             bottom: false,
@@ -705,6 +706,26 @@ class _TeacherWorkspaceScreenState
           final chunk = docs.sublist(
             i,
             i + 500 > docs.length ? docs.length : i + 500,
+          );
+          for (final doc in chunk) {
+            batch.delete(doc.reference);
+          }
+          await batch.commit();
+        }
+
+        // Delete polls in Firestore
+        final pollsRef = repo.firestore
+            .collection('rooms')
+            .doc(roomId)
+            .collection('polls');
+        final pollsSnap = await pollsRef.get();
+        final pollDocs = pollsSnap.docs;
+
+        for (var i = 0; i < pollDocs.length; i += 500) {
+          final batch = repo.firestore.batch();
+          final chunk = pollDocs.sublist(
+            i,
+            i + 500 > pollDocs.length ? pollDocs.length : i + 500,
           );
           for (final doc in chunk) {
             batch.delete(doc.reference);
@@ -1270,132 +1291,7 @@ class _MobileBottomBar extends StatelessWidget {
               width: 1.0,
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ...List.generate(items.length, (index) {
-                final item = items[index];
-                final selected = selectedIndex == index;
-
-                return Expanded(
-                  child: InkWell(
-                    onTap: () => onSelect(index),
-                    borderRadius: BorderRadius.circular(20),
-                    highlightColor: Colors.transparent,
-                    splashColor: SchoolColors.primary.withValues(alpha: 0.1),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedScale(
-                          scale: selected ? 1.15 : 1.0,
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOutBack,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? (isDark
-                                        ? SchoolColors.primary.withValues(
-                                            alpha: 0.18,
-                                          )
-                                        : SchoolColors.primary.withValues(
-                                            alpha: 0.1,
-                                          ))
-                                  : Colors.transparent,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              selected ? item.selectedIcon : item.icon,
-                              color: selected
-                                  ? SchoolColors.primary
-                                  : (isDark
-                                        ? SchoolColors.darkTextSecondary
-                                              .withValues(alpha: 0.5)
-                                        : SchoolColors.textSecondary.withValues(
-                                            alpha: 0.5,
-                                          )),
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                        if (selected)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Container(
-                              width: 4,
-                              height: 4,
-                              decoration: const BoxDecoration(
-                                color: SchoolColors.primary,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-              Expanded(
-                child: InkWell(
-                  onTap: onMoreTap,
-                  borderRadius: BorderRadius.circular(20),
-                  highlightColor: Colors.transparent,
-                  splashColor: SchoolColors.primary.withValues(alpha: 0.1),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AnimatedScale(
-                        scale: moreSelected ? 1.15 : 1.0,
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeOutBack,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: moreSelected
-                                ? (isDark
-                                      ? SchoolColors.primary.withValues(
-                                          alpha: 0.18,
-                                        )
-                                      : SchoolColors.primary.withValues(
-                                          alpha: 0.1,
-                                        ))
-                                : Colors.transparent,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            moreSelected
-                                ? Icons.grid_view_rounded
-                                : Icons.grid_view_outlined,
-                            color: moreSelected
-                                ? SchoolColors.primary
-                                : (isDark
-                                      ? SchoolColors.darkTextSecondary
-                                            .withValues(alpha: 0.5)
-                                      : SchoolColors.textSecondary.withValues(
-                                          alpha: 0.5,
-                                        )),
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                      if (moreSelected)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Container(
-                            width: 4,
-                            height: 4,
-                            decoration: const BoxDecoration(
-                              color: SchoolColors.primary,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+          child: _buildIcons(isDark, context),
         ),
       );
     }
@@ -1428,134 +1324,125 @@ class _MobileBottomBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(
             filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ...List.generate(items.length, (index) {
-                  final item = items[index];
-                  final selected = selectedIndex == index;
+            child: _buildIcons(isDark, context),
+          ),
+        ),
+      ),
+    );
+  }
 
-                  return Expanded(
-                    child: InkWell(
-                      onTap: () => onSelect(index),
-                      borderRadius: BorderRadius.circular(20),
-                      highlightColor: Colors.transparent,
-                      splashColor: SchoolColors.primary.withValues(alpha: 0.1),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedScale(
-                            scale: selected ? 1.15 : 1.0,
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeOutBack,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: selected
-                                    ? (isDark
-                                          ? SchoolColors.primary.withValues(
-                                              alpha: 0.18,
-                                            )
-                                          : SchoolColors.primary.withValues(
-                                              alpha: 0.1,
-                                            ))
-                                    : Colors.transparent,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                selected ? item.selectedIcon : item.icon,
-                                color: selected
-                                    ? SchoolColors.primary
-                                    : (isDark
-                                          ? SchoolColors.darkTextSecondary
-                                                .withValues(alpha: 0.5)
-                                          : SchoolColors.textSecondary
-                                                .withValues(alpha: 0.5)),
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                          if (selected)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Container(
-                                width: 4,
-                                height: 4,
-                                decoration: const BoxDecoration(
-                                  color: SchoolColors.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ),
-                        ],
+  Widget _buildIcons(bool isDark, BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        ...List.generate(items.length, (index) {
+          final item = items[index];
+          final selected = selectedIndex == index;
+
+          return Expanded(
+            child: InkWell(
+              onTap: () => onSelect(index),
+              borderRadius: BorderRadius.circular(20),
+              highlightColor: Colors.transparent,
+              splashColor: SchoolColors.primary.withValues(alpha: 0.1),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedScale(
+                    scale: selected ? 1.15 : 1.0,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutBack,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? (isDark
+                                  ? SchoolColors.primary.withValues(alpha: 0.18)
+                                  : SchoolColors.primary.withValues(alpha: 0.1))
+                            : Colors.transparent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        selected ? item.selectedIcon : item.icon,
+                        color: selected
+                            ? SchoolColors.primary
+                            : (isDark
+                                  ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
+                                  : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                        size: 28,
                       ),
                     ),
-                  );
-                }),
-                Expanded(
-                  child: InkWell(
-                    onTap: onMoreTap,
-                    borderRadius: BorderRadius.circular(20),
-                    highlightColor: Colors.transparent,
-                    splashColor: SchoolColors.primary.withValues(alpha: 0.1),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedScale(
-                          scale: moreSelected ? 1.15 : 1.0,
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOutBack,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: moreSelected
-                                  ? (isDark
-                                        ? SchoolColors.primary.withValues(
-                                            alpha: 0.18,
-                                          )
-                                        : SchoolColors.primary.withValues(
-                                            alpha: 0.1,
-                                          ))
-                                  : Colors.transparent,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              moreSelected
-                                  ? Icons.grid_view_rounded
-                                  : Icons.grid_view_outlined,
-                              color: moreSelected
-                                  ? SchoolColors.primary
-                                  : (isDark
-                                        ? SchoolColors.darkTextSecondary
-                                              .withValues(alpha: 0.5)
-                                        : SchoolColors.textSecondary.withValues(
-                                            alpha: 0.5,
-                                          )),
-                              size: 24,
-                            ),
-                          ),
+                  ),
+                  if (selected)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Container(
+                        width: 4,
+                        height: 4,
+                        decoration: const BoxDecoration(
+                          color: SchoolColors.primary,
+                          shape: BoxShape.circle,
                         ),
-                        if (moreSelected)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Container(
-                              width: 4,
-                              height: 4,
-                              decoration: const BoxDecoration(
-                                color: SchoolColors.primary,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                      ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        }),
+        Expanded(
+          child: InkWell(
+            onTap: onMoreTap,
+            borderRadius: BorderRadius.circular(20),
+            highlightColor: Colors.transparent,
+            splashColor: SchoolColors.primary.withValues(alpha: 0.1),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedScale(
+                  scale: moreSelected ? 1.15 : 1.0,
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutBack,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: moreSelected
+                          ? (isDark
+                                ? SchoolColors.primary.withValues(alpha: 0.18)
+                                : SchoolColors.primary.withValues(alpha: 0.1))
+                          : Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      moreSelected
+                          ? Icons.grid_view_rounded
+                          : Icons.grid_view_outlined,
+                      color: moreSelected
+                          ? SchoolColors.primary
+                          : (isDark
+                                ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
+                                : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                      size: 24,
                     ),
                   ),
                 ),
+                if (moreSelected)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Container(
+                      width: 4,
+                      height: 4,
+                      decoration: const BoxDecoration(
+                        color: SchoolColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }

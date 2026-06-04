@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:school_world/src/theme.dart';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
@@ -25,7 +26,6 @@ class ChatInput extends StatefulWidget {
     this.pendingAttachment,
     required this.onCancelAttachment,
     this.onEditAttachment,
-    this.onCreatePoll,
     this.isUploading = false,
     required this.className,
     this.onTypingChanged,
@@ -43,7 +43,6 @@ class ChatInput extends StatefulWidget {
   final PickedChatAttachment? pendingAttachment;
   final VoidCallback onCancelAttachment;
   final VoidCallback? onEditAttachment;
-  final VoidCallback? onCreatePoll;
   final bool isUploading;
   final String className;
   final ValueChanged<bool>? onTypingChanged;
@@ -267,24 +266,22 @@ class _ChatInputState extends State<ChatInput> {
           borderRadius: BorderRadius.circular(isMobile ? 24 : 32),
           border: Border.all(
             color: isFocused
-                ? const Color(0xFF2563EB).withOpacity(0.5)
+                ? SchoolColors.primary.withValues(alpha: 0.5)
                 : (isDark ? const Color(0xFF334155) : const Color(0xFFE4ECFC)),
-            width: isFocused ? 1.5 : 1.5,
+            width: isFocused ? 1.5 : 1.0,
           ),
           boxShadow: isFocused
               ? [
                   BoxShadow(
-                    color: const Color(
-                      0xFF2563EB,
-                    ).withOpacity(isDark ? 0.15 : 0.10),
-                    blurRadius: 18,
+                    color: SchoolColors.primary.withValues(alpha: isDark ? 0.25 : 0.15),
+                    blurRadius: 20,
                     offset: const Offset(0, 4),
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-                    blurRadius: 6,
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                    blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
@@ -352,22 +349,12 @@ class _ChatInputState extends State<ChatInput> {
                     color: isEditing
                         ? theme.colorScheme.onSurfaceVariant.withOpacity(0.3)
                         : theme.colorScheme.primary,
+                    size: isMobile ? 28 : 24,
                   ),
                   tooltip: AppLocalizations.of(context)!.attach,
                   padding: EdgeInsets.all(isMobile ? 8 : 10),
                   constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                 ),
-                if (widget.onCreatePoll != null && !isEditing)
-                  IconButton(
-                    onPressed: widget.onCreatePoll,
-                    icon: Icon(
-                      Icons.poll_outlined,
-                      color: theme.colorScheme.primary,
-                    ),
-                    tooltip: AppLocalizations.of(context)!.survey1,
-                    padding: EdgeInsets.all(isMobile ? 8 : 10),
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                  ),
                 Expanded(
                   child: Focus(
                     onKeyEvent: isMobile
@@ -392,7 +379,7 @@ class _ChatInputState extends State<ChatInput> {
                       minLines: 1,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         height: 1.4,
-                        fontSize: isMobile ? 15 : 16,
+                        fontSize: isMobile ? 16 : 16,
                       ),
                       decoration: InputDecoration(
                         hintText: isMobile
@@ -404,7 +391,7 @@ class _ChatInputState extends State<ChatInput> {
                           color: theme.colorScheme.onSurfaceVariant.withOpacity(
                             0.6,
                           ),
-                          fontSize: isMobile ? 15 : 16,
+                          fontSize: isMobile ? 16 : 16,
                         ),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
@@ -730,16 +717,16 @@ class _GradientSendButtonState extends State<_GradientSendButton>
           height: 42,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF2563EB), Color(0xFF6366F1)],
+            gradient: LinearGradient(
+              colors: [SchoolColors.primaryLight, SchoolColors.primary],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF2563EB).withOpacity(0.35),
-                blurRadius: 12,
-                offset: const Offset(0, 3),
+                color: SchoolColors.primary.withValues(alpha: 0.4),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
             ],
           ),

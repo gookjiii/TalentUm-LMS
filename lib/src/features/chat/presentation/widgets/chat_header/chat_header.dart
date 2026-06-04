@@ -236,8 +236,17 @@ class _ChatHeaderState extends State<ChatHeader> {
           .collection('messages')
           .get();
 
+      final pollsSnapshot = await widget.repository.firestore
+          .collection('rooms')
+          .doc('global_teachers_lounge')
+          .collection('polls')
+          .get();
+
       final batch = widget.repository.firestore.batch();
       for (final doc in messagesSnapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      for (final doc in pollsSnapshot.docs) {
         batch.delete(doc.reference);
       }
       await batch.commit();

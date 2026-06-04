@@ -788,8 +788,11 @@ class _TeacherTodayScheduleState extends State<_TeacherTodaySchedule> {
                     final it = todayItems[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: RepaintBoundary(
-                        child: _buildClassItem(context, it),
+                      child: FadeInUp(
+                        delay: Duration(milliseconds: 50 * index),
+                        child: RepaintBoundary(
+                          child: _buildClassItem(context, it),
+                        ),
                       ),
                     );
                   },

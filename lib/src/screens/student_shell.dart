@@ -236,7 +236,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                   ? null
                   : Builder(
                       builder: (context) {
-                        if (_tabIndex == 2 && lastChatClassId != null) {
+                        if (_tabIndex == 2 && appState.isChatRoomMobileOpen) {
                           return const SizedBox.shrink();
                         }
                         // 0=Today, 2=Chat, 3=Homework, 4=Schedule; More opens sheet
@@ -541,7 +541,7 @@ class _NavTabItem extends StatelessWidget {
                     : (isDark
                         ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
                         : SchoolColors.textSecondary.withValues(alpha: 0.5)),
-                size: 24,
+                size: 28,
               ),
             ),
           ),

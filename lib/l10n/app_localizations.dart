@@ -3923,11 +3923,23 @@ abstract class AppLocalizations {
   /// **'My schedule'**
   String get mySchedule;
 
-  /// No description provided for @unknownKey14.
+  /// No description provided for @classes.
   ///
   /// In en, this message translates to:
-  /// **'Классы'**
-  String get unknownKey14;
+  /// **'Classes'**
+  String get classes;
+
+  /// No description provided for @noClassesTeacherDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t created any classes yet. Create a class in the Classes tab before scheduling.'**
+  String get noClassesTeacherDesc;
+
+  /// No description provided for @errorLoadingClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading classes: {error}'**
+  String errorLoadingClasses(String error);
 
   /// No description provided for @dayOfTheWeek.
   ///
@@ -4666,6 +4678,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reduces file size but may slightly reduce image quality'**
   String get compressPdfSubtitle;
+
+  /// No description provided for @effectiveFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective from'**
+  String get effectiveFrom;
+
+  /// No description provided for @untilDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Until'**
+  String get untilDate;
+
+  /// No description provided for @colorOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Color override:'**
+  String get colorOverride;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

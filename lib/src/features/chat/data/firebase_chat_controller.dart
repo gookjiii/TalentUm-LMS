@@ -219,6 +219,7 @@ class FirebaseChatController extends InMemoryChatController
               _sanitizeFirestoreValue(doc.data()) as Map<String, dynamic>,
             ),
           )
+          .where((m) => !(m is TextMessage && m.text.trim().isEmpty))
           .toList();
       _allMessages = [...olderMessages, ..._allMessages];
       await _applySearch(animated: false);
@@ -256,7 +257,7 @@ class FirebaseChatController extends InMemoryChatController
         }
       }
       return toMessage(doc.id, data);
-    }).toList();
+    }).where((m) => !(m is TextMessage && m.text.trim().isEmpty)).toList();
 
     // Merge with already-fetched older messages.
     final recentIds = recentMessages.map((m) => m.id).toSet();

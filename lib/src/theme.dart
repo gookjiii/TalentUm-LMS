@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SchoolColors {
-  // ── Primary Purple ──────────────────────────────────────────────
-  static const primary = Color(0xFF7C3AED);
-  static const primaryLight = Color(0xFFA78BFA);
-  static const primaryDark = Color(0xFF5B21B6);
+  // ── Primary Purple (More Vibrant) ─────────────────────────────────
+  static const primary = Color(0xFF8A2BE2); // Vibrant Blue Violet
+  static const primaryLight = Color(0xFFB066FF);
+  static const primaryDark = Color(0xFF5A189A);
   static const primaryContainer = Color(0xFFF3E8FF);
   static const onPrimaryContainer = Color(0xFF3B0764);
 
   // ── Secondary / Indigo ────────────────────────────────────────
-  static const secondary = Color(0xFF8B5CF6);
-  static const secondaryLight = Color(0xFFC4B5FD);
-  static const secondaryContainer = Color(0xFFF5F3FF);
-  static const onSecondaryContainer = Color(0xFF4C1D95);
+  static const secondary = Color(0xFF6366F1); // Vibrant Indigo
+  static const secondaryLight = Color(0xFFA5B4FC);
+  static const secondaryContainer = Color(0xFFEEF2FF);
+  static const onSecondaryContainer = Color(0xFF312E81);
 
   // ── Accent / Emerald ───────────────────────────────────────
   static const accent = Color(0xFF059669);
@@ -73,19 +73,19 @@ class SchoolColors {
   static const replyDeletedBorder = Color(0xFFCBD5E1);
   static const replyDeletedText = Color(0xFF64748B);
 
-  // ── Glow / Shadow helpers ─────────────────────────────────────
+  // ── Glow / Shadow helpers (Enhanced) ─────────────────────────
   static BoxShadow cardShadow = BoxShadow(
-    color: const Color(0xFF7C3AED).withValues(alpha: 0.04),
-    blurRadius: 20,
-    offset: const Offset(0, 4),
+    color: const Color(0xFF8A2BE2).withValues(alpha: 0.06), // Colored shadow
+    blurRadius: 24,
+    offset: const Offset(0, 6),
     spreadRadius: 0,
   );
 
   static BoxShadow cardShadowHover = BoxShadow(
-    color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
-    blurRadius: 32,
-    offset: const Offset(0, 8),
-    spreadRadius: 0,
+    color: const Color(0xFF8A2BE2).withValues(alpha: 0.15), // Stronger glow on hover
+    blurRadius: 36,
+    offset: const Offset(0, 10),
+    spreadRadius: 2,
   );
 
   static BoxShadow elevatedShadow = BoxShadow(

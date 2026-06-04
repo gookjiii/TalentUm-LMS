@@ -223,9 +223,10 @@ class SchoolCard extends HookWidget {
     Matrix4 transform = Matrix4.identity();
     if (onTap != null && !AppScope.of(context).appState.performanceMode) {
       if (isPressed.value) {
-        transform.translate(0, 1.0, 0); // Tactile push
+        transform.scale(0.97); // Bouncy scale down
       } else if (isHovered.value) {
-        transform.translate(0, -3.0, 0); // Pull up on hover
+        transform.translate(0.0, -4.0, 0.0); // Pull up on hover
+        transform.scale(1.01); // Subtle scale up
       }
     }
 
@@ -383,11 +384,17 @@ class GlassCard extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(borderRadius),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white.withValues(alpha: isDark ? 0.15 : 0.4),
+                            Colors.white.withValues(alpha: 0.0),
+                          ],
+                        ),
                         border: Border.all(
-                          color: Colors.white.withValues(
-                            alpha: isDark ? 0.05 : 0.3,
-                          ),
-                          width: 0.5,
+                          color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.4),
+                          width: 1.0,
                         ),
                       ),
                     ),
@@ -2031,6 +2038,56 @@ class EmptyStateWidget extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FADE IN UP (Staggered Animation)
+// ─────────────────────────────────────────────────────────────────
+class FadeInUp extends HookWidget {
+  const FadeInUp({
+    super.key,
+    required this.child,
+    this.delay = Duration.zero,
+    this.duration = const Duration(milliseconds: 500),
+    this.offset = 30.0,
+  });
+
+  final Widget child;
+  final Duration delay;
+  final Duration duration;
+  final double offset;
+
+  @override
+  Widget build(BuildContext context) {
+    if (AppScope.of(context).appState.performanceMode) return child;
+
+    final controller = useAnimationController(duration: duration);
+    final animation = CurvedAnimation(parent: controller, curve: Curves.easeOutCubic);
+
+    final opacity = Tween<double>(begin: 0.0, end: 1.0).animate(animation);
+    final translateY = Tween<double>(begin: offset, end: 0.0).animate(animation);
+
+    useEffect(() {
+      Future.delayed(delay, () {
+        if (context.mounted) controller.forward();
+      });
+      return null;
+    }, const []);
+
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: opacity.value,
+          child: Transform.translate(
+            offset: Offset(0, translateY.value),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }

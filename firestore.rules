@@ -72,9 +72,9 @@ service cloud.firestore {
       
       // Allow query-compatible lists
       allow list: if signedIn() && isTeacher();
-      allow list: if signedIn() && (resource != null && request.auth.uid in resource.data.get('studentIds', []));
-      allow list: if signedIn() && (resource != null && request.auth.uid in resource.data.get('parentIds', []));
-      allow list: if signedIn() && (resource != null && request.auth.uid == resource.data.get('teacherId', ''));
+      allow list: if signedIn() && request.auth.uid in resource.data.studentIds;
+      allow list: if signedIn() && request.auth.uid in resource.data.parentIds;
+      allow list: if signedIn() && request.auth.uid == resource.data.teacherId;
       allow create, update: if isTeacher();
       allow delete: if isTeacher() && (
         resource.data.teacherId == request.auth.uid || 

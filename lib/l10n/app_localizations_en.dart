@@ -1965,7 +1965,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mySchedule => 'My schedule';
 
   @override
-  String get unknownKey14 => 'Классы';
+  String get classes => 'Classes';
+
+  @override
+  String get noClassesTeacherDesc => 'You haven\'t created any classes yet. Create a class in the Classes tab before scheduling.';
+
+  @override
+  String errorLoadingClasses(String error) {
+    return 'Error loading classes: $error';
+  }
 
   @override
   String get dayOfTheWeek => 'Day of the week';
@@ -2341,4 +2349,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get compressPdfSubtitle => 'Reduces file size but may slightly reduce image quality';
+
+  @override
+  String get effectiveFrom => 'Effective from';
+
+  @override
+  String get untilDate => 'Until';
+
+  @override
+  String get colorOverride => 'Color override:';
 }

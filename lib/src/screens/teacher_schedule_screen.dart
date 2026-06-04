@@ -84,37 +84,28 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
-        centerTitle: true,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              tooltip: l10n.previousWeek,
-              onPressed: () => setState(
-                () => _weekStart = _weekStart.subtract(const Duration(days: 7)),
-              ),
-              icon: const Icon(Icons.chevron_left, size: 28),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              DateFormat('MMM yyyy', l10n.localeName).format(_weekStart),
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              tooltip: l10n.nextWeek,
-              onPressed: () => setState(
-                () => _weekStart = _weekStart.add(const Duration(days: 7)),
-              ),
-              icon: const Icon(Icons.chevron_right, size: 28),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          ],
+        centerTitle: false,
+        titleSpacing: 16,
+        title: Text(
+          DateFormat('MMMM yyyy', l10n.localeName).format(_weekStart),
+          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
         ),
         actions: [
+          IconButton(
+            tooltip: l10n.previousWeek,
+            onPressed: () => setState(
+              () => _weekStart = _weekStart.subtract(const Duration(days: 7)),
+            ),
+            icon: const Icon(Icons.chevron_left_rounded, size: 28),
+          ),
+          IconButton(
+            tooltip: l10n.nextWeek,
+            onPressed: () => setState(
+              () => _weekStart = _weekStart.add(const Duration(days: 7)),
+            ),
+            icon: const Icon(Icons.chevron_right_rounded, size: 28),
+          ),
+          const SizedBox(width: 4),
           IconButton(
             tooltip: l10n.today,
             onPressed: () {
@@ -150,7 +141,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                   color: Colors.white,
                   size: 22,
                 ),
-                tooltip: AppLocalizations.of(context)!.addALesson,
+                tooltip: l10n.addALesson,
                 constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
                 padding: EdgeInsets.zero,
               ),
@@ -603,6 +594,12 @@ class _WeekGrid extends StatelessWidget {
 
   Widget _buildBody(int hours, double bodyH, double dayWidth, bool isDark) {
     final borderColor = isDark ? SchoolColors.darkBorder : SchoolColors.border;
+    final now = DateTime.now();
+    final nowMin = now.hour * 60 + now.minute;
+    final isCurrentWeek =
+        now.isAfter(weekStart.subtract(const Duration(seconds: 1))) &&
+        now.isBefore(weekStart.add(const Duration(days: 7)));
+
     return SizedBox(
       height: bodyH,
       child: Stack(
@@ -624,6 +621,7 @@ class _WeekGrid extends StatelessWidget {
           Row(
             children: List.generate(7, (dayIndex) {
               final date = weekStart.add(Duration(days: dayIndex));
+              final isToday = _sameDay(date, now);
               final items = resolveDay(
                 date: date,
                 schedules: schedules,
@@ -633,6 +631,13 @@ class _WeekGrid extends StatelessWidget {
                 width: dayWidth,
                 child: Stack(
                   children: [
+                    // Today highlight background
+                    if (isToday)
+                      Positioned.fill(
+                        child: Container(
+                          color: SchoolColors.primary.withValues(alpha: 0.03),
+                        ),
+                      ),
                     // Vertical separator
                     Positioned.fill(
                       child: Container(
@@ -663,6 +668,34 @@ class _WeekGrid extends StatelessWidget {
               );
             }),
           ),
+          // "Now" indicator line
+          if (isCurrentWeek && now.hour >= startHour && now.hour < endHour)
+            Positioned(
+              top: ((nowMin - startHour * 60) / 60) * hourHeight,
+              left: 0,
+              right: 0,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: 2,
+                    color: SchoolColors.primary,
+                  ),
+                  Positioned(
+                    left: (now.weekday - 1) * dayWidth - 4,
+                    top: -4,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: SchoolColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -948,7 +981,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 12.0),
                           child: Text(
-                            'У вас еще нет созданных классов. Создайте класс во вкладке ${AppLocalizations.of(context)!.unknownKey14} trước khi lập lịch.',
+                            l10n.noClassesTeacherDesc,
                             style: const TextStyle(
                               color: SchoolColors.muted,
                               fontSize: 13,
@@ -986,7 +1019,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                     error: (err, stack) => Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: Text(
-                        'Ошибка загрузки классов: $err',
+                        l10n.errorLoadingClasses(err.toString()),
                         style: const TextStyle(
                           color: SchoolColors.red,
                           fontSize: 12,
@@ -1010,8 +1043,8 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                 DropdownButtonFormField<int>(
                   value: _dayOfWeek,
                   decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context)!.dayOfTheWeek,
-                    border: OutlineInputBorder(),
+                    labelText: l10n.dayOfTheWeek,
+                    border: const OutlineInputBorder(),
                   ),
                   items: [
                     DropdownMenuItem(value: 1, child: Text(l10n.monday)),
@@ -1029,8 +1062,8 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                   icon: const Icon(Icons.calendar_today_outlined),
                   label: Text(
                     _oneOffDate == null
-                        ? AppLocalizations.of(context)!.selectDate
-                        : DateFormat('EEE, d MMM', 'ru').format(_oneOffDate!),
+                        ? l10n.selectDate
+                        : DateFormat('EEE, d MMM', l10n.localeName).format(_oneOffDate!),
                   ),
                   onPressed: () async {
                     final picked = await showDatePicker(
@@ -1049,7 +1082,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                 children: [
                   Expanded(
                     child: _TimeField(
-                      label: AppLocalizations.of(context)!.start,
+                      label: l10n.start,
                       value: _start,
                       onChanged: (t) => setState(() => _start = t),
                     ),
@@ -1057,7 +1090,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _TimeField(
-                      label: AppLocalizations.of(context)!.end,
+                      label: l10n.end,
                       value: _end,
                       onChanged: (t) => setState(() => _end = t),
                     ),
@@ -1068,8 +1101,8 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
               TextField(
                 controller: _room,
                 decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.officenote,
-                  border: OutlineInputBorder(),
+                  labelText: l10n.officenote,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               if (_recurring) ...[
@@ -1081,8 +1114,8 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                         icon: const Icon(Icons.start_rounded, size: 18),
                         label: Text(
                           _effectiveFrom == null
-                              ? "Effective from"
-                              : DateFormat('d MMM', 'ru').format(_effectiveFrom!),
+                              ? l10n.effectiveFrom
+                              : DateFormat('d MMM', l10n.localeName).format(_effectiveFrom!),
                           style: const TextStyle(fontSize: 12),
                         ),
                         onPressed: () async {
@@ -1104,8 +1137,8 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                         icon: const Icon(Icons.event_busy_rounded, size: 18),
                         label: Text(
                           _effectiveTo == null
-                              ? "Until"
-                              : DateFormat('d MMM', 'ru').format(_effectiveTo!),
+                              ? l10n.untilDate
+                              : DateFormat('d MMM', l10n.localeName).format(_effectiveTo!),
                           style: const TextStyle(fontSize: 12),
                         ),
                         onPressed: () async {
@@ -1127,7 +1160,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Text("Color override:", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  Text(l10n.colorOverride, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                   const SizedBox(width: 12),
                   for (final hex in ['7C3AED', '059669', 'F97316', 'DC2626'])
                     Padding(
@@ -1169,7 +1202,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                         color: SchoolColors.red,
                       ),
                       label: Text(
-                        l10n.cancel,
+                        l10n.delete,
                         style: const TextStyle(color: SchoolColors.red),
                       ),
                     ),
@@ -1194,20 +1227,21 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
   int _toMin(TimeOfDay t) => t.hour * 60 + t.minute;
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_classId == null || _classId!.isEmpty) {
-      _showErr(AppLocalizations.of(context)!.firstSelectAClass);
+      _showErr(l10n.firstSelectAClass);
       return;
     }
     if (_toMin(_end) <= _toMin(_start)) {
-      _showErr(AppLocalizations.of(context)!.theEndMustBeLater);
+      _showErr(l10n.theEndMustBeLater);
       return;
     }
     if (_recurring && _dayOfWeek == null) {
-      _showErr(AppLocalizations.of(context)!.selectDayOfWeek);
+      _showErr(l10n.selectDayOfWeek);
       return;
     }
     if (!_recurring && _oneOffDate == null) {
-      _showErr(AppLocalizations.of(context)!.selectDate);
+      _showErr(l10n.selectDate);
       return;
     }
 
@@ -1250,12 +1284,12 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.savedSchedule)),
+          SnackBar(content: Text(l10n.savedSchedule)),
         );
         Navigator.of(context).pop();
       }
     } catch (e) {
-      _showErr('Ошибка: $e');
+      _showErr(l10n.errorPrefix(e.toString()));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -1278,7 +1312,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
           FilledButton.tonal(
             style: FilledButton.styleFrom(minimumSize: const Size(100, 44)),
             onPressed: () => Navigator.pop(context, true),
-            child: Text(AppLocalizations.of(context)!.delete),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -1293,7 +1327,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
           context,
         ).showSnackBar(SnackBar(content: Text(l10n.deletedSchedule)));
     } catch (e) {
-      _showErr('Ошибка: $e');
+      _showErr(l10n.errorPrefix(e.toString()));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

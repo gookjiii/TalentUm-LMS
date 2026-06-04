@@ -903,11 +903,24 @@
   "submittedAssignment": "сдал(а) задание",
   "submittedSuccessfully": "Успешно отправлено!",
   "selectClass": "Выбрать класс",
-  "previousWeek": "Предыдущая tuần",
-  "nextWeek": "Следующая tuần",
+  "previousWeek": "Предыдущая неделя",
+  "nextWeek": "Следующая неделя",
   "youHaveNoTasksYet": "У вас пока нет заданий.",
   "upcomingAssignment": "Предстоящее задание",
   "deadline": "Крайний срок",
   "compressPdfTitle": "Сжать PDF (только для файлов > 50МБ)",
-  "compressPdfSubtitle": "Уменьшает размер файла, но может немного снизить качество изображения"
+  "compressPdfSubtitle": "Уменьшает размер файла, но может немного снизить качество изображения",
+  "effectiveFrom": "Действует с",
+  "untilDate": "До",
+  "colorOverride": "Цвет:",
+  "classes": "Классы",
+  "noClassesTeacherDesc": "У вас еще нет созданных классов. Создайте класс во вкладке «Классы» перед составлением расписания.",
+  "errorLoadingClasses": "Ошибка загрузки классов: {error}",
+  "@errorLoadingClasses": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

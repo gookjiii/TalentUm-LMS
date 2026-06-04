@@ -208,10 +208,20 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
               return const Locale('ru');
             },
             builder: (context, child) {
+              final mediaQueryData = MediaQuery.of(context);
+              final isMobile = mediaQueryData.size.width < 700;
+              
               // Force a directionality and default text style to prevent crashes in sub-widgets
               return Directionality(
                 textDirection: TextDirection.ltr,
-                child: child ?? const SizedBox.shrink(),
+                child: MediaQuery(
+                  data: mediaQueryData.copyWith(
+                    textScaler: isMobile 
+                        ? const TextScaler.linear(1.15)
+                        : mediaQueryData.textScaler,
+                  ),
+                  child: child ?? const SizedBox.shrink(),
+                ),
               );
             },
             home: AuthGate(repository: repository, appState: appState),
