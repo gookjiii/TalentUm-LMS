@@ -16,6 +16,8 @@ analyzer:
     - "**/*.rej"
     - "**/*.freezed.dart"
     - "**/*.g.dart"
+    - "packages/flutter_chat_ui/**"
+    - "packages/flutter_firebase_chat_core/**"
   errors:
     deprecated_member_use: ignore
     prefer_const_constructors: ignore
