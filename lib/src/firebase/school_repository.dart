@@ -20,8 +20,8 @@ import 'package:school_world/src/firebase/school_repository_presence.dart';
 import 'package:school_world/src/firebase/school_repository_library.dart';
 import 'package:school_world/src/firebase/school_repository_webinars.dart';
 import 'package:school_world/src/firebase/school_repository_journal.dart';
+import 'package:school_world/src/firebase/school_repository_admin.dart';
 import 'safe_firestore.dart';
-
 
 export 'school_repository_schedules.dart';
 export 'school_repository_feed.dart';
@@ -33,6 +33,7 @@ export 'school_repository_presence.dart';
 export 'school_repository_library.dart';
 export 'school_repository_webinars.dart';
 export 'school_repository_journal.dart';
+export 'school_repository_admin.dart';
 
 class SchoolRepository
     with
@@ -45,7 +46,8 @@ class SchoolRepository
         SchoolRepositoryPresence,
         SchoolRepositoryLibrary,
         SchoolRepositoryWebinars,
-        SchoolRepositoryJournal {
+        SchoolRepositoryJournal,
+        SchoolRepositoryAdmin {
   SchoolRepository({
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
@@ -55,7 +57,9 @@ class SchoolRepository
     GoogleSignIn? googleSignIn,
   }) : auth = auth ?? FirebaseAuth.instance,
        firestore = firestore ?? FirebaseFirestore.instance,
-       functions = functions ?? FirebaseFunctions.instanceFor(region: 'asia-northeast1'),
+       functions =
+           functions ??
+           FirebaseFunctions.instanceFor(region: 'asia-northeast1'),
        storage = storage ?? FirebaseStorage.instance,
        database =
            database ??

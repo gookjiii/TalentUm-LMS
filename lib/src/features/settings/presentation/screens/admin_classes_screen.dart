@@ -5,6 +5,7 @@ import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import '../../../classroom/presentation/screens/bulk_class_create_screen.dart';
+import '../../../../features/roster/presentation/screens/roster_screen.dart';
 
 class AdminClassesScreen extends StatefulWidget {
   const AdminClassesScreen({super.key});
@@ -134,6 +135,15 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
       );
     },
   );
+  }
+
+  void _openRoster(String classId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RosterScreen(classId: classId),
+      ),
+    );
   }
 
   @override
@@ -301,6 +311,7 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                               className: name,
                               onAssignTeacher: () =>
                                   _showTeacherSelectionDialog(id, teacherId),
+                              onOpenRoster: () => _openRoster(id),
                             ),
                           ],
                         ),
@@ -324,23 +335,36 @@ class _ClassActions extends StatelessWidget {
     required this.teacherId,
     required this.className,
     required this.onAssignTeacher,
+    required this.onOpenRoster,
   });
 
   final String classId;
   final String teacherId;
   final String className;
   final VoidCallback onAssignTeacher;
+  final VoidCallback onOpenRoster;
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.tonalIcon(
-      onPressed: onAssignTeacher,
-      style: FilledButton.styleFrom(
-        minimumSize: Size.zero,
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      ),
-      icon: Icon(Icons.person_add_alt_1_rounded, size: 16),
-      label: Text(AppLocalizations.of(context)!.teacher),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton.filledTonal(
+          onPressed: onOpenRoster,
+          icon: Icon(Icons.people_alt_rounded, size: 20),
+          tooltip: AppLocalizations.of(context)!.classRoster,
+        ),
+        SizedBox(width: 8),
+        FilledButton.tonalIcon(
+          onPressed: onAssignTeacher,
+          style: FilledButton.styleFrom(
+            minimumSize: Size.zero,
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          ),
+          icon: Icon(Icons.person_add_alt_1_rounded, size: 16),
+          label: Text(AppLocalizations.of(context)!.teacher),
+        ),
+      ],
     );
   }
 }

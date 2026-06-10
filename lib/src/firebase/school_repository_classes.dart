@@ -30,7 +30,7 @@ mixin SchoolRepositoryClasses {
     final classRef = firestore.collection('classes').doc();
     final classId = classRef.id;
     final now = FieldValue.serverTimestamp();
-    
+
     final classData = {
       'id': classId,
       'name': name,
@@ -44,9 +44,9 @@ mixin SchoolRepositoryClasses {
     };
     if (subject != null) classData['subject'] = subject;
     if (inviteCode != null) classData['inviteCode'] = inviteCode;
-    
+
     batch.set(classRef, classData);
-    
+
     final roomRef = firestore.collection('rooms').doc(classId);
     batch.set(roomRef, {
       'id': classId,
@@ -55,14 +55,12 @@ mixin SchoolRepositoryClasses {
       'createdAt': now,
       'updatedAt': now,
       'userIds': [uid],
-      'metadata': {
-        'classId': classId,
-      }
+      'metadata': {'classId': classId},
     });
 
     final userRef = firestore.collection('users').doc(uid);
     batch.update(userRef, {
-      'classIds': FieldValue.arrayUnion([classId])
+      'classIds': FieldValue.arrayUnion([classId]),
     });
 
     await batch.commit();
@@ -144,6 +142,14 @@ mixin SchoolRepositoryClasses {
         .collection('users')
         .where('email', isEqualTo: email.trim().toLowerCase())
         .limit(5)
+        .get();
+    return snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getAllStudents() async {
+    final snap = await firestore
+        .collection('users')
+        .where('role', isEqualTo: 'student')
         .get();
     return snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
   }

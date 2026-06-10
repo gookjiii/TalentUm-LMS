@@ -64,6 +64,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.send(buffer);
   } catch (error: any) {
     console.error('Error proxying image:', error);
+    if (error.code === 404 || (error.response && error.response.status === 404)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }

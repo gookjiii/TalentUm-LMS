@@ -45,9 +45,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
         final dio = Dio();
         final res = await dio.get(
           '$proxyUrl/api/admin/storage_stats',
-          options: Options(
-            headers: {'Authorization': 'Bearer $apiSecret'},
-          ),
+          options: Options(headers: {'Authorization': 'Bearer $apiSecret'}),
         );
         if (mounted) {
           setState(() {
@@ -67,9 +65,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.confirmCleanup),
-        content: Text(
-          AppLocalizations.of(context)!.confirmCleanupDesc,
-        ),
+        content: Text(AppLocalizations.of(context)!.confirmCleanupDesc),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -94,11 +90,9 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
         final res = await dio.post(
           '$proxyUrl/api/admin/storage_cleanup',
           data: {'dryRun': false},
-          options: Options(
-            headers: {'Authorization': 'Bearer $apiSecret'},
-          ),
+          options: Options(headers: {'Authorization': 'Bearer $apiSecret'}),
         );
-        
+
         final summary = (res.data as Map<String, dynamic>)['summary'];
         final totalFiles = summary['totalFilesDeleted'] ?? 0;
         final totalBytesSaved = summary['totalBytesSaved'] ?? 0;
@@ -107,7 +101,11 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(AppLocalizations.of(context)!.cleanupSuccess(totalFiles.toString(), formattedSize)),
+              content: Text(
+                AppLocalizations.of(
+                  context,
+                )!.cleanupSuccess(totalFiles.toString(), formattedSize),
+              ),
               backgroundColor: SchoolColors.green,
             ),
           );
@@ -118,7 +116,9 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.cleanupFailed(e.toString())),
+            content: Text(
+              AppLocalizations.of(context)!.cleanupFailed(e.toString()),
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -130,7 +130,9 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
 
   String _formatBytes(dynamic bytes, [int decimals = 2]) {
     if (bytes == null) return '0 B';
-    final intBytes = bytes is int ? bytes : (int.tryParse(bytes.toString()) ?? 0);
+    final intBytes = bytes is int
+        ? bytes
+        : (int.tryParse(bytes.toString()) ?? 0);
     if (intBytes <= 0) return '0 B';
     const constSuffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
     final i = (math.log(intBytes) / math.log(1024)).floor();
@@ -152,8 +154,9 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
           children: [
             PageHeader(
               title: AppLocalizations.of(context)!.adminPanel,
-              subtitle: AppLocalizations.of(context)!
-                  .systemManagementAndActivityAnalytics,
+              subtitle: AppLocalizations.of(
+                context,
+              )!.systemManagementAndActivityAnalytics,
               padding: EdgeInsets.all(isMobile ? 16 : 32),
             ),
             Padding(
@@ -167,14 +170,22 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _StatFuture(
-                          future: repo.firestore.collection('users').count().get().then((res) => res.count),
+                          future: repo.firestore
+                              .collection('users')
+                              .count()
+                              .get()
+                              .then((res) => res.count),
                           title: AppLocalizations.of(context)!.totalUsers,
                           icon: Icons.people_rounded,
                           color: SchoolColors.primary,
                         ),
                         const SizedBox(height: 16),
                         _StatFuture(
-                          future: repo.firestore.collection('rooms').count().get().then((res) => res.count),
+                          future: repo.firestore
+                              .collection('rooms')
+                              .count()
+                              .get()
+                              .then((res) => res.count),
                           title: AppLocalizations.of(context)!.activeChats,
                           icon: Icons.chat_bubble_rounded,
                           color: SchoolColors.green,
@@ -183,12 +194,17 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                         _StatFuture(
                           future: repo.firestore
                               .collectionGroup('messages')
-                              .where('createdAt', isGreaterThanOrEqualTo: startOfToday)
+                              .where(
+                                'createdAt',
+                                isGreaterThanOrEqualTo: startOfToday,
+                              )
                               .count()
                               .get()
                               .then((res) => res.count)
                               .catchError((e) {
-                                debugPrint('Missing index for messages today: $e');
+                                debugPrint(
+                                  'Missing index for messages today: $e',
+                                );
                                 return null;
                               }),
                           title: AppLocalizations.of(context)!.postsToday,
@@ -202,7 +218,11 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       children: [
                         Expanded(
                           child: _StatFuture(
-                            future: repo.firestore.collection('users').count().get().then((res) => res.count),
+                            future: repo.firestore
+                                .collection('users')
+                                .count()
+                                .get()
+                                .then((res) => res.count),
                             title: AppLocalizations.of(context)!.totalUsers,
                             icon: Icons.people_rounded,
                             color: SchoolColors.primary,
@@ -211,7 +231,11 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                         const SizedBox(width: 16),
                         Expanded(
                           child: _StatFuture(
-                            future: repo.firestore.collection('rooms').count().get().then((res) => res.count),
+                            future: repo.firestore
+                                .collection('rooms')
+                                .count()
+                                .get()
+                                .then((res) => res.count),
                             title: AppLocalizations.of(context)!.activeChats,
                             icon: Icons.chat_bubble_rounded,
                             color: SchoolColors.green,
@@ -222,12 +246,17 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                           child: _StatFuture(
                             future: repo.firestore
                                 .collectionGroup('messages')
-                                .where('createdAt', isGreaterThanOrEqualTo: startOfToday)
+                                .where(
+                                  'createdAt',
+                                  isGreaterThanOrEqualTo: startOfToday,
+                                )
                                 .count()
                                 .get()
                                 .then((res) => res.count)
                                 .catchError((e) {
-                                  debugPrint('Missing index for messages today: $e');
+                                  debugPrint(
+                                    'Missing index for messages today: $e',
+                                  );
                                   return null;
                                 }),
                             title: AppLocalizations.of(context)!.postsToday,
@@ -239,16 +268,22 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                     ),
 
                   const SizedBox(height: 32),
-                  SectionHeader(title: AppLocalizations.of(context)!.appBranding),
+                  SectionHeader(
+                    title: AppLocalizations.of(context)!.appBranding,
+                  ),
                   const SizedBox(height: 16),
                   _BrandingSettingsCard(),
 
                   const SizedBox(height: 32),
-                  SectionHeader(title: AppLocalizations.of(context)!.cloudStorageManagement),
+                  SectionHeader(
+                    title: AppLocalizations.of(context)!.cloudStorageManagement,
+                  ),
                   const SizedBox(height: 16),
                   _buildStorageManagementCard(),
                   const SizedBox(height: 32),
-                  SectionHeader(title: AppLocalizations.of(context)!.quickActions1),
+                  SectionHeader(
+                    title: AppLocalizations.of(context)!.quickActions1,
+                  ),
                   const SizedBox(height: 16),
                   Wrap(
                     spacing: 16,
@@ -256,8 +291,9 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                     children: [
                       _AdminActionTile(
                         title: AppLocalizations.of(context)!.users,
-                        subtitle:
-                            AppLocalizations.of(context)!.roleManagementAndBan,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        )!.roleManagementAndBan,
                         icon: Icons.manage_accounts_rounded,
                         onTap: () {
                           Navigator.push(
@@ -270,8 +306,9 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       ),
                       _AdminActionTile(
                         title: AppLocalizations.of(context)!.allClasses,
-                        subtitle:
-                            AppLocalizations.of(context)!.reviewAndModeration,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        )!.reviewAndModeration,
                         icon: Icons.school_rounded,
                         onTap: () {
                           Navigator.push(
@@ -283,15 +320,19 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                         },
                       ),
                       _AdminActionTile(
-                        title: AppLocalizations.of(context)!.applicationsForTeachers,
-                        subtitle:
-                            AppLocalizations.of(context)!.moderationOfRequests,
+                        title: AppLocalizations.of(
+                          context,
+                        )!.applicationsForTeachers,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        )!.moderationOfRequests,
                         icon: Icons.how_to_reg_rounded,
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const AdminTeacherRequestsScreen(),
+                              builder: (_) =>
+                                  const AdminTeacherRequestsScreen(),
                             ),
                           );
                         },
@@ -300,7 +341,9 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                   ),
 
                   const SizedBox(height: 32),
-                  SectionHeader(title: AppLocalizations.of(context)!.latestUsers),
+                  SectionHeader(
+                    title: AppLocalizations.of(context)!.latestUsers,
+                  ),
                   const SizedBox(height: 16),
                   FutureBuilder<QuerySnapshot>(
                     future: repo.firestore
@@ -331,7 +374,9 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                             for (int i = 0; i < docs.length; i++) ...[
                               _LogItem(
                                 user: docs[i].get('name') ?? 'User',
-                                action: AppLocalizations.of(context)!.registered,
+                                action: AppLocalizations.of(
+                                  context,
+                                )!.registered,
                                 target: '',
                                 time: _formatTime(docs[i].get('createdAt')),
                                 icon: Icons.person_add_rounded,
@@ -344,6 +389,62 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       );
                     },
                   ),
+
+                  const SizedBox(height: 32),
+                  SectionHeader(
+                    title: AppLocalizations.of(context)!.dangerZone,
+                  ),
+                  const SizedBox(height: 16),
+                  SchoolCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context)!.resetSystem,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: SchoolColors.red,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          AppLocalizations.of(context)!.resetSystemDesc,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: SchoolColors.muted,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _cleaningStorage ? null : _resetSystem,
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              foregroundColor: SchoolColors.red,
+                              side: const BorderSide(color: SchoolColors.red),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.delete_forever_rounded,
+                              size: 18,
+                            ),
+                            label: Text(
+                              AppLocalizations.of(context)!.resetSystem,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 48),
                 ],
               ),
             ),
@@ -351,6 +452,55 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
         ),
       ),
     );
+  }
+
+  Future<void> _resetSystem() async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.confirmReset),
+        content: Text(l10n.resetSystemDesc),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: SchoolColors.red),
+            child: Text(l10n.resetSystem),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _cleaningStorage = true);
+    try {
+      final repo = AppScope.of(context).repository;
+      await repo.resetSystem();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.resetSuccess),
+            backgroundColor: SchoolColors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.resetFailed(e.toString())),
+            backgroundColor: SchoolColors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _cleaningStorage = false);
+    }
   }
 
   String _formatTime(dynamic ts) {
@@ -389,7 +539,8 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
     }
 
     final googleUsed = _storageStats?['googleDrive']?['used'] ?? 0;
-    final googleLimit = _storageStats?['googleDrive']?['limit'] ?? 1; // avoid divide by zero
+    final googleLimit =
+        _storageStats?['googleDrive']?['limit'] ?? 1; // avoid divide by zero
     final googlePct = (googleUsed / googleLimit).clamp(0.0, 1.0);
 
     final cloudinaryUsed = _storageStats?['cloudinary']?['used'] ?? 0;
@@ -463,8 +614,13 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                     )
                   : const Icon(Icons.cleaning_services_rounded, size: 18),
               label: Text(
-                _cleaningStorage ? AppLocalizations.of(context)!.cleaningUpStorage : AppLocalizations.of(context)!.cleanUpRedundantData,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                _cleaningStorage
+                    ? AppLocalizations.of(context)!.cleaningUpStorage
+                    : AppLocalizations.of(context)!.cleanUpRedundantData,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
@@ -502,7 +658,10 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
                   Text(
                     subtitle,
@@ -561,7 +720,10 @@ class _StatFuture extends StatelessWidget {
         final count = snapshot.data;
         return _StatCard(
           title: title,
-          value: snapshot.hasError || (snapshot.connectionState == ConnectionState.done && count == null)
+          value:
+              snapshot.hasError ||
+                  (snapshot.connectionState == ConnectionState.done &&
+                      count == null)
               ? 'Err'
               : (count?.toString() ?? '0'),
           icon: icon,
@@ -662,7 +824,9 @@ class _AdminActionTile extends HookWidget {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeOut,
-              width: MediaQuery.sizeOf(context).width < 600 ? double.infinity : 280,
+              width: MediaQuery.sizeOf(context).width < 600
+                  ? double.infinity
+                  : 280,
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
@@ -796,7 +960,10 @@ class _BrandingSettingsCardState extends State<_BrandingSettingsCard> {
   String? _logoUrl;
 
   Future<void> _pickLogo() async {
-    final result = await FilePicker.pickFiles(withData: true, type: FileType.image);
+    final result = await FilePicker.pickFiles(
+      withData: true,
+      type: FileType.image,
+    );
     if (result == null || result.files.isEmpty) return;
 
     setState(() => _loading = true);
@@ -819,15 +986,19 @@ class _BrandingSettingsCardState extends State<_BrandingSettingsCard> {
 
       setState(() => _logoUrl = downloadUrl);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.logoLoaded)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.logoLoaded)),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.uploadError(e.toString()))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.uploadError(e.toString()),
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -940,14 +1111,22 @@ class _BrandingSettingsCardState extends State<_BrandingSettingsCard> {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(AppLocalizations.of(context)!.settingsSaved),
+                                  content: Text(
+                                    AppLocalizations.of(context)!.settingsSaved,
+                                  ),
                                 ),
                               );
                             }
                           } catch (e) {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(AppLocalizations.of(context)!.errorPrefix(e.toString()))),
+                                SnackBar(
+                                  content: Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.errorPrefix(e.toString()),
+                                  ),
+                                ),
                               );
                             }
                           } finally {
@@ -1018,5 +1197,3 @@ class _LogItem extends StatelessWidget {
     );
   }
 }
-
-

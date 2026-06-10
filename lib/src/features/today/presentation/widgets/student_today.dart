@@ -10,6 +10,8 @@ import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:school_world/main.dart';
+import 'package:sw_design_system/design_system.dart';
+import 'package:school_world/src/utils/responsive_utils.dart';
 
 import 'package:school_world/src/screens/settings_screen.dart';
 import 'package:school_world/src/screens/student_shell.dart';
@@ -81,7 +83,7 @@ class StudentToday extends ConsumerWidget {
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding, vertical: 16),
             child: PageHeader(
               title: '$greeting, $name',
               subtitle: date,
@@ -103,107 +105,83 @@ class StudentToday extends ConsumerWidget {
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 8)),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: FadeIn(
-              delay: const Duration(milliseconds: 60),
-              child: _StatsRow(
-                classCount: classes.length,
-                todayLessons: todaySchedules.length,
-                activeLessons: activeLessons,
-              ),
-            ),
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-        // ── Upcoming class reminder ────────────────────────────────
-        if (upcomingClass != null) ...[
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: FadeIn(
-                delay: const Duration(milliseconds: 80),
-                child: _UpcomingClassReminder(
-                  item: upcomingClass,
-                  className: classInfo[upcomingClass.classId]?.name ?? 'Класс',
+        // ── Bento Grid Section ─────────────────────────────────────
+        SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: _BentoStats(
+                        classCount: classes.length,
+                        todayLessons: todaySchedules.length,
+                        activeLessons: activeLessons,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 3,
+                      child: StreakCard(
+                        classIds: classes.map((c) => (c['id'] ?? '').toString()).toList(),
+                        onTap: onHomeworkTap,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
-        ],
-
-        // ── Streak / homework progress ─────────────────────────────
-        const SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: FadeIn(
-              delay: Duration(milliseconds: 100),
-              child: LearningStreakWidget(),
+                const SizedBox(height: 16),
+                if (upcomingClass != null) ...[
+                  _UpcomingClassReminder(
+                    item: upcomingClass,
+                    className: classInfo[upcomingClass.classId]?.name ?? 'Класс',
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                const LearningStreakWidget(),
+              ],
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 12)),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: FadeIn(
-              delay: const Duration(milliseconds: 120),
-              child: StreakCard(
-                classIds: classes.map((c) => (c['id'] ?? '').toString()).toList(),
-                onTap: onHomeworkTap,
-              ),
-            ),
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+        const SliverToBoxAdapter(child: SizedBox(height: 32)),
 
         // ── Today's classes ───────────────────────────────────────
         if (!showSidebar) ...[
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: FadeIn(
-                delay: const Duration(milliseconds: 160),
-                child: SectionHeader(
-                  title: l10n.todaysClasses.toUpperCase(),
-                  action: l10n.viewAll,
-                  onActionTap: () => onTabSelect(4),
-                ),
+              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+              child: SectionHeader(
+                title: l10n.todaysClasses.toUpperCase(),
+                action: l10n.viewAll,
+                onActionTap: () => onTabSelect(4),
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
           if (todaySchedules.isEmpty)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: FadeIn(
-                  delay: const Duration(milliseconds: 180),
-                  child: SchoolCard(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 32,
-                      horizontal: 16,
-                    ),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          const Icon(Icons.calendar_today_outlined,
-                              size: 32, color: SchoolColors.muted),
-                          const SizedBox(height: 10),
-                          Text(
-                            l10n.noLessonsForToday,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: SchoolColors.muted,
-                            ),
+                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+                child: SwBentoCard(
+                  padding: const EdgeInsets.symmetric(vertical: 48),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.calendar_today_outlined,
+                            size: 32, color: SchoolColors.muted.withOpacity(0.5)),
+                        const SizedBox(height: 12),
+                        Text(
+                          l10n.noLessonsForToday,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: SchoolColors.muted,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -211,7 +189,7 @@ class StudentToday extends ConsumerWidget {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
@@ -220,12 +198,10 @@ class StudentToday extends ConsumerWidget {
                     final info = classInfo[item.classId];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: RepaintBoundary(
-                        child: StudentScheduleCard(
-                          item: item,
-                          className: info?.name ?? 'Класс',
-                          subject: info?.subject ?? '',
-                        ),
+                      child: StudentScheduleCard(
+                        item: item,
+                        className: info?.name ?? 'Класс',
+                        subject: info?.subject ?? '',
                       ),
                     );
                   },
@@ -234,67 +210,125 @@ class StudentToday extends ConsumerWidget {
                 ),
               ),
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
 
         // ── Quick links ───────────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: FadeIn(
-              delay: const Duration(milliseconds: 220),
-              child: SectionHeader(title: l10n.quickLinks),
-            ),
+            padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+            child: SectionHeader(title: l10n.quickLinks),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 12)),
+        const SliverToBoxAdapter(child: SizedBox(height: 16)),
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
           sliver: SliverGrid(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: MediaQuery.sizeOf(context).width >= 700 ? 4 : 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.5,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 1.6,
             ),
             delegate: SliverChildListDelegate([
-              FadeIn(
-                delay: const Duration(milliseconds: 240),
-                child: QuickTile(
-                  onTap: () => onTabSelect(5),
-                  icon: Icons.library_books_outlined,
-                  label: l10n.library,
-                  color: SchoolColors.primary,
-                ),
+              QuickTile(
+                onTap: () => onTabSelect(5),
+                icon: Icons.library_books_outlined,
+                label: l10n.library,
+                color: SchoolColors.primary,
               ),
-              FadeIn(
-                delay: const Duration(milliseconds: 260),
-                child: QuickTile(
-                  onTap: () => onTabSelect(6),
-                  icon: Icons.ondemand_video_outlined,
-                  label: l10n.webinars,
-                  color: SchoolColors.accent,
-                ),
+              QuickTile(
+                onTap: () => onTabSelect(6),
+                icon: Icons.ondemand_video_outlined,
+                label: l10n.webinars,
+                color: SchoolColors.accent,
               ),
-              FadeIn(
-                delay: const Duration(milliseconds: 280),
-                child: QuickTile(
-                  onTap: () => showDialog(
-                    context: context,
-                    builder: (_) => JoinClassDialog(
-                      repository: AppScope.of(context).repository,
-                    ),
+              QuickTile(
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (_) => JoinClassDialog(
+                    repository: AppScope.of(context).repository,
                   ),
-                  icon: Icons.group_add_outlined,
-                  label: l10n.joinAClass,
-                  color: SchoolColors.secondary,
                 ),
+                icon: Icons.group_add_outlined,
+                label: l10n.joinAClass,
+                color: SchoolColors.secondary,
               ),
             ]),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 40)),
+        const SliverToBoxAdapter(child: SizedBox(height: 48)),
       ],
+    );
+  }
+}
+
+class _BentoStats extends StatelessWidget {
+  const _BentoStats({
+    required this.classCount,
+    required this.todayLessons,
+    required this.activeLessons,
+  });
+  final int classCount;
+  final int todayLessons;
+  final int activeLessons;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: SchoolColors.primary,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: SwTheme.diffusionShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$todayLessons',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 40,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -1,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'LESSONS TODAY',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: SchoolColors.accent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$activeLessons ACTIVE',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

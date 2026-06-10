@@ -77,11 +77,15 @@ class _RosterScreenState extends State<RosterScreen> {
 
           return Column(
             children: [
-              _MembersHeader(count: 1 + studentIds.length),
+              _MembersHeader(
+                count: 1 + studentIds.length,
+                classId: effectiveClassId,
+              ),
               Expanded(
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (ScrollNotification scrollInfo) {
-                    if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+                    if (scrollInfo.metrics.pixels >=
+                        scrollInfo.metrics.maxScrollExtent - 200) {
                       setState(() {
                         _visibleCount += 20;
                       });
@@ -166,42 +170,50 @@ class _RosterScreenState extends State<RosterScreen> {
 }
 
 class _MembersHeader extends StatelessWidget {
-  const _MembersHeader({required this.count});
+  const _MembersHeader({required this.count, required this.classId});
   final int count;
+  final String? classId;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final appState = AppScope.of(context).appState;
     final repo = AppScope.of(context).repository;
-    final classId = appState.selectedClassId;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: classId != null 
+      stream: classId != null
           ? repo.firestore.collection('classes').doc(classId).snapshots()
           : const Stream.empty(),
       builder: (context, classSnap) {
-        final className = classSnap.data?.data()?['name']?.toString();
-        
+        final classData = classSnap.data?.data();
+        final className = classData?['name']?.toString();
+        final studentIds = List<String>.from(classData?['studentIds'] ?? []);
+
         return Consumer(
           builder: (context, ref, _) {
-            final allClassAsync = ref.watch(appState.isTeacher ? teacherClassesStreamProvider : studentClassesStreamProvider);
+            final allClassAsync = ref.watch(
+              appState.isTeacher
+                  ? teacherClassesStreamProvider
+                  : studentClassesStreamProvider,
+            );
             final allVisibleClasses = allClassAsync.value ?? [];
-            
+
             return PageHeader(
               title: l10n.classRoster,
               subtitle: l10n.totalParticipants(count),
               classContext: className,
-              onClassContextTap: allVisibleClasses.length > 1 ? () {
-                showClassSwitcher(
-                  context: context,
-                  classes: allVisibleClasses,
-                  currentClassId: classId,
-                  onSelect: (id) {
-                    appState.selectClass(id);
-                  },
-                );
-              } : null,
+              onClassContextTap: allVisibleClasses.length > 1
+                  ? () {
+                      showClassSwitcher(
+                        context: context,
+                        classes: allVisibleClasses,
+                        currentClassId: classId,
+                        onSelect: (id) {
+                          appState.selectClass(id);
+                        },
+                      );
+                    }
+                  : null,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -211,11 +223,17 @@ class _MembersHeader extends StatelessWidget {
                         if (classId != null) {
                           showDialog(
                             context: context,
-                            builder: (_) => _AddStudentDialog(classId: classId),
+                            builder: (_) => _AddStudentDialog(
+                              classId: classId!,
+                              currentStudentIds: studentIds,
+                            ),
                           );
                         }
                       },
-                      icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
+                      icon: const Icon(
+                        Icons.person_add_alt_1_rounded,
+                        size: 20,
+                      ),
                       tooltip: l10n.addAStudent,
                     ),
                   if (appState.isLeadTeacher) ...[
@@ -226,12 +244,16 @@ class _MembersHeader extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ClassSettingsScreen(classId: classId),
+                              builder: (_) =>
+                                  ClassSettingsScreen(classId: classId!),
                             ),
                           );
                         }
                       },
-                      icon: const Icon(Icons.settings_suggest_rounded, size: 20),
+                      icon: const Icon(
+                        Icons.settings_suggest_rounded,
+                        size: 20,
+                      ),
                       tooltip: l10n.classSettings,
                     ),
                   ],
@@ -478,7 +500,9 @@ class _MemberCardState extends State<_MemberCard> {
                         ),
                       ),
                       Text(
-                        widget.isAdmin ? AppLocalizations.of(context)!.administrator : AppLocalizations.of(context)!.participant,
+                        widget.isAdmin
+                            ? AppLocalizations.of(context)!.administrator
+                            : AppLocalizations.of(context)!.participant,
                         style: TextStyle(
                           fontSize: 12,
                           color: widget.isAdmin
@@ -492,62 +516,66 @@ class _MemberCardState extends State<_MemberCard> {
                     ],
                   ),
                 ),
-                  if (appState.isTeacher)
-                    PopupMenuButton<String>(
-                      icon: const Icon(
-                        Icons.more_vert,
-                        size: 20,
-                        color: SchoolColors.muted,
-                      ),
-                      onSelected: (val) {
-                        if (val == 'profile') _showUserInfo(context, data!);
-                        if (val == 'edit_name' && appState.isLeadTeacher) {
-                          _editStudentName(context, data!);
-                        }
-                        if (val == 'admin' && appState.isLeadTeacher) {
-                          widget.onToggleAdmin();
-                        }
-                        if (val == 'remove') widget.onRemove();
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'profile',
-                          child: Text(l10n.profile),
-                        ),
-                        if (appState.isLeadTeacher)
-                          PopupMenuItem(
-                            value: 'edit_name',
-                            child: Text(AppLocalizations.of(context)!.editName),
-                          ),
-                        if (appState.isLeadTeacher)
-                          PopupMenuItem(
-                            value: 'admin',
-                            child: Text(
-                              widget.isAdmin
-                                  ? AppLocalizations.of(context)!.removeAdminRights
-                                  : AppLocalizations.of(context)!.makeAsAdministrator,
-                            ),
-                          ),
-                        PopupMenuItem(
-                          value: 'remove',
-                          child: Text(
-                            l10n.delete,
-                            style: const TextStyle(color: SchoolColors.red),
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    IconButton(
-                      icon: const Icon(
-                        Icons.chevron_right,
-                        size: 20,
-                        color: SchoolColors.muted,
-                      ),
-                      onPressed: data == null
-                          ? null
-                          : () => _showUserInfo(context, data),
+                if (appState.isTeacher)
+                  PopupMenuButton<String>(
+                    icon: const Icon(
+                      Icons.more_vert,
+                      size: 20,
+                      color: SchoolColors.muted,
                     ),
+                    onSelected: (val) {
+                      if (val == 'profile') _showUserInfo(context, data!);
+                      if (val == 'edit_name' && appState.isLeadTeacher) {
+                        _editStudentName(context, data!);
+                      }
+                      if (val == 'admin' && appState.isLeadTeacher) {
+                        widget.onToggleAdmin();
+                      }
+                      if (val == 'remove') widget.onRemove();
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'profile',
+                        child: Text(l10n.profile),
+                      ),
+                      if (appState.isLeadTeacher)
+                        PopupMenuItem(
+                          value: 'edit_name',
+                          child: Text(AppLocalizations.of(context)!.editName),
+                        ),
+                      if (appState.isLeadTeacher)
+                        PopupMenuItem(
+                          value: 'admin',
+                          child: Text(
+                            widget.isAdmin
+                                ? AppLocalizations.of(
+                                    context,
+                                  )!.removeAdminRights
+                                : AppLocalizations.of(
+                                    context,
+                                  )!.makeAsAdministrator,
+                          ),
+                        ),
+                      PopupMenuItem(
+                        value: 'remove',
+                        child: Text(
+                          l10n.delete,
+                          style: const TextStyle(color: SchoolColors.red),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  IconButton(
+                    icon: const Icon(
+                      Icons.chevron_right,
+                      size: 20,
+                      color: SchoolColors.muted,
+                    ),
+                    onPressed: data == null
+                        ? null
+                        : () => _showUserInfo(context, data),
+                  ),
               ],
             ),
           ),
@@ -556,9 +584,14 @@ class _MemberCardState extends State<_MemberCard> {
     );
   }
 
-  Future<void> _editStudentName(BuildContext context, Map<String, dynamic> userData) async {
+  Future<void> _editStudentName(
+    BuildContext context,
+    Map<String, dynamic> userData,
+  ) async {
     final repo = AppScope.of(context).repository;
-    final controller = TextEditingController(text: userData['name']?.toString() ?? '');
+    final controller = TextEditingController(
+      text: userData['name']?.toString() ?? '',
+    );
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -654,7 +687,9 @@ class _MemberCardState extends State<_MemberCard> {
                       ),
                       const SizedBox(height: 4),
                       StatusChip(
-                        label: widget.isAdmin ? AppLocalizations.of(context)!.administrator1 : AppLocalizations.of(context)!.student1,
+                        label: widget.isAdmin
+                            ? AppLocalizations.of(context)!.administrator1
+                            : AppLocalizations.of(context)!.student1,
                         color: widget.isAdmin
                             ? SchoolColors.primary
                             : SchoolColors.green,
@@ -667,7 +702,10 @@ class _MemberCardState extends State<_MemberCard> {
             const SizedBox(height: 24),
             const Divider(),
             const SizedBox(height: 12),
-            _InfoRow(icon: Icons.email_outlined, text: email ?? AppLocalizations.of(context)!.noEmail),
+            _InfoRow(
+              icon: Icons.email_outlined,
+              text: email ?? AppLocalizations.of(context)!.noEmail,
+            ),
             _InfoRow(
               icon: Icons.calendar_today_outlined,
               text: 'Участник с: $dateStr',
@@ -701,44 +739,77 @@ class _InfoRow extends StatelessWidget {
 }
 
 class _AddStudentDialog extends StatefulWidget {
-  const _AddStudentDialog({required this.classId});
+  const _AddStudentDialog({
+    required this.classId,
+    required this.currentStudentIds,
+  });
   final String classId;
+  final List<String> currentStudentIds;
 
   @override
   State<_AddStudentDialog> createState() => _AddStudentDialogState();
 }
 
 class _AddStudentDialogState extends State<_AddStudentDialog> {
-  final _emailController = TextEditingController();
-  List<Map<String, dynamic>> _results = [];
-  bool _searching = false;
+  final _searchController = TextEditingController();
+  List<Map<String, dynamic>> _allAvailableStudents = [];
+  List<Map<String, dynamic>> _displayedStudents = [];
+  bool _loading = true;
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    _loadStudents();
+  }
+
+  @override
   void dispose() {
-    _emailController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _search() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) return;
-    setState(() {
-      _searching = true;
-      _error = null;
-    });
+  Future<void> _loadStudents() async {
     try {
       final repo = AppScope.of(context).repository;
-      final results = await repo.searchUserByEmail(email);
-      setState(() {
-        _results = results;
-        if (results.isEmpty) _error = AppLocalizations.of(context)!.userNotFound;
-      });
+      final allStudents = await repo.getAllStudents();
+      final availableStudents = allStudents.where((student) {
+        final id = student['id'] as String?;
+        return id != null && !widget.currentStudentIds.contains(id);
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _allAvailableStudents = availableStudents;
+          _displayedStudents = availableStudents;
+          _loading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _error = 'Ошибка поиска: $e');
-    } finally {
-      setState(() => _searching = false);
+      if (mounted) {
+        setState(() {
+          _error = 'Ошибка загрузки: $e';
+          _loading = false;
+        });
+      }
     }
+  }
+
+  void _filterStudents(String query) {
+    if (query.trim().isEmpty) {
+      setState(() {
+        _displayedStudents = _allAvailableStudents;
+      });
+      return;
+    }
+    final q = query.trim().toLowerCase();
+    setState(() {
+      _displayedStudents = _allAvailableStudents.where((s) {
+        final name = s['name']?.toString().toLowerCase() ?? '';
+        final email = s['email']?.toString().toLowerCase() ?? '';
+        return name.contains(q) || email.contains(q);
+      }).toList();
+    });
   }
 
   Future<void> _addUser(String userId) async {
@@ -765,52 +836,59 @@ class _AddStudentDialogState extends State<_AddStudentDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-              controller: _emailController,
+              controller: _searchController,
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.studentEmail,
-                hintText: 'student@email.com',
-                suffixIcon: _searching
-                    ? const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : IconButton(
-                        icon: const Icon(Icons.search),
-                        onPressed: _search,
-                      ),
+                labelText: AppLocalizations.of(context)!.search,
+                hintText: AppLocalizations.of(context)!.studentName,
+                prefixIcon: const Icon(Icons.search),
               ),
-              onSubmitted: (_) => _search(),
+              onChanged: _filterStudents,
             ),
-            if (_error != null)
+            const SizedBox(height: 16),
+            if (_loading)
+              const Center(child: CircularProgressIndicator())
+            else if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: Text(
                   _error!,
                   style: const TextStyle(color: SchoolColors.red, fontSize: 13),
                 ),
+              )
+            else if (_displayedStudents.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(AppLocalizations.of(context)!.userNotFound),
+              )
+            else
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _displayedStudents.length,
+                  itemBuilder: (context, index) {
+                    final user = _displayedStudents[index];
+                    return ListTile(
+                      leading: SchoolAvatar(
+                        name: user['name']?.toString() ?? '',
+                        radius: 18,
+                        userId: user['id'] as String?,
+                      ),
+                      title: Text(
+                        user['name']?.toString() ??
+                            AppLocalizations.of(context)!.unknownKey9,
+                      ),
+                      subtitle: Text(
+                        user['email']?.toString() ?? '',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      trailing: FilledButton(
+                        onPressed: () => _addUser(user['id'] as String),
+                        child: Text(AppLocalizations.of(context)!.add),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ..._results.map(
-              (user) => ListTile(
-                leading: SchoolAvatar(
-                  name: user['name']?.toString() ?? '',
-                  radius: 18,
-                  userId: user['id'] as String?,
-                ),
-                title: Text(user['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey9),
-                subtitle: Text(
-                  user['email']?.toString() ?? '',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                trailing: FilledButton(
-                  onPressed: () => _addUser(user['id'] as String),
-                  child: Text(AppLocalizations.of(context)!.add),
-                ),
-              ),
-            ),
           ],
         ),
       ),

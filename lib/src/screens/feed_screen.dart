@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/src/app_state.dart';
 import 'package:school_world/src/firebase/school_repository.dart';
@@ -34,14 +35,12 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final width = MediaQuery.sizeOf(context).width;
-    final isMobile = width < 720;
     final userName =
         widget.repository.auth.currentUser?.displayName ?? AppLocalizations.of(context)!.user;
 
     return Scaffold(
       backgroundColor: SchoolColors.bg,
-      appBar: isMobile ? null : AppBar(title: Text(l10n.feed)),
+      appBar: context.isMobile ? null : AppBar(title: Text(l10n.feed)),
       body: CachedStreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         streamFactory: () => widget.repository.postsForClass(widget.classId),
         keys: [widget.classId],
@@ -54,7 +53,7 @@ class _FeedScreenState extends State<FeedScreen> {
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(context.horizontalPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -63,8 +62,8 @@ class _FeedScreenState extends State<FeedScreen> {
                           Expanded(
                             child: Text(
                               l10n.feed,
-                              style: const TextStyle(
-                                fontSize: 32,
+                              style: TextStyle(
+                                fontSize: context.isMobile ? 28 : 32,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -97,7 +96,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 SliverFillRemaining(child: Center(child: Text(AppLocalizations.of(context)!.empty)))
               else
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       return FutureBuilder<Map<String, dynamic>?>(

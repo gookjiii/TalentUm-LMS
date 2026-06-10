@@ -146,16 +146,42 @@ class AppRadius {
 
 class AppTextStyle {
   const AppTextStyle._();
-  static const labelSm = TextStyle(fontSize: 11, fontWeight: FontWeight.w600);
-  static const labelMd = TextStyle(fontSize: 13, fontWeight: FontWeight.w600);
-  static const bodyMd = TextStyle(fontSize: 15, fontWeight: FontWeight.w500);
-  static const titleSm = TextStyle(fontSize: 18, fontWeight: FontWeight.w700);
-  static const titleLg = TextStyle(fontSize: 24, fontWeight: FontWeight.w800);
   
-  static TextStyle display(BuildContext context) => GoogleFonts.inter(
-        fontSize: 28,
-        fontWeight: FontWeight.w900,
-        letterSpacing: -0.3,
+  static final labelSm = GoogleFonts.inter(
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.1,
+  );
+
+  static final labelMd = GoogleFonts.inter(
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.1,
+  );
+
+  static final bodyMd = GoogleFonts.inter(
+    fontSize: 15,
+    fontWeight: FontWeight.w500,
+    height: 1.5,
+  );
+
+  static final titleSm = GoogleFonts.plusJakartaSans(
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.2,
+  );
+
+  static final titleLg = GoogleFonts.plusJakartaSans(
+    fontSize: 24,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.4,
+  );
+  
+  static TextStyle display(BuildContext context) => GoogleFonts.plusJakartaSans(
+        fontSize: 32,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.8,
+        height: 1.1,
         color: Theme.of(context).colorScheme.onSurface,
       );
 
@@ -218,11 +244,11 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       shadowColor: SchoolColors.border,
       surfaceTintColor: Colors.transparent,
       centerTitle: false,
-      titleTextStyle: GoogleFonts.inter(
+      titleTextStyle: GoogleFonts.plusJakartaSans(
         color: SchoolColors.text,
         fontSize: 22,
-        fontWeight: FontWeight.w900,
-        letterSpacing: -0.3,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.4,
       ).copyWith(fontFamilyFallback: fallbackFonts),
     ),
 
@@ -743,7 +769,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       iconColor: SchoolColors.darkMuted,
       titleTextStyle: GoogleFonts.inter(
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: FontWeight.w600,
         color: SchoolColors.darkText,
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
 import '../app_state.dart';
@@ -22,7 +23,7 @@ class TodayScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: MediaQuery.sizeOf(context).width < 720
+      appBar: context.isMobile
           ? null
           : AppBar(title: Text(l10n.today)),
       body: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -75,7 +76,7 @@ class TodayScreen extends StatelessWidget {
               }
 
               return ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                padding: context.screenPadding,
                 itemCount: assignments.length,
                 itemBuilder: (context, index) {
                   final assignment = assignments[index].data();

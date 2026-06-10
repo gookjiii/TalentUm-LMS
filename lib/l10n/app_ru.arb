@@ -922,5 +922,10 @@
         "type": "String"
       }
     }
-  }
+  },
+  "resetSystem": "Сброс системы",
+  "resetSystemDesc": "Это навсегда удалит tất cả các lớp học, bài tập, tin nhắn và đặt lại liên kết người dùng. Các tài khoản quản trị sẽ được giữ lại.",
+  "confirmReset": "Подтвердить сброс",
+  "resetSuccess": "Система успешно сброшена!",
+  "resetFailed": "Ошибка сброса системы: {error}"
 }

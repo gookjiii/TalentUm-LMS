@@ -2358,4 +2358,21 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get colorOverride => 'Цвет:';
+
+  @override
+  String get resetSystem => 'Сброс системы';
+
+  @override
+  String get resetSystemDesc => 'Это навсегда удалит tất cả các lớp học, bài tập, tin nhắn và đặt lại liên kết người dùng. Các tài khoản quản trị sẽ được giữ lại.';
+
+  @override
+  String get confirmReset => 'Подтвердить сброс';
+
+  @override
+  String get resetSuccess => 'Система успешно сброшена!';
+
+  @override
+  String resetFailed(Object error) {
+    return 'Ошибка сброса системы: $error';
+  }
 }

@@ -1,11 +1,13 @@
 import 'package:school_world/l10n/app_localizations.dart';
 import '../utils/string_extensions.dart';
+import '../utils/responsive_utils.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../main.dart';
 import '../theme.dart';
@@ -184,7 +186,7 @@ class SchoolCard extends HookWidget {
     this.margin,
     this.onTap,
     this.color,
-    this.borderRadius = 20,
+    this.borderRadius = 24, // Unified larger radius
     this.borderColor,
     this.boxShadow,
   });
@@ -203,7 +205,7 @@ class SchoolCard extends HookWidget {
     final isHovered = useState(false);
     final resolvedPadding =
         padding ??
-        (MediaQuery.sizeOf(context).width < 600
+        (context.isMobile
             ? const EdgeInsets.all(16)
             : const EdgeInsets.all(24));
     final isPressed = useState(false);
@@ -223,10 +225,9 @@ class SchoolCard extends HookWidget {
     Matrix4 transform = Matrix4.identity();
     if (onTap != null && !AppScope.of(context).appState.performanceMode) {
       if (isPressed.value) {
-        transform.scale(0.97); // Bouncy scale down
+        transform.scale(0.97); // Tactile push feedback
       } else if (isHovered.value) {
-        transform.translate(0.0, -4.0, 0.0); // Pull up on hover
-        transform.scale(1.01); // Subtle scale up
+        transform.translate(0.0, -4.0, 0.0); // Premium hover pull
       }
     }
 
@@ -257,7 +258,7 @@ class SchoolCard extends HookWidget {
                     if (isHovered.value && onTap != null && !isPressed.value)
                       SchoolColors.cardShadowHover
                     else
-                      SchoolColors.cardShadow,
+                      SchoolColors.cardShadow, // Uses the updated diffusion shadow
                   ],
           ),
           child: Material(
@@ -942,13 +943,13 @@ class SectionHeader extends StatelessWidget {
         Expanded(
           child: Text(
             title.toUpperCase(),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
               color: Theme.of(
                 context,
-              ).colorScheme.onSurface.withValues(alpha: 0.45),
-              letterSpacing: 1.1,
+              ).colorScheme.onSurface.withValues(alpha: 0.4),
+              letterSpacing: 1.2,
             ),
           ),
         ),
@@ -965,10 +966,11 @@ class SectionHeader extends StatelessWidget {
               ),
               child: Text(
                 action!,
-                style: const TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                   color: SchoolColors.primary,
+                  letterSpacing: -0.2,
                 ),
               ),
             ),
@@ -1726,8 +1728,15 @@ class PageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final topPadding = MediaQuery.paddingOf(context).top;
+    
     return Padding(
-      padding: padding ?? const EdgeInsets.fromLTRB(20, 56, 20, 16),
+      padding: padding ?? EdgeInsets.fromLTRB(
+        context.isMobile ? 16 : 24, 
+        topPadding + (context.isMobile ? 16 : 24), 
+        context.isMobile ? 16 : 24, 
+        16
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -1753,12 +1762,13 @@ class PageHeader extends StatelessWidget {
                         subtitle!,
                         style:
                             subtitleStyle ??
-                            TextStyle(
+                            GoogleFonts.inter(
                               color: isDark
                                   ? SchoolColors.darkMuted
                                   : SchoolColors.muted,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
                             ),
                       ),
                       const SizedBox(height: 4),
@@ -1767,11 +1777,11 @@ class PageHeader extends StatelessWidget {
                       title,
                       style:
                           titleStyle ??
-                          TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
+                          GoogleFonts.outfit(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
                             height: 1.1,
-                            letterSpacing: -0.5,
+                            letterSpacing: -1.0, // Tighter tracking
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                     ),
@@ -1796,11 +1806,11 @@ class _ContextBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const color = SchoolColors.primary;
+    final color = Theme.of(context).colorScheme.primary;
     final widget = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
       ),
@@ -1815,11 +1825,11 @@ class _ContextBadge extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 10.5,
+            style: GoogleFonts.inter(
+              fontSize: 10,
               fontWeight: FontWeight.w900,
-              color: SchoolColors.primary,
-              letterSpacing: 0.5,
+              color: color,
+              letterSpacing: 1.0,
             ),
           ),
           if (onTap != null) ...[

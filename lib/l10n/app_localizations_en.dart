@@ -2358,4 +2358,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get colorOverride => 'Color override:';
+
+  @override
+  String get resetSystem => 'Reset System';
+
+  @override
+  String get resetSystemDesc => 'This will permanently delete all classes, assignments, messages, and reset user associations. Admin accounts will be preserved.';
+
+  @override
+  String get confirmReset => 'Confirm Reset';
+
+  @override
+  String get resetSuccess => 'System reset successfully!';
+
+  @override
+  String resetFailed(Object error) {
+    return 'System reset failed: $error';
+  }
 }

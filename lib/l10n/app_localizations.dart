@@ -4696,6 +4696,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Color override:'**
   String get colorOverride;
+
+  /// No description provided for @resetSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset System'**
+  String get resetSystem;
+
+  /// No description provided for @resetSystemDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete all classes, assignments, messages, and reset user associations. Admin accounts will be preserved.'**
+  String get resetSystemDesc;
+
+  /// No description provided for @confirmReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Reset'**
+  String get confirmReset;
+
+  /// No description provided for @resetSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'System reset successfully!'**
+  String get resetSuccess;
+
+  /// No description provided for @resetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'System reset failed: {error}'**
+  String resetFailed(Object error);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

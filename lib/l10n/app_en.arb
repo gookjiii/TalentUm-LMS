@@ -931,5 +931,10 @@
         "type": "String"
       }
     }
-  }
+  },
+  "resetSystem": "Reset System",
+  "resetSystemDesc": "This will permanently delete all classes, assignments, messages, and reset user associations. Admin accounts will be preserved.",
+  "confirmReset": "Confirm Reset",
+  "resetSuccess": "System reset successfully!",
+  "resetFailed": "System reset failed: {error}"
 }

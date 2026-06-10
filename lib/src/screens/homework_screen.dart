@@ -1,4 +1,5 @@
 import 'package:school_world/src/widgets/school_widgets.dart';
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,7 @@ class HomeworkScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: MediaQuery.sizeOf(context).width < 720
+      appBar: context.isMobile
           ? null
           : AppBar(
               title: Text(l10n.homework),
@@ -70,7 +71,7 @@ class HomeworkScreen extends StatelessWidget {
             );
           }
           return ListView.separated(
-            padding: const EdgeInsets.all(12),
+            padding: context.screenPadding,
             itemCount: docs.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, i) {
