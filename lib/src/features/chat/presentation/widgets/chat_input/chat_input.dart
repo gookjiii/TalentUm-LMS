@@ -1,6 +1,7 @@
 import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -255,44 +256,54 @@ class _ChatInputState extends State<ChatInput> {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        isMobile ? 4 : 16,
+        isMobile ? 8 : 16,
         isMobile ? 4 : 12,
-        isMobile ? 4 : 16,
-        (isMobile ? 6 : 16) + MediaQuery.paddingOf(context).bottom,
+        isMobile ? 8 : 16,
+        (isMobile ? 8 : 16) + MediaQuery.paddingOf(context).bottom,
       ),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFFFF),
+          color: isDark 
+              ? const Color(0xFF09090B).withValues(alpha: 0.65) 
+              : const Color(0xFFFFFFFF).withValues(alpha: 0.75),
           borderRadius: BorderRadius.circular(isMobile ? 24 : 32),
           border: Border.all(
             color: isFocused
-                ? SchoolColors.primary.withValues(alpha: 0.5)
-                : (isDark ? const Color(0xFF334155) : const Color(0xFFE4ECFC)),
+                ? SchoolColors.primary.withValues(alpha: 0.4)
+                : (isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7)).withValues(alpha: 0.5),
             width: isFocused ? 1.5 : 1.0,
           ),
-          boxShadow: isFocused
-              ? [
-                  BoxShadow(
-                    color: SchoolColors.primary.withValues(alpha: isDark ? 0.25 : 0.15),
-                    blurRadius: 20,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+          boxShadow: [
+            if (isFocused)
+              BoxShadow(
+                color: SchoolColors.primary.withValues(alpha: 0.15),
+                blurRadius: 24,
+                spreadRadius: 2,
+                offset: const Offset(0, 8),
+              )
+            else
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                blurRadius: 16,
+                spreadRadius: -4,
+                offset: const Offset(0, 4),
+              ),
+          ],
         ),
-        padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 4 : 2,
-          vertical: isMobile ? 2 : 6,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(isMobile ? 24 : 32),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 6 : 8,
+                vertical: isMobile ? 6 : 8,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
               switchInCurve: Curves.easeOutCubic,
@@ -348,8 +359,8 @@ class _ChatInputState extends State<ChatInput> {
                         : Icons.add_circle_outline_rounded,
                     color: isEditing
                         ? theme.colorScheme.onSurfaceVariant.withOpacity(0.3)
-                        : theme.colorScheme.primary,
-                    size: isMobile ? 28 : 24,
+                        : theme.colorScheme.primary.withOpacity(0.85),
+                    size: isMobile ? 26 : 28,
                   ),
                   tooltip: AppLocalizations.of(context)!.attach,
                   padding: EdgeInsets.all(isMobile ? 8 : 10),
@@ -397,8 +408,8 @@ class _ChatInputState extends State<ChatInput> {
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(
-                          vertical: isMobile ? 10 : 12,
-                          horizontal: 8,
+                          vertical: isMobile ? 12 : 14,
+                          horizontal: 12,
                         ),
                         isDense: true,
                       ),
@@ -444,52 +455,54 @@ class _ChatInputState extends State<ChatInput> {
                               onLongPressCancel: isEditing || !isMobile
                                   ? null
                                   : () => _stopRecording(cancel: true),
-                              child: IconButton(
-                                onPressed: isEditing
-                                    ? null
-                                    : () {
-                                        if (_isRecording) {
-                                          // Desktop/web tap-to-stop
-                                          _stopRecording();
-                                        } else if (!isMobile) {
-                                          // Desktop/web tap-to-start
-                                          _startRecording();
-                                        } else {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                AppLocalizations.of(
-                                                  context,
-                                                )!.holdToRecordVoice,
+                              child: Padding(
+                                padding: const EdgeInsets.all(2),
+                                child: IconButton(
+                                  onPressed: isEditing
+                                      ? null
+                                      : () {
+                                          if (_isRecording) {
+                                            // Desktop/web tap-to-stop
+                                            _stopRecording();
+                                          } else if (!isMobile) {
+                                            // Desktop/web tap-to-start
+                                            _startRecording();
+                                          } else {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  AppLocalizations.of(
+                                                    context,
+                                                  )!.holdToRecordVoice,
+                                                ),
+                                                duration: const Duration(
+                                                  seconds: 1,
+                                                ),
                                               ),
-                                              duration: const Duration(
-                                                seconds: 1,
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                icon: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 180),
-                                  child: Icon(
-                                    _isRecording
-                                        ? Icons.stop_rounded
-                                        : Icons.mic_rounded,
-                                    key: ValueKey(_isRecording),
+                                            );
+                                          }
+                                        },
+                                  icon: AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 180),
+                                    child: Icon(
+                                      _isRecording
+                                          ? Icons.stop_rounded
+                                          : Icons.mic_rounded,
+                                      key: ValueKey(_isRecording),
+                                      size: 26,
+                                    ),
+                                  ),
+                                  color: _isRecording
+                                      ? Colors.red
+                                      : theme.colorScheme.primary.withOpacity(0.85),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 42,
+                                    minHeight: 42,
                                   ),
                                 ),
-                                color: _isRecording
-                                    ? Colors.red
-                                    : theme.colorScheme.primary,
-                                padding: EdgeInsets.all(isMobile ? 4 : 8),
-                                constraints: isMobile
-                                    ? const BoxConstraints(
-                                        minWidth: 32,
-                                        minHeight: 32,
-                                      )
-                                    : null,
                               ),
                             )
                           : Padding(
@@ -506,7 +519,10 @@ class _ChatInputState extends State<ChatInput> {
                 ),
               ],
             ),
-          ],
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
