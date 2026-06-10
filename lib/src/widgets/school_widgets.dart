@@ -1749,11 +1749,15 @@ class PageHeader extends StatelessWidget {
             ),
             const SizedBox(height: 12),
           ],
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
+          SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              runSpacing: 16,
+              spacing: 16,
+              children: [
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1787,9 +1791,9 @@ class PageHeader extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-              if (trailing != null) ...[const SizedBox(width: 12), trailing!],
-            ],
+                if (trailing != null) trailing!,
+              ],
+            ),
           ),
         ],
       ),
