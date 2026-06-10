@@ -456,6 +456,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
 
   Future<void> _resetSystem() async {
     final l10n = AppLocalizations.of(context)!;
+    final repo = AppScope.of(context).repository;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -479,7 +480,6 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
 
     setState(() => _cleaningStorage = true);
     try {
-      final repo = AppScope.of(context).repository;
       await repo.resetSystem();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
