@@ -496,8 +496,8 @@ class _AttentionSubmissionRow extends StatelessWidget {
         builder: (context, setState) => AlertDialog(
           title: Text('Проверка работы: $studentName'),
           content: SingleChildScrollView(
-            child: SizedBox(
-              width: 500,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,

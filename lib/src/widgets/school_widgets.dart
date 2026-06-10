@@ -938,10 +938,15 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
+    return SizedBox(
+      width: double.infinity,
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        runSpacing: 4,
+        spacing: 8,
+        children: [
+          Text(
             title.toUpperCase(),
             style: GoogleFonts.inter(
               fontSize: 10,
@@ -952,12 +957,11 @@ class SectionHeader extends StatelessWidget {
               letterSpacing: 1.2,
             ),
           ),
-        ),
-        if (action != null && action!.isNotEmpty)
-          Semantics(
-            label: action,
-            button: true,
-            child: TextButton(
+          if (action != null && action!.isNotEmpty)
+            Semantics(
+              label: action,
+              button: true,
+              child: TextButton(
               onPressed: onActionTap,
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 12),

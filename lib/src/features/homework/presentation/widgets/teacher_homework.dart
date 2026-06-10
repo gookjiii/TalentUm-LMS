@@ -265,8 +265,8 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
         builder: (context, setState) => AlertDialog(
           title: Text(AppLocalizations.of(context)!.createATask),
           content: SingleChildScrollView(
-            child: SizedBox(
-              width: 450,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 450),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1336,8 +1336,8 @@ class _SubmissionRowState extends State<_SubmissionRow> {
         builder: (context, setState) => AlertDialog(
           title: Text('Проверка работы: $studentName'),
           content: SingleChildScrollView(
-            child: SizedBox(
-              width: 500,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
