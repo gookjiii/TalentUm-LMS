@@ -924,7 +924,7 @@
     }
   },
   "resetSystem": "Сброс системы",
-  "resetSystemDesc": "Это навсегда удалит tất cả các lớp học, bài tập, tin nhắn và đặt lại liên kết người dùng. Các tài khoản quản trị sẽ được giữ lại.",
+  "resetSystemDesc": "Это навсегда удалит все классы, задания, сообщения и сбросит связи пользователей. Учетные записи администраторов будут сохранены.",
   "confirmReset": "Подтвердить сброс",
   "resetSuccess": "Система успешно сброшена!",
   "resetFailed": "Ошибка сброса системы: {error}"
