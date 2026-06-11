@@ -258,7 +258,8 @@ class SchoolCard extends HookWidget {
                     if (isHovered.value && onTap != null && !isPressed.value)
                       SchoolColors.cardShadowHover
                     else
-                      SchoolColors.cardShadow, // Uses the updated diffusion shadow
+                      SchoolColors
+                          .cardShadow, // Uses the updated diffusion shadow
                   ],
           ),
           child: Material(
@@ -394,7 +395,9 @@ class GlassCard extends StatelessWidget {
                           ],
                         ),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.4),
+                          color: Colors.white.withValues(
+                            alpha: isDark ? 0.08 : 0.4,
+                          ),
                           width: 1.0,
                         ),
                       ),
@@ -962,24 +965,25 @@ class SectionHeader extends StatelessWidget {
               label: action,
               button: true,
               child: TextButton(
-              onPressed: onActionTap,
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                minimumSize: const Size(44, 44),
-                tapTargetSize: MaterialTapTargetSize.padded,
-              ),
-              child: Text(
-                action!,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: SchoolColors.primary,
-                  letterSpacing: -0.2,
+                onPressed: onActionTap,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  minimumSize: const Size(44, 44),
+                  tapTargetSize: MaterialTapTargetSize.padded,
+                ),
+                child: Text(
+                  action!,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: SchoolColors.primary,
+                    letterSpacing: -0.2,
+                  ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1733,14 +1737,16 @@ class PageHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final topPadding = MediaQuery.paddingOf(context).top;
-    
+
     return Padding(
-      padding: padding ?? EdgeInsets.fromLTRB(
-        context.isMobile ? 16 : 24, 
-        topPadding + (context.isMobile ? 16 : 24), 
-        context.isMobile ? 16 : 24, 
-        16
-      ),
+      padding:
+          padding ??
+          EdgeInsets.fromLTRB(
+            context.isMobile ? 16 : 24,
+            topPadding + (context.isMobile ? 16 : 24),
+            context.isMobile ? 16 : 24,
+            16,
+          ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -2082,10 +2088,16 @@ class FadeInUp extends HookWidget {
     if (AppScope.of(context).appState.performanceMode) return child;
 
     final controller = useAnimationController(duration: duration);
-    final animation = CurvedAnimation(parent: controller, curve: Curves.easeOutCubic);
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: Curves.easeOutCubic,
+    );
 
     final opacity = Tween<double>(begin: 0.0, end: 1.0).animate(animation);
-    final translateY = Tween<double>(begin: offset, end: 0.0).animate(animation);
+    final translateY = Tween<double>(
+      begin: offset,
+      end: 0.0,
+    ).animate(animation);
 
     useEffect(() {
       Future.delayed(delay, () {
