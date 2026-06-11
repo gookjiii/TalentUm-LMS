@@ -1,0 +1,46 @@
+name: Deploy Feature Branch to Firebase Hosting Preview
+
+on:
+  push:
+    branches:
+      - 'feature/gemini-ui-ux-upgrade'
+
+env:
+  FLUTTER_CHANNEL: 'stable'
+
+jobs:
+  build_and_preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Build Web (release)
+        run: |
+          flutter build web --release \
+            --dart-define=GOOGLE_DRIVE_PROXY_URL="https://vercel-talentum-backend.vercel.app" \
+            --dart-define=CLOUDINARY_CLOUD_NAME=dp50nlimq \
+            --dart-define=CLOUDINARY_UPLOAD_PRESET=schoolWorld \
+            --dart-define=APP_API_SECRET=talentum2026secret
+
+      - name: Deploy to Firebase Hosting (Preview Channel)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: preview-gemini-ui
+          expires: 7d
+          projectId: school-wolrd
+          target: talentum
