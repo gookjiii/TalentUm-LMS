@@ -1,488 +1,250 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:school_world/l10n/app_localizations.dart';
-
 import '../../main.dart';
 import '../theme.dart';
+import '../widgets/school_widgets.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends HookWidget {
   const OnboardingScreen({super.key});
-
-  @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
-}
-
-class _OnboardingScreenState extends State<OnboardingScreen>
-    with SingleTickerProviderStateMixin {
-  final _codeController = TextEditingController();
-  Map<String, dynamic>? _previewData;
-  bool _loading = false;
-  String? _codeError;
-
-  late AnimationController _previewAnimCtrl;
-  late Animation<double> _previewOpacity;
-  late Animation<Offset> _previewSlide;
-
-  @override
-  void initState() {
-    super.initState();
-    _previewAnimCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 420),
-    );
-    _previewOpacity = CurvedAnimation(
-      parent: _previewAnimCtrl,
-      curve: Curves.easeOut,
-    );
-    _previewSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-        .animate(
-          CurvedAnimation(parent: _previewAnimCtrl, curve: Curves.easeOutCubic),
-        );
-  }
-
-  @override
-  void dispose() {
-    _codeController.dispose();
-    _previewAnimCtrl.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final codeController = useTextEditingController();
+    final previewData = useState<Map<String, dynamic>?>(null);
+    final loading = useState<bool>(false);
+    final codeError = useState<String?>(null);
+
+    final animCtrl = useAnimationController(duration: const Duration(milliseconds: 500));
+    final fadeAnim = useMemoized(() => CurvedAnimation(parent: animCtrl, curve: Curves.easeIn), [animCtrl]);
+    final slideAnim = useMemoized(() => Tween<Offset>(begin: const Offset(0.0, 0.15), end: Offset.zero)
+        .animate(CurvedAnimation(parent: animCtrl, curve: const ElasticOutCurve(0.95))), [animCtrl]);
+
+    useEffect(() {
+      if (previewData.value != null) animCtrl.forward(from: 0.0);
+      return null;
+    }, [previewData.value]);
+
+    Future<void> previewClass() async {
+      final code = codeController.text.trim();
+      if (code.isEmpty) {
+        codeError.value = l10n.enterInvitationCode;
+        return;
+      }
+      loading.value = true;
+      codeError.value = null;
+      try {
+        final repo = AppScope.of(context).repository;
+        final data = await repo.validateInviteCode(code.toUpperCase());
+        previewData.value = data;
+      } catch (_) {
+        codeError.value = l10n.codeNotFoundCheckAnd;
+        previewData.value = null;
+      } finally {
+        loading.value = false;
+      }
+    }
+
+    Future<void> joinClass() async {
+      if (previewData.value == null) return;
+      loading.value = true;
+      try {
+        final repo = AppScope.of(context).repository;
+        final user = repo.auth.currentUser;
+        if (user == null) return;
+
+        await repo.createProfile(
+          role: 'student',
+          name: user.displayName ?? user.email?.split('@').first ?? l10n.student,
+        );
+
+        final result = await repo.joinClass(previewData.value!['classId'].toString());
+        
+        if (context.mounted) {
+          AppScope.of(context).appState.selectClass(result['classId'].toString());
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      } finally {
+        loading.value = false;
+      }
+    }
+
     return Scaffold(
-      backgroundColor: isDark ? SchoolColors.darkBg : const Color(0xFFF5F7FF),
+      backgroundColor: isDark ? SchoolColors.darkBg : const Color(0xFFF9FAFC),
       body: Stack(
         children: [
-          // Decorative background blobs
           Positioned(
             top: -100,
-            right: -80,
+            right: -100,
             child: Container(
-              width: 300,
-              height: 300,
+              width: 320,
+              height: 320,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: SchoolColors.primary.withValues(alpha: 0.06),
+                gradient: RadialGradient(
+                  colors: [SchoolColors.primary.withValues(alpha: 0.08), Colors.transparent],
+                ),
               ),
             ),
           ),
-          Positioned(
-            bottom: 80,
-            left: -80,
-            child: Container(
-              width: 220,
-              height: 220,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: SchoolColors.secondary.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-          // Main content
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(28),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
+                  constraints: const BoxConstraints(maxWidth: 480),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 20),
-                      // Pill label
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: SchoolColors.primaryContainer,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.school_rounded,
-                                size: 15,
-                                color: SchoolColors.primary,
-                              ),
-                              const SizedBox(width: 7),
-                              Text(
-                                l10n.studentPortalTerm3,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: SchoolColors.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        l10n.joinYourFirstClass,
-                        style: const TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.8,
-                          height: 1.1,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        l10n.joinFirstClassDesc,
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: isDark
-                              ? SchoolColors.darkTextSecondary
-                              : SchoolColors.textSecondary,
-                          height: 1.55,
-                        ),
-                      ),
-                      const SizedBox(height: 36),
-
-                      // Invite code field
-                      TextField(
-                        controller: _codeController,
-                        textCapitalization: TextCapitalization.characters,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 3,
-                        ),
-                        onChanged: (_) {
-                          if (_codeError != null) {
-                            setState(() => _codeError = null);
-                          }
-                        },
-                        decoration: InputDecoration(
-                          labelText: l10n.inviteCode,
-                          hintText: 'ABC123',
-                          prefixIcon: const Icon(
-                            Icons.key_rounded,
-                            color: SchoolColors.primary,
-                          ),
-                          errorText: _codeError,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Preview button
-                      OutlinedButton.icon(
-                        onPressed: _loading ? null : _previewClass,
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                            color: SchoolColors.primary,
-                            width: 1.5,
-                          ),
-                        ),
-                        icon: _loading
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.search_rounded),
-                        label: Text(l10n.previewClassAction),
-                      ),
-
-                      // Animated class preview card
-                      if (_previewData != null) ...[
-                        const SizedBox(height: 20),
-                        FadeTransition(
-                          opacity: _previewOpacity,
-                          child: SlideTransition(
-                            position: _previewSlide,
-                            child: _ClassPreviewCard(data: _previewData!),
-                          ),
-                        ),
-                      ],
-
-                      const SizedBox(height: 28),
-
-                      // Join button
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: SchoolColors.primary.withValues(
-                                alpha: (_previewData != null && !_loading) ? 0.3 : 0.0,
-                              ),
-                              blurRadius: (_previewData != null && !_loading) ? 20 : 0,
-                              offset: (_previewData != null && !_loading)
-                                  ? const Offset(0, 6)
-                                  : Offset.zero,
+                          color: SchoolColors.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: SchoolColors.primary.withValues(alpha: 0.15), width: 1.2),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.auto_awesome_rounded, size: 13, color: SchoolColors.primary),
+                            const SizedBox(width: 6),
+                            Text(
+                              l10n.studentPortalTerm3.toUpperCase(),
+                              style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w900, color: SchoolColors.primary, letterSpacing: 1.0),
                             ),
                           ],
                         ),
-                        child: FilledButton.icon(
-                          onPressed: (_previewData == null || _loading)
-                              ? null
-                              : _onJoinClass,
-                          icon: _loading
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(Icons.login_rounded),
-                          label: Text(l10n.joinClass),
+                      ),
+                      const SizedBox(height: 28),
+                      Text(l10n.joinYourFirstClass, style: AppTextStyle.display(context).copyWith(fontSize: 34, fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 12),
+                      Text(l10n.joinFirstClassDesc, style: AppTextStyle.bodyMd.copyWith(color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary, height: 1.55)),
+                      const SizedBox(height: 36),
+                      Text(l10n.inviteCode.toUpperCase(), style: AppTextStyle.labelSm.copyWith(color: isDark ? SchoolColors.darkMuted : SchoolColors.muted, letterSpacing: 0.8)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: codeController,
+                        textCapitalization: TextCapitalization.characters,
+                        inputFormatters: [LengthLimitingTextInputFormatter(12)],
+                        style: GoogleFonts.jetBrainsMono(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: 4, color: isDark ? Colors.white : SchoolColors.text),
+                        onChanged: (_) { if (codeError.value != null) codeError.value = null; },
+                        decoration: InputDecoration(
+                          hintText: 'ABCD-1234',
+                          errorText: codeError.value,
+                          prefixIcon: const Icon(Icons.key_rounded, size: 20, color: SchoolColors.primary),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                         ),
                       ),
-
                       const SizedBox(height: 16),
-
-                      // Teacher link
-                      TextButton(
-                        onPressed: _createTeacherProfile,
-                        child: RichText(
-                          textAlign: TextAlign.center,
-                          text: TextSpan(
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isDark
-                                  ? SchoolColors.darkTextSecondary
-                                  : SchoolColors.textSecondary,
-                            ),
-                            children: [
-                              TextSpan(text: AppLocalizations.of(context)!.areYouATeacher),
-                              TextSpan(
-                                text: AppLocalizations.of(context)!.loginAsTeacher,
-                                style: TextStyle(
-                                  color: SchoolColors.primary,
-                                  fontWeight: FontWeight.w700,
+                      _TactileSpringButton(
+                        onTap: loading.value ? null : previewClass,
+                        child: Container(
+                          height: 52,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: SchoolColors.primary.withValues(alpha: 0.4), width: 1.5),
+                          ),
+                          alignment: Alignment.center,
+                          child: loading.value
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.search_rounded, size: 18, color: SchoolColors.primary),
+                                    const SizedBox(width: 8),
+                                    Text(l10n.previewClassAction, style: AppTextStyle.labelMd.copyWith(color: SchoolColors.primary, fontWeight: FontWeight.w700)),
+                                  ],
                                 ),
+                        ),
+                      ),
+                      if (previewData.value != null) ...[
+                        const SizedBox(height: 24),
+                        FadeTransition(
+                          opacity: fadeAnim,
+                          child: SlideTransition(
+                            position: slideAnim,
+                            child: GlassCard(
+                              padding: const EdgeInsets.all(20),
+                              borderRadius: 20,
+                              child: Row(
+                                children: [
+                                  ClassBadge(name: previewData.value!['className']?.toString() ?? '?', color: SchoolColors.primary, size: 56, radius: 14),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(previewData.value!['className']?.toString() ?? '', style: AppTextStyle.titleSm.copyWith(fontWeight: FontWeight.w900, color: isDark ? Colors.white : SchoolColors.text)),
+                                        const SizedBox(height: 4),
+                                        Text(l10n.teacherLabel(previewData.value!['teacherName']?.toString() ?? ''), style: AppTextStyle.bodyMd.copyWith(fontSize: 13, color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary)),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: const BoxDecoration(color: SchoolColors.green, shape: BoxShape.circle),
+                                    child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
+                      ],
+                      const SizedBox(height: 32),
+                      _TactileSpringButton(
+                        onTap: (previewData.value == null || loading.value) ? null : joinClass,
+                        child: Container(
+                          height: 54,
+                          decoration: BoxDecoration(
+                            color: previewData.value != null ? SchoolColors.primary : (isDark ? SchoolColors.darkBorder : SchoolColors.border),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: previewData.value != null ? [SchoolColors.cardShadowHover] : null,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(l10n.joinClass.toUpperCase(), style: AppTextStyle.labelMd.copyWith(color: previewData.value != null ? Colors.white : SchoolColors.muted, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                        ),
                       ),
-                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
             ),
-          ),
+          )
         ],
       ),
     );
   }
-
-  Future<void> _previewClass() async {
-    final code = _codeController.text.trim();
-    if (code.isEmpty) {
-      setState(() => _codeError = AppLocalizations.of(context)!.enterInvitationCode);
-      return;
-    }
-    setState(() {
-      _loading = true;
-      _codeError = null;
-    });
-    try {
-      final data = await AppScope.of(
-        context,
-      ).repository.validateInviteCode(code.toUpperCase());
-      setState(() => _previewData = data);
-      _previewAnimCtrl.forward(from: 0);
-    } catch (_) {
-      setState(
-        () => _codeError = AppLocalizations.of(context)!.codeNotFoundCheckAnd,
-      );
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _onJoinClass() async {
-    if (_previewData == null) return;
-    setState(() => _loading = true);
-    try {
-      final repo = AppScope.of(context).repository;
-      final user = repo.auth.currentUser;
-      if (user == null) {
-        _showMessage(AppLocalizations.of(context)!.pleaseLoginFirst);
-        return;
-      }
-      await repo.createProfile(
-        role: 'student',
-        name: user.displayName ?? user.email?.split('@').first ?? AppLocalizations.of(context)!.student,
-      );
-      final result = await repo.joinClass(_previewData!['classId'].toString());
-      if (mounted) {
-        AppScope.of(context).appState.selectClass(result['classId'].toString());
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
-    } catch (e) {
-      _showMessage(e.toString());
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _createTeacherProfile() async {
-    setState(() => _loading = true);
-    try {
-      final repo = AppScope.of(context).repository;
-      final user = repo.auth.currentUser;
-      if (user == null) {
-        _showMessage(AppLocalizations.of(context)!.pleaseLoginFirst);
-        return;
-      }
-      await repo.createProfile(
-        role: 'teacher',
-        name: user.displayName ?? user.email?.split('@').first ?? AppLocalizations.of(context)!.teacher,
-      );
-      if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
-    } catch (e) {
-      _showMessage(e.toString());
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
 }
 
-// ─────────────────────────────────────────────────────────────────
-// CLASS PREVIEW CARD
-// ─────────────────────────────────────────────────────────────────
-class _ClassPreviewCard extends StatelessWidget {
-  const _ClassPreviewCard({required this.data});
-  final Map<String, dynamic> data;
-
+class _TactileSpringButton extends StatefulWidget {
+  const _TactileSpringButton({required this.child, required this.onTap});
+  final Widget child;
+  final VoidCallback? onTap;
+  @override
+  State<_TactileSpringButton> createState() => _TactileSpringButtonState();
+}
+class _TactileSpringButtonState extends State<_TactileSpringButton> {
+  bool _isPressed = false;
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final className = data['className'] as String? ?? '';
-    final teacherName = data['teacherName']?.toString() ?? '';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final cardBg = isDark
-        ? [const Color(0xFF062017), const Color(0xFF0B2B20)]
-        : [SchoolColors.greenContainer, SchoolColors.accentContainer];
-    final borderCol = isDark
-        ? const Color(0xFF154C34)
-        : SchoolColors.green.withValues(alpha: 0.25);
-    final textCol = isDark ? SchoolColors.darkText : SchoolColors.text;
-    final secTextCol = isDark
-        ? SchoolColors.darkTextSecondary
-        : SchoolColors.textSecondary;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: cardBg,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: borderCol, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: SchoolColors.green.withValues(alpha: isDark ? 0.05 : 0.12),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Class initial badge
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [SchoolColors.primary, SchoolColors.secondary],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: SchoolColors.primary.withValues(alpha: 0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              className.isNotEmpty ? className[0].toUpperCase() : '?',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 22,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  className,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: textCol,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  l10n.teacherLabel(teacherName),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: secTextCol,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: SchoolColors.green,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: SchoolColors.green.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.check_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
-          ),
-        ],
+    return GestureDetector(
+      onTapDown: widget.onTap == null ? null : (_) => setState(() => _isPressed = true),
+      onTapUp: widget.onTap == null ? null : (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 90),
+        curve: Curves.easeOut,
+        transform: Matrix4.identity()..translate(0.0, _isPressed ? 1.5 : 0.0, 0.0),
+        child: Opacity(opacity: widget.onTap == null ? 0.5 : 1.0, child: widget.child),
       ),
     );
   }

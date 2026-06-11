@@ -245,7 +245,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
 
                         if (mobileSelected < 0) mobileSelected = -1;
 
-                        return _MobileTabBar(
+                        return ModernGlassTabBar(
                           selectedIndex: mobileSelected,
                           onSelect: (i) {
                             HapticFeedback.lightImpact();
@@ -496,13 +496,7 @@ class JoinClassEmptyState extends ConsumerWidget {
 }
 
 class _NavTabItem extends StatelessWidget {
-  const _NavTabItem({
-    required this.icon,
-    required this.selectedIcon,
-    required this.selected,
-    required this.isDark,
-    required this.onTap,
-  });
+  const _NavTabItem({required this.icon, required this.selectedIcon, required this.selected, required this.isDark, required this.onTap});
   final IconData icon;
   final IconData selectedIcon;
   final bool selected;
@@ -515,7 +509,7 @@ class _NavTabItem extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       highlightColor: Colors.transparent,
-      splashColor: SchoolColors.primary.withValues(alpha: 0.1),
+      splashColor: Colors.transparent,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -526,35 +520,20 @@ class _NavTabItem extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: selected
-                    ? (isDark
-                        ? SchoolColors.primary.withValues(alpha: 0.18)
-                        : SchoolColors.primary.withValues(alpha: 0.1))
-                    : Colors.transparent,
+                color: selected ? SchoolColors.primary.withValues(alpha: isDark ? 0.15 : 0.08) : Colors.transparent,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 selected ? selectedIcon : icon,
-                color: selected
-                    ? SchoolColors.primary
-                    : (isDark
-                        ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
-                        : SchoolColors.textSecondary.withValues(alpha: 0.5)),
-                size: 28,
+                color: selected ? SchoolColors.primary : (isDark ? SchoolColors.darkTextSecondary.withValues(alpha: 0.6) : SchoolColors.textSecondary.withValues(alpha: 0.6)),
+                size: 26,
               ),
             ),
           ),
           if (selected)
             Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: Container(
-                width: 4,
-                height: 4,
-                decoration: const BoxDecoration(
-                  color: SchoolColors.primary,
-                  shape: BoxShape.circle,
-                ),
-              ),
+              child: Container(width: 4, height: 4, decoration: const BoxDecoration(color: SchoolColors.primary, shape: BoxShape.circle)),
             ),
         ],
       ),
@@ -825,69 +804,59 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
   }
 }
 
-class _MobileTabBar extends StatelessWidget {
-  const _MobileTabBar({
+class ModernGlassTabBar extends StatelessWidget {
+  const ModernGlassTabBar({
+    super.key,
     required this.selectedIndex,
     required this.onSelect,
     required this.items,
     required this.onMoreTap,
     this.moreSelected = false,
   });
+
   final int selectedIndex;
   final ValueChanged<int> onSelect;
-  final List<NavDest> items;
+  final List<dynamic> items; // Định dạng danh sách NavDest
   final VoidCallback onMoreTap;
   final bool moreSelected;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final performanceMode = AppScope.of(context).appState.performanceMode;
 
-    if (performanceMode) {
-      return SafeArea(
-        top: false,
-        child: Container(
-          height: 72,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          decoration: BoxDecoration(
-            color: isDark ? SchoolColors.darkSurface : Colors.white,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.12)
-                  : SchoolColors.border.withValues(alpha: 0.8),
-              width: 1.0,
+    Widget buildTabs() {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          ...List.generate(items.length, (index) {
+            final item = items[index];
+            final selected = selectedIndex == index;
+            return Expanded(
+              child: _NavTabItem(
+                icon: item.icon,
+                selectedIcon: item.selectedIcon,
+                selected: selected,
+                isDark: isDark,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onSelect(index);
+                },
+              ),
+            );
+          }),
+          Expanded(
+            child: _NavTabItem(
+              icon: Icons.grid_view_outlined,
+              selectedIcon: Icons.grid_view_rounded,
+              selected: moreSelected,
+              isDark: isDark,
+              onTap: () {
+                HapticFeedback.mediumImpact();
+                onMoreTap();
+              },
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ...List.generate(items.length, (index) {
-                final item = items[index];
-                final selected = selectedIndex == index;
-                return Expanded(
-                  child: _NavTabItem(
-                    icon: item.icon,
-                    selectedIcon: item.selectedIcon,
-                    selected: selected,
-                    isDark: isDark,
-                    onTap: () => onSelect(index),
-                  ),
-                );
-              }),
-              Expanded(
-                child: _NavTabItem(
-                  icon: Icons.grid_view_outlined,
-                  selectedIcon: Icons.grid_view_rounded,
-                  selected: moreSelected,
-                  isDark: isDark,
-                  onTap: onMoreTap,
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       );
     }
 
@@ -895,57 +864,18 @@ class _MobileTabBar extends StatelessWidget {
       top: false,
       child: Container(
         height: 72,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         decoration: BoxDecoration(
-          color: isDark
-              ? SchoolColors.darkSurface.withValues(alpha: 0.85)
-              : Colors.white.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : SchoolColors.border.withValues(alpha: 0.5),
-            width: 1.0,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          color: isDark ? SchoolColors.darkSurface.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.08) : SchoolColors.border.withValues(alpha: 0.4), width: 1.2),
+          boxShadow: [SchoolColors.glassShadow],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ...List.generate(items.length, (index) {
-                  final item = items[index];
-                  final selected = selectedIndex == index;
-                  return Expanded(
-                    child: _NavTabItem(
-                      icon: item.icon,
-                      selectedIcon: item.selectedIcon,
-                      selected: selected,
-                      isDark: isDark,
-                      onTap: () => onSelect(index),
-                    ),
-                  );
-                }),
-                Expanded(
-                  child: _NavTabItem(
-                    icon: Icons.grid_view_outlined,
-                    selectedIcon: Icons.grid_view_rounded,
-                    selected: moreSelected,
-                    isDark: isDark,
-                    onTap: onMoreTap,
-                  ),
-                ),
-              ],
-            ),
+            filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: buildTabs(),
           ),
         ),
       ),
