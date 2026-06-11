@@ -96,14 +96,10 @@ class ChatBubbleBuilders {
                 )
               : null,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(22),
-            topRight: const Radius.circular(22),
-            bottomLeft: isSentByMe
-                ? const Radius.circular(22)
-                : const Radius.circular(6),
-            bottomRight: isSentByMe
-                ? const Radius.circular(6)
-                : const Radius.circular(22),
+            topLeft: Radius.circular(isSentByMe ? 18 : 2),
+            topRight: Radius.circular(isSentByMe ? 2 : 18),
+            bottomLeft: const Radius.circular(18),
+            bottomRight: const Radius.circular(18),
           ),
           boxShadow: [
             BoxShadow(
@@ -200,14 +196,10 @@ class ChatBubbleBuilders {
             width: 1.5,
           ),
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(22),
-            topRight: const Radius.circular(22),
-            bottomLeft: isSentByMe
-                ? const Radius.circular(22)
-                : const Radius.circular(6),
-            bottomRight: isSentByMe
-                ? const Radius.circular(6)
-                : const Radius.circular(22),
+            topLeft: Radius.circular(isSentByMe ? 18 : 2),
+            topRight: Radius.circular(isSentByMe ? 2 : 18),
+            bottomLeft: const Radius.circular(18),
+            bottomRight: const Radius.circular(18),
           ),
         ),
         child: Column(
@@ -303,8 +295,8 @@ class ChatBubbleBuilders {
                   cursor: SystemMouseCursors.click,
                   child: ClipRRect(
                     borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(18),
-                      topRight: const Radius.circular(18),
+                      topLeft: Radius.circular(isSentByMe ? 18 : 2),
+                      topRight: Radius.circular(isSentByMe ? 2 : 18),
                       bottomLeft: Radius.circular(msgText == null ? 18 : 6),
                       bottomRight: Radius.circular(msgText == null ? 18 : 6),
                     ),
@@ -517,15 +509,11 @@ class ChatBubbleBuilders {
                     width: 1,
                   ),
             borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(22),
-              topRight: const Radius.circular(22),
-              bottomLeft: isSentByMe
-                  ? const Radius.circular(22)
-                  : const Radius.circular(6),
-              bottomRight: isSentByMe
-                  ? const Radius.circular(6)
-                  : const Radius.circular(22),
-            ),
+            topLeft: Radius.circular(isSentByMe ? 18 : 2),
+            topRight: Radius.circular(isSentByMe ? 2 : 18),
+            bottomLeft: const Radius.circular(18),
+            bottomRight: const Radius.circular(18),
+          ),
           ),
           child: _AudioBubble(
             url: message.source,
@@ -562,14 +550,10 @@ class ChatBubbleBuilders {
           if (isVideo)
             ClipRRect(
               borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(22),
-                topRight: const Radius.circular(22),
-                bottomLeft: isSentByMe
-                    ? const Radius.circular(22)
-                    : Radius.zero,
-                bottomRight: isSentByMe
-                    ? Radius.zero
-                    : const Radius.circular(22),
+                topLeft: Radius.circular(isSentByMe ? 18 : 2),
+                topRight: Radius.circular(isSentByMe ? 2 : 18),
+                bottomLeft: const Radius.circular(18),
+                bottomRight: const Radius.circular(18),
               ),
               child: SizedBox(
                 width: videoWidth,
@@ -813,19 +797,16 @@ class ChatBubbleBuilders {
         return Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: isSentByMe
                 ? MainAxisAlignment.end
                 : MainAxisAlignment.start,
             children: [
               if (!isSentByMe) ...[
-                Padding(
-                  padding: EdgeInsets.only(top: (replyText != null) ? 48 : 24),
-                  child: SchoolAvatar(
-                    name: authorId,
-                    userId: authorId,
-                    radius: 14,
-                  ),
+                SchoolAvatar(
+                  name: authorId,
+                  userId: authorId,
+                  radius: 14,
                 ),
                 const SizedBox(width: 7),
               ],
@@ -882,14 +863,10 @@ class ChatBubbleBuilders {
                                     Container(
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.only(
-                                          topLeft: const Radius.circular(18),
-                                          topRight: const Radius.circular(18),
-                                          bottomLeft: Radius.circular(
-                                            isSentByMe ? 18 : 2,
-                                          ),
-                                          bottomRight: Radius.circular(
-                                            isSentByMe ? 2 : 18,
-                                          ),
+                                          topLeft: Radius.circular(isSentByMe ? 18 : 2),
+                                          topRight: Radius.circular(isSentByMe ? 2 : 18),
+                                          bottomLeft: const Radius.circular(18),
+                                          bottomRight: const Radius.circular(18),
                                         ),
                                         boxShadow: [
                                           BoxShadow(
@@ -939,14 +916,10 @@ class ChatBubbleBuilders {
                                         curve: Curves.easeOutCubic,
                                         decoration: BoxDecoration(
                                           borderRadius: BorderRadius.only(
-                                            topLeft: const Radius.circular(18),
-                                            topRight: const Radius.circular(18),
-                                            bottomLeft: Radius.circular(
-                                              isSentByMe ? 18 : 2,
-                                            ),
-                                            bottomRight: Radius.circular(
-                                              isSentByMe ? 2 : 18,
-                                            ),
+                                            topLeft: Radius.circular(isSentByMe ? 18 : 2),
+                                            topRight: Radius.circular(isSentByMe ? 2 : 18),
+                                            bottomLeft: const Radius.circular(18),
+                                            bottomRight: const Radius.circular(18),
                                           ),
                                           boxShadow: [
                                             BoxShadow(
@@ -1039,7 +1012,14 @@ class ChatBubbleBuilders {
                   ],
                 ),
               ),
-              if (isSentByMe) const SizedBox(width: 10),
+              if (isSentByMe) ...[
+                const SizedBox(width: 7),
+                SchoolAvatar(
+                  name: authorId,
+                  userId: authorId,
+                  radius: 14,
+                ),
+              ],
             ],
           ),
         );

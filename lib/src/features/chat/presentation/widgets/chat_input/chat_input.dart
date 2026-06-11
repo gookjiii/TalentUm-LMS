@@ -267,9 +267,9 @@ class _ChatInputState extends State<ChatInput> {
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           color: isDark 
-              ? const Color(0xFF09090B).withValues(alpha: 0.65) 
+              ? const Color(0xFF151E32).withValues(alpha: 0.5) 
               : const Color(0xFFFFFFFF).withValues(alpha: 0.75),
-          borderRadius: BorderRadius.circular(isMobile ? 24 : 32),
+          borderRadius: BorderRadius.circular(isMobile ? 20 : 24),
           border: Border.all(
             color: isFocused
                 ? SchoolColors.primary.withValues(alpha: 0.4)
@@ -294,7 +294,7 @@ class _ChatInputState extends State<ChatInput> {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(isMobile ? 24 : 32),
+          borderRadius: BorderRadius.circular(isMobile ? 20 : 24),
           child: BackdropFilter(
             filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
             child: Padding(
@@ -733,15 +733,15 @@ class _GradientSendButtonState extends State<_GradientSendButton>
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
+            borderRadius: BorderRadius.circular(14),
             gradient: LinearGradient(
-              colors: const [SchoolColors.primaryLight, SchoolColors.primary],
+              colors: const [Color(0xFF2563EB), Color(0xFF6366F1)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: SchoolColors.primary.withValues(alpha: 0.4),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.4),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),

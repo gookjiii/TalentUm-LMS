@@ -149,7 +149,7 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
   Widget _buildDesktopChat() {
     if (widget.classes.isEmpty) return const SizedBox.shrink();
     final classId =
-        widget.initialClassId ?? widget.classes.first['id'] as String;
+        _selectedClassId ?? widget.initialClassId ?? widget.classes.first['id'] as String;
     final classData = widget.classes.firstWhere(
       (c) => c['id'] == classId,
       orElse: () => {
@@ -162,18 +162,40 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
     );
     final roomId = classData['chatRoomId'] as String?;
 
-    return ClassChatScreen(
-      key: ValueKey('chat-$classId'),
-      repository: widget.repository,
-      appState: widget.appState,
-      classId: classId,
-      canInitializeRoom: widget.canInitializeRoom,
-      initialTopicId: widget.appState.lastChatClassId == classId
-          ? widget.appState.lastChatTopicId
-          : null,
-      preloadedController: (roomId != null && roomId.isNotEmpty)
-          ? ref.watch(preloadedChatControllerProvider(roomId).notifier)
-          : null,
+    return Row(
+      children: [
+        SizedBox(
+          width: 340, // Match w-80 from prototype approx (320-340)
+          child: _ChatClassList(
+            classes: widget.classes,
+            onSelect: (id) {
+              widget.appState.selectClass(id);
+              widget.appState.saveChatContext(classId: id, topicId: null);
+              setState(() => _selectedClassId = id);
+            },
+            repository: widget.repository,
+            appState: widget.appState,
+            isSplitView: true,
+            selectedClassId: classId,
+          ),
+        ),
+        VerticalDivider(width: 1, color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5)),
+        Expanded(
+          child: ClassChatScreen(
+            key: ValueKey('chat-$classId'),
+            repository: widget.repository,
+            appState: widget.appState,
+            classId: classId,
+            canInitializeRoom: widget.canInitializeRoom,
+            initialTopicId: widget.appState.lastChatClassId == classId
+                ? widget.appState.lastChatTopicId
+                : null,
+            preloadedController: (roomId != null && roomId.isNotEmpty)
+                ? ref.watch(preloadedChatControllerProvider(roomId).notifier)
+                : null,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -184,12 +206,16 @@ class _ChatClassList extends StatefulWidget {
     required this.onSelect,
     required this.repository,
     required this.appState,
+    this.isSplitView = false,
+    this.selectedClassId,
   });
 
   final List<Map<String, dynamic>> classes;
   final ValueChanged<String> onSelect;
   final SchoolRepository repository;
   final SchoolAppState appState;
+  final bool isSplitView;
+  final String? selectedClassId;
 
   @override
   State<_ChatClassList> createState() => _ChatClassListState();
@@ -318,6 +344,7 @@ class _ChatClassListState extends State<_ChatClassList> {
                                 c: c,
                                 repository: widget.repository,
                                 onTap: () => widget.onSelect(c['id'] as String),
+                                isSelected: widget.isSplitView && c['id'] == widget.selectedClassId,
                               ),
                             );
                           },
@@ -337,11 +364,13 @@ class _ClassCard extends ConsumerStatefulWidget {
     required this.c,
     required this.repository,
     required this.onTap,
+    this.isSelected = false,
   });
 
   final Map<String, dynamic> c;
   final SchoolRepository repository;
   final VoidCallback onTap;
+  final bool isSelected;
 
   @override
   ConsumerState<_ClassCard> createState() => _ClassCardState();
@@ -452,20 +481,24 @@ class _ClassCardState extends ConsumerState<_ClassCard> {
             duration: const Duration(milliseconds: 200),
             padding: context.screenPadding,
             decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.black.withValues(alpha: _hovered ? 0.45 : 0.35)
-                  : Colors.white.withValues(alpha: _hovered ? 0.75 : 0.65),
+              color: widget.isSelected 
+                  ? (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05))
+                  : isDark
+                      ? Colors.black.withValues(alpha: _hovered ? 0.45 : 0.35)
+                      : Colors.white.withValues(alpha: _hovered ? 0.75 : 0.65),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: (isDark ? Colors.white : Colors.black).withValues(
-                  alpha: _hovered ? 0.15 : 0.08,
-                ),
-                width: 1.0,
+                color: widget.isSelected
+                    ? color.withValues(alpha: 0.5)
+                    : (isDark ? Colors.white : Colors.black).withValues(
+                        alpha: _hovered ? 0.15 : 0.08,
+                      ),
+                width: widget.isSelected ? 1.5 : 1.0,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: color.withValues(alpha: _hovered ? 0.18 : 0.06),
-                  blurRadius: _hovered ? 16 : 8,
+                  color: color.withValues(alpha: _hovered || widget.isSelected ? 0.18 : 0.06),
+                  blurRadius: _hovered || widget.isSelected ? 16 : 8,
                   offset: const Offset(0, 4),
                 ),
               ],
