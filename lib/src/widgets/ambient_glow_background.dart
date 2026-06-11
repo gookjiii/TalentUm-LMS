@@ -8,13 +8,12 @@ class AmbientGlowBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    if (!isDark) return child;
 
     return Stack(
       children: [
         Positioned.fill(
           child: Container(
-            color: SchoolColors.darkBg,
+            color: isDark ? SchoolColors.darkBg : SchoolColors.bg,
           ),
         ),
         // Glow 1 (Top Left)
@@ -28,7 +27,7 @@ class AmbientGlowBackground extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  const Color(0xFF2563EB).withValues(alpha: 0.15),
+                  const Color(0xFF2563EB).withValues(alpha: isDark ? 0.15 : 0.08),
                   const Color(0xFF2563EB).withValues(alpha: 0.0),
                 ],
               ),
@@ -46,7 +45,7 @@ class AmbientGlowBackground extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  const Color(0xFF6366F1).withValues(alpha: 0.10),
+                  const Color(0xFF6366F1).withValues(alpha: isDark ? 0.10 : 0.06),
                   const Color(0xFF6366F1).withValues(alpha: 0.0),
                 ],
               ),

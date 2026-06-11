@@ -212,7 +212,7 @@ class SchoolCard extends HookWidget {
     final isPressed = useState(false);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeColor =
-        color ?? (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white);
+        color ?? (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white.withValues(alpha: 0.65));
     final resolvedBorderColor =
         borderColor ??
         (color == null
@@ -220,7 +220,7 @@ class SchoolCard extends HookWidget {
                   ? Theme.of(
                       context,
                     ).colorScheme.primary.withValues(alpha: 0.3)
-                  : (isDark ? Colors.white.withValues(alpha: 0.08) : SchoolColors.border))
+                  : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.6)))
             : Colors.white.withValues(alpha: 0.15));
 
     Matrix4 transform = Matrix4.identity();
@@ -263,7 +263,7 @@ class SchoolCard extends HookWidget {
                           .cardShadow, // Uses the updated diffusion shadow
                   ],
           ),
-          child: isDark && !isPerformance ? ClipRRect(
+          child: !isPerformance ? ClipRRect(
             borderRadius: BorderRadius.circular(borderRadius),
             child: BackdropFilter(
               filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
