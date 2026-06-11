@@ -194,7 +194,7 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
             debugShowCheckedModeBanner: false,
             theme: schoolTheme(primaryColor: appState.accentColor),
             darkTheme: schoolDarkTheme(primaryColor: appState.accentColor),
-            themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            themeMode: ThemeMode.dark, // Forced for Elite Digital Campus
             locale: activeLocale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,

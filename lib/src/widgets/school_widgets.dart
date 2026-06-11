@@ -12,6 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../main.dart';
 import '../theme.dart';
 export 'cached_stream_builder.dart';
+export 'ambient_glow_background.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // HOVERABLE
@@ -211,15 +212,15 @@ class SchoolCard extends HookWidget {
     final isPressed = useState(false);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeColor =
-        color ?? (isDark ? SchoolColors.darkSurface : Colors.white);
+        color ?? (isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white);
     final resolvedBorderColor =
         borderColor ??
         (color == null
             ? (isHovered.value
                   ? Theme.of(
                       context,
-                    ).colorScheme.primary.withValues(alpha: 0.25)
-                  : (isDark ? SchoolColors.darkBorder : SchoolColors.border))
+                    ).colorScheme.primary.withValues(alpha: 0.3)
+                  : (isDark ? Colors.white.withValues(alpha: 0.08) : SchoolColors.border))
             : Colors.white.withValues(alpha: 0.15));
 
     Matrix4 transform = Matrix4.identity();
@@ -262,7 +263,25 @@ class SchoolCard extends HookWidget {
                           .cardShadow, // Uses the updated diffusion shadow
                   ],
           ),
-          child: Material(
+          child: isDark && !isPerformance ? ClipRRect(
+            borderRadius: BorderRadius.circular(borderRadius),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Material(
+                color: themeColor,
+                borderRadius: BorderRadius.circular(borderRadius),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  child: Semantics(
+                    button: onTap != null,
+                    child: Padding(padding: resolvedPadding, child: child),
+                  ),
+                ),
+              ),
+            ),
+          ) : Material(
             color: themeColor,
             borderRadius: BorderRadius.circular(borderRadius),
             clipBehavior: Clip.antiAlias,

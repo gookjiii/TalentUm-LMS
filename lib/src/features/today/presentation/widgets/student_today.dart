@@ -82,14 +82,53 @@ class StudentToday extends HookConsumerWidget {
 
                 const SizedBox(height: 40),
 
-                // 3. UPCOMING TASKS (Staggered List)
-                SectionHeader(
-                  title: 'Upcoming Assignments',
-                  action: 'View All',
-                  onActionTap: onHomeworkTap,
-                ),
-                const SizedBox(height: 16),
-                _UpcomingTasksList(classColor: classColor),
+                // 3. BOTTOM SECTION (2-Column on Desktop)
+                if (isMobile) ...[
+                  SectionHeader(
+                    title: 'Action Require',
+                    action: 'View All',
+                    onActionTap: onHomeworkTap,
+                  ),
+                  const SizedBox(height: 16),
+                  _UpcomingTasksList(classColor: classColor),
+                  const SizedBox(height: 40),
+                  const SectionHeader(title: 'Timeline'),
+                  const SizedBox(height: 16),
+                  _TimelineList(classColor: classColor),
+                ] else ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 5,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SectionHeader(title: 'Timeline'),
+                            const SizedBox(height: 16),
+                            _TimelineList(classColor: classColor),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 40),
+                      Expanded(
+                        flex: 4,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(
+                              title: 'Action Require',
+                              action: 'View All',
+                              onActionTap: onHomeworkTap,
+                            ),
+                            const SizedBox(height: 16),
+                            _UpcomingTasksList(classColor: classColor),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 
                 const SizedBox(height: 80), // Bottom breathing room
               ]),

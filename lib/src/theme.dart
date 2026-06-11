@@ -42,10 +42,10 @@ class SchoolColors {
   static const borderFocus = Color(0xFFC4B5FD);
 
   // ── Dark-mode Palette ─────────────────────────────────────────
-  static const darkBg = Color(0xFF080C1E);
-  static const darkSurface = Color(0xFF11152D);
+  static const darkBg = Color(0xFF0B1120);
+  static const darkSurface = Color(0xFF151E32);
   static const darkSurfaceElevated = Color(0xFF1B1E3B);
-  static const darkBorder = Color(0xFF222648);
+  static const darkBorder = Color(0x1AFFFFFF); // rgba(255, 255, 255, 0.1)
   static const darkText = Color(0xFFF8FAFC);
   static const darkTextSecondary = Color(0xFF94A3B8);
   static const darkMuted = Color(0xFF64748B);
@@ -183,19 +183,19 @@ class AppTextStyle {
     height: 1.5,
   );
 
-  static final titleSm = GoogleFonts.plusJakartaSans(
+  static final titleSm = GoogleFonts.inter(
     fontSize: 18,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.2,
   );
 
-  static final titleLg = GoogleFonts.plusJakartaSans(
+  static final titleLg = GoogleFonts.inter(
     fontSize: 24,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.4,
   );
   
-  static TextStyle display(BuildContext context) => GoogleFonts.plusJakartaSans(
+  static TextStyle display(BuildContext context) => GoogleFonts.inter(
         fontSize: 32,
         fontWeight: FontWeight.w800,
         letterSpacing: -0.8,

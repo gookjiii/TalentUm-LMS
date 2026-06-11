@@ -312,9 +312,10 @@ class _TeacherWorkspaceScreenState
                 ],
               );
 
-        return Scaffold(
-          extendBody: true, // Allow content to scroll under the frosted glass bottom bar
-          backgroundColor: Theme.of(context).colorScheme.surface,
+        return AmbientGlowBackground(
+          child: Scaffold(
+            extendBody: true, // Allow content to scroll under the frosted glass bottom bar
+            backgroundColor: Colors.transparent,
           body: SafeArea(
             bottom: false,
             child: Row(
@@ -389,9 +390,10 @@ class _TeacherWorkspaceScreenState
                     );
                   },
                 ),
+              ),
+            );
+          },
         );
-      },
-    );
   }
 
   String? _selectedClassIdFromMap(
