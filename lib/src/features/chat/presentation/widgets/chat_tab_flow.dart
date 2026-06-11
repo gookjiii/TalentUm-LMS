@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -449,7 +450,7 @@ class _ClassCardState extends ConsumerState<_ClassCard> {
           curve: Curves.easeOutCubic,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(16),
+            padding: context.screenPadding,
             decoration: BoxDecoration(
               color: isDark
                   ? Colors.black.withValues(alpha: _hovered ? 0.45 : 0.35)

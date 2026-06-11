@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
@@ -159,7 +160,7 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: context.screenPadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -208,7 +209,7 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: context.screenPadding,
           child: Hero(
             tag: 'bulk_create_btn',
             child: FilledButton.icon(

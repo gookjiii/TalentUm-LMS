@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -478,7 +479,7 @@ class _TeacherWorkspaceScreenState
               ),
               const SizedBox(height: 24),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: context.screenPadding,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -1280,7 +1281,7 @@ class _MobileBottomBar extends StatelessWidget {
         top: false,
         child: Container(
           height: 72,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          margin: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
           decoration: BoxDecoration(
             color: isDark ? SchoolColors.darkSurface : Colors.white,
             borderRadius: BorderRadius.circular(28),
@@ -1300,7 +1301,7 @@ class _MobileBottomBar extends StatelessWidget {
       top: false,
       child: Container(
         height: 72,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        margin: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
         decoration: BoxDecoration(
           color: isDark
               ? SchoolColors.darkSurface.withValues(alpha: 0.85)

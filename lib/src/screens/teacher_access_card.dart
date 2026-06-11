@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -63,7 +64,7 @@ class TeacherAccessCard extends StatelessWidget {
                         style: FilledButton.styleFrom(
                           backgroundColor: SchoolColors.accent,
                           visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                         ),
                         child: Text(l10n.send),
                       ),

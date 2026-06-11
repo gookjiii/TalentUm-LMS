@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:async';
 import 'dart:io';
@@ -533,7 +534,7 @@ class _ChatInputState extends State<ChatInput> {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
       child: Container(
         height: 54,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
         decoration: BoxDecoration(
           color: theme.colorScheme.primaryContainer.withOpacity(0.3),
           borderRadius: BorderRadius.circular(27),
@@ -583,7 +584,7 @@ class _ChatInputState extends State<ChatInput> {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
       child: Container(
         height: 54,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
           borderRadius: BorderRadius.circular(27),

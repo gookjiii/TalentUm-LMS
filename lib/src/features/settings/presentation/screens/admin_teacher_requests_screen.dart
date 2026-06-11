@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -105,7 +106,7 @@ class _AdminTeacherRequestsScreenState extends ConsumerState<AdminTeacherRequest
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(24),
+            padding: context.screenPadding,
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final data = docs[index].data() as Map<String, dynamic>;
@@ -117,7 +118,7 @@ class _AdminTeacherRequestsScreenState extends ConsumerState<AdminTeacherRequest
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: GlassCard(
-                  padding: const EdgeInsets.all(16),
+                  padding: context.screenPadding,
                   child: Row(
                     children: [
                       CircleAvatar(

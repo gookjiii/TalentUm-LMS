@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -345,7 +346,7 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF3B82F6),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
                 ),
@@ -374,7 +375,7 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                     bottom: false,
                     child: Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: context.screenPadding,
                         child: LayoutBuilder(
                           builder: (context, constraints) {
                             // Perfect fit for aspect ratio

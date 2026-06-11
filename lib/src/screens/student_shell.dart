@@ -559,7 +559,7 @@ class _MoreSheet extends StatelessWidget {
     ];
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      margin: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark ? SchoolColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(28),

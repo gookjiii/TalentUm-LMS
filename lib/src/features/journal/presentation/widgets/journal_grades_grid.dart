@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -161,7 +162,7 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
     const double headerHeight = 72.0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? SchoolColors.darkSurface : Colors.white,
@@ -514,7 +515,7 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
               ),
           ],
         ),
-        padding: const EdgeInsets.all(16),
+        padding: context.screenPadding,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -669,7 +670,7 @@ class _StudentNameCell extends ConsumerWidget {
 
     return Container(
       height: height,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
       alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
         border: Border(

@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -429,7 +430,7 @@ class _MediaGridState extends State<_MediaGrid> {
         if (snapshot.hasError) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: context.screenPadding,
               child: Text(
                 'Ошибка загрузки медиа: ${snapshot.error}',
                 textAlign: TextAlign.center,
@@ -632,7 +633,7 @@ class _FilesListState extends State<_FilesList> {
         if (snapshot.hasError) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: context.screenPadding,
               child: Text(
                 'Ошибка загрузки файлов: ${snapshot.error}',
                 textAlign: TextAlign.center,
@@ -976,7 +977,7 @@ class _LinksListViewState extends State<_LinksListView> {
         if (snapshot.hasError) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: context.screenPadding,
               child: Text(
                 'Ошибка загрузки ссылок: ${snapshot.error}',
                 textAlign: TextAlign.center,
@@ -1260,7 +1261,7 @@ class _MembersTabViewState extends State<_MembersTabView> {
         if (snapshot.hasError) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: context.screenPadding,
               child: Text(
                 'Ошибка загрузки участников:\n${snapshot.error}',
                 textAlign: TextAlign.center,
@@ -1523,7 +1524,7 @@ class _PollsListViewState extends State<_PollsListView> {
         if (snapshot.hasError) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: context.screenPadding,
               child: Text(
                 'Ошибка загрузки опросов: ${snapshot.error}',
                 textAlign: TextAlign.center,
@@ -1790,7 +1791,7 @@ class _AIAssistantTabState extends State<_AIAssistantTab> {
       children: [
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: context.screenPadding,
             itemCount: _messages.length + (_loading ? 1 : 0),
             itemBuilder: (context, i) {
               if (i == _messages.length) return const _AILoadingIndicator();

@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
@@ -136,7 +137,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     }
 
                     return SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final data = docs[index].data();
@@ -304,7 +305,7 @@ class _MaterialTile extends StatelessWidget {
           child: InkWell(
             onTap: () => _handleTap(context),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: context.screenPadding,
               child: Row(
                 children: [
                   Container(

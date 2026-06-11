@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:school_world/l10n/app_localizations.dart';
@@ -70,7 +71,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
           if (classes.isEmpty) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: context.screenPadding,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -94,7 +95,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: context.screenPadding,
             itemCount: classes.length,
             itemBuilder: (context, index) {
               final classData = classes[index].data();
@@ -192,7 +193,7 @@ class _ParentClassDetailScreen extends StatelessWidget {
                 return Center(child: Text(l10n.noAssignmentsYet));
               }
               return ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: context.screenPadding,
                 itemCount: assignments.length,
                 itemBuilder: (context, index) {
                   final assignment = assignments[index].data();

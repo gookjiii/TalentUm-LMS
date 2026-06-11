@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -912,7 +913,7 @@ class _AttentionRow extends StatelessWidget {
             ? const BorderRadius.vertical(bottom: Radius.circular(20))
             : null,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: context.screenPadding,
           child: Row(
             children: [
               Container(
@@ -1168,7 +1169,7 @@ class _TeacherTodayClassRowState extends State<TeacherTodayClassRow> {
               ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: context.screenPadding,
                 child: Row(
                   children: [
                     ClassBadge(

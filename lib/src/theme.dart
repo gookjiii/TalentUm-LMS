@@ -144,6 +144,24 @@ class AppRadius {
   static const full = BorderRadius.all(Radius.circular(999));
 }
 
+class AppLayout {
+  const AppLayout._();
+
+  static const double maxContentWidth = 1200.0;
+  
+  // Standard paddings for both margins
+  static const EdgeInsets pagePaddingMobile = EdgeInsets.symmetric(horizontal: 20);
+  static const EdgeInsets pagePaddingTablet = EdgeInsets.symmetric(horizontal: 32);
+  static const EdgeInsets pagePaddingDesktop = EdgeInsets.symmetric(horizontal: 48);
+
+  static EdgeInsets pagePadding(BuildContext context) {
+    final w = MediaQuery.sizeOf(context).width;
+    if (w < 600) return pagePaddingMobile;
+    if (w < 1024) return pagePaddingTablet;
+    return pagePaddingDesktop;
+  }
+}
+
 class AppTextStyle {
   const AppTextStyle._();
   

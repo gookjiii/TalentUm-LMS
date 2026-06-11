@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -104,7 +105,7 @@ class _ActivityItem extends StatelessWidget {
         }
         
         return SchoolCard(
-          padding: const EdgeInsets.all(16),
+          padding: context.screenPadding,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

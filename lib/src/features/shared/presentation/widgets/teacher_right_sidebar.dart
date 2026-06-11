@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +25,7 @@ class TeacherRightSidebar extends StatelessWidget {
         ),
       ),
       child: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: context.screenPadding,
         children: [
           SectionHeader(title: AppLocalizations.of(context)!.upcomingClasses),
           const SizedBox(height: 16),

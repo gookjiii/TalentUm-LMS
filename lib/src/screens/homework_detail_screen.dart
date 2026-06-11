@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -86,7 +87,7 @@ class _HomeworkDetailScreenState extends State<HomeworkDetailScreen> {
                   ? submissionSnapshot.data!.docs.first.data()
                   : null;
               return SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: context.screenPadding,
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 920),

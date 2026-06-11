@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'dart:convert';
 import 'package:school_world/l10n/app_localizations.dart';
@@ -62,7 +63,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, i) => _ChildProgressCard(childId: childIds[i]),

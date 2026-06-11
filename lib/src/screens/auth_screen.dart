@@ -1,3 +1,4 @@
+import 'package:school_world/src/theme.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -361,7 +362,9 @@ class _MobileAuthLayout extends StatelessWidget {
         SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(28),
+              padding: AppLayout.pagePadding(
+                context,
+              ).copyWith(top: 28, bottom: 28),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),
                 child: child,
@@ -389,7 +392,9 @@ class _WideAuthLayout extends StatelessWidget {
         Expanded(
           child: Container(
             height: double.infinity,
-            padding: const EdgeInsets.all(56),
+            padding: AppLayout.pagePadding(
+              context,
+            ).copyWith(top: 56, bottom: 56),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -467,7 +472,9 @@ class _WideAuthLayout extends StatelessWidget {
         Expanded(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(48),
+              padding: AppLayout.pagePadding(
+                context,
+              ).copyWith(top: 48, bottom: 48),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),
                 child: form,

@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
@@ -37,7 +38,7 @@ class _GuestJoinScreenState extends State<GuestJoinScreen> {
       backgroundColor: SchoolColors.bg,
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: context.screenPadding,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: SchoolCard(

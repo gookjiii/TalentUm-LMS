@@ -206,8 +206,8 @@ class SchoolCard extends HookWidget {
     final resolvedPadding =
         padding ??
         (context.isMobile
-            ? const EdgeInsets.all(16)
-            : const EdgeInsets.all(24));
+            ? const EdgeInsets.all(AppSpacing.md)
+            : const EdgeInsets.all(AppSpacing.lg));
     final isPressed = useState(false);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeColor =
@@ -307,8 +307,8 @@ class GlassCard extends StatelessWidget {
     final resolvedPadding =
         padding ??
         (MediaQuery.sizeOf(context).width < 600
-            ? const EdgeInsets.all(16)
-            : const EdgeInsets.all(24));
+            ? const EdgeInsets.all(AppSpacing.md)
+            : const EdgeInsets.all(AppSpacing.lg));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg =
         color ??
@@ -1063,7 +1063,7 @@ class QuickTile extends HookWidget {
               child: Stack(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -2031,7 +2031,7 @@ class EmptyStateWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
                 color: isDark ? SchoolColors.darkSurface : Colors.white,
                 shape: BoxShape.circle,

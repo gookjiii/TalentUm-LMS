@@ -82,15 +82,8 @@ class HomeworkScreen extends StatelessWidget {
               final overdue =
                   dueDate != null && dueDate.isBefore(DateTime.now());
 
-              return Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                    width: .5,
-                  ),
-                ),
+              return SchoolCard(
+                padding: EdgeInsets.zero,
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,

@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -48,7 +49,7 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
           final requireApproval = permissions['requireApproval'] ?? false;
 
           return ListView(
-            padding: const EdgeInsets.all(24),
+            padding: context.screenPadding,
             children: [
               SectionHeader(title: AppLocalizations.of(context)!.generalSettings1),
               const SizedBox(height: 16),

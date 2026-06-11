@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
@@ -196,7 +197,7 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
                             ),
                             Padding(
                               padding:
-                                  const EdgeInsets.symmetric(horizontal: 24),
+                                  EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -350,7 +351,7 @@ class HomeworkCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: SchoolCard(
-        padding: const EdgeInsets.all(16),
+        padding: context.screenPadding,
         onTap: () {
           Navigator.push(
             context,

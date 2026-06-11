@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -152,7 +153,7 @@ class _UserListTile extends StatelessWidget {
     final isBanned = data['isBanned'] == true;
 
     return SchoolCard(
-      padding: const EdgeInsets.all(16),
+      padding: context.screenPadding,
       child: Row(
         children: [
           Stack(

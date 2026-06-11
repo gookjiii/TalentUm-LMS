@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
@@ -965,7 +966,7 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
     );
 
     return SchoolCard(
-      padding: const EdgeInsets.all(24),
+      padding: context.screenPadding,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isMobile = constraints.maxWidth < 600;

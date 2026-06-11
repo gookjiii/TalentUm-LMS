@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -72,7 +73,7 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                 child: Text(
                   AppLocalizations.of(context)!.assignATeacher,
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -82,7 +83,7 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
               Expanded(
                 child: ListView.builder(
                   itemCount: allTeachers.length,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                   itemBuilder: (context, index) {
                     final doc = allTeachers[index];
                     final data = doc.data();
@@ -260,7 +261,7 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                       final teacherId = data['teacherId']?.toString() ?? '';
 
                       return SchoolCard(
-                        padding: const EdgeInsets.all(16),
+                        padding: context.screenPadding,
                         child: Row(
                           children: [
                             Container(

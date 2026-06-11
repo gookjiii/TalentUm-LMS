@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -120,7 +121,7 @@ class _TeacherFeedState extends State<TeacherFeed> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -184,7 +185,7 @@ class _TeacherFeedState extends State<TeacherFeed> {
                 );
               }
               return SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final doc = posts[index];

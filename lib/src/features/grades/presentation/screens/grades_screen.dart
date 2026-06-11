@@ -1,3 +1,4 @@
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -30,7 +31,7 @@ class RosterGradesScreen extends StatelessWidget {
             return Center(child: Text(l10n.noSubmissionsYet));
           }
           return ListView.builder(
-            padding: const EdgeInsets.all(24),
+            padding: context.screenPadding,
             itemCount: submissions.length,
             itemBuilder: (context, index) {
               final data = submissions[index].data();
