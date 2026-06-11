@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../app_state.dart';
 import '../../../../theme.dart';
@@ -26,27 +25,17 @@ class StudentToday extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final topPadding = MediaQuery.paddingOf(context).top;
-    final isMobile = MediaQuery.sizeOf(context).width < 700;
+    final isMobile = MediaQuery.sizeOf(context).width < 1024; // lg breakpoint in tailwind
 
-    // Simulate fetching user name from state/repo (fallback to Alex Student)
-    final appState = AppScope.of(context).appState;
-    final String studentName = "Alex Student"; 
-
-    // Find active class
-    final activeClass = classes.firstWhere(
-      (c) => c['id'] == selectedClassId,
-      orElse: () => classes.isNotEmpty ? classes.first : {},
-    );
-    final String className = activeClass['name']?.toString() ?? 'Computer Science 101';
-    final Color classColor = colorFromHex(
-      activeClass['coverColor'] as String?,
-      SchoolColors.primary,
-    );
+    // Mock data for UI to match the prototype
+    final String studentName = "Alex Nguyen";
+    final int assignments = 3;
+    final String gpa = "8.5";
+    final String attendance = "95%";
 
     return Scaffold(
-      backgroundColor: Colors.transparent, // Let the shell handle the background
+      backgroundColor: Colors.transparent,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         slivers: [
@@ -55,82 +44,79 @@ class StudentToday extends HookConsumerWidget {
               isMobile ? 16 : 32,
               topPadding + (isMobile ? 16 : 32),
               isMobile ? 16 : 32,
-              40,
+              80,
             ),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // 1. ASYMMETRIC HERO SECTION (Glassmorphism)
+                // 1. HERO SECTION
                 FadeInUp(
                   offset: 40,
                   duration: const Duration(milliseconds: 600),
                   child: _HeroSection(
                     studentName: studentName,
-                    className: className,
-                    classColor: classColor,
+                    assignments: assignments,
                     isMobile: isMobile,
+                    onAction: () => onTabSelect(1), // Assume tab 1 is classes
                   ),
                 ),
                 
-                const SizedBox(height: 32),
+                const SizedBox(height: 40),
 
-                // 2. QUICK STATS (Asymmetric Grid 2:1)
+                // 2. QUICK STATS
                 FadeInUp(
                   delay: const Duration(milliseconds: 100),
                   offset: 30,
-                  child: _QuickStatsSection(isMobile: isMobile, classColor: classColor),
+                  child: _QuickStatsSection(
+                    gpa: gpa,
+                    assignments: assignments.toString(),
+                    attendance: attendance,
+                    isMobile: isMobile,
+                  ),
                 ),
 
                 const SizedBox(height: 40),
 
-                // 3. BOTTOM SECTION (2-Column on Desktop)
+                // 3. TWO COLUMN LAYOUT (Timeline & Action Required)
                 if (isMobile) ...[
-                  SectionHeader(
-                    title: 'Action Require',
-                    action: 'View All',
-                    onActionTap: onHomeworkTap,
-                  ),
+                  const _SectionTitle(title: 'Lịch trình hôm nay', icon: Icons.schedule_rounded, color: SchoolColors.primary),
                   const SizedBox(height: 16),
-                  _UpcomingTasksList(classColor: classColor),
+                  const _TimelineList(),
                   const SizedBox(height: 40),
-                  const SectionHeader(title: 'Timeline'),
+                  const _SectionTitle(title: 'Cần xử lý', icon: Icons.error_outline_rounded, color: SchoolColors.orange),
                   const SizedBox(height: 16),
-                  _TimelineList(classColor: classColor),
+                  const _UpcomingTasksList(),
                 ] else ...[
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Timeline (7 cols)
+                      Expanded(
+                        flex: 7,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            _SectionTitle(title: 'Lịch trình hôm nay', icon: Icons.schedule_rounded, color: SchoolColors.primary),
+                            SizedBox(height: 16),
+                            _TimelineList(),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 32),
+                      // Homework (5 cols)
                       Expanded(
                         flex: 5,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SectionHeader(title: 'Timeline'),
-                            const SizedBox(height: 16),
-                            _TimelineList(classColor: classColor),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 40),
-                      Expanded(
-                        flex: 4,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SectionHeader(
-                              title: 'Action Require',
-                              action: 'View All',
-                              onActionTap: onHomeworkTap,
-                            ),
-                            const SizedBox(height: 16),
-                            _UpcomingTasksList(classColor: classColor),
+                          children: const [
+                            _SectionTitle(title: 'Cần xử lý', icon: Icons.error_outline_rounded, color: SchoolColors.orange),
+                            SizedBox(height: 16),
+                            _UpcomingTasksList(),
                           ],
                         ),
                       ),
                     ],
                   ),
                 ],
-                
-                const SizedBox(height: 80), // Bottom breathing room
               ]),
             ),
           ),
@@ -140,203 +126,198 @@ class StudentToday extends HookConsumerWidget {
   }
 }
 
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title, required this.icon, required this.color});
+  final String title;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────
-// HERO SECTION (Glassmorphism + Asymmetric)
+// HERO SECTION
 // ─────────────────────────────────────────────────────────────────
 class _HeroSection extends StatelessWidget {
   const _HeroSection({
     required this.studentName,
-    required this.className,
-    required this.classColor,
+    required this.assignments,
     required this.isMobile,
+    required this.onAction,
   });
 
   final String studentName;
-  final String className;
-  final Color classColor;
+  final int assignments;
   final bool isMobile;
+  final VoidCallback onAction;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // Greeting logic
-    final hour = DateTime.now().hour;
-    final greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    final nameParts = studentName.split(' ');
+    final firstName = nameParts.isNotEmpty ? nameParts.first : studentName;
 
-    return GlassCard(
-      padding: EdgeInsets.all(isMobile ? 24 : 40),
-      borderRadius: 24,
-      color: isDark 
-          ? classColor.withValues(alpha: 0.08) 
-          : classColor.withValues(alpha: 0.04),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Background abstract glow
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: classColor.withValues(alpha: 0.15),
-              ),
-            ),
-          ),
-          
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: isMobile ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    StatusChip(
-                      label: className.toUpperCase(),
-                      color: classColor,
-                      pulseDot: true,
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  const Text(
+                    'Chào buổi sáng, ',
+                    style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1,
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      '$greeting,\n$studentName.',
-                      style: AppTextStyle.display(context).copyWith(
-                        fontSize: isMobile ? 28 : 36,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'You have 2 pending assignments and 1 upcoming webinar this week.',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
-                        height: 1.5,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: () {},
-                      style: FilledButton.styleFrom(
-                        backgroundColor: classColor,
-                        minimumSize: const Size(140, 48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        )
-                      ),
-                      child: const Text('Resume Course'),
-                    ),
-                  ],
-                ),
-              ),
-              if (!isMobile) ...[
-                const SizedBox(width: 40),
-                Expanded(
-                  flex: 1,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: CircularProgressRing(
-                      percent: 0.68,
-                      color: classColor,
-                      size: 140,
-                      strokeWidth: 10,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '68%',
-                            style: AppTextStyle.mono(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : SchoolColors.text,
-                            ),
-                          ),
-                          Text(
-                            'Completed',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
-                              letterSpacing: 0.5,
-                            ),
-                          )
-                        ],
+                  ),
+                  ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [Color(0xFF2563EB), Color(0xFF6366F1)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ).createShader(bounds),
+                    child: Text(
+                      '$firstName!',
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: -1,
                       ),
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Hôm nay bạn có $assignments nhiệm vụ cần hoàn thành.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
                 ),
+              ),
+              if (isMobile) ...[
+                const SizedBox(height: 24),
+                _ActionButton(onPressed: onAction),
               ],
             ],
           ),
+        ),
+        if (!isMobile) _ActionButton(onPressed: onAction),
+      ],
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({required this.onPressed});
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2563EB), Color(0xFF6366F1)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2563EB).withValues(alpha: 0.2),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
         ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                const Text(
+                  'Vào lớp học',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────
-// QUICK STATS (Asymmetric Layout)
+// QUICK STATS
 // ─────────────────────────────────────────────────────────────────
 class _QuickStatsSection extends StatelessWidget {
-  const _QuickStatsSection({required this.isMobile, required this.classColor});
+  const _QuickStatsSection({
+    required this.gpa,
+    required this.assignments,
+    required this.attendance,
+    required this.isMobile,
+  });
+  
+  final String gpa;
+  final String assignments;
+  final String attendance;
   final bool isMobile;
-  final Color classColor;
 
   @override
   Widget build(BuildContext context) {
+    final children = [
+      _StatCard(title: 'Điểm số / Đánh giá', value: gpa, icon: Icons.trending_up_rounded, iconColor: SchoolColors.green),
+      _StatCard(title: 'Bài tập / Nhiệm vụ', value: assignments, icon: Icons.assignment_rounded, iconColor: SchoolColors.orange),
+      _StatCard(title: 'Chuyên cần', value: attendance, icon: Icons.event_available_rounded, iconColor: SchoolColors.primary),
+    ];
+
     if (isMobile) {
       return Column(
-        children: [
-          _StatCard(title: 'Current Grade', value: 'A-', subtitle: 'Top 15% of class', flex: 1, color: SchoolColors.green),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: _StatCard(title: 'Attendance', value: '98%', subtitle: 'On track', color: SchoolColors.primary)),
-              const SizedBox(width: 16),
-              Expanded(child: _StatCard(title: 'Credits', value: '24', subtitle: 'Earned', color: SchoolColors.orange)),
-            ],
-          )
-        ],
+        children: children.map((c) => Padding(padding: const EdgeInsets.only(bottom: 16), child: c)).toList(),
       );
     }
 
     return Row(
-      children: [
-        Expanded(
-          flex: 5,
-          child: _StatCard(
-            title: 'Current Grade Average', 
-            value: '92.4', 
-            subtitle: 'Consistent performance this semester',
-            color: SchoolColors.green,
-            isLarge: true,
-          ),
+      children: children.map((c) => Expanded(
+        child: Padding(
+          padding: EdgeInsets.only(right: children.last == c ? 0 : 24),
+          child: c,
         ),
-        const SizedBox(width: 24),
-        Expanded(
-          flex: 3,
-          child: _StatCard(
-            title: 'Attendance', 
-            value: '98%', 
-            subtitle: '2 missed sessions',
-            color: SchoolColors.primary,
-          ),
-        ),
-        const SizedBox(width: 24),
-        Expanded(
-          flex: 3,
-          child: _StatCard(
-            title: 'Rank', 
-            value: '#4', 
-            subtitle: 'Out of 120 students',
-            color: SchoolColors.orange,
-          ),
-        ),
-      ],
+      )).toList(),
     );
   }
 }
@@ -345,70 +326,59 @@ class _StatCard extends StatelessWidget {
   const _StatCard({
     required this.title,
     required this.value,
-    required this.subtitle,
-    required this.color,
-    this.flex = 1,
-    this.isLarge = false,
+    required this.icon,
+    required this.iconColor,
   });
 
   final String title;
   final String value;
-  final String subtitle;
-  final Color color;
-  final int flex;
-  final bool isLarge;
+  final IconData icon;
+  final Color iconColor;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    return SchoolCard(
-      padding: EdgeInsets.all(isLarge ? 28 : 20),
+    return GlassCard(
+      padding: const EdgeInsets.all(24),
       borderRadius: 20,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
-                  letterSpacing: -0.2,
-                ),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
               ),
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 4, offset: const Offset(0, 2))
-                  ]
+            ),
+            child: Icon(icon, color: iconColor, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
+                  ),
                 ),
-              )
-            ],
-          ),
-          SizedBox(height: isLarge ? 24 : 16),
-          Text(
-            value,
-            style: AppTextStyle.mono(
-              fontSize: isLarge ? 42 : 32,
-              fontWeight: FontWeight.w800,
-              color: isDark ? Colors.white : SchoolColors.text,
-            ).copyWith(letterSpacing: -1),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: AppTextStyle.mono(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: isDark ? Colors.white : SchoolColors.text,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -418,43 +388,40 @@ class _StatCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// TASKS LIST (Staggered Animation + Hover physics)
+// TIMELINE LIST
 // ─────────────────────────────────────────────────────────────────
-class _UpcomingTasksList extends StatelessWidget {
-  const _UpcomingTasksList({required this.classColor});
-  final Color classColor;
+class _TimelineList extends StatelessWidget {
+  const _TimelineList();
 
   @override
   Widget build(BuildContext context) {
-    final tasks = [
-      {'title': 'Advanced Data Structures Quiz', 'due': 'Today, 23:59', 'type': 'Quiz', 'urgent': true},
-      {'title': 'Module 4 Project Submission', 'due': 'Tomorrow, 12:00', 'type': 'Project', 'urgent': false},
-      {'title': 'Read Chapter 5: Graph Theory', 'due': 'Wed, 09:00', 'type': 'Reading', 'urgent': false},
+    final events = [
+      {'time': '08:00 - 09:30', 'subject': 'Toán Học Cao Cấp', 'room': 'Phòng 102 - Cơ sở A', 'active': false},
+      {'time': '10:00 - 11:30', 'subject': 'Lập trình Web', 'room': 'Lab 3', 'active': true},
+      {'time': '13:30 - 15:00', 'subject': 'Thiết kế UI/UX', 'room': 'Online via Zoom', 'active': false},
     ];
 
     return StaggeredList(
-      delayStep: const Duration(milliseconds: 60),
-      children: tasks.map((task) {
-        final isUrgent = task['urgent'] as bool;
+      delayStep: const Duration(milliseconds: 100),
+      children: events.map((event) {
+        final isActive = event['active'] as bool;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
         return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: SchoolCard(
-            onTap: () {},
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            borderRadius: 16,
-            borderColor: isUrgent ? SchoolColors.red.withValues(alpha: 0.3) : null,
+          padding: const EdgeInsets.only(bottom: 16),
+          child: GlassCard(
+            padding: const EdgeInsets.all(20),
+            borderRadius: 20,
+            color: isActive ? (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white) : null,
             child: Row(
               children: [
-                GradientIconBox(
-                  icon: task['type'] == 'Quiz' ? Icons.timer_outlined 
-                      : task['type'] == 'Project' ? Icons.folder_zip_outlined 
-                      : Icons.menu_book_rounded,
-                  colors: isUrgent 
-                      ? [SchoolColors.red.withValues(alpha: 0.7), SchoolColors.red] 
-                      : [classColor.withValues(alpha: 0.7), classColor],
-                  size: 44,
-                  iconSize: 20,
-                  borderRadius: 12,
+                Container(
+                  width: 6,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: isActive ? SchoolColors.primary : (isDark ? SchoolColors.darkMuted : SchoolColors.muted),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -462,40 +429,48 @@ class _UpcomingTasksList extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        task['title'] as String,
+                        event['time'] as String,
+                        style: AppTextStyle.mono(
+                          fontSize: 12,
+                          color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        event['subject'] as String,
                         style: const TextStyle(
-                          fontSize: 15,
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: -0.2,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(
-                            Icons.schedule_rounded, 
-                            size: 13, 
-                            color: isUrgent ? SchoolColors.red : SchoolColors.muted
-                          ),
+                          Icon(Icons.location_on_rounded, size: 14, color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary),
                           const SizedBox(width: 4),
                           Text(
-                            task['due'] as String,
-                            style: AppTextStyle.mono(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: isUrgent ? SchoolColors.red : SchoolColors.muted,
+                            event['room'] as String,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
                             ),
                           ),
                         ],
-                      )
+                      ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
-                )
+                if (isActive)
+                  FilledButton(
+                    onPressed: () {},
+                    style: FilledButton.styleFrom(
+                      backgroundColor: SchoolColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                      minimumSize: const Size(0, 36),
+                    ),
+                    child: const Text('Tham gia', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ),
               ],
             ),
           ),
@@ -506,89 +481,75 @@ class _UpcomingTasksList extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// TIMELINE LIST
+// UPCOMING TASKS (Cần xử lý)
 // ─────────────────────────────────────────────────────────────────
-class _TimelineList extends StatelessWidget {
-  const _TimelineList({required this.classColor});
-  final Color classColor;
+class _UpcomingTasksList extends StatelessWidget {
+  const _UpcomingTasksList();
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    final events = [
-      {'time': '09:00', 'title': 'Data Structures Lecture', 'type': 'Lecture', 'icon': Icons.video_camera_front_outlined},
-      {'time': '11:30', 'title': 'Quiz 2 Opens', 'type': 'Assessment', 'icon': Icons.quiz_outlined},
-      {'time': '14:00', 'title': 'Study Group Meeting', 'type': 'Event', 'icon': Icons.group_outlined},
-      {'time': '23:59', 'title': 'Assignment Deadline', 'type': 'Deadline', 'icon': Icons.warning_amber_rounded},
+    final tasks = [
+      {'title': 'Bài tập lớn React', 'due': 'Hôm nay, 23:59', 'status': 'warning'},
+      {'title': 'Báo cáo UI UX', 'due': 'Ngày mai', 'status': 'success'},
+      {'title': 'Thiết kế Figma', 'due': 'Trễ hạn 1 ngày', 'status': 'danger'},
     ];
 
     return StaggeredList(
-      delayStep: const Duration(milliseconds: 60),
-      children: events.map((event) {
+      delayStep: const Duration(milliseconds: 100),
+      children: tasks.map((task) {
+        final status = task['status'] as String;
+        Color statusColor;
+        switch(status) {
+          case 'warning': statusColor = SchoolColors.orange; break;
+          case 'success': statusColor = SchoolColors.green; break;
+          case 'danger': statusColor = SchoolColors.red; break;
+          default: statusColor = SchoolColors.primary;
+        }
+
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
-          child: SchoolCard(
+          child: GlassCard(
             padding: const EdgeInsets.all(20),
-            borderRadius: 16,
-            child: Row(
+            borderRadius: 20,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: isDark ? classColor.withValues(alpha: 0.1) : classColor.withValues(alpha: 0.05),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    event['icon'] as IconData,
-                    color: classColor,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        event['title'] as String,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        task['title'] as String,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.schedule, size: 14, color: isDark ? SchoolColors.darkMuted : SchoolColors.muted),
-                          const SizedBox(width: 6),
-                          Text(
-                            event['time'] as String,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              event['type'] as String,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                    ],
+                      child: Text(
+                        status.toUpperCase(),
+                        style: AppTextStyle.mono(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: statusColor,
+                        ).copyWith(letterSpacing: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  task['due'] as String,
+                  style: AppTextStyle.mono(
+                    fontSize: 14,
+                    color: Theme.of(context).brightness == Brightness.dark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
                   ),
                 ),
               ],
