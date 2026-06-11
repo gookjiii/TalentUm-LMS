@@ -1,13 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../../app_state.dart';
+import '../../../../firebase/school_repository.dart';
 import '../../../../theme.dart';
 import '../../../../widgets/school_widgets.dart';
 import 'package:school_world/main.dart';
 
-class StudentToday extends HookConsumerWidget {
+class StudentToday extends StatefulHookConsumerWidget {
   const StudentToday({
     super.key,
     required this.classes,
@@ -24,104 +26,128 @@ class StudentToday extends HookConsumerWidget {
   final VoidCallback onHomeworkTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StudentToday> createState() => _StudentTodayState();
+}
+
+class _StudentTodayState extends ConsumerState<StudentToday> {
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _userStream;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      final repo = AppScope.of(context).repository;
+      _userStream = repo.userDocStream();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final topPadding = MediaQuery.paddingOf(context).top;
-    final isMobile = MediaQuery.sizeOf(context).width < 1024; // lg breakpoint in tailwind
+    final isMobile = MediaQuery.sizeOf(context).width < 1024;
+    final repo = AppScope.of(context).repository;
 
-    // Mock data for UI to match the prototype
-    final String studentName = "Alex Nguyen";
-    final int assignments = 3;
-    final String gpa = "8.5";
-    final String attendance = "95%";
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: _userStream,
+      builder: (context, profileSnap) {
+        final profile = profileSnap.data?.data() ?? const <String, dynamic>{};
+        final user = repo.auth.currentUser;
+        final name = (profile['name']?.toString().trim().isNotEmpty ?? false)
+            ? profile['name'].toString().trim()
+            : (user?.displayName ?? "Студент"); // Student
+            
+        final firstName = name.split(RegExp(r'\s+')).first;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              isMobile ? 16 : 32,
-              topPadding + (isMobile ? 16 : 32),
-              isMobile ? 16 : 32,
-              80,
-            ),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // 1. HERO SECTION
-                FadeInUp(
-                  offset: 40,
-                  duration: const Duration(milliseconds: 600),
-                  child: _HeroSection(
-                    studentName: studentName,
-                    assignments: assignments,
-                    isMobile: isMobile,
-                    onAction: () => onTabSelect(1), // Assume tab 1 is classes
-                  ),
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: CustomScrollView(
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  isMobile ? 16 : 32,
+                  topPadding + (isMobile ? 16 : 32),
+                  isMobile ? 16 : 32,
+                  80,
                 ),
-                
-                const SizedBox(height: 40),
-
-                // 2. QUICK STATS
-                FadeInUp(
-                  delay: const Duration(milliseconds: 100),
-                  offset: 30,
-                  child: _QuickStatsSection(
-                    gpa: gpa,
-                    assignments: assignments.toString(),
-                    attendance: attendance,
-                    isMobile: isMobile,
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-
-                // 3. TWO COLUMN LAYOUT (Timeline & Action Required)
-                if (isMobile) ...[
-                  const _SectionTitle(title: 'Lịch trình hôm nay', icon: Icons.schedule_rounded, color: SchoolColors.primary),
-                  const SizedBox(height: 16),
-                  const _TimelineList(),
-                  const SizedBox(height: 40),
-                  const _SectionTitle(title: 'Cần xử lý', icon: Icons.error_outline_rounded, color: SchoolColors.orange),
-                  const SizedBox(height: 16),
-                  const _UpcomingTasksList(),
-                ] else ...[
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Timeline (7 cols)
-                      Expanded(
-                        flex: 7,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            _SectionTitle(title: 'Lịch trình hôm nay', icon: Icons.schedule_rounded, color: SchoolColors.primary),
-                            SizedBox(height: 16),
-                            _TimelineList(),
-                          ],
-                        ),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // 1. HERO SECTION
+                    FadeInUp(
+                      offset: 40,
+                      duration: const Duration(milliseconds: 600),
+                      child: _HeroSection(
+                        studentName: firstName,
+                        repo: repo,
+                        isMobile: isMobile,
+                        onAction: () => widget.onTabSelect(1),
                       ),
-                      const SizedBox(width: 32),
-                      // Homework (5 cols)
-                      Expanded(
-                        flex: 5,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            _SectionTitle(title: 'Cần xử lý', icon: Icons.error_outline_rounded, color: SchoolColors.orange),
-                            SizedBox(height: 16),
-                            _UpcomingTasksList(),
-                          ],
-                        ),
+                    ),
+                    
+                    const SizedBox(height: 40),
+
+                    // 2. QUICK STATS
+                    FadeInUp(
+                      delay: const Duration(milliseconds: 100),
+                      offset: 30,
+                      child: _QuickStatsSection(
+                        repo: repo,
+                        isMobile: isMobile,
+                      ),
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    // 3. TWO COLUMN LAYOUT (Timeline & Action Required)
+                    if (isMobile) ...[
+                      const _SectionTitle(title: 'Расписание на сегодня', icon: Icons.schedule_rounded, color: SchoolColors.primary),
+                      const SizedBox(height: 16),
+                      _TimelineList(classes: widget.classes),
+                      const SizedBox(height: 40),
+                      const _SectionTitle(title: 'Требует внимания', icon: Icons.error_outline_rounded, color: SchoolColors.orange),
+                      const SizedBox(height: 16),
+                      _UpcomingTasksList(repo: repo),
+                    ] else ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Timeline (7 cols)
+                          Expanded(
+                            flex: 7,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const _SectionTitle(title: 'Расписание на сегодня', icon: Icons.schedule_rounded, color: SchoolColors.primary),
+                                const SizedBox(height: 16),
+                                _TimelineList(classes: widget.classes),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 32),
+                          // Homework (5 cols)
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const _SectionTitle(title: 'Требует внимания', icon: Icons.error_outline_rounded, color: SchoolColors.orange),
+                                const SizedBox(height: 16),
+                                _UpcomingTasksList(repo: repo),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
-              ]),
-            ),
+                  ]),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      }
     );
   }
 }
@@ -153,79 +179,105 @@ class _SectionTitle extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────
 // HERO SECTION
 // ─────────────────────────────────────────────────────────────────
-class _HeroSection extends StatelessWidget {
+class _HeroSection extends StatefulWidget {
   const _HeroSection({
     required this.studentName,
-    required this.assignments,
+    required this.repo,
     required this.isMobile,
     required this.onAction,
   });
 
   final String studentName;
-  final int assignments;
+  final SchoolRepository repo;
   final bool isMobile;
   final VoidCallback onAction;
 
   @override
+  State<_HeroSection> createState() => _HeroSectionState();
+}
+
+class _HeroSectionState extends State<_HeroSection> {
+  Stream<QuerySnapshot>? _submissionsStream;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      final uid = widget.repo.auth.currentUser?.uid;
+      _submissionsStream = widget.repo.firestore
+          .collection('submissions')
+          .where('studentId', isEqualTo: uid)
+          .snapshots();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final nameParts = studentName.split(' ');
-    final firstName = nameParts.isNotEmpty ? nameParts.first : studentName;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: isMobile ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
+    return StreamBuilder<QuerySnapshot>(
+      stream: _submissionsStream,
+      builder: (context, snapshot) {
+        final assignments = snapshot.data?.docs.length ?? 0;
+        
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: widget.isMobile ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Chào buổi sáng, ',
-                    style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -1,
-                    ),
-                  ),
-                  ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [Color(0xFF2563EB), Color(0xFF6366F1)],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ).createShader(bounds),
-                    child: Text(
-                      '$firstName!',
-                      style: const TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: -1,
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      const Text(
+                        'Доброе утро, ', // Good morning
+                        style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1,
+                        ),
                       ),
+                      ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [Color(0xFF2563EB), Color(0xFF6366F1)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ).createShader(bounds),
+                        child: Text(
+                          '${widget.studentName}!',
+                          style: const TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Сегодня у вас $assignments задач для выполнения.', // Today you have X tasks
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
                     ),
                   ),
+                  if (widget.isMobile) ...[
+                    const SizedBox(height: 24),
+                    _ActionButton(onPressed: widget.onAction),
+                  ],
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Hôm nay bạn có $assignments nhiệm vụ cần hoàn thành.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
-                ),
-              ),
-              if (isMobile) ...[
-                const SizedBox(height: 24),
-                _ActionButton(onPressed: onAction),
-              ],
-            ],
-          ),
-        ),
-        if (!isMobile) _ActionButton(onPressed: onAction),
-      ],
+            ),
+            if (!widget.isMobile) _ActionButton(onPressed: widget.onAction),
+          ],
+        );
+      }
     );
   }
 }
@@ -265,7 +317,7 @@ class _ActionButton extends StatelessWidget {
                 const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
                 const SizedBox(width: 8),
                 const Text(
-                  'Vào lớp học',
+                  'Перейти к курсу', // Resume course
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -284,40 +336,76 @@ class _ActionButton extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────
 // QUICK STATS
 // ─────────────────────────────────────────────────────────────────
-class _QuickStatsSection extends StatelessWidget {
+class _QuickStatsSection extends StatefulWidget {
   const _QuickStatsSection({
-    required this.gpa,
-    required this.assignments,
-    required this.attendance,
+    required this.repo,
     required this.isMobile,
   });
   
-  final String gpa;
-  final String assignments;
-  final String attendance;
+  final SchoolRepository repo;
   final bool isMobile;
 
   @override
-  Widget build(BuildContext context) {
-    final children = [
-      _StatCard(title: 'Điểm số / Đánh giá', value: gpa, icon: Icons.trending_up_rounded, iconColor: SchoolColors.green),
-      _StatCard(title: 'Bài tập / Nhiệm vụ', value: assignments, icon: Icons.assignment_rounded, iconColor: SchoolColors.orange),
-      _StatCard(title: 'Chuyên cần', value: attendance, icon: Icons.event_available_rounded, iconColor: SchoolColors.primary),
-    ];
+  State<_QuickStatsSection> createState() => _QuickStatsSectionState();
+}
 
-    if (isMobile) {
-      return Column(
-        children: children.map((c) => Padding(padding: const EdgeInsets.only(bottom: 16), child: c)).toList(),
-      );
+class _QuickStatsSectionState extends State<_QuickStatsSection> {
+  Future<QuerySnapshot>? _gradedFuture;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      final uid = widget.repo.auth.currentUser?.uid;
+      _gradedFuture = widget.repo.firestore
+          .collection('submissions')
+          .where('studentId', isEqualTo: uid)
+          .where('status', isEqualTo: 'graded')
+          .get();
     }
+  }
 
-    return Row(
-      children: children.map((c) => Expanded(
-        child: Padding(
-          padding: EdgeInsets.only(right: children.last == c ? 0 : 24),
-          child: c,
-        ),
-      )).toList(),
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<QuerySnapshot>(
+      future: _gradedFuture,
+      builder: (context, gradedSnap) {
+        final gradedDocs = gradedSnap.data?.docs ?? [];
+        double avg = 0;
+        if (gradedDocs.isNotEmpty) {
+          final sum = gradedDocs.fold<double>(0, (acc, d) {
+            final g = d.data() as Map<String, dynamic>;
+            return acc + (double.tryParse(g['grade']?.toString() ?? '0') ?? 0);
+          });
+          avg = sum / gradedDocs.length;
+        }
+
+        final avgStr = avg == 0 ? "—" : avg.toStringAsFixed(1);
+        final assignmentsCount = gradedDocs.length; // Approximate for assignments done
+
+        final children = [
+          _StatCard(title: 'Текущая оценка', value: avgStr, icon: Icons.trending_up_rounded, iconColor: SchoolColors.green), // Current Grade
+          _StatCard(title: 'Задания', value: assignmentsCount.toString(), icon: Icons.assignment_rounded, iconColor: SchoolColors.orange), // Assignments
+          const _StatCard(title: 'Посещаемость', value: "98%", icon: Icons.event_available_rounded, iconColor: SchoolColors.primary), // Attendance
+        ];
+
+        if (widget.isMobile) {
+          return Column(
+            children: children.map((c) => Padding(padding: const EdgeInsets.only(bottom: 16), child: c)).toList(),
+          );
+        }
+
+        return Row(
+          children: children.map((c) => Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: children.last == c ? 0 : 24),
+              child: c,
+            ),
+          )).toList(),
+        );
+      }
     );
   }
 }
@@ -391,21 +479,35 @@ class _StatCard extends StatelessWidget {
 // TIMELINE LIST
 // ─────────────────────────────────────────────────────────────────
 class _TimelineList extends StatelessWidget {
-  const _TimelineList();
+  const _TimelineList({required this.classes});
+  final List<Map<String, dynamic>> classes;
 
   @override
   Widget build(BuildContext context) {
-    final events = [
-      {'time': '08:00 - 09:30', 'subject': 'Toán Học Cao Cấp', 'room': 'Phòng 102 - Cơ sở A', 'active': false},
-      {'time': '10:00 - 11:30', 'subject': 'Lập trình Web', 'room': 'Lab 3', 'active': true},
-      {'time': '13:30 - 15:00', 'subject': 'Thiết kế UI/UX', 'room': 'Online via Zoom', 'active': false},
-    ];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Build timeline events from actual classes
+    List<Map<String, dynamic>> events = [];
+    if (classes.isEmpty) {
+      events = [
+        {'time': '08:00 - 09:30', 'subject': 'Нет классов', 'room': '-', 'active': false}, // No classes
+      ];
+    } else {
+      for (var i = 0; i < classes.length; i++) {
+        final c = classes[i];
+        events.add({
+          'time': 'Класс ${i + 1}', // Class #
+          'subject': c['name'] ?? 'Неизвестно', // Unknown
+          'room': 'Онлайн', // Online
+          'active': i == 0, // Mock active state for the first one
+        });
+      }
+    }
 
     return StaggeredList(
       delayStep: const Duration(milliseconds: 100),
       children: events.map((event) {
         final isActive = event['active'] as bool;
-        final isDark = Theme.of(context).brightness == Brightness.dark;
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
@@ -469,7 +571,7 @@ class _TimelineList extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                       minimumSize: const Size(0, 36),
                     ),
-                    child: const Text('Tham gia', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    child: const Text('Войти', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)), // Join
                   ),
               ],
             ),
@@ -483,80 +585,110 @@ class _TimelineList extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────
 // UPCOMING TASKS (Cần xử lý)
 // ─────────────────────────────────────────────────────────────────
-class _UpcomingTasksList extends StatelessWidget {
-  const _UpcomingTasksList();
+class _UpcomingTasksList extends StatefulWidget {
+  const _UpcomingTasksList({required this.repo});
+  final SchoolRepository repo;
+
+  @override
+  State<_UpcomingTasksList> createState() => _UpcomingTasksListState();
+}
+
+class _UpcomingTasksListState extends State<_UpcomingTasksList> {
+  Stream<QuerySnapshot<Map<String, dynamic>>>? _attentionStream;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      final uid = widget.repo.auth.currentUser?.uid;
+      _attentionStream = widget.repo.firestore
+          .collection('submissions')
+          .where('studentId', isEqualTo: uid)
+          .limit(3)
+          .snapshots();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final tasks = [
-      {'title': 'Bài tập lớn React', 'due': 'Hôm nay, 23:59', 'status': 'warning'},
-      {'title': 'Báo cáo UI UX', 'due': 'Ngày mai', 'status': 'success'},
-      {'title': 'Thiết kế Figma', 'due': 'Trễ hạn 1 ngày', 'status': 'danger'},
-    ];
-
-    return StaggeredList(
-      delayStep: const Duration(milliseconds: 100),
-      children: tasks.map((task) {
-        final status = task['status'] as String;
-        Color statusColor;
-        switch(status) {
-          case 'warning': statusColor = SchoolColors.orange; break;
-          case 'success': statusColor = SchoolColors.green; break;
-          case 'danger': statusColor = SchoolColors.red; break;
-          default: statusColor = SchoolColors.primary;
-        }
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: GlassCard(
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: _attentionStream,
+      builder: (context, snapshot) {
+        final docs = snapshot.data?.docs ?? [];
+        
+        if (docs.isEmpty) {
+          return GlassCard(
             padding: const EdgeInsets.all(20),
             borderRadius: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+            child: const Center(
+              child: Text("Завершено!", style: TextStyle(color: SchoolColors.green, fontWeight: FontWeight.bold)), // Completed!
+            )
+          );
+        }
+
+        return StaggeredList(
+          delayStep: const Duration(milliseconds: 100),
+          children: docs.map((doc) {
+            final data = doc.data();
+            final title = data['assignmentId']?.toString() ?? 'Задание'; // Assignment
+            final statusStr = "важное"; // important
+            final statusColor = SchoolColors.orange;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: GlassCard(
+                padding: const EdgeInsets.all(20),
+                borderRadius: 20,
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        task['title'] as String,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
-                      ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.1),
+                            border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            statusStr.toUpperCase(),
+                            style: AppTextStyle.mono(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: statusColor,
+                            ).copyWith(letterSpacing: 0.5),
+                          ),
+                        ),
+                      ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
-                        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        status.toUpperCase(),
-                        style: AppTextStyle.mono(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: statusColor,
-                        ).copyWith(letterSpacing: 0.5),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Недавно', // Recently
+                      style: AppTextStyle.mono(
+                        fontSize: 14,
+                        color: Theme.of(context).brightness == Brightness.dark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  task['due'] as String,
-                  style: AppTextStyle.mono(
-                    fontSize: 14,
-                    color: Theme.of(context).brightness == Brightness.dark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          }).toList(),
         );
-      }).toList(),
+      }
     );
   }
 }
