@@ -265,7 +265,6 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                         );
                       },
                     ),
-                    ),
               ),
             );
           },
