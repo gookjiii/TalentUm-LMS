@@ -1,330 +1,236 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:school_world/l10n/app_localizations.dart';
-import 'package:school_world/src/firebase/school_repository.dart';
-import 'package:school_world/src/models/schedule.dart';
-import 'package:school_world/src/providers/app_providers.dart';
-import 'package:school_world/src/theme.dart';
-import 'package:school_world/src/widgets/school_widgets.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../../../../app_state.dart';
+import '../../../../theme.dart';
+import '../../../../widgets/school_widgets.dart';
 import 'package:school_world/main.dart';
-import 'package:sw_design_system/design_system.dart';
-import 'package:school_world/src/utils/responsive_utils.dart';
 
-import 'package:school_world/src/screens/settings_screen.dart';
-import 'package:school_world/src/screens/student_shell.dart';
-import 'package:school_world/src/features/today/presentation/widgets/learning_streak_widget.dart';
-
-class StudentToday extends ConsumerWidget {
+class StudentToday extends HookConsumerWidget {
   const StudentToday({
     super.key,
     required this.classes,
     required this.selectedClassId,
     required this.onTabSelect,
-    required this.onHomeworkTap,
     this.showSidebar = false,
+    required this.onHomeworkTap,
   });
+
   final List<Map<String, dynamic>> classes;
   final String? selectedClassId;
   final ValueChanged<int> onTabSelect;
-  final VoidCallback onHomeworkTap;
   final bool showSidebar;
+  final VoidCallback onHomeworkTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context)!;
-    final user = FirebaseAuth.instance.currentUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final topPadding = MediaQuery.paddingOf(context).top;
+    final isMobile = MediaQuery.sizeOf(context).width < 700;
 
-    final userAsync = ref.watch(userDocumentProvider);
-    final userData = userAsync.value ?? {};
-    final rawName = userData['name']?.toString() ?? user?.displayName ?? l10n.student;
-    final name = rawName.trim().isNotEmpty
-        ? rawName.split(RegExp(r'\s+')).first
-        : l10n.student;
-    final avatarUrl = userData['avatarUrl']?.toString();
+    // Simulate fetching user name from state/repo (fallback to Alex Student)
+    final appState = AppScope.of(context).appState;
+    final String studentName = "Alex Student"; 
 
-    final now = DateTime.now();
-    final date = DateFormat('EEEE, MMMM d', l10n.localeName).format(now);
-    final hour = now.hour;
-    final greeting = hour < 12
-        ? l10n.goodMorning
-        : hour < 17
-        ? l10n.goodAfternoon
-        : l10n.goodEvening;
+    // Find active class
+    final activeClass = classes.firstWhere(
+      (c) => c['id'] == selectedClassId,
+      orElse: () => classes.isNotEmpty ? classes.first : {},
+    );
+    final String className = activeClass['name']?.toString() ?? 'Computer Science 101';
+    final Color classColor = colorFromHex(
+      activeClass['coverColor'] as String?,
+      SchoolColors.primary,
+    );
 
-    final todaySchedules = ref.watch(studentTodaySchedulesProvider);
-    final classInfo = {
-      for (final c in classes)
-        c['id'].toString(): (
-          name: c['name']?.toString() ?? 'Класс',
-          subject: c['subject']?.toString() ?? '',
-        ),
-    };
-
-    ResolvedScheduleItem? upcomingClass;
-    for (final item in todaySchedules) {
-      if (item.cancelled) continue;
-      final diff = item.start.difference(now).inMinutes;
-      if (diff > 0 && diff <= 15) {
-        upcomingClass = item;
-        break;
-      }
-    }
-
-    final activeLessons = todaySchedules.where((s) {
-      final n = DateTime.now();
-      return !s.cancelled && n.isAfter(s.start) && n.isBefore(s.end);
-    }).length;
-
-    return CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding, vertical: 16),
-            child: PageHeader(
-              title: '$greeting, $name',
-              subtitle: date,
-              trailing: SchoolAvatar(
-                name: name,
-                avatarUrl: avatarUrl,
-                radius: 23,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (ctx) => SettingsScreen(
-                      repository: AppScope.of(ctx).repository,
-                      appState: AppScope.of(ctx).appState,
-                    ),
+    return Scaffold(
+      backgroundColor: Colors.transparent, // Let the shell handle the background
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              isMobile ? 16 : 32,
+              topPadding + (isMobile ? 16 : 32),
+              isMobile ? 16 : 32,
+              40,
+            ),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // 1. ASYMMETRIC HERO SECTION (Glassmorphism)
+                FadeInUp(
+                  offset: 40,
+                  duration: const Duration(milliseconds: 600),
+                  child: _HeroSection(
+                    studentName: studentName,
+                    className: className,
+                    classColor: classColor,
+                    isMobile: isMobile,
                   ),
                 ),
-                showBorder: true,
-              ),
-            ),
-          ),
-        ),
+                
+                const SizedBox(height: 32),
 
-        // ── Bento Grid Section ─────────────────────────────────────
-        SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-          sliver: SliverToBoxAdapter(
-            child: Column(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _BentoStats(
-                        classCount: classes.length,
-                        todayLessons: todaySchedules.length,
-                        activeLessons: activeLessons,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 3,
-                      child: StreakCard(
-                        classIds: classes.map((c) => (c['id'] ?? '').toString()).toList(),
-                        onTap: onHomeworkTap,
-                      ),
-                    ),
-                  ],
+                // 2. QUICK STATS (Asymmetric Grid 2:1)
+                FadeInUp(
+                  delay: const Duration(milliseconds: 100),
+                  offset: 30,
+                  child: _QuickStatsSection(isMobile: isMobile, classColor: classColor),
+                ),
+
+                const SizedBox(height: 40),
+
+                // 3. UPCOMING TASKS (Staggered List)
+                SectionHeader(
+                  title: 'Upcoming Assignments',
+                  action: 'View All',
+                  onActionTap: onHomeworkTap,
                 ),
                 const SizedBox(height: 16),
-                if (upcomingClass != null) ...[
-                  _UpcomingClassReminder(
-                    item: upcomingClass,
-                    className: classInfo[upcomingClass.classId]?.name ?? 'Класс',
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                const LearningStreakWidget(),
-              ],
+                _UpcomingTasksList(classColor: classColor),
+                
+                const SizedBox(height: 80), // Bottom breathing room
+              ]),
             ),
           ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 32)),
-
-        // ── Today's classes ───────────────────────────────────────
-        if (!showSidebar) ...[
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-              child: SectionHeader(
-                title: l10n.todaysClasses.toUpperCase(),
-                action: l10n.viewAll,
-                onActionTap: () => onTabSelect(4),
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          if (todaySchedules.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-                child: SwBentoCard(
-                  padding: const EdgeInsets.symmetric(vertical: 48),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(Icons.calendar_today_outlined,
-                            size: 32, color: SchoolColors.muted.withOpacity(0.5)),
-                        const SizedBox(height: 12),
-                        Text(
-                          l10n.noLessonsForToday,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: SchoolColors.muted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = todaySchedules[index];
-                    if (index >= 3) return null;
-                    final info = classInfo[item.classId];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: StudentScheduleCard(
-                        item: item,
-                        className: info?.name ?? 'Класс',
-                        subject: info?.subject ?? '',
-                      ),
-                    );
-                  },
-                  childCount:
-                      todaySchedules.length > 3 ? 3 : todaySchedules.length,
-                ),
-              ),
-            ),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
-
-        // ── Quick links ───────────────────────────────────────────
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-            child: SectionHeader(title: l10n.quickLinks),
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-          sliver: SliverGrid(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: MediaQuery.sizeOf(context).width >= 700 ? 4 : 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.6,
-            ),
-            delegate: SliverChildListDelegate([
-              QuickTile(
-                onTap: () => onTabSelect(5),
-                icon: Icons.library_books_outlined,
-                label: l10n.library,
-                color: SchoolColors.primary,
-              ),
-              QuickTile(
-                onTap: () => onTabSelect(6),
-                icon: Icons.ondemand_video_outlined,
-                label: l10n.webinars,
-                color: SchoolColors.accent,
-              ),
-              QuickTile(
-                onTap: () => showDialog(
-                  context: context,
-                  builder: (_) => JoinClassDialog(
-                    repository: AppScope.of(context).repository,
-                  ),
-                ),
-                icon: Icons.group_add_outlined,
-                label: l10n.joinAClass,
-                color: SchoolColors.secondary,
-              ),
-            ]),
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 48)),
-      ],
+      ),
     );
   }
 }
 
-class _BentoStats extends StatelessWidget {
-  const _BentoStats({
-    required this.classCount,
-    required this.todayLessons,
-    required this.activeLessons,
+// ─────────────────────────────────────────────────────────────────
+// HERO SECTION (Glassmorphism + Asymmetric)
+// ─────────────────────────────────────────────────────────────────
+class _HeroSection extends StatelessWidget {
+  const _HeroSection({
+    required this.studentName,
+    required this.className,
+    required this.classColor,
+    required this.isMobile,
   });
-  final int classCount;
-  final int todayLessons;
-  final int activeLessons;
+
+  final String studentName;
+  final String className;
+  final Color classColor;
+  final bool isMobile;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: SchoolColors.primary,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: SwTheme.diffusionShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Greeting logic
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+    return GlassCard(
+      padding: EdgeInsets.all(isMobile ? 24 : 40),
+      borderRadius: 24,
+      color: isDark 
+          ? classColor.withValues(alpha: 0.08) 
+          : classColor.withValues(alpha: 0.04),
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Text(
-            '$todayLessons',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 40,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1,
-              height: 1,
+          // Background abstract glow
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: classColor.withValues(alpha: 0.15),
+              ),
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'LESSONS TODAY',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(height: 24),
+          
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: SchoolColors.accent,
-                  shape: BoxShape.circle,
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    StatusChip(
+                      label: className.toUpperCase(),
+                      color: classColor,
+                      pulseDot: true,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '$greeting,\n$studentName.',
+                      style: AppTextStyle.display(context).copyWith(
+                        fontSize: isMobile ? 28 : 36,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'You have 2 pending assignments and 1 upcoming webinar this week.',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
+                        height: 1.5,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: () {},
+                      style: FilledButton.styleFrom(
+                        backgroundColor: classColor,
+                        minimumSize: const Size(140, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        )
+                      ),
+                      child: const Text('Resume Course'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                '$activeLessons ACTIVE',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+              if (!isMobile) ...[
+                const SizedBox(width: 40),
+                Expanded(
+                  flex: 1,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: CircularProgressRing(
+                      percent: 0.68,
+                      color: classColor,
+                      size: 140,
+                      strokeWidth: 10,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '68%',
+                            style: AppTextStyle.mono(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white : SchoolColors.text,
+                            ),
+                          ),
+                          Text(
+                            'Completed',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                              letterSpacing: 0.5,
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ],
@@ -334,390 +240,136 @@ class _BentoStats extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// STATS ROW
+// QUICK STATS (Asymmetric Layout)
 // ─────────────────────────────────────────────────────────────────
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({
-    required this.classCount,
-    required this.todayLessons,
-    required this.activeLessons,
-  });
-  final int classCount;
-  final int todayLessons;
-  final int activeLessons;
+class _QuickStatsSection extends StatelessWidget {
+  const _QuickStatsSection({required this.isMobile, required this.classColor});
+  final bool isMobile;
+  final Color classColor;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final l10n = AppLocalizations.of(context)!;
+    if (isMobile) {
+      return Column(
+        children: [
+          _StatCard(title: 'Current Grade', value: 'A-', subtitle: 'Top 15% of class', flex: 1, color: SchoolColors.green),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: _StatCard(title: 'Attendance', value: '98%', subtitle: 'On track', color: SchoolColors.primary)),
+              const SizedBox(width: 16),
+              Expanded(child: _StatCard(title: 'Credits', value: '24', subtitle: 'Earned', color: SchoolColors.orange)),
+            ],
+          )
+        ],
+      );
+    }
 
     return Row(
       children: [
-        _StatMini(
-          icon: Icons.school_rounded,
-          value: '$classCount',
-          label: l10n.allClasses,
-          color: SchoolColors.primary,
-          isDark: isDark,
-        ),
-        const SizedBox(width: 10),
-        _StatMini(
-          icon: Icons.calendar_today_rounded,
-          value: '$todayLessons',
-          label: l10n.todaysClasses,
-          color: SchoolColors.accent,
-          isDark: isDark,
-        ),
-        if (activeLessons > 0) ...[
-          const SizedBox(width: 10),
-          _StatMini(
-            icon: Icons.play_circle_rounded,
-            value: '$activeLessons',
-            label: AppLocalizations.of(context)!.now,
+        Expanded(
+          flex: 5,
+          child: _StatCard(
+            title: 'Current Grade Average', 
+            value: '92.4', 
+            subtitle: 'Consistent performance this semester',
             color: SchoolColors.green,
-            isDark: isDark,
-            pulsing: true,
+            isLarge: true,
           ),
-        ],
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          flex: 3,
+          child: _StatCard(
+            title: 'Attendance', 
+            value: '98%', 
+            subtitle: '2 missed sessions',
+            color: SchoolColors.primary,
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          flex: 3,
+          child: _StatCard(
+            title: 'Rank', 
+            value: '#4', 
+            subtitle: 'Out of 120 students',
+            color: SchoolColors.orange,
+          ),
+        ),
       ],
     );
   }
 }
 
-class _StatMini extends StatelessWidget {
-  const _StatMini({
-    required this.icon,
+class _StatCard extends StatelessWidget {
+  const _StatCard({
+    required this.title,
     required this.value,
-    required this.label,
+    required this.subtitle,
     required this.color,
-    required this.isDark,
-    this.pulsing = false,
+    this.flex = 1,
+    this.isLarge = false,
   });
-  final IconData icon;
+
+  final String title;
   final String value;
-  final String label;
+  final String subtitle;
   final Color color;
-  final bool isDark;
-  final bool pulsing;
+  final int flex;
+  final bool isLarge;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: isDark
-              ? color.withValues(alpha: 0.12)
-              : color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: color.withValues(alpha: isDark ? 0.2 : 0.15),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: AppTextStyle.mono(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
-                      color: color,
-                    ).copyWith(height: 1.1),
-                  ),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? SchoolColors.darkTextSecondary
-                          : SchoolColors.muted,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────
-// STREAK / HOMEWORK PROGRESS CARD
-// ─────────────────────────────────────────────────────────────────
-class StreakCard extends StatefulWidget {
-  const StreakCard({super.key, required this.classIds, required this.onTap});
-
-  final List<String> classIds;
-  final VoidCallback onTap;
-
-  @override
-  State<StreakCard> createState() => _StreakCardState();
-}
-
-class _StreakCardState extends State<StreakCard> {
-  Future<_HomeworkProgress>? _progressFuture;
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final repo = AppScope.of(context).repository;
-    _progressFuture ??= _loadProgress(repo, repo.uid, widget.classIds);
-  }
-
-  @override
-  void didUpdateWidget(covariant StreakCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.classIds != widget.classIds) {
-      final repo = AppScope.of(context).repository;
-      _progressFuture = _loadProgress(repo, repo.uid, widget.classIds);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return FutureBuilder<_HomeworkProgress>(
-      future: _progressFuture,
-      builder: (context, snapshot) {
-        final progress =
-            snapshot.data ?? const _HomeworkProgress(done: 0, total: 0);
-        final fraction = progress.total == 0
-            ? 0.0
-            : (progress.done / progress.total).clamp(0.0, 1.0);
-        final percent = (fraction * 100).round();
-
-        return MouseRegion(
-          onEnter: (_) => setState(() => _hovered = true),
-          onExit: (_) => setState(() => _hovered = false),
-          child: GestureDetector(
-            onTapDown: (_) => setState(() => _pressed = true),
-            onTapUp: (_) {
-              setState(() => _pressed = false);
-              widget.onTap();
-            },
-            onTapCancel: () => setState(() => _pressed = false),
-            child: AnimatedScale(
-              scale: _pressed ? 0.96 : (_hovered ? 1.025 : 1.0),
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeOutBack,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [SchoolColors.primaryDark, SchoolColors.secondary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: SchoolColors.primary.withValues(alpha: _hovered ? 0.45 : 0.28),
-                      blurRadius: _hovered ? 28 : 20,
-                      offset: Offset(0, _hovered ? 12 : 8),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    // Animated ring
-                    CircularProgressRing(
-                      percent: fraction,
-                      color: Colors.white,
-                      size: 56,
-                      strokeWidth: 4,
-                      child: Text(
-                        '$percent%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.homework,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.75),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            l10n.homeworksDone(progress.done, progress.total),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: Colors.white.withValues(alpha: 0.5),
-                      size: 14,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<_HomeworkProgress> _loadProgress(
-    SchoolRepository repo,
-    String? uid,
-    List<String> classIds,
-  ) async {
-    if (uid == null || classIds.isEmpty) {
-      return const _HomeworkProgress(done: 0, total: 0);
-    }
-
-    final today = DateTime.now();
-    final start = DateTime(today.year, today.month, today.day);
-    final end = start.add(const Duration(days: 1));
-    final ids = classIds.take(10).toList(growable: false);
-
-    final assignments = await repo.firestore
-        .collection('assignments')
-        .where('classId', whereIn: ids)
-        .get();
-
-    final relevantAssignments = assignments.docs
-        .where((doc) {
-          final dueAt = doc.data()['dueDate'];
-          if (dueAt is! Timestamp) return false;
-          final due = dueAt.toDate();
-          return !due.isBefore(start) && due.isBefore(end);
-        })
-        .toList(growable: false);
-
-    final effectiveAssignments = relevantAssignments.isEmpty
-        ? assignments.docs
-        : relevantAssignments;
-    if (effectiveAssignments.isEmpty) {
-      return const _HomeworkProgress(done: 0, total: 0);
-    }
-
-    final assignmentIds = effectiveAssignments.map((doc) => doc.id).toSet();
-    final submissions = await repo.firestore
-        .collection('submissions')
-        .where('studentId', isEqualTo: uid)
-        .get();
-    final done = submissions.docs
-        .where((doc) => assignmentIds.contains(doc.data()['assignmentId']))
-        .length;
-
-    return _HomeworkProgress(done: done, total: effectiveAssignments.length);
-  }
-}
-
-class _HomeworkProgress {
-  const _HomeworkProgress({required this.done, required this.total});
-  final int done;
-  final int total;
-}
-
-// ─────────────────────────────────────────────────────────────────
-// UPCOMING CLASS REMINDER
-// ─────────────────────────────────────────────────────────────────
-class _UpcomingClassReminder extends StatelessWidget {
-  const _UpcomingClassReminder({required this.item, required this.className});
-  final ResolvedScheduleItem item;
-  final String className;
-
-  @override
-  Widget build(BuildContext context) {
-    final diff = item.start.difference(DateTime.now()).inMinutes;
-    final l10n = AppLocalizations.of(context)!;
-
-    return GlassCard(
-      color: SchoolColors.orange.withValues(alpha: 0.12),
-      borderRadius: 16,
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return SchoolCard(
+      padding: EdgeInsets.all(isLarge ? 28 : 20),
+      borderRadius: 20,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: SchoolColors.orange,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.notifications_active_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'УРОК НАЧНЕТСЯ ЧЕРЕЗ $diff МИН!',
-                  style: const TextStyle(
-                    color: SchoolColors.orange,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 10,
-                    letterSpacing: 0.5,
-                  ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                  letterSpacing: -0.2,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '$className · Кабинет ${item.room ?? '—'}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          FilledButton(
-            onPressed: () {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(l10n.joinLessonSoon)));
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: SchoolColors.orange,
-              minimumSize: const Size(80, 36),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
               ),
-            ),
-            child: Text(
-              l10n.join,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 4, offset: const Offset(0, 2))
+                  ]
+                ),
+              )
+            ],
+          ),
+          SizedBox(height: isLarge ? 24 : 16),
+          Text(
+            value,
+            style: AppTextStyle.mono(
+              fontSize: isLarge ? 42 : 32,
+              fontWeight: FontWeight.w800,
+              color: isDark ? Colors.white : SchoolColors.text,
+            ).copyWith(letterSpacing: -1),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
             ),
           ),
         ],
@@ -727,223 +379,89 @@ class _UpcomingClassReminder extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// SCHEDULE CARD
+// TASKS LIST (Staggered Animation + Hover physics)
 // ─────────────────────────────────────────────────────────────────
-class StudentScheduleCard extends StatefulWidget {
-  const StudentScheduleCard({
-    super.key,
-    required this.item,
-    required this.className,
-    required this.subject,
-  });
-
-  final ResolvedScheduleItem item;
-  final String className;
-  final String subject;
-
-  @override
-  State<StudentScheduleCard> createState() => _StudentScheduleCardState();
-}
-
-class _StudentScheduleCardState extends State<StudentScheduleCard> {
-  bool _hovered = false;
-  bool _pressed = false;
+class _UpcomingTasksList extends StatelessWidget {
+  const _UpcomingTasksList({required this.classColor});
+  final Color classColor;
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final start = widget.item.start;
-    final end = widget.item.end;
-    final isNow =
-        now.isAfter(start) && now.isBefore(end) && !widget.item.cancelled;
-    final isNext = now.isBefore(start) && !widget.item.cancelled;
-    final startLabel = DateFormat('HH:mm').format(start);
-    final room = widget.item.room?.toString().trim() ?? '—';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tasks = [
+      {'title': 'Advanced Data Structures Quiz', 'due': 'Today, 23:59', 'type': 'Quiz', 'urgent': true},
+      {'title': 'Module 4 Project Submission', 'due': 'Tomorrow, 12:00', 'type': 'Project', 'urgent': false},
+      {'title': 'Read Chapter 5: Graph Theory', 'due': 'Wed, 09:00', 'type': 'Reading', 'urgent': false},
+    ];
 
-    final subjectColor = widget.item.cancelled
-        ? Colors.grey
-        : (isNow
-            ? SchoolColors.green
-            : isNext
-                ? SchoolColors.orange
-                : isDark
-                    ? SchoolColors.darkMuted
-                    : SchoolColors.muted);
-
-    final primaryTitle = widget.subject.isNotEmpty ? widget.subject : widget.className;
-    final subtitle = widget.subject.isNotEmpty ? widget.className : '';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: GestureDetector(
-          onTapDown: (_) => setState(() => _pressed = true),
-          onTapUp: (_) => setState(() => _pressed = false),
-          onTapCancel: () => setState(() => _pressed = false),
-          child: AnimatedScale(
-            scale: _pressed ? 0.98 : (_hovered ? 1.015 : 1.0),
-            duration: const Duration(milliseconds: 150),
-            child: GlassCard(
-              padding: EdgeInsets.zero,
-              borderRadius: 20,
-              color: _hovered
-                  ? subjectColor.withValues(alpha: isDark ? 0.10 : 0.04)
-                  : null,
-              child: IntrinsicHeight(
-                child: Row(
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: 5,
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: subjectColor,
-                        borderRadius: const BorderRadius.horizontal(
-                          right: Radius.circular(5),
+    return StaggeredList(
+      delayStep: const Duration(milliseconds: 60),
+      children: tasks.map((task) {
+        final isUrgent = task['urgent'] as bool;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: SchoolCard(
+            onTap: () {},
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            borderRadius: 16,
+            borderColor: isUrgent ? SchoolColors.red.withValues(alpha: 0.3) : null,
+            child: Row(
+              children: [
+                GradientIconBox(
+                  icon: task['type'] == 'Quiz' ? Icons.timer_outlined 
+                      : task['type'] == 'Project' ? Icons.folder_zip_outlined 
+                      : Icons.menu_book_rounded,
+                  colors: isUrgent 
+                      ? [SchoolColors.red.withValues(alpha: 0.7), SchoolColors.red] 
+                      : [classColor.withValues(alpha: 0.7), classColor],
+                  size: 44,
+                  iconSize: 20,
+                  borderRadius: 12,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        task['title'] as String,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: SchoolColors.green.withValues(
-                              alpha: isNow ? 0.5 : 0.0,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.schedule_rounded, 
+                            size: 13, 
+                            color: isUrgent ? SchoolColors.red : SchoolColors.muted
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            task['due'] as String,
+                            style: AppTextStyle.mono(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isUrgent ? SchoolColors.red : SchoolColors.muted,
                             ),
-                            blurRadius: isNow ? 8 : 0,
-                            spreadRadius: isNow ? 1 : 0,
                           ),
                         ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '$startLabel · ${AppLocalizations.of(context)!.cabinetWithNumber(room)}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDark
-                                          ? SchoolColors.darkMuted
-                                          : SchoolColors.muted,
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    primaryTitle,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
-                                  if (subtitle.isNotEmpty)
-                                    Text(
-                                      subtitle,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: isDark
-                                            ? SchoolColors.darkTextSecondary
-                                            : SchoolColors.textSecondary,
-                                      ),
-                                    ),
-                                  if (widget.item.note != null &&
-                                      widget.item.note!.trim().isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primaryContainer
-                                            .withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withValues(alpha: 0.18),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        widget.item.note!.trim(),
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimaryContainer,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            _StatusPill(
-                              isNow: isNow,
-                              isNext: isNext,
-                              isCancelled: widget.item.cancelled,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                      )
+                    ],
+                  ),
                 ),
-              ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                )
+              ],
             ),
           ),
-        ),
-      ),
+        );
+      }).toList(),
     );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({
-    required this.isNow,
-    required this.isNext,
-    required this.isCancelled,
-  });
-  final bool isNow, isNext, isCancelled;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    if (isCancelled) {
-      return StatusChip(
-        label: AppLocalizations.of(context)!.canceled,
-        color: SchoolColors.red,
-        icon: Icons.cancel_outlined,
-      );
-    }
-    if (isNow) {
-      return StatusChip(
-        label: l10n.now,
-        color: SchoolColors.green,
-        pulseDot: true,
-      );
-    }
-    if (isNext) {
-      return StatusChip(
-        label: AppLocalizations.of(context)!.soon,
-        color: SchoolColors.orange,
-        icon: Icons.access_time_rounded,
-      );
-    }
-    return StatusChip(label: l10n.later, color: SchoolColors.muted);
   }
 }
