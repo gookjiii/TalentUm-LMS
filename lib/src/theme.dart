@@ -1,6 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+
+/// Quản lý toàn bộ màu sắc, tách biệt hoàn toàn để dễ tái sử dụng
+class AppColors {
+  // Brand Colors
+  static const Color primary = Color(0xFF8A2BE2); // Vibrant Blue Violet
+  static const Color secondary = Color(0xFF6366F1); // Indigo
+  static const Color accent = Color(0xFF059669); // Emerald
+  static const Color orange = Color(0xFFF59E0B);
+
+  // Dark Theme Colors (Elite Digital Campus)
+  static const Color darkBackground = Color(0xFF0B1120); // Midnight Deep
+  static const Color darkSurface = Color(0xFF151E32); // Thẻ kính
+  static const Color darkBorder = Color(0x1AFFFFFF); // Viền 10% trắng
+  static const Color darkTextMain = Color(0xFFF8FAFC);
+  static const Color darkTextMuted = Color(0xFF94A3B8);
+
+  // Light Theme Colors (Clean Material)
+  static const Color lightBackground = Color(0xFFF9FAFC);
+  static const Color lightSurface = Color(0xFFFFFFFF);
+  static const Color lightBorder = Color(0xFFECEBF3);
+  static const Color lightTextMain = Color(0xFF0F172A);
+  static const Color lightTextMuted = Color(0xFF64748B);
+
+  // Gradients
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [primary, secondary],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+}
+
+/// Hiệu ứng bóng đổ (Shadows) đã được TỐI ƯU HÓA HIỆU NĂNG
+class AppShadows {
+  // Thay vì blur 40px gây lag, ta dùng blur 20px với màu đậm hơn để tạo Glow
+  static final List<BoxShadow> glowPrimary = [
+    BoxShadow(
+      color: Color(0x408A2BE2), // AppColors.primary.withOpacity(0.25)
+      blurRadius: 20,
+      offset: Offset(0, 8),
+    ),
+  ];
+
+  static final List<BoxShadow> softCardDark = [
+    BoxShadow(
+      color: Color(0x4D000000), // Colors.black.withOpacity(0.3)
+      blurRadius: 16,
+      offset: Offset(0, 4),
+    ),
+  ];
+}
+
+
 class SchoolColors {
   // ── Primary Purple (More Vibrant) ─────────────────────────────────
   static const primary = Color(0xFF8A2BE2); // Vibrant Blue Violet

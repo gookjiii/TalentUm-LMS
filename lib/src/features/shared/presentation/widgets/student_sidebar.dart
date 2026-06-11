@@ -43,8 +43,9 @@ class StudentSidebar extends StatelessWidget {
       width: extended ? 260 : 80,
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: SchoolColors.sidebarBg,
+        color: AppColors.darkSurface.withOpacity(0.8),
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.darkBorder),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.15),
@@ -259,7 +260,7 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
     const activeColor = Colors.white;
     final inactiveColor = Colors.white.withValues(alpha: 0.55);
     final bgColor = widget.selected
-        ? Colors.white.withValues(alpha: 0.10)
+        ? AppColors.primary.withOpacity(0.15)
         : _hovered
         ? Colors.white.withValues(alpha: 0.05)
         : Colors.transparent;
@@ -297,13 +298,11 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
                       height: 20,
                       margin: const EdgeInsets.only(right: 11),
                       decoration: BoxDecoration(
-                        color: SchoolColors.primaryLight,
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(3),
                         boxShadow: [
                           BoxShadow(
-                            color: SchoolColors.primaryLight.withValues(
-                              alpha: 0.5,
-                            ),
+                            color: AppColors.primary.withOpacity(0.5),
                             blurRadius: 6,
                           ),
                         ],

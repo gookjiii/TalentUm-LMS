@@ -222,60 +222,83 @@ class _HeroSectionState extends State<_HeroSection> {
       builder: (context, snapshot) {
         final assignments = snapshot.data?.docs.length ?? 0;
         
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: widget.isMobile ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      const Text(
-                        'Доброе утро, ', // Good morning
-                        style: TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -1,
-                        ),
+        return Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: AppColors.darkSurface.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.darkBorder),
+            gradient: RadialGradient(
+              center: Alignment.topRight,
+              radius: 1.5,
+              colors: [AppColors.primary.withOpacity(0.15), Colors.transparent],
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: widget.isMobile ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                       ),
-                      ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF6366F1)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ).createShader(bounds),
-                        child: Text(
-                          '${widget.studentName}!',
-                          style: const TextStyle(
+                      child: const Text('HỆ THỐNG TRỰC TUYẾN', style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w900)),
+                    ),
+                    const SizedBox(height: 20),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        const Text(
+                          'Доброе утро, ', // Good morning
+                          style: TextStyle(
                             fontSize: 36,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
                             letterSpacing: -1,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Сегодня у вас $assignments задач для выполнения.', // Today you have X tasks
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
+                        ShaderMask(
+                          shaderCallback: (bounds) => const LinearGradient(
+                            colors: [Color(0xFF2563EB), Color(0xFF6366F1)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ).createShader(bounds),
+                          child: Text(
+                            '${widget.studentName}!',
+                            style: const TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: -1,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  if (widget.isMobile) ...[
-                    const SizedBox(height: 24),
-                    _ActionButton(onPressed: widget.onAction),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Сегодня у вас $assignments задач для выполнения.', // Today you have X tasks
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
+                      ),
+                    ),
+                    if (widget.isMobile) ...[
+                      const SizedBox(height: 24),
+                      _ActionButton(onPressed: widget.onAction),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-            if (!widget.isMobile) _ActionButton(onPressed: widget.onAction),
-          ],
+              if (!widget.isMobile) _ActionButton(onPressed: widget.onAction),
+            ],
+          ),
         );
       }
     );
@@ -425,54 +448,35 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return GlassCard(
+    return Container(
       padding: const EdgeInsets.all(24),
-      borderRadius: 20,
-      child: Row(
+      decoration: BoxDecoration(
+        color: AppColors.darkSurface.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.darkBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-              ),
-            ),
-            child: Icon(icon, color: iconColor, size: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.w600)),
+              Container(width: 8, height: 8, decoration: BoxDecoration(color: iconColor, shape: BoxShape.circle)),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: AppTextStyle.mono(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: isDark ? Colors.white : SchoolColors.text,
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 16),
+          Text(
+            value,
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 36, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -2),
           ),
+          const SizedBox(height: 4),
+          Text('Phân tích chi tiết', style: const TextStyle(color: Colors.white54, fontSize: 12)),
         ],
       ),
     );
   }
+
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -511,10 +515,13 @@ class _TimelineList extends StatelessWidget {
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
-          child: GlassCard(
+          child: Container(
             padding: const EdgeInsets.all(20),
-            borderRadius: 20,
-            color: isActive ? (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white) : null,
+            decoration: BoxDecoration(
+              color: AppColors.darkSurface.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: isActive ? AppColors.primary : AppColors.darkBorder),
+            ),
             child: Row(
               children: [
                 Container(
@@ -619,11 +626,15 @@ class _UpcomingTasksListState extends State<_UpcomingTasksList> {
         final docs = snapshot.data?.docs ?? [];
         
         if (docs.isEmpty) {
-          return GlassCard(
+          return Container(
             padding: const EdgeInsets.all(20),
-            borderRadius: 20,
+            decoration: BoxDecoration(
+              color: AppColors.darkSurface.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.darkBorder),
+            ),
             child: const Center(
-              child: Text("Завершено!", style: TextStyle(color: SchoolColors.green, fontWeight: FontWeight.bold)), // Completed!
+              child: Text("Завершено!", style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold)), // Completed!
             )
           );
         }
@@ -638,9 +649,13 @@ class _UpcomingTasksListState extends State<_UpcomingTasksList> {
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: GlassCard(
+              child: Container(
                 padding: const EdgeInsets.all(20),
-                borderRadius: 20,
+                decoration: BoxDecoration(
+                  color: AppColors.darkSurface.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.darkBorder),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

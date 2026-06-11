@@ -868,10 +868,16 @@ class ModernGlassTabBar extends StatelessWidget {
         height: 72,
         margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         decoration: BoxDecoration(
-          color: isDark ? SchoolColors.darkSurface.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.85),
+          color: isDark ? AppColors.darkSurface.withOpacity(0.8) : Colors.white.withOpacity(0.85),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.08) : SchoolColors.border.withValues(alpha: 0.4), width: 1.2),
-          boxShadow: [SchoolColors.glassShadow],
+          border: Border.all(color: isDark ? AppColors.darkBorder : SchoolColors.border.withOpacity(0.4), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            )
+          ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
