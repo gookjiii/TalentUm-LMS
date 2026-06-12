@@ -23,7 +23,6 @@ import '../features/shared/presentation/widgets/student_sidebar.dart';
 import '../features/shared/presentation/widgets/student_right_sidebar.dart';
 import '../features/library/presentation/widgets/library_screen.dart';
 import '../features/webinars/presentation/widgets/webinars_screen.dart';
-import 'student_menu_screen.dart';
 class StudentShell extends ConsumerStatefulWidget {
   const StudentShell({super.key});
 
@@ -194,24 +193,6 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                     title: AppLocalizations.of(context)!.magazine,
                     icon: Icons.book_outlined,
                   ),
-                  
-                // 8: Mobile Menu Screen
-                if (!wide)
-                  StudentMenuScreen(
-                    onSelectTab: (index) {
-                      _handleTabSelection(
-                        index,
-                        false,
-                        selectedId,
-                        repo,
-                        appState,
-                        l10n,
-                        classes,
-                      );
-                    },
-                  )
-                else
-                  const SizedBox.shrink(),
               ],
             );
 
@@ -272,11 +253,15 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                             setState(() => _tabIndex = mobileIndices[i]);
                           },
                           items: mobileNavItems,
-                          onMoreTap: () {
-                            HapticFeedback.lightImpact();
-                            setState(() => _tabIndex = 8); // Open Menu Tab
-                          },
-                          moreSelected: _tabIndex == 8,
+                          onMoreTap: () => _showMoreSheet(
+                            context,
+                            classes,
+                            selectedId,
+                            repo,
+                            appState,
+                            l10n,
+                          ),
+                          moreSelected: mobileSelected < 0,
                         );
                       },
                     ),
@@ -883,16 +868,10 @@ class ModernGlassTabBar extends StatelessWidget {
         height: 72,
         margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface.withOpacity(0.8) : Colors.white.withOpacity(0.85),
+          color: isDark ? SchoolColors.darkSurface.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: isDark ? AppColors.darkBorder : SchoolColors.border.withOpacity(0.4), width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            )
-          ],
+          border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.08) : SchoolColors.border.withValues(alpha: 0.4), width: 1.2),
+          boxShadow: [SchoolColors.glassShadow],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
