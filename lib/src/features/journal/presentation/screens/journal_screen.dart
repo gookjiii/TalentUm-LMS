@@ -6,7 +6,6 @@ import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 import '../widgets/journal_grades_grid.dart';
 import '../widgets/journal_topics_list.dart';
 import 'package:school_world/src/providers/app_providers.dart';
@@ -92,23 +91,38 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                           }
                         : null,
                     trailing: isTeacher
-                        ? SizedBox(
-                            height: 44,
-                            child: FilledButton.icon(
-                              onPressed: () => _showAddLessonDialog(context, ref, effectiveClassId),
-                              icon: const Icon(Icons.add_rounded, size: 20),
-                              label: Text(AppLocalizations.of(context)!.addALesson),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: SchoolColors.primary,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
+                        ? GestureDetector(
+                            onTap: () => _showAddLessonDialog(context, ref, effectiveClassId),
+                            child: Container(
+                              height: 44,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [AppColors.primary, AppColors.secondary],
                                 ),
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.4),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.add_rounded, color: Colors.white, size: 18),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    AppLocalizations.of(context)!.addALesson,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           )
@@ -120,30 +134,49 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
           Padding(
             padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
             child: Container(
-              height: 48,
+              height: 52,
+              padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-                borderRadius: BorderRadius.circular(14),
+                color: isDark
+                    ? AppColors.darkSurface.withOpacity(0.6)
+                    : Colors.white.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark
+                      ? AppColors.darkBorder
+                      : AppColors.lightBorder,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: TabBar(
                 controller: _tabController,
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
-                indicatorPadding: const EdgeInsets.all(4),
+                indicatorPadding: EdgeInsets.zero,
                 indicator: BoxDecoration(
-                  color: isDark ? SchoolColors.darkSurface : Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.secondary,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
                   boxShadow: [
-                    if (!isDark)
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
-                labelColor: isDark ? Colors.white : SchoolColors.darkSurface,
-                unselectedLabelColor: isDark ? Colors.white54 : SchoolColors.muted,
+                labelColor: Colors.white,
+                unselectedLabelColor: isDark ? Colors.white54 : Colors.black45,
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 tabs: [
                   Tab(text: AppLocalizations.of(context)!.ratings),

@@ -1195,7 +1195,7 @@ class NotificationQuickTile extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────
 // EMPTY STATE  (reusable illustrated placeholder)
 // ─────────────────────────────────────────────────────────────────
-class EmptyState extends StatelessWidget {
+class EmptyState extends StatefulWidget {
   const EmptyState({
     super.key,
     required this.icon,
@@ -1214,8 +1214,39 @@ class EmptyState extends StatelessWidget {
   final Color? color;
 
   @override
+  State<EmptyState> createState() => _EmptyStateState();
+}
+
+class _EmptyStateState extends State<EmptyState> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _pulseAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 0.92, end: 1.08).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final c = color ?? SchoolColors.primary;
+    final c = widget.color ?? SchoolColors.primary;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Center(
@@ -1225,79 +1256,155 @@ class EmptyState extends StatelessWidget {
           padding: const EdgeInsets.all(40),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start, // Asymmetric
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Stack(
-                children: [
-                  Positioned(
-                    left: 12,
-                    top: 12,
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: c.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: isDark ? SchoolColors.darkSurface : Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: c.withValues(alpha: 0.2),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: c.withValues(alpha: 0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
+              // Animated Icon with ambient glow rings
+              SizedBox(
+                width: 100,
+                height: 100,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Outer glow ring (slowest pulse)
+                    AnimatedBuilder(
+                      animation: _pulseAnimation,
+                      builder: (context, _) => Transform.scale(
+                        scale: _pulseAnimation.value,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: c.withOpacity(0.06 * _fadeAnimation.value),
+                          ),
                         ),
-                      ],
+                      ),
                     ),
-                    child: Icon(icon, size: 32, color: c),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  height: 1.1,
-                  letterSpacing: -0.5,
-                  color: Theme.of(context).colorScheme.onSurface,
+                    // Middle glow ring
+                    AnimatedBuilder(
+                      animation: _pulseAnimation,
+                      builder: (context, _) => Transform.scale(
+                        scale: 1.0 - (_pulseAnimation.value - 1.0) * 0.5,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: c.withOpacity(0.10 * _fadeAnimation.value),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Icon container with glassmorphism
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                        child: Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? c.withOpacity(0.15)
+                                : c.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: c.withOpacity(isDark ? 0.35 : 0.25),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: c.withOpacity(0.25),
+                                blurRadius: 24,
+                                spreadRadius: -4,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Icon(widget.icon, size: 32, color: c),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 16),
+              const SizedBox(height: 32),
+              // Gradient title text
+              ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [
+                    c,
+                    c.withOpacity(0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds),
+                child: Text(
+                  widget.title,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    height: 1.1,
+                    letterSpacing: -0.5,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              if (widget.subtitle != null) ...[
+                const SizedBox(height: 12),
                 Text(
-                  subtitle!,
+                  widget.subtitle!,
                   style: TextStyle(
                     fontSize: 15,
                     height: 1.6,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                    color: isDark
+                        ? Colors.white54
+                        : Colors.black45,
                   ),
                 ),
               ],
-              if (action != null && actionLabel != null) ...[
+              if (widget.action != null && widget.actionLabel != null) ...[
                 const SizedBox(height: 32),
-                FilledButton.icon(
-                  onPressed: action,
-                  icon: const Icon(Icons.add_rounded, size: 20),
-                  label: Text(actionLabel!),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 52),
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    shape: RoundedRectangleBorder(
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [c, c.withOpacity(0.7)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: c.withOpacity(0.4),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: widget.action,
                       borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 14,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              widget.actionLabel!,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -1309,6 +1416,7 @@ class EmptyState extends StatelessWidget {
     );
   }
 }
+
 
 // ─────────────────────────────────────────────────────────────────
 // ANIMATED COUNTER  (number ticker)
@@ -1840,49 +1948,65 @@ class _ContextBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.primary;
-    final widget = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            onTap != null ? Icons.swap_horiz_rounded : Icons.school_rounded,
-            size: 14,
-            color: color,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label.toUpperCase(),
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              color: color,
-              letterSpacing: 1.0,
+
+    final badge = ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                color.withOpacity(isDark ? 0.25 : 0.12),
+                color.withOpacity(isDark ? 0.12 : 0.06),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: color.withOpacity(isDark ? 0.4 : 0.2),
+              width: 1,
             ),
           ),
-          if (onTap != null) ...[
-            const SizedBox(width: 4),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              size: 16,
-              color: color.withValues(alpha: 0.6),
-            ),
-          ],
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                onTap != null ? Icons.swap_horiz_rounded : Icons.school_rounded,
+                size: 14,
+                color: color,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label.toUpperCase(),
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: color.withOpacity(0.7),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
 
-    if (onTap == null) return widget;
+    if (onTap == null) return badge;
 
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: widget,
+      child: badge,
     );
   }
 }

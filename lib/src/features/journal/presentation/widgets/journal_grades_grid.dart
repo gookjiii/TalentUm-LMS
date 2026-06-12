@@ -165,32 +165,53 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
       padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? SchoolColors.darkSurface : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          color: isDark
+              ? AppColors.darkSurface.withOpacity(0.7)
+              : Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : SchoolColors.border.withValues(alpha: 0.8),
-            width: 1.2,
+                ? Colors.white.withOpacity(0.1)
+                : AppColors.primary.withOpacity(0.15),
+            width: 1.5,
           ),
-          boxShadow: isDark ? null : [SchoolColors.glassShadow],
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withOpacity(0.3)
+                  : AppColors.primary.withOpacity(0.08),
+              blurRadius: 30,
+              spreadRadius: -5,
+              offset: const Offset(0, 12),
+            ),
+          ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           child: Column(
             children: [
-              // HEADER ROW
+              // HEADER ROW — Gradient
               Container(
                 height: headerHeight,
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.02)
-                      : SchoolColors.primary.withValues(alpha: 0.03),
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [
+                            AppColors.primary.withOpacity(0.18),
+                            AppColors.secondary.withOpacity(0.08),
+                          ]
+                        : [
+                            AppColors.primary.withOpacity(0.07),
+                            AppColors.secondary.withOpacity(0.03),
+                          ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   border: Border(
                     bottom: BorderSide(
                       color: isDark
-                          ? Colors.white10
-                          : Colors.black.withValues(alpha: 0.05),
+                          ? Colors.white.withOpacity(0.08)
+                          : AppColors.primary.withOpacity(0.1),
                     ),
                   ),
                 ),
@@ -787,22 +808,34 @@ class _MarkCell extends ConsumerWidget {
           '\n${AppLocalizations.of(context)!.ratings}: $mark ${markDesc.isNotEmpty ? "($markDesc)" : ""}';
     }
 
+
     final cellWidget = Tooltip(
       message: tooltipMsg,
       preferBelow: false,
       child: Container(
         decoration: BoxDecoration(
-          color:
-              mark.isNotEmpty ? color.withValues(alpha: 0.1) : Colors.transparent,
+          color: mark.isNotEmpty
+              ? color.withOpacity(isDark ? 0.18 : 0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: mark.isNotEmpty
-                ? color.withValues(alpha: 0.2)
+                ? color.withOpacity(isDark ? 0.4 : 0.25)
                 : (isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.black.withValues(alpha: 0.05)),
-            width: 1,
+                    ? Colors.white.withOpacity(0.06)
+                    : Colors.black.withOpacity(0.06)),
+            width: 1.2,
           ),
+          boxShadow: mark.isNotEmpty
+              ? [
+                  BoxShadow(
+                    color: color.withOpacity(0.25),
+                    blurRadius: 10,
+                    spreadRadius: -2,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         alignment: Alignment.center,
         child: Text(
