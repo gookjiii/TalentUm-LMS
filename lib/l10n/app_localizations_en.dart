@@ -2375,4 +2375,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String resetFailed(Object error) {
     return 'System reset failed: $error';
   }
+
+  @override
+  String get todaySchedule => 'Today\'s Schedule';
+
+  @override
+  String get requiresAttention => 'Requires Attention';
 }

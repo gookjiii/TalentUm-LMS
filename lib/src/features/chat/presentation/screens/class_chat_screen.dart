@@ -1130,8 +1130,10 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
       ],
     );
 
-    return Scaffold(
-      key: _scaffoldKey,
+    return AmbientGlowBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        key: _scaffoldKey,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight + 10),
         child: Builder(
@@ -1269,6 +1271,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

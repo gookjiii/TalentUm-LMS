@@ -4726,6 +4726,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System reset failed: {error}'**
   String resetFailed(Object error);
+
+  /// No description provided for @todaySchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Schedule'**
+  String get todaySchedule;
+
+  /// No description provided for @requiresAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires Attention'**
+  String get requiresAttention;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

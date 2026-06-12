@@ -936,5 +936,7 @@
   "resetSystemDesc": "This will permanently delete all classes, assignments, messages, and reset user associations. Admin accounts will be preserved.",
   "confirmReset": "Confirm Reset",
   "resetSuccess": "System reset successfully!",
-  "resetFailed": "System reset failed: {error}"
+  "resetFailed": "System reset failed: {error}",
+  "todaySchedule": "Today's Schedule",
+  "requiresAttention": "Requires Attention"
 }

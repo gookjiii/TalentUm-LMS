@@ -248,16 +248,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final performanceLabel = isRu ? 'Режим высокой производительности' : 'High Performance Mode';
         final performanceSub = isRu ? 'Отключить эффекты размытия для слабых устройств' : 'Disable blur effects for low-end devices';
 
-        return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.settings),
-        centerTitle: false,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        children: [
-          // ── Profile section ─────────────────────────────────
-          _SectionLabel(label: l10n.profile),
+        return AmbientGlowBackground(
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: AppBar(
+              title: Text(l10n.settings),
+              centerTitle: false,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+            ),
+            body: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              children: [
+                // ── Profile section ─────────────────────────────────
+                _SectionLabel(label: l10n.profile),
           StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
             stream: widget.repository.userDocStream(),
             builder: (context, snapshot) {
@@ -269,75 +273,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _nameController.text = currentName;
               }
 
-              final profileCard = SchoolCard(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Center(
-                      child: GestureDetector(
-                        onTap: _uploadingAvatar ? null : () => _pickAndUploadAvatar(context),
-                        child: Stack(
-                          children: [
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.outlineVariant,
-                                  width: 2,
-                                ),
-                              ),
-                              child: ClipOval(
-                                child: _uploadingAvatar
-                                    ? const Padding(
-                                        padding: EdgeInsets.all(24.0),
-                                        child: CircularProgressIndicator(strokeWidth: 2.5),
-                                      )
-                                    : SchoolAvatar(
-                                        name: currentName,
-                                        avatarUrl: avatarUrl,
-                                        radius: 40,
-                                      ),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: widget.appState.accentColor,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1.5),
-                                ),
-                                child: const Icon(
-                                  Icons.camera_alt_rounded,
-                                  color: Colors.white,
-                                  size: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: l10n.name,
-                        prefixIcon: const Icon(Icons.person_outline_rounded),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.save_outlined),
-                          tooltip: l10n.saveChanges,
-                          onPressed: () => _saveName(context, l10n),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              final profileCard = _GlassmorphismProfileCard(
+                avatarUrl: avatarUrl,
+                currentName: currentName,
+                nameController: _nameController,
+                uploading: _uploadingAvatar,
+                accentColor: widget.appState.accentColor,
+                l10n: l10n,
+                onPickAvatar: () => _pickAndUploadAvatar(context),
+                onSaveName: () => _saveName(context, l10n),
+                isDark: isDark,
               );
               
               return Column(
@@ -602,9 +547,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
 
           const SizedBox(height: 40),
-        ],
-      ),
-    );
+              ],
+            ),
+          ),
+        );
       },
     );
   }
@@ -1060,6 +1006,162 @@ class _LinkingCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
               letterSpacing: 0.5,
               color: SchoolColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// GLASSMORPHISM PROFILE CARD
+// ─────────────────────────────────────────────────────────────────
+class _GlassmorphismProfileCard extends StatelessWidget {
+  const _GlassmorphismProfileCard({
+    required this.avatarUrl,
+    required this.currentName,
+    required this.nameController,
+    required this.uploading,
+    required this.accentColor,
+    required this.l10n,
+    required this.onPickAvatar,
+    required this.onSaveName,
+    required this.isDark,
+  });
+
+  final String? avatarUrl;
+  final String currentName;
+  final TextEditingController nameController;
+  final bool uploading;
+  final Color accentColor;
+  final AppLocalizations l10n;
+  final VoidCallback onPickAvatar;
+  final VoidCallback onSaveName;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassCard(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: GestureDetector(
+              onTap: uploading ? null : onPickAvatar,
+              child: Stack(
+                children: [
+                  Container(
+                    width: 86,
+                    height: 86,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          accentColor.withValues(alpha: 0.8),
+                          accentColor.withValues(alpha: 0.2),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: accentColor.withValues(alpha: 0.25),
+                          blurRadius: 16,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(3.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isDark ? SchoolColors.darkBg : Colors.white,
+                        ),
+                        child: ClipOval(
+                          child: uploading
+                              ? const Padding(
+                                  padding: EdgeInsets.all(24.0),
+                                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                                )
+                              : SchoolAvatar(
+                                  name: currentName,
+                                  avatarUrl: avatarUrl,
+                                  radius: 40,
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: accentColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isDark ? SchoolColors.darkSurface : Colors.white,
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: accentColor.withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt_rounded,
+                        color: Colors.white,
+                        size: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            decoration: BoxDecoration(
+              color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+              ),
+            ),
+            child: TextField(
+              controller: nameController,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                color: isDark ? SchoolColors.darkText : SchoolColors.text,
+              ),
+              decoration: InputDecoration(
+                labelText: l10n.name,
+                labelStyle: TextStyle(
+                  color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                  fontWeight: FontWeight.w500,
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                prefixIcon: Icon(
+                  Icons.person_outline_rounded,
+                  color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    Icons.check_circle_rounded,
+                    color: accentColor,
+                  ),
+                  tooltip: l10n.saveChanges,
+                  onPressed: onSaveName,
+                ),
+              ),
             ),
           ),
         ],

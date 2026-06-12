@@ -73,172 +73,188 @@ class _StudentFeedState extends State<StudentFeed> {
     final user = FirebaseAuth.instance.currentUser;
     final name = user?.displayName ?? AppLocalizations.of(context)!.student;
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800),
-        child: SizedBox.expand(
-          child: NotificationListener<ScrollNotification>(
-            onNotification: (ScrollNotification scrollInfo) {
-              if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
-                _loadMore();
-              }
-              return false;
-            },
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 56, 24, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    AppLocalizations.of(context)!.ribbon,
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  Text(
-                                    AppLocalizations.of(context)!.announcementsFromYourTeachers,
-                                    style: TextStyle(
-                                      color: SchoolColors.muted.withValues(
-                                        alpha: 0.7,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = AppScope.of(context).appState.accentColor;
+
+    return AmbientGlowBackground(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SizedBox.expand(
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (ScrollNotification scrollInfo) {
+                if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+                  _loadMore();
+                }
+                return false;
+              },
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 56, 24, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      AppLocalizations.of(context)!.ribbon,
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: -0.5,
                                       ),
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SchoolAvatar(
-                              name: name,
-                              userId: user?.uid,
-                              radius: 22,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (ctx) => SettingsScreen(
-                                    repository: AppScope.of(ctx).repository,
-                                    appState: AppScope.of(ctx).appState,
-                                  ),
+                                    Text(
+                                      AppLocalizations.of(context)!.announcementsFromYourTeachers,
+                                      style: TextStyle(
+                                        color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 24),
-                        TextField(
-                          onChanged: (v) => setState(
-                            () => _searchQuery = v.trim().toLowerCase(),
-                          ),
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(context)!.searchByAdvertisements,
-                            prefixIcon: const Icon(Icons.search_rounded),
-                            filled: true,
-                            fillColor:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? SchoolColors.darkSurface
-                                : Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 24),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _FeedFilterChip(
-                                label: AppLocalizations.of(context)!.allClasses,
-                                active: widget.classId == 'all',
-                                onTap: () => widget.onClassSelect('all'),
-                              ),
-                              ...widget.classes.map(
-                                (c) => _FeedFilterChip(
-                                  label: c['name']?.toString() ?? '',
-                                  active: c['id'] == widget.classId,
-                                  onTap: () =>
-                                      widget.onClassSelect(c['id'] as String),
+                              SchoolAvatar(
+                                name: name,
+                                userId: user?.uid,
+                                radius: 22,
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (ctx) => SettingsScreen(
+                                      repository: AppScope.of(ctx).repository,
+                                      appState: AppScope.of(ctx).appState,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          SizedBox(height: 24),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.03),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                              ),
+                            ),
+                            child: TextField(
+                              onChanged: (v) => setState(
+                                () => _searchQuery = v.trim().toLowerCase(),
+                              ),
+                              style: TextStyle(
+                                color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: AppLocalizations.of(context)!.searchByAdvertisements,
+                                hintStyle: TextStyle(
+                                  color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.search_rounded,
+                                  color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                  horizontal: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 24),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _FeedFilterChip(
+                                  label: AppLocalizations.of(context)!.allClasses,
+                                  active: widget.classId == 'all',
+                                  onTap: () => widget.onClassSelect('all'),
+                                ),
+                                ...widget.classes.map(
+                                  (c) => _FeedFilterChip(
+                                    label: c['name']?.toString() ?? '',
+                                    active: c['id'] == widget.classId,
+                                    onTap: () =>
+                                        widget.onClassSelect(c['id'] as String),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: _postsStream,
-                  builder: (context, snapshot) {
-                    var posts = snapshot.data?.docs ?? [];
-  
-                    if (_searchQuery.isNotEmpty) {
-                      posts = posts.where((doc) {
-                        final content =
-                            doc.data()['content']?.toString().toLowerCase() ?? '';
-                        return content.contains(_searchQuery);
-                      }).toList();
-                    }
-  
-                    if (posts.isEmpty &&
-                        snapshot.connectionState != ConnectionState.waiting) {
-                      return SliverToBoxAdapter(
-                        child: EmptyStateWidget(
-                          icon: Icons.notifications_none_rounded,
-                          title: AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
-                          subtitle: 'Bạn đã xem hết tất cả thông báo rồi!',
+                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: _postsStream,
+                    builder: (context, snapshot) {
+                      var posts = snapshot.data?.docs ?? [];
+    
+                      if (_searchQuery.isNotEmpty) {
+                        posts = posts.where((doc) {
+                          final content =
+                              doc.data()['content']?.toString().toLowerCase() ?? '';
+                          return content.contains(_searchQuery);
+                        }).toList();
+                      }
+    
+                      if (posts.isEmpty &&
+                          snapshot.connectionState != ConnectionState.waiting) {
+                        return SliverToBoxAdapter(
+                          child: EmptyStateWidget(
+                            icon: Icons.notifications_none_rounded,
+                            title: AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
+                            subtitle: 'Bạn đã xem hết tất cả thông báo rồi!',
+                          ),
+                        );
+                      }
+                      return SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate((context, index) {
+                            final doc = posts[index];
+                            final data = doc.data();
+                            final cId = data['classId']?.toString();
+                            final classData = widget.classes.firstWhere(
+                              (c) => c['id'] == cId,
+                              orElse: () => widget.classes.isNotEmpty
+                                  ? widget.classes.first
+                                  : {},
+                            );
+    
+                            if (classData.isEmpty) return const SizedBox.shrink();
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: PostCard(
+                                doc: doc,
+                                classData: classData,
+                                canManage: false,
+                              ),
+                            );
+                          }, childCount: posts.length),
                         ),
                       );
-                    }
-                    return SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final doc = posts[index];
-                          final data = doc.data();
-                          final cId = data['classId']?.toString();
-                          final classData = widget.classes.firstWhere(
-                            (c) => c['id'] == cId,
-                            orElse: () => widget.classes.isNotEmpty
-                                ? widget.classes.first
-                                : {},
-                          );
-  
-                          if (classData.isEmpty) return const SizedBox.shrink();
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: PostCard(
-                              doc: doc,
-                              classData: classData,
-                              canManage: false,
-                            ),
-                          );
-                        }, childCount: posts.length),
-                      ),
-                    );
-                  },
-                ),
-              ],
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
+
   }
 }
 
@@ -254,31 +270,51 @@ class _FeedFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = AppScope.of(context).appState.accentColor;
+
     return Semantics(
       button: true,
       selected: active,
       label: 'Фильтр: $label',
       child: Padding(
         padding: const EdgeInsets.only(right: 8),
-        child: ChoiceChip(
-          label: Text(label),
-          selected: active,
-          onSelected: (_) => onTap(),
-          backgroundColor: Colors.white,
-          selectedColor: SchoolColors.primary,
-          labelStyle: TextStyle(
-            color: active ? Colors.white : SchoolColors.muted,
-            fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-            fontSize: 13,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(999),
-            side: BorderSide(
-              color: active ? SchoolColors.primary : SchoolColors.border,
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: active 
+                  ? accentColor 
+                  : (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: active 
+                    ? accentColor 
+                    : (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+              ),
+              boxShadow: active
+                  ? [
+                      BoxShadow(
+                        color: accentColor.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      )
+                    ]
+                  : null,
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: active 
+                    ? Colors.white 
+                    : (isDark ? SchoolColors.darkText : SchoolColors.text),
+                fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                fontSize: 13,
+              ),
             ),
           ),
-          showCheckmark: false,
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         ),
       ),
     );

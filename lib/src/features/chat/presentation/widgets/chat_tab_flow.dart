@@ -246,14 +246,15 @@ class _ChatClassListState extends State<_ChatClassList> {
         ),
         centerTitle: true,
       ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Background
-          Positioned.fill(
-            child: Container(color: Theme.of(context).colorScheme.surface),
-          ),
-          SafeArea(
+      body: AmbientGlowBackground(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Background
+            Positioned.fill(
+              child: Container(color: Colors.transparent),
+            ),
+            SafeArea(
             child: Column(
               children: [
                 const SizedBox(height: 8),
@@ -332,6 +333,7 @@ class _ChatClassListState extends State<_ChatClassList> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

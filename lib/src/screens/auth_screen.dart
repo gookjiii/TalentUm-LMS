@@ -62,6 +62,7 @@ class _AuthScreenState extends State<AuthScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       body: LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth >= 900;
@@ -313,66 +314,23 @@ class _MobileAuthLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Stack(
-      children: [
-        // Gradient background
-        Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [
-                        const Color(0xFF0B1120),
-                        const Color(0xFF0E1928),
-                        const Color(0xFF111827),
-                      ]
-                    : [
-                        const Color(0xFFF0F5FF),
-                        const Color(0xFFF8F7FF),
-                        Colors.white,
-                      ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
-        ),
-        // Decorative circles
-        Positioned(
-          top: -80,
-          right: -60,
-          child: _DecorativeCircle(
-            size: 260,
-            color: SchoolColors.primary.withValues(alpha: isDark ? 0.15 : 0.10),
-          ),
-        ),
-        Positioned(
-          bottom: 60,
-          left: -80,
-          child: _DecorativeCircle(
-            size: 200,
-            color: SchoolColors.secondary.withValues(
-              alpha: isDark ? 0.10 : 0.07,
-            ),
-          ),
-        ),
-        // Content
-        SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: AppLayout.pagePadding(
-                context,
-              ).copyWith(top: 28, bottom: 28),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
+    return AmbientGlowBackground(
+      child: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: AppLayout.pagePadding(
+              context,
+            ).copyWith(top: 28, bottom: 28),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: GlassCard(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                 child: child,
               ),
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -634,21 +592,38 @@ class _AuthForm extends StatelessWidget {
           ),
           const SizedBox(height: 32),
 
-          TextField(
-            controller: phoneController,
-            keyboardType: TextInputType.phone,
-            textInputAction: otpSent
-                ? TextInputAction.next
-                : TextInputAction.done,
-            enabled: !loading && !otpSent,
-            onSubmitted: (_) {
-              if (!otpSent) onSendOtp();
-            },
-            decoration: InputDecoration(
-              labelText: _getPhoneText(context),
-              prefixIcon: const Icon(Icons.phone_outlined),
+            Container(
+              decoration: BoxDecoration(
+                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.03),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                ),
+              ),
+              child: TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                textInputAction: otpSent
+                    ? TextInputAction.next
+                    : TextInputAction.done,
+                enabled: !loading && !otpSent,
+                onSubmitted: (_) {
+                  if (!otpSent) onSendOtp();
+                },
+                decoration: InputDecoration(
+                  labelText: _getPhoneText(context),
+                  labelStyle: TextStyle(
+                    color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.phone_outlined,
+                    color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
             ),
-          ),
           const SizedBox(height: 14),
 
           AnimatedSize(
@@ -657,15 +632,32 @@ class _AuthForm extends StatelessWidget {
             child: otpSent
                 ? Column(
                     children: [
-                      TextField(
-                        controller: otpController,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.done,
-                        enabled: !loading,
-                        onSubmitted: (_) => onVerifyOtp(),
-                        decoration: InputDecoration(
-                          labelText: _getEnterOtpText(context),
-                          prefixIcon: const Icon(Icons.lock_clock_outlined),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.03),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: otpController,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          enabled: !loading,
+                          onSubmitted: (_) => onVerifyOtp(),
+                          decoration: InputDecoration(
+                            labelText: _getEnterOtpText(context),
+                            labelStyle: TextStyle(
+                              color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.lock_clock_outlined,
+                              color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -783,13 +775,30 @@ class _AuthForm extends StatelessWidget {
           child: isSignUp
               ? Column(
                   children: [
-                    TextField(
-                      controller: nameController,
-                      textInputAction: TextInputAction.next,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context)!.fullName,
-                        prefixIcon: Icon(Icons.person_outline_rounded),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.03),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+                        ),
+                      ),
+                      child: TextField(
+                        controller: nameController,
+                        textInputAction: TextInputAction.next,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context)!.fullName,
+                          labelStyle: TextStyle(
+                            color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.person_outline_rounded,
+                            color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -798,36 +807,71 @@ class _AuthForm extends StatelessWidget {
               : const SizedBox.shrink(),
         ),
 
-        TextField(
-          controller: emailController,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.next,
-          decoration: InputDecoration(
-            labelText: AppLocalizations.of(context)!.emailMail,
-            prefixIcon: Icon(Icons.email_outlined),
+        Container(
+          decoration: BoxDecoration(
+            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+            ),
+          ),
+          child: TextField(
+            controller: emailController,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.emailMail,
+              labelStyle: TextStyle(
+                color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+              ),
+              prefixIcon: Icon(
+                Icons.email_outlined,
+                color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
           ),
         ),
         const SizedBox(height: 14),
 
-        TextField(
-          controller: passwordController,
-          obscureText: obscurePassword,
-          onSubmitted: (_) => onSubmit(),
-          textInputAction: TextInputAction.done,
-          decoration: InputDecoration(
-            labelText: AppLocalizations.of(context)!.password,
-            prefixIcon: const Icon(Icons.lock_outline_rounded),
-            suffixIcon: IconButton(
-              icon: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  obscurePassword
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  key: ValueKey(obscurePassword),
-                ),
+        Container(
+          decoration: BoxDecoration(
+            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+            ),
+          ),
+          child: TextField(
+            controller: passwordController,
+            obscureText: obscurePassword,
+            onSubmitted: (_) => onSubmit(),
+            textInputAction: TextInputAction.done,
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.password,
+              labelStyle: TextStyle(
+                color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
               ),
-              onPressed: onTogglePassword,
+              prefixIcon: Icon(
+                Icons.lock_outline_rounded,
+                color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              suffixIcon: IconButton(
+                icon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    key: ValueKey(obscurePassword),
+                    color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                  ),
+                ),
+                onPressed: onTogglePassword,
+              ),
             ),
           ),
         ),
