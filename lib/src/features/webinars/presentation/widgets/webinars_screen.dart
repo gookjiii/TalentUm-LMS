@@ -12,7 +12,7 @@ import 'iframe_player.dart';
 import '../webinars_providers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
-
+import 'dart:ui' as ui;
 class WebinarsScreen extends ConsumerStatefulWidget {
   const WebinarsScreen({super.key, required this.classId});
   final String classId;
@@ -376,117 +376,139 @@ class _WebinarTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: isDark ? SchoolColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () => _playVideo(context),
+      child: Container(
+        height: 220,
+        margin: const EdgeInsets.only(bottom: 24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          color: isDark ? AppColors.darkSurface : Colors.white,
+          image: DecorationImage(
+            image: const NetworkImage('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1000'), // Placeholder thumbnail
+            fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              Colors.black.withOpacity(0.3),
+              BlendMode.darken,
+            ),
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => _playVideo(context),
-            child: Padding(
-              padding: context.screenPadding,
-              child: Row(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            )
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Delete Button
+            if (canDelete)
+              Positioned(
+                top: 16,
+                right: 16,
+                child: GestureDetector(
+                  onTap: onDelete,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: SchoolColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.delete_outline, color: Colors.white, size: 20),
+                  ),
+                ),
+              ),
+            // Play Button (Glass)
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(40),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.5)),
                     ),
                     child: const Icon(
-                      Icons.play_circle_fill_rounded,
-                      color: SchoolColors.primary,
-                      size: 32,
+                      Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 40,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              ),
+            ),
+            // Content Gradient
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.8),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                            letterSpacing: -0.2,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ),
-                        if (description != null && description!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              description!,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: SchoolColors.muted,
-                                height: 1.3,
-                              ),
+                          child: const Text(
+                            'Video', // or duration
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.link_rounded,
-                              size: 12,
-                              color: SchoolColors.primary,
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              AppLocalizations.of(context)!.watchVideo,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: SchoolColors.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Column(
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.open_in_new_rounded,
-                          size: 18,
-                          color: SchoolColors.muted,
-                        ),
-                        onPressed: () => launchUrl(Uri.parse(videoUrl)),
+                    const SizedBox(height: 8),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                      if (canDelete)
-                        IconButton(
-                          icon: const Icon(
-                            Icons.delete_outline_rounded,
-                            color: SchoolColors.red,
-                            size: 20,
-                          ),
-                          onPressed: onDelete,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (description != null && description!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        description!,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 13,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

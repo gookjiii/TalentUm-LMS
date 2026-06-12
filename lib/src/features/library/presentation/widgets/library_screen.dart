@@ -138,7 +138,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
                     return SliverPadding(
                       padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-                      sliver: SliverList(
+                      sliver: SliverGrid(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 0.85,
+                        ),
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final data = docs[index].data();
                           final id = docs[index].id;
@@ -285,124 +291,81 @@ class _MaterialTile extends StatelessWidget {
       accentColor = const Color(0xFFF59E0B); // Amber
     }
     
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: isDark ? SchoolColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () => _handleTap(context),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              accentColor.withOpacity(isDark ? 0.2 : 0.8),
+              accentColor.withOpacity(isDark ? 0.05 : 0.6),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => _handleTap(context),
-            child: Padding(
-              padding: context.screenPadding,
-              child: Row(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: accentColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(
-                      iconData,
-                      color: accentColor,
-                      size: 28,
-                    ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: accentColor.withOpacity(0.2),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                        if (description != null && description!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              description!,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: SchoolColors.muted,
-                                height: 1.3,
-                              ),
-                            ),
-                          ),
-                        if (fileName != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.file_present_rounded,
-                                  size: 12,
-                                  color: SchoolColors.muted,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    fileName!,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Theme.of(context).hintColor,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Column(
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 16,
-                          color: SchoolColors.muted,
-                        ),
-                        onPressed: () => _handleTap(context),
+                  child: Icon(iconData, color: Colors.white, size: 24),
+                ),
+                if (canDelete)
+                  GestureDetector(
+                    onTap: onDelete,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        shape: BoxShape.circle,
                       ),
-                      if (canDelete)
-                        IconButton(
-                          icon: const Icon(
-                            Icons.delete_outline_rounded,
-                            color: SchoolColors.red,
-                            size: 20,
-                          ),
-                          onPressed: onDelete,
-                        ),
-                    ],
+                      child: const Icon(Icons.delete_outline, color: Colors.white, size: 16),
+                    ),
                   ),
-                ],
-              ),
+              ],
             ),
-          ),
+            const Spacer(),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                height: 1.2,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (description != null && description!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                description!,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 12,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
         ),
       ),
     );

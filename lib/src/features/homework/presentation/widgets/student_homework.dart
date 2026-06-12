@@ -235,38 +235,40 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
                                     const SizedBox(height: 12),
                                     FocusAssignmentCard(doc: urgentAssignment),
                                   ],
-                                  const SizedBox(height: 32),
-                                  SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
+                                  Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? AppColors.darkSurface.withOpacity(0.6)
+                                          : Colors.white.withOpacity(0.8),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? AppColors.darkBorder
+                                            : AppColors.lightBorder,
+                                      ),
+                                    ),
                                     child: Row(
                                       children: [
-                                        FilterChipItem(
-                                          label: AppLocalizations.of(context)!
-                                              .all,
-                                          active: _filter == 'All',
-                                          onTap: () =>
-                                              setState(() => _filter = 'All'),
+                                        _SegmentTab(
+                                          title: AppLocalizations.of(context)!.all,
+                                          isActive: _filter == 'All',
+                                          onTap: () => setState(() => _filter = 'All'),
                                         ),
-                                        FilterChipItem(
-                                          label: AppLocalizations.of(context)!
-                                              .waiting,
-                                          active: _filter == 'Pending',
-                                          onTap: () =>
-                                              setState(() => _filter = 'Pending'),
+                                        _SegmentTab(
+                                          title: AppLocalizations.of(context)!.waiting,
+                                          isActive: _filter == 'Pending',
+                                          onTap: () => setState(() => _filter = 'Pending'),
                                         ),
-                                        FilterChipItem(
-                                          label: AppLocalizations.of(context)!
-                                              .delivered,
-                                          active: _filter == 'Submitted',
-                                          onTap: () =>
-                                              setState(() => _filter = 'Submitted'),
+                                        _SegmentTab(
+                                          title: AppLocalizations.of(context)!.delivered,
+                                          isActive: _filter == 'Submitted',
+                                          onTap: () => setState(() => _filter = 'Submitted'),
                                         ),
-                                        FilterChipItem(
-                                          label: AppLocalizations.of(context)!
-                                              .rated,
-                                          active: _filter == 'Graded',
-                                          onTap: () =>
-                                              setState(() => _filter = 'Graded'),
+                                        _SegmentTab(
+                                          title: AppLocalizations.of(context)!.rated,
+                                          isActive: _filter == 'Graded',
+                                          onTap: () => setState(() => _filter = 'Graded'),
                                         ),
                                       ],
                                     ),
@@ -333,6 +335,52 @@ class NoHomeworkEmptyState extends StatelessWidget {
   }
 }
 
+class _SegmentTab extends StatelessWidget {
+  const _SegmentTab({
+    required this.title,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final String title;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    )
+                  ]
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+              color: isActive ? Colors.white : AppColors.darkTextMuted,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class HomeworkCard extends StatelessWidget {
   const HomeworkCard({super.key, required this.doc, this.submission});
   final QueryDocumentSnapshot<Map<String, dynamic>> doc;
@@ -347,11 +395,11 @@ class HomeworkCard extends StatelessWidget {
     final isOverdue = due != null && due.isBefore(DateTime.now());
     final submitted = submission != null;
     final grade = submission?['grade'];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: SchoolCard(
-        padding: context.screenPadding,
+      padding: const EdgeInsets.only(bottom: 16),
+      child: GestureDetector(
         onTap: () {
           Navigator.push(
             context,
@@ -364,183 +412,146 @@ class HomeworkCard extends StatelessWidget {
             ),
           );
         },
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: (submitted
-                        ? SchoolColors.green
-                        : (isOverdue ? SchoolColors.red : SchoolColors.primary))
-                    .withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                submitted
-                    ? Icons.task_alt_rounded
-                    : (isOverdue
-                        ? Icons.running_with_errors_rounded
-                        : Icons.assignment_outlined),
-                color: submitted
-                    ? SchoolColors.green
-                    : (isOverdue ? SchoolColors.red : SchoolColors.primary),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface.withOpacity(0.6) : Colors.white.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+            boxShadow: [
+              if (isOverdue && !submitted)
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.2),
+                  blurRadius: 20,
+                  spreadRadius: -5,
+                )
+              else
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                )
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: submitted ? const Color(0xFF10B981).withOpacity(0.15) : (isOverdue ? const Color(0xFFEF4444).withOpacity(0.15) : AppColors.primary.withOpacity(0.15)),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (desc.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      desc,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: SchoolColors.muted,
+                    child: Text(
+                      submitted ? AppLocalizations.of(context)!.delivered : (isOverdue ? 'Quá hạn' : 'Bài tập'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: submitted ? const Color(0xFF10B981) : (isOverdue ? const Color(0xFFEF4444) : AppColors.primary),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      if (due != null)
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 14,
-                              color: isOverdue
-                                  ? SchoolColors.red
-                                  : SchoolColors.muted,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _getHumanFriendlyDate(context, due),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isOverdue
-                                    ? SchoolColors.red
-                                    : SchoolColors.muted,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      const Spacer(),
-                      if (grade != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: SchoolColors.green.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '$grade%',
-                            style: const TextStyle(
-                              color: SchoolColors.green,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
-                            ),
-                          ),
-                        )
-                      else if (submitted && grade == null) ...[
-                        const SizedBox(width: 12),
-                        const Icon(
-                          Icons.check_circle,
-                          size: 14,
-                          color: SchoolColors.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          AppLocalizations.of(context)!.delivered,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: SchoolColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ],
                   ),
-                  if (!submitted) ...[
-                    const SizedBox(height: 16),
+                  const Spacer(),
+                  if (due != null)
                     Row(
                       children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => _showQuickSubmit(context),
-                            icon: const Icon(Icons.bolt_rounded, size: 18),
-                            label: Text(
-                              AppLocalizations.of(context)!.quickSubmit,
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 40),
-                              padding: EdgeInsets.zero,
-                              side: BorderSide(
-                                color:
-                                    SchoolColors.primary.withValues(alpha: 0.5),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => HomeworkDetailScreen(
-                                    repository: AppScope.of(context).repository,
-                                    appState: AppScope.of(context).appState,
-                                    assignmentId: doc.id,
-                                  ),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.arrow_forward_rounded,
-                                size: 18),
-                            label: Text(
-                              AppLocalizations.of(context)!.viewMore,
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size(0, 40),
-                              padding: EdgeInsets.zero,
-                            ),
+                        Icon(Icons.timer_outlined, size: 14, color: isOverdue ? const Color(0xFFEF4444) : AppColors.darkTextMuted),
+                        const SizedBox(width: 4),
+                        Text(
+                          _getHumanFriendlyDate(context, due),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isOverdue ? const Color(0xFFEF4444) : AppColors.darkTextMuted,
                           ),
                         ),
                       ],
                     ),
-                  ],
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              if (desc.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  desc,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.darkTextMuted,
+                    height: 1.4,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (grade != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
+                          const SizedBox(width: 4),
+                          Text(
+                            '$grade%',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFF59E0B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    const SizedBox.shrink(),
+                  if (!submitted) ...[
+                    GestureDetector(
+                      onTap: () => _showQuickSubmit(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: AppShadows.glowPrimary,
+                        ),
+                        child: Text(
+                          AppLocalizations.of(context)!.quickSubmit,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                     const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 24),
+                  ]
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
-
   void _showQuickSubmit(BuildContext context) {
     showModalBottomSheet(
       context: context,

@@ -162,40 +162,18 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
     );
     final roomId = classData['chatRoomId'] as String?;
 
-    return Row(
-      children: [
-        SizedBox(
-          width: 340, // Match w-80 from prototype approx (320-340)
-          child: _ChatClassList(
-            classes: widget.classes,
-            onSelect: (id) {
-              widget.appState.selectClass(id);
-              widget.appState.saveChatContext(classId: id, topicId: null);
-              setState(() => _selectedClassId = id);
-            },
-            repository: widget.repository,
-            appState: widget.appState,
-            isSplitView: true,
-            selectedClassId: classId,
-          ),
-        ),
-        VerticalDivider(width: 1, color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5)),
-        Expanded(
-          child: ClassChatScreen(
-            key: ValueKey('chat-$classId'),
-            repository: widget.repository,
-            appState: widget.appState,
-            classId: classId,
-            canInitializeRoom: widget.canInitializeRoom,
-            initialTopicId: widget.appState.lastChatClassId == classId
-                ? widget.appState.lastChatTopicId
-                : null,
-            preloadedController: (roomId != null && roomId.isNotEmpty)
-                ? ref.watch(preloadedChatControllerProvider(roomId).notifier)
-                : null,
-          ),
-        ),
-      ],
+    return ClassChatScreen(
+      key: ValueKey('chat-$classId'),
+      repository: widget.repository,
+      appState: widget.appState,
+      classId: classId,
+      canInitializeRoom: widget.canInitializeRoom,
+      initialTopicId: widget.appState.lastChatClassId == classId
+          ? widget.appState.lastChatTopicId
+          : null,
+      preloadedController: (roomId != null && roomId.isNotEmpty)
+          ? ref.watch(preloadedChatControllerProvider(roomId).notifier)
+          : null,
     );
   }
 }

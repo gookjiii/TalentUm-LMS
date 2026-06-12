@@ -23,6 +23,7 @@ import '../features/shared/presentation/widgets/student_sidebar.dart';
 import '../features/shared/presentation/widgets/student_right_sidebar.dart';
 import '../features/library/presentation/widgets/library_screen.dart';
 import '../features/webinars/presentation/widgets/webinars_screen.dart';
+import 'student_menu_screen.dart';
 class StudentShell extends ConsumerStatefulWidget {
   const StudentShell({super.key});
 
@@ -193,6 +194,24 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                     title: AppLocalizations.of(context)!.magazine,
                     icon: Icons.book_outlined,
                   ),
+                  
+                // 8: Mobile Menu Screen
+                if (!wide)
+                  StudentMenuScreen(
+                    onSelectTab: (index) {
+                      _handleTabSelection(
+                        index,
+                        false,
+                        selectedId,
+                        repo,
+                        appState,
+                        l10n,
+                        classes,
+                      );
+                    },
+                  )
+                else
+                  const SizedBox.shrink(),
               ],
             );
 
@@ -253,15 +272,11 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                             setState(() => _tabIndex = mobileIndices[i]);
                           },
                           items: mobileNavItems,
-                          onMoreTap: () => _showMoreSheet(
-                            context,
-                            classes,
-                            selectedId,
-                            repo,
-                            appState,
-                            l10n,
-                          ),
-                          moreSelected: mobileSelected < 0,
+                          onMoreTap: () {
+                            HapticFeedback.lightImpact();
+                            setState(() => _tabIndex = 8); // Open Menu Tab
+                          },
+                          moreSelected: _tabIndex == 8,
                         );
                       },
                     ),
