@@ -20,24 +20,6 @@ class EliteStudentFeed extends HookWidget {
   }
 }
 
-class EliteCampusChat extends HookWidget {
-  const EliteCampusChat({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: SchoolColors.darkBg,
-      appBar: AppBar(
-        title: const Text('Campus Chat'),
-        backgroundColor: Colors.transparent,
-      ),
-      body: const Center(
-        child: Text('Campus Chat Elite Placeholder', style: TextStyle(color: Colors.white)),
-      ),
-    );
-  }
-}
-
 class EliteAssignmentHub extends HookWidget {
   const EliteAssignmentHub({super.key});
 
