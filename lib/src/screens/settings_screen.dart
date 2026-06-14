@@ -308,7 +308,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // ── Notifications section ───────────────────────────
           _SectionLabel(label: notificationsLabel),
-          SchoolCard(
+          GlassCard(
             padding: EdgeInsets.zero,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -376,7 +376,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // ── Appearance section ──────────────────────────────
           _SectionLabel(label: appearanceLabel),
-          SchoolCard(
+          GlassCard(
             padding: EdgeInsets.zero,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -463,7 +463,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // ── About section ───────────────────────────────────
           _SectionLabel(label: isRu ? AppLocalizations.of(context)!.aboutTheApplication : 'About'),
-          SchoolCard(
+          GlassCard(
             padding: EdgeInsets.zero,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -887,7 +887,7 @@ class _MiniStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SchoolCard(
+    return GlassCard(
       padding: const EdgeInsets.all(18),
       child: Column(
         mainAxisSize: MainAxisSize.min,

@@ -1,11 +1,9 @@
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
-import '../../../../screens/settings_screen.dart';
 
 import './feed_widgets.dart';
 
@@ -70,191 +68,277 @@ class _StudentFeedState extends State<StudentFeed> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    final name = user?.displayName ?? AppLocalizations.of(context)!.student;
-
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentColor = AppScope.of(context).appState.accentColor;
 
-    return AmbientGlowBackground(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: SizedBox.expand(
-            child: NotificationListener<ScrollNotification>(
-              onNotification: (ScrollNotification scrollInfo) {
-                if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
-                  _loadMore();
-                }
-                return false;
-              },
-              child: CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 56, 24, 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      AppLocalizations.of(context)!.ribbon,
-                                      style: TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: -0.5,
-                                      ),
-                                    ),
-                                    Text(
-                                      AppLocalizations.of(context)!.announcementsFromYourTeachers,
-                                      style: TextStyle(
-                                        color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SchoolAvatar(
-                                name: name,
-                                userId: user?.uid,
-                                radius: 22,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (ctx) => SettingsScreen(
-                                      repository: AppScope.of(ctx).repository,
-                                      appState: AppScope.of(ctx).appState,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 24),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.03),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
-                              ),
-                            ),
-                            child: TextField(
-                              onChanged: (v) => setState(
-                                () => _searchQuery = v.trim().toLowerCase(),
-                              ),
-                              style: TextStyle(
-                                color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: AppLocalizations.of(context)!.searchByAdvertisements,
-                                hintStyle: TextStyle(
-                                  color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
-                                ),
-                                prefixIcon: Icon(
-                                  Icons.search_rounded,
-                                  color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                  horizontal: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 24),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                _FeedFilterChip(
-                                  label: AppLocalizations.of(context)!.allClasses,
-                                  active: widget.classId == 'all',
-                                  onTap: () => widget.onClassSelect('all'),
-                                ),
-                                ...widget.classes.map(
-                                  (c) => _FeedFilterChip(
-                                    label: c['name']?.toString() ?? '',
-                                    active: c['id'] == widget.classId,
-                                    onTap: () =>
-                                        widget.onClassSelect(c['id'] as String),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+    return Container(
+      color: isDark ? const Color(0xFF0F172A) : Theme.of(context).colorScheme.surface,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification scrollInfo) {
+          if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+            _loadMore();
+          }
+          return false;
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 900;
+            return CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                    child: _FeedHeader(
+                      searchQuery: _searchQuery,
+                      onSearchChanged: (v) => setState(() => _searchQuery = v),
+                      classId: widget.classId,
+                      classes: widget.classes,
+                      onClassSelect: widget.onClassSelect,
                     ),
                   ),
-                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: _postsStream,
-                    builder: (context, snapshot) {
-                      var posts = snapshot.data?.docs ?? [];
-    
-                      if (_searchQuery.isNotEmpty) {
-                        posts = posts.where((doc) {
-                          final content =
-                              doc.data()['content']?.toString().toLowerCase() ?? '';
-                          return content.contains(_searchQuery);
-                        }).toList();
-                      }
-    
-                      if (posts.isEmpty &&
-                          snapshot.connectionState != ConnectionState.waiting) {
-                        return SliverToBoxAdapter(
-                          child: EmptyStateWidget(
-                            icon: Icons.notifications_none_rounded,
-                            title: AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
-                            subtitle: 'Bạn đã xem hết tất cả thông báo rồi!',
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  sliver: SliverToBoxAdapter(
+                    child: isWide
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(flex: 7, child: _buildPostsList(isDark)),
+                              const SizedBox(width: 32),
+                              Expanded(flex: 3, child: _buildDeadlinesSidebar(isDark)),
+                            ],
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildDeadlinesSidebar(isDark),
+                              const SizedBox(height: 32),
+                              _buildPostsList(isDark),
+                            ],
                           ),
-                        );
-                      }
-                      return SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate((context, index) {
-                            final doc = posts[index];
-                            final data = doc.data();
-                            final cId = data['classId']?.toString();
-                            final classData = widget.classes.firstWhere(
-                              (c) => c['id'] == cId,
-                              orElse: () => widget.classes.isNotEmpty
-                                  ? widget.classes.first
-                                  : {},
-                            );
-    
-                            if (classData.isEmpty) return const SizedBox.shrink();
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: PostCard(
-                                doc: doc,
-                                classData: classData,
-                                canManage: false,
-                              ),
-                            );
-                          }, childCount: posts.length),
-                        ),
-                      );
-                    },
                   ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 48)),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPostsList(bool isDark) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: _postsStream,
+      builder: (context, snapshot) {
+        var posts = snapshot.data?.docs ?? [];
+
+        if (_searchQuery.isNotEmpty) {
+          posts = posts.where((doc) {
+            final content = doc.data()['content']?.toString().toLowerCase() ?? '';
+            return content.contains(_searchQuery);
+          }).toList();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Recent Updates',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: isDark ? Colors.white : SchoolColors.text,
+              ),
+            ),
+            const SizedBox(height: 24),
+            if (posts.isEmpty && snapshot.connectionState != ConnectionState.waiting)
+              EmptyStateWidget(
+                icon: Icons.notifications_none_rounded,
+                title: AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
+                subtitle: 'No more updates in your feed.',
+              )
+            else
+              ...posts.map((doc) {
+                final data = doc.data();
+                final cId = data['classId']?.toString();
+                final classData = widget.classes.firstWhere(
+                  (c) => c['id'] == cId,
+                  orElse: () => widget.classes.isNotEmpty ? widget.classes.first : {},
+                );
+
+                if (classData.isEmpty) return const SizedBox.shrink();
+
+                // Wrapping PostCard with Glassmorphism
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: GlassCard(
+                    borderRadius: 20,
+                    padding: EdgeInsets.zero,
+                    color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white.withValues(alpha: 0.5),
+                    child: PostCard(
+                      doc: doc,
+                      classData: classData,
+                      canManage: false,
+                    ),
+                  ),
+                );
+              }),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDeadlinesSidebar(bool isDark) {
+    final mockDeadlines = [
+      ('Physics Lab Report', 'Due Apr 28', SchoolColors.primary),
+      ('Coding Project', 'Due Apr 27', SchoolColors.green),
+      ('Coding Project', 'Due Feb 27', SchoolColors.green),
+      ('Physics Lab Report', 'Due Feb 23', SchoolColors.primary),
+      ('Physics Lab Report', 'Due Apr 28', SchoolColors.orange),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Upcoming Deadlines',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: isDark ? Colors.white : SchoolColors.text,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ...mockDeadlines.map((d) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withValues(alpha: 0.05) : d.$3.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(color: d.$3, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(d.$1, style: TextStyle(fontWeight: FontWeight.w700, color: isDark ? Colors.white : SchoolColors.text)),
+                        const SizedBox(height: 4),
+                        Text(d.$2, style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : SchoolColors.muted)),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.access_time_rounded, size: 16, color: isDark ? Colors.white54 : SchoolColors.muted),
                 ],
+              ),
+            ),
+          )),
+          const SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: () {},
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+              side: BorderSide(color: isDark ? Colors.white24 : SchoolColors.border),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text('View Full Calendar', style: TextStyle(color: isDark ? Colors.white : SchoolColors.text)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeedHeader extends StatelessWidget {
+  const _FeedHeader({
+    required this.searchQuery,
+    required this.onSearchChanged,
+    required this.classId,
+    required this.classes,
+    required this.onClassSelect,
+  });
+
+  final String searchQuery;
+  final ValueChanged<String> onSearchChanged;
+  final String classId;
+  final List<Map<String, dynamic>> classes;
+  final ValueChanged<String> onClassSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // No avatar/name row because StudentShell already contains it in sidebar
+        Container(
+          decoration: BoxDecoration(
+            color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: TextField(
+            onChanged: (v) => onSearchChanged(v.trim().toLowerCase()),
+            style: TextStyle(
+              color: isDark ? Colors.white : SchoolColors.text,
+              fontWeight: FontWeight.w500,
+            ),
+            decoration: InputDecoration(
+              hintText: l10n.searchByAdvertisements,
+              hintStyle: TextStyle(
+                color: isDark ? Colors.white54 : SchoolColors.muted,
+              ),
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                color: isDark ? Colors.white54 : SchoolColors.muted,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 16,
+                horizontal: 16,
               ),
             ),
           ),
         ),
-      ),
+        const SizedBox(height: 24),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _FeedFilterChip(
+                label: l10n.allClasses,
+                active: classId == 'all',
+                onTap: () => onClassSelect('all'),
+              ),
+              ...classes.map(
+                (c) => _FeedFilterChip(
+                  label: c['name']?.toString() ?? '',
+                  active: c['id'] == classId,
+                  onTap: () => onClassSelect(c['id'] as String),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
-
   }
 }
 
@@ -271,12 +355,11 @@ class _FeedFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentColor = AppScope.of(context).appState.accentColor;
 
     return Semantics(
       button: true,
       selected: active,
-      label: 'Фильтр: $label',
+      label: 'Filter: $label',
       child: Padding(
         padding: const EdgeInsets.only(right: 8),
         child: GestureDetector(
@@ -286,30 +369,16 @@ class _FeedFilterChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: active 
-                  ? accentColor 
+                  ? SchoolColors.primary 
                   : (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: active 
-                    ? accentColor 
-                    : (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
-              ),
-              boxShadow: active
-                  ? [
-                      BoxShadow(
-                        color: accentColor.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      )
-                    ]
-                  : null,
             ),
             child: Text(
               label,
               style: TextStyle(
                 color: active 
                     ? Colors.white 
-                    : (isDark ? SchoolColors.darkText : SchoolColors.text),
+                    : (isDark ? Colors.white : SchoolColors.text),
                 fontWeight: active ? FontWeight.w700 : FontWeight.w600,
                 fontSize: 13,
               ),

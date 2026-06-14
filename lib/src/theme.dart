@@ -94,8 +94,8 @@ class SchoolColors {
   static const borderFocus = Color(0xFFC4B5FD);
 
   // ── Dark-mode Palette ─────────────────────────────────────────
-  static const darkBg = Color(0xFF0B1120);
-  static const darkSurface = Color(0xFF151E32);
+  static const Color darkBg = Color(0xFF0F172A);
+  static const Color darkSurface = Color(0xFF1E293B);
   static const darkSurfaceElevated = Color(0xFF1B1E3B);
   static const darkBorder = Color(0x1AFFFFFF); // rgba(255, 255, 255, 0.1)
   static const darkText = Color(0xFFF8FAFC);

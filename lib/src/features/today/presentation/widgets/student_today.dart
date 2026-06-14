@@ -3,21 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:school_world/l10n/app_localizations.dart';
-import 'package:school_world/src/firebase/school_repository.dart';
 import 'package:school_world/src/models/schedule.dart';
 import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:school_world/main.dart';
-import 'package:sw_design_system/design_system.dart';
 import 'package:school_world/src/utils/responsive_utils.dart';
-
 import 'package:school_world/src/screens/settings_screen.dart';
-import 'package:school_world/src/screens/student_shell.dart';
-import 'package:school_world/src/features/today/presentation/widgets/learning_streak_widget.dart';
 
-class StudentToday extends ConsumerWidget {
+class StudentToday extends ConsumerStatefulWidget {
   const StudentToday({
     super.key,
     required this.classes,
@@ -33,7 +27,14 @@ class StudentToday extends ConsumerWidget {
   final bool showSidebar;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StudentToday> createState() => _StudentTodayState();
+}
+
+class _StudentTodayState extends ConsumerState<StudentToday> {
+  int _selectedTabIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final user = FirebaseAuth.instance.currentUser;
 
@@ -45,285 +46,409 @@ class StudentToday extends ConsumerWidget {
         : l10n.student;
     final avatarUrl = userData['avatarUrl']?.toString();
 
-    final now = DateTime.now();
-    final date = DateFormat('EEEE, MMMM d', l10n.localeName).format(now);
-    final hour = now.hour;
-    final greeting = hour < 12
-        ? l10n.goodMorning
-        : hour < 17
-        ? l10n.goodAfternoon
-        : l10n.goodEvening;
-
     final todaySchedules = ref.watch(studentTodaySchedulesProvider);
     final classInfo = {
-      for (final c in classes)
+      for (final c in widget.classes)
         c['id'].toString(): (
-          name: c['name']?.toString() ?? 'Класс',
+          name: c['name']?.toString() ?? 'Class',
           subject: c['subject']?.toString() ?? '',
         ),
     };
 
-    ResolvedScheduleItem? upcomingClass;
-    for (final item in todaySchedules) {
-      if (item.cancelled) continue;
-      final diff = item.start.difference(now).inMinutes;
-      if (diff > 0 && diff <= 15) {
-        upcomingClass = item;
-        break;
-      }
-    }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final activeLessons = todaySchedules.where((s) {
-      final n = DateTime.now();
-      return !s.cancelled && n.isAfter(s.start) && n.isBefore(s.end);
-    }).length;
-
-    return CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding, vertical: 16),
-            child: PageHeader(
-              title: '$greeting, $name',
-              subtitle: date,
-              trailing: SchoolAvatar(
-                name: name,
-                avatarUrl: avatarUrl,
-                radius: 23,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (ctx) => SettingsScreen(
-                      repository: AppScope.of(ctx).repository,
-                      appState: AppScope.of(ctx).appState,
-                    ),
-                  ),
-                ),
-                showBorder: true,
-              ),
-            ),
-          ),
-        ),
-
-        // ── Bento Grid Section ─────────────────────────────────────
-        SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-          sliver: SliverToBoxAdapter(
-            child: Column(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _BentoStats(
-                        classCount: classes.length,
-                        todayLessons: todaySchedules.length,
-                        activeLessons: activeLessons,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 3,
-                      child: StreakCard(
-                        classIds: classes.map((c) => (c['id'] ?? '').toString()).toList(),
-                        onTap: onHomeworkTap,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                if (upcomingClass != null) ...[
-                  _UpcomingClassReminder(
-                    item: upcomingClass,
-                    className: classInfo[upcomingClass.classId]?.name ?? 'Класс',
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                const LearningStreakWidget(),
-              ],
-            ),
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 32)),
-
-        // ── Today's classes ───────────────────────────────────────
-        if (!showSidebar) ...[
+    return Container(
+      color: isDark ? const Color(0xFF0F172A) : Theme.of(context).colorScheme.surface, // Deep Indigo background
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-              child: SectionHeader(
-                title: l10n.todaysClasses.toUpperCase(),
-                action: l10n.viewAll,
-                onActionTap: () => onTabSelect(4),
+              padding: EdgeInsets.fromLTRB(context.horizontalPadding, 32, context.horizontalPadding, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Dashboard',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? Colors.white : SchoolColors.text,
+                          letterSpacing: -1,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Mock navigation tabs
+                      Row(
+                        children: [
+                          _DashboardTab(title: 'All', isSelected: _selectedTabIndex == 0, onTap: () => setState(() => _selectedTabIndex = 0)),
+                          const SizedBox(width: 24),
+                          _DashboardTab(title: 'Schedule', isSelected: _selectedTabIndex == 1, onTap: () => setState(() => _selectedTabIndex = 1)),
+                          const SizedBox(width: 24),
+                          _DashboardTab(title: 'Grades', isSelected: _selectedTabIndex == 2, onTap: () => setState(() => _selectedTabIndex = 2)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SchoolAvatar(
+                    name: name,
+                    avatarUrl: avatarUrl,
+                    radius: 24,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (ctx) => SettingsScreen(
+                          repository: AppScope.of(ctx).repository,
+                          appState: AppScope.of(ctx).appState,
+                        ),
+                      ),
+                    ),
+                    showBorder: true,
+                  ),
+                ],
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          if (todaySchedules.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-                child: SwBentoCard(
-                  padding: const EdgeInsets.symmetric(vertical: 48),
-                  child: Center(
-                    child: Column(
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding, vertical: 16),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth > 900) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.calendar_today_outlined,
-                            size: 32, color: SchoolColors.muted.withOpacity(0.5)),
-                        const SizedBox(height: 12),
-                        Text(
-                          l10n.noLessonsForToday,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: SchoolColors.muted,
+                        Expanded(flex: 3, child: _buildUpcomingClasses(todaySchedules, classInfo, isDark)),
+                        const SizedBox(width: 24),
+                        Expanded(flex: 3, child: _buildRecentGrades(isDark)),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          flex: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildAnnouncements(isDark),
+                              const SizedBox(height: 24),
+                              _buildQuickActions(isDark, l10n),
+                            ],
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                ),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = todaySchedules[index];
-                    if (index >= 3) return null;
-                    final info = classInfo[item.classId];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: StudentScheduleCard(
-                        item: item,
-                        className: info?.name ?? 'Класс',
-                        subject: info?.subject ?? '',
-                      ),
                     );
-                  },
-                  childCount:
-                      todaySchedules.length > 3 ? 3 : todaySchedules.length,
-                ),
+                  } else if (constraints.maxWidth > 600) {
+                    return Column(
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: _buildUpcomingClasses(todaySchedules, classInfo, isDark)),
+                            const SizedBox(width: 24),
+                            Expanded(child: _buildRecentGrades(isDark)),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: _buildAnnouncements(isDark)),
+                            const SizedBox(width: 24),
+                            Expanded(child: _buildQuickActions(isDark, l10n)),
+                          ],
+                        ),
+                      ],
+                    );
+                  } else {
+                    return Column(
+                      children: [
+                        _buildUpcomingClasses(todaySchedules, classInfo, isDark),
+                        const SizedBox(height: 24),
+                        _buildRecentGrades(isDark),
+                        const SizedBox(height: 24),
+                        _buildAnnouncements(isDark),
+                        const SizedBox(height: 24),
+                        _buildQuickActions(isDark, l10n),
+                      ],
+                    );
+                  }
+                },
               ),
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 48)),
         ],
+      ),
+    );
+  }
 
-        // ── Quick links ───────────────────────────────────────────
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-            child: SectionHeader(title: l10n.quickLinks),
-          ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-          sliver: SliverGrid(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: MediaQuery.sizeOf(context).width >= 700 ? 4 : 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.6,
-            ),
-            delegate: SliverChildListDelegate([
-              QuickTile(
-                onTap: () => onTabSelect(5),
-                icon: Icons.library_books_outlined,
-                label: l10n.library,
-                color: SchoolColors.primary,
-              ),
-              QuickTile(
-                onTap: () => onTabSelect(6),
-                icon: Icons.ondemand_video_outlined,
-                label: l10n.webinars,
-                color: SchoolColors.accent,
-              ),
-              QuickTile(
-                onTap: () => showDialog(
-                  context: context,
-                  builder: (_) => JoinClassDialog(
-                    repository: AppScope.of(context).repository,
+  Widget _buildUpcomingClasses(List<ResolvedScheduleItem> schedules, Map<String, dynamic> classInfo, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GlassCard(
+          borderRadius: 24,
+          padding: const EdgeInsets.all(24),
+          color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.6), // Surface layer
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Upcoming Classes',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : SchoolColors.text),
                   ),
-                ),
-                icon: Icons.group_add_outlined,
-                label: l10n.joinAClass,
-                color: SchoolColors.secondary,
+                  Icon(Icons.more_horiz, color: isDark ? Colors.white54 : SchoolColors.muted),
+                ],
               ),
-            ]),
+              const SizedBox(height: 4),
+              Text('All', style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : SchoolColors.muted)),
+              const SizedBox(height: 16),
+              Container(height: 3, decoration: BoxDecoration(color: SchoolColors.primary, borderRadius: BorderRadius.circular(3))),
+              const SizedBox(height: 24),
+              if (schedules.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(child: Text('No classes today', style: TextStyle(color: Colors.grey))),
+                )
+              else
+                ...schedules.take(4).map((item) {
+                  final info = classInfo[item.classId];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: _ClassItemCard(item: item, className: info?.name ?? 'Class', subject: info?.subject ?? '', isDark: isDark),
+                  );
+                }),
+            ],
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 48)),
       ],
     );
   }
-}
 
-class _BentoStats extends StatelessWidget {
-  const _BentoStats({
-    required this.classCount,
-    required this.todayLessons,
-    required this.activeLessons,
-  });
-  final int classCount;
-  final int todayLessons;
-  final int activeLessons;
+  Widget _buildRecentGrades(bool isDark) {
+    final mockGrades = [
+      ('Assignment Analysis', 95, true),
+      ('Assignment Title 1', 75, true),
+      ('Assignment Test 1', 86, true),
+      ('Assignment Title 2', 75, true),
+      ('Assignment Title 3', 80, true),
+      ('Assignment Title 4', 86, true),
+      ('Assignment Title 5', 85, true),
+      ('Assignment Title 6', 75, true),
+    ];
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
+    return GlassCard(
+      borderRadius: 24,
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: SchoolColors.primary,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: SwTheme.diffusionShadow,
+      color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Recent Grades',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : SchoolColors.text),
+              ),
+              Icon(Icons.more_horiz, color: isDark ? Colors.white54 : SchoolColors.muted),
+            ],
+          ),
+          const SizedBox(height: 24),
+          ...mockGrades.map((g) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Course Name', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : SchoolColors.muted)),
+                      Text(g.$1, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : SchoolColors.text), overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+                Row(
+                  children: [
+                    Text('${g.$2}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: SchoolColors.green)), // Emerald Growth
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_drop_up_rounded, color: SchoolColors.green),
+                  ],
+                ),
+              ],
+            ),
+          )),
+        ],
       ),
+    );
+  }
+
+  Widget _buildAnnouncements(bool isDark) {
+    return GlassCard(
+      borderRadius: 24,
+      padding: const EdgeInsets.all(24),
+      color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$todayLessons',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 40,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1,
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'LESSONS TODAY',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
-            ),
+            'Announcements',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : SchoolColors.text),
           ),
           const SizedBox(height: 24),
+          _AnnouncementItem(
+            title: 'Elite Digital Art Updates',
+            body: 'Elite Digital Campus news to latest updates.',
+            time: '4 days ago',
+            isDark: isDark,
+          ),
+          const SizedBox(height: 16),
+          _AnnouncementItem(
+            title: 'Announcements Update',
+            body: 'The news sentation to most makers reading...',
+            time: '2 hours ago',
+            isDark: isDark,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions(bool isDark, AppLocalizations l10n) {
+    return GlassCard(
+      borderRadius: 24,
+      padding: const EdgeInsets.all(24),
+      color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Quick Actions',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : SchoolColors.text),
+          ),
+          const SizedBox(height: 24),
+          _ActionButton(label: 'Submit Assignment', primary: true, onTap: () => widget.onHomeworkTap()),
+          const SizedBox(height: 12),
+          _ActionButton(label: 'Contact Advisor', primary: false, onTap: () => widget.onTabSelect(2)),
+          const SizedBox(height: 12),
+          _ActionButton(label: 'Contact Assistant', primary: false, onTap: () => widget.onTabSelect(2)),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashboardTab extends StatelessWidget {
+  const _DashboardTab({required this.title, required this.isSelected, required this.onTap});
+  final String title;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+              color: isSelected ? SchoolColors.primary : (isDark ? Colors.white54 : SchoolColors.muted),
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (isSelected)
+            Container(
+              height: 3,
+              width: 24,
+              decoration: BoxDecoration(color: SchoolColors.primary, borderRadius: BorderRadius.circular(2)),
+            )
+          else
+            const SizedBox(height: 3),
+        ],
+      ),
+    );
+  }
+}
+
+class _ClassItemCard extends StatelessWidget {
+  const _ClassItemCard({required this.item, required this.className, required this.subject, required this.isDark});
+  final ResolvedScheduleItem item;
+  final String className;
+  final String subject;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final startLabel = DateFormat('HH:mm a').format(item.start);
+    final isNow = DateTime.now().isAfter(item.start) && DateTime.now().isBefore(item.end);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF334155).withValues(alpha: 0.4) : SchoolColors.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: Column(
+        children: [
           Row(
             children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: SchoolColors.accent,
-                  shape: BoxShape.circle,
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: SchoolColors.primary.withValues(alpha: 0.2),
+                child: const Icon(Icons.person, size: 20, color: SchoolColors.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Instructor', style: TextStyle(fontSize: 10, color: isDark ? Colors.white54 : SchoolColors.muted)),
+                    Text(
+                      subject.isNotEmpty ? subject : className,
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? Colors.white : SchoolColors.text),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                '$activeLessons ACTIVE',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+              if (isNow)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: SchoolColors.green.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
+                  child: const Text('In Progress', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: SchoolColors.green)),
                 ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.access_time_rounded, size: 14, color: isDark ? Colors.white54 : SchoolColors.muted),
+                  const SizedBox(width: 4),
+                  Text('Time - $startLabel', style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : SchoolColors.textSecondary)),
+                ],
+              ),
+              FilledButton(
+                onPressed: () {},
+                style: FilledButton.styleFrom(
+                  backgroundColor: SchoolColors.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  minimumSize: const Size(0, 32),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Join Class', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -333,617 +458,57 @@ class _BentoStats extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────
-// STATS ROW
-// ─────────────────────────────────────────────────────────────────
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({
-    required this.classCount,
-    required this.todayLessons,
-    required this.activeLessons,
-  });
-  final int classCount;
-  final int todayLessons;
-  final int activeLessons;
+class _AnnouncementItem extends StatelessWidget {
+  const _AnnouncementItem({required this.title, required this.body, required this.time, required this.isDark});
+  final String title;
+  final String body;
+  final String time;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final l10n = AppLocalizations.of(context)!;
-
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _StatMini(
-          icon: Icons.school_rounded,
-          value: '$classCount',
-          label: l10n.allClasses,
-          color: SchoolColors.primary,
-          isDark: isDark,
-        ),
-        const SizedBox(width: 10),
-        _StatMini(
-          icon: Icons.calendar_today_rounded,
-          value: '$todayLessons',
-          label: l10n.todaysClasses,
-          color: SchoolColors.accent,
-          isDark: isDark,
-        ),
-        if (activeLessons > 0) ...[
-          const SizedBox(width: 10),
-          _StatMini(
-            icon: Icons.play_circle_rounded,
-            value: '$activeLessons',
-            label: AppLocalizations.of(context)!.now,
-            color: SchoolColors.green,
-            isDark: isDark,
-            pulsing: true,
-          ),
-        ],
+        Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isDark ? Colors.white : SchoolColors.text)),
+        const SizedBox(height: 4),
+        Text(body, style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : SchoolColors.textSecondary)),
+        const SizedBox(height: 8),
+        Text(time, style: TextStyle(fontSize: 10, color: isDark ? Colors.white54 : SchoolColors.muted)),
       ],
     );
   }
 }
 
-class _StatMini extends StatelessWidget {
-  const _StatMini({
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-    required this.isDark,
-    this.pulsing = false,
-  });
-  final IconData icon;
-  final String value;
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({required this.label, required this.primary, required this.onTap});
   final String label;
-  final Color color;
-  final bool isDark;
-  final bool pulsing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: isDark
-              ? color.withValues(alpha: 0.12)
-              : color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: color.withValues(alpha: isDark ? 0.2 : 0.15),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: AppTextStyle.mono(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
-                      color: color,
-                    ).copyWith(height: 1.1),
-                  ),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? SchoolColors.darkTextSecondary
-                          : SchoolColors.muted,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────
-// STREAK / HOMEWORK PROGRESS CARD
-// ─────────────────────────────────────────────────────────────────
-class StreakCard extends StatefulWidget {
-  const StreakCard({super.key, required this.classIds, required this.onTap});
-
-  final List<String> classIds;
+  final bool primary;
   final VoidCallback onTap;
 
   @override
-  State<StreakCard> createState() => _StreakCardState();
-}
-
-class _StreakCardState extends State<StreakCard> {
-  Future<_HomeworkProgress>? _progressFuture;
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final repo = AppScope.of(context).repository;
-    _progressFuture ??= _loadProgress(repo, repo.uid, widget.classIds);
-  }
-
-  @override
-  void didUpdateWidget(covariant StreakCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.classIds != widget.classIds) {
-      final repo = AppScope.of(context).repository;
-      _progressFuture = _loadProgress(repo, repo.uid, widget.classIds);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return FutureBuilder<_HomeworkProgress>(
-      future: _progressFuture,
-      builder: (context, snapshot) {
-        final progress =
-            snapshot.data ?? const _HomeworkProgress(done: 0, total: 0);
-        final fraction = progress.total == 0
-            ? 0.0
-            : (progress.done / progress.total).clamp(0.0, 1.0);
-        final percent = (fraction * 100).round();
-
-        return MouseRegion(
-          onEnter: (_) => setState(() => _hovered = true),
-          onExit: (_) => setState(() => _hovered = false),
-          child: GestureDetector(
-            onTapDown: (_) => setState(() => _pressed = true),
-            onTapUp: (_) {
-              setState(() => _pressed = false);
-              widget.onTap();
-            },
-            onTapCancel: () => setState(() => _pressed = false),
-            child: AnimatedScale(
-              scale: _pressed ? 0.96 : (_hovered ? 1.025 : 1.0),
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeOutBack,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [SchoolColors.primaryDark, SchoolColors.secondary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: SchoolColors.primary.withValues(alpha: _hovered ? 0.45 : 0.28),
-                      blurRadius: _hovered ? 28 : 20,
-                      offset: Offset(0, _hovered ? 12 : 8),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    // Animated ring
-                    CircularProgressRing(
-                      percent: fraction,
-                      color: Colors.white,
-                      size: 56,
-                      strokeWidth: 4,
-                      child: Text(
-                        '$percent%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.homework,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.75),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            l10n.homeworksDone(progress.done, progress.total),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: Colors.white.withValues(alpha: 0.5),
-                      size: 14,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<_HomeworkProgress> _loadProgress(
-    SchoolRepository repo,
-    String? uid,
-    List<String> classIds,
-  ) async {
-    if (uid == null || classIds.isEmpty) {
-      return const _HomeworkProgress(done: 0, total: 0);
-    }
-
-    final today = DateTime.now();
-    final start = DateTime(today.year, today.month, today.day);
-    final end = start.add(const Duration(days: 1));
-    final ids = classIds.take(10).toList(growable: false);
-
-    final assignments = await repo.firestore
-        .collection('assignments')
-        .where('classId', whereIn: ids)
-        .get();
-
-    final relevantAssignments = assignments.docs
-        .where((doc) {
-          final dueAt = doc.data()['dueDate'];
-          if (dueAt is! Timestamp) return false;
-          final due = dueAt.toDate();
-          return !due.isBefore(start) && due.isBefore(end);
-        })
-        .toList(growable: false);
-
-    final effectiveAssignments = relevantAssignments.isEmpty
-        ? assignments.docs
-        : relevantAssignments;
-    if (effectiveAssignments.isEmpty) {
-      return const _HomeworkProgress(done: 0, total: 0);
-    }
-
-    final assignmentIds = effectiveAssignments.map((doc) => doc.id).toSet();
-    final submissions = await repo.firestore
-        .collection('submissions')
-        .where('studentId', isEqualTo: uid)
-        .get();
-    final done = submissions.docs
-        .where((doc) => assignmentIds.contains(doc.data()['assignmentId']))
-        .length;
-
-    return _HomeworkProgress(done: done, total: effectiveAssignments.length);
-  }
-}
-
-class _HomeworkProgress {
-  const _HomeworkProgress({required this.done, required this.total});
-  final int done;
-  final int total;
-}
-
-// ─────────────────────────────────────────────────────────────────
-// UPCOMING CLASS REMINDER
-// ─────────────────────────────────────────────────────────────────
-class _UpcomingClassReminder extends StatelessWidget {
-  const _UpcomingClassReminder({required this.item, required this.className});
-  final ResolvedScheduleItem item;
-  final String className;
-
-  @override
-  Widget build(BuildContext context) {
-    final diff = item.start.difference(DateTime.now()).inMinutes;
-    final l10n = AppLocalizations.of(context)!;
-
-    return GlassCard(
-      color: SchoolColors.orange.withValues(alpha: 0.12),
-      borderRadius: 16,
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: SchoolColors.orange,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.notifications_active_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'УРОК НАЧНЕТСЯ ЧЕРЕЗ $diff МИН!',
-                  style: const TextStyle(
-                    color: SchoolColors.orange,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 10,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '$className · Кабинет ${item.room ?? '—'}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          FilledButton(
-            onPressed: () {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(l10n.joinLessonSoon)));
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: SchoolColors.orange,
-              minimumSize: const Size(80, 36),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: Text(
-              l10n.join,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────
-// SCHEDULE CARD
-// ─────────────────────────────────────────────────────────────────
-class StudentScheduleCard extends StatefulWidget {
-  const StudentScheduleCard({
-    super.key,
-    required this.item,
-    required this.className,
-    required this.subject,
-  });
-
-  final ResolvedScheduleItem item;
-  final String className;
-  final String subject;
-
-  @override
-  State<StudentScheduleCard> createState() => _StudentScheduleCardState();
-}
-
-class _StudentScheduleCardState extends State<StudentScheduleCard> {
-  bool _hovered = false;
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final start = widget.item.start;
-    final end = widget.item.end;
-    final isNow =
-        now.isAfter(start) && now.isBefore(end) && !widget.item.cancelled;
-    final isNext = now.isBefore(start) && !widget.item.cancelled;
-    final startLabel = DateFormat('HH:mm').format(start);
-    final room = widget.item.room?.toString().trim() ?? '—';
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final subjectColor = widget.item.cancelled
-        ? Colors.grey
-        : (isNow
-            ? SchoolColors.green
-            : isNext
-                ? SchoolColors.orange
-                : isDark
-                    ? SchoolColors.darkMuted
-                    : SchoolColors.muted);
-
-    final primaryTitle = widget.subject.isNotEmpty ? widget.subject : widget.className;
-    final subtitle = widget.subject.isNotEmpty ? widget.className : '';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: GestureDetector(
-          onTapDown: (_) => setState(() => _pressed = true),
-          onTapUp: (_) => setState(() => _pressed = false),
-          onTapCancel: () => setState(() => _pressed = false),
-          child: AnimatedScale(
-            scale: _pressed ? 0.98 : (_hovered ? 1.015 : 1.0),
-            duration: const Duration(milliseconds: 150),
-            child: GlassCard(
-              padding: EdgeInsets.zero,
-              borderRadius: 20,
-              color: _hovered
-                  ? subjectColor.withValues(alpha: isDark ? 0.10 : 0.04)
-                  : null,
-              child: IntrinsicHeight(
-                child: Row(
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: 5,
-                      margin: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: subjectColor,
-                        borderRadius: const BorderRadius.horizontal(
-                          right: Radius.circular(5),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: SchoolColors.green.withValues(
-                              alpha: isNow ? 0.5 : 0.0,
-                            ),
-                            blurRadius: isNow ? 8 : 0,
-                            spreadRadius: isNow ? 1 : 0,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '$startLabel · ${AppLocalizations.of(context)!.cabinetWithNumber(room)}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDark
-                                          ? SchoolColors.darkMuted
-                                          : SchoolColors.muted,
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    primaryTitle,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
-                                  if (subtitle.isNotEmpty)
-                                    Text(
-                                      subtitle,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: isDark
-                                            ? SchoolColors.darkTextSecondary
-                                            : SchoolColors.textSecondary,
-                                      ),
-                                    ),
-                                  if (widget.item.note != null &&
-                                      widget.item.note!.trim().isNotEmpty) ...[
-                                    const SizedBox(height: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primaryContainer
-                                            .withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withValues(alpha: 0.18),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        widget.item.note!.trim(),
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimaryContainer,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            _StatusPill(
-                              isNow: isNow,
-                              isNext: isNext,
-                              isCancelled: widget.item.cancelled,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+    if (primary) {
+      return FilledButton(
+        onPressed: onTap,
+        style: FilledButton.styleFrom(
+          backgroundColor: SchoolColors.primary, // Vibrant Amethyst
+          minimumSize: const Size(double.infinity, 48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-      ),
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({
-    required this.isNow,
-    required this.isNext,
-    required this.isCancelled,
-  });
-  final bool isNow, isNext, isCancelled;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    if (isCancelled) {
-      return StatusChip(
-        label: AppLocalizations.of(context)!.canceled,
-        color: SchoolColors.red,
-        icon: Icons.cancel_outlined,
+        child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+      );
+    } else {
+      return OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 48),
+          side: BorderSide(color: isDark ? Colors.white24 : SchoolColors.border),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: Text(label, style: TextStyle(color: isDark ? Colors.white : SchoolColors.text, fontWeight: FontWeight.w600)),
       );
     }
-    if (isNow) {
-      return StatusChip(
-        label: l10n.now,
-        color: SchoolColors.green,
-        pulseDot: true,
-      );
-    }
-    if (isNext) {
-      return StatusChip(
-        label: AppLocalizations.of(context)!.soon,
-        color: SchoolColors.orange,
-        icon: Icons.access_time_rounded,
-      );
-    }
-    return StatusChip(label: l10n.later, color: SchoolColors.muted);
   }
 }

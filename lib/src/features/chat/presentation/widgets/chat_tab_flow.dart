@@ -1,8 +1,6 @@
-import 'package:school_world/src/utils/responsive_utils.dart';
-import 'package:school_world/l10n/app_localizations.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/src/app_state.dart';
 import 'package:school_world/src/features/chat/presentation/screens/class_chat_screen.dart';
 import 'package:school_world/src/firebase/school_repository.dart';
@@ -73,12 +71,9 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
     } else if (widget.classes.isEmpty) {
       _selectedClassId = null;
       _view = ChatView.classList;
-    } else if (widget.classes.length == 1) {
-      _selectedClassId = widget.classes.first['id'] as String?;
-      _view = ChatView.chatRoom;
     } else {
-      _selectedClassId = null;
-      _view = ChatView.classList;
+      _selectedClassId = widget.initialClassId ?? widget.classes.first['id'] as String?;
+      _view = ChatView.chatRoom;
     }
 
     if (!widget.desktopMode) {
@@ -100,10 +95,34 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (widget.desktopMode) {
-      return _buildDesktopChat();
+      return Container(
+        color: isDark ? const Color(0xFF0F172A) : Theme.of(context).colorScheme.surface,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              width: 280,
+              child: _ChatClassList(
+                classes: widget.classes,
+                onSelect: _onClassSelect,
+                repository: widget.repository,
+                appState: widget.appState,
+                isSplitView: true,
+                selectedClassId: _selectedClassId,
+              ),
+            ),
+            Expanded(
+              child: _buildDesktopChat(),
+            ),
+          ],
+        ),
+      );
     }
 
+    // Mobile logic
     switch (_view) {
       case ChatView.classList:
         return _ChatClassList(
@@ -113,40 +132,14 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
           appState: widget.appState,
         );
       case ChatView.chatRoom:
-        final classData = widget.classes.firstWhere(
-          (c) => c['id'] == _selectedClassId,
-          orElse: () => {
-            'id': 'teachers_lounge',
-            'name': AppLocalizations.of(context)!.teachersRoom,
-            'chatRoomId': 'global_teachers_lounge',
-            'coverColor': '#FF4F46E5',
-            'isTeachersLounge': true,
-          },
-        );
-        final roomId = classData['chatRoomId'] as String?;
-        return ClassChatScreen(
-          key: ValueKey('chat-$_selectedClassId'),
-          repository: widget.repository,
-          appState: widget.appState,
-          classId: _selectedClassId!,
-          canInitializeRoom: widget.canInitializeRoom,
-          initialTopicId: widget.appState.lastChatClassId == _selectedClassId
-              ? widget.appState.lastChatTopicId
-              : null,
-          preloadedController: (roomId != null && roomId.isNotEmpty)
-              ? ref.watch(preloadedChatControllerProvider(roomId).notifier)
-              : null,
-          onBack: (widget.appState.isTeacher || widget.classes.length > 1)
-              ? () {
-                  widget.appState.clearChatContext();
-                  setState(() => _view = ChatView.classList);
-                }
-              : null,
-        );
+        return _buildDesktopChat(mobileBack: () {
+          widget.appState.clearChatContext();
+          setState(() => _view = ChatView.classList);
+        });
     }
   }
 
-  Widget _buildDesktopChat() {
+  Widget _buildDesktopChat({VoidCallback? mobileBack}) {
     if (widget.classes.isEmpty) return const SizedBox.shrink();
     final classId =
         _selectedClassId ?? widget.initialClassId ?? widget.classes.first['id'] as String;
@@ -162,18 +155,30 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
     );
     final roomId = classData['chatRoomId'] as String?;
 
-    return ClassChatScreen(
-      key: ValueKey('chat-$classId'),
-      repository: widget.repository,
-      appState: widget.appState,
-      classId: classId,
-      canInitializeRoom: widget.canInitializeRoom,
-      initialTopicId: widget.appState.lastChatClassId == classId
-          ? widget.appState.lastChatTopicId
-          : null,
-      preloadedController: (roomId != null && roomId.isNotEmpty)
-          ? ref.watch(preloadedChatControllerProvider(roomId).notifier)
-          : null,
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark 
+            ? const Color(0xFF1E293B).withValues(alpha: 0.6) 
+            : Colors.white.withValues(alpha: 0.8),
+        borderRadius: widget.desktopMode 
+            ? const BorderRadius.only(topLeft: Radius.circular(24), bottomLeft: Radius.circular(24))
+            : BorderRadius.zero,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ClassChatScreen(
+        key: ValueKey('chat-$classId'),
+        repository: widget.repository,
+        appState: widget.appState,
+        classId: classId,
+        canInitializeRoom: widget.canInitializeRoom,
+        initialTopicId: widget.appState.lastChatClassId == classId
+            ? widget.appState.lastChatTopicId
+            : null,
+        preloadedController: (roomId != null && roomId.isNotEmpty)
+            ? ref.watch(preloadedChatControllerProvider(roomId).notifier)
+            : null,
+        onBack: mobileBack,
+      ),
     );
   }
 }
@@ -213,9 +218,7 @@ class _ChatClassListState extends State<_ChatClassList> {
   Widget build(BuildContext context) {
     final classesList = List<Map<String, dynamic>>.from(widget.classes);
     if (widget.appState.isTeacher) {
-      final matchesSearch = AppLocalizations.of(
-        context,
-      )!.teachersRoom1.contains(_searchQuery.toLowerCase());
+      final matchesSearch = AppLocalizations.of(context)!.teachersRoom1.contains(_searchQuery.toLowerCase());
       if (matchesSearch) {
         classesList.insert(0, {
           'id': 'teachers_lounge',
@@ -227,391 +230,209 @@ class _ChatClassListState extends State<_ChatClassList> {
       }
     }
 
-    final filtered = classesList.where((c) {
+    final filteredChannels = classesList.where((c) {
       final name = c['name']?.toString().toLowerCase() ?? '';
       return name.contains(_searchQuery.toLowerCase());
     }).toList();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text(
-          AppLocalizations.of(context)!.chats,
-          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
-        ),
-        centerTitle: true,
-      ),
-      body: AmbientGlowBackground(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Background
-            Positioned.fill(
-              child: Container(color: Colors.transparent),
+    final mockDirectMessages = [
+      ('David Kim', true),
+      ('Aisha Khan', false),
+      ('Michael Chen', false),
+      ('Sarah Johnson', true),
+    ];
+
+    Widget content = SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+            child: Text(
+              'ELITE DIGITAL CAMPUS',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+                letterSpacing: 1.2,
+                color: isDark ? Colors.white : SchoolColors.text,
+              ),
             ),
-            SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Hero(
-                    tag: 'chat_search',
-                    child: Material(
-                      color: Colors.transparent,
-                      child: Container(
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.05)
-                              : Colors.black.withValues(alpha: 0.04),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.08)
-                                : Colors.black.withValues(alpha: 0.06),
-                          ),
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: (v) => setState(() => _searchQuery = v),
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(context)!.searchChats,
-                            hintStyle: TextStyle(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.3)
-                                  : Colors.black.withValues(alpha: 0.3),
-                              fontSize: 15,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.search_rounded,
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.4)
-                                  : Colors.black.withValues(alpha: 0.4),
-                              size: 20,
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (v) => setState(() => _searchQuery = v),
+                style: TextStyle(fontSize: 14, color: isDark ? Colors.white : SchoolColors.text),
+                decoration: InputDecoration(
+                  hintText: 'Search chats...',
+                  hintStyle: TextStyle(
+                    color: isDark ? Colors.white54 : Colors.black54,
+                    fontSize: 14,
                   ),
+                  prefixIcon: Icon(Icons.search_rounded, color: isDark ? Colors.white54 : Colors.black54, size: 18),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                Expanded(
-                  child: filtered.isEmpty
-                      ? EmptyState(
-                          icon: Icons.chat_bubble_outline_rounded,
-                          title: AppLocalizations.of(context)!.noChatsFound,
-                          subtitle: AppLocalizations.of(context)!.tryAgain,
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
-                          itemCount: filtered.length,
-                          itemBuilder: (context, index) {
-                            final c = filtered[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _ClassCard(
-                                c: c,
-                                repository: widget.repository,
-                                onTap: () => widget.onSelect(c['id'] as String),
-                                isSelected: widget.isSplitView && c['id'] == widget.selectedClassId,
-                              ),
-                            );
-                          },
-                        ),
-                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              children: [
+                _buildSectionTitle('CHANNELS', isDark),
+                if (filteredChannels.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text('No channels found', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
+                  )
+                else
+                  ...filteredChannels.map((c) => _SidebarItem(
+                        icon: Icons.tag_rounded,
+                        label: c['name']?.toString() ?? '',
+                        color: parseHexColor(c['coverColor']),
+                        isSelected: widget.selectedClassId == c['id'],
+                        onTap: () => widget.onSelect(c['id'] as String),
+                        isDark: isDark,
+                      )),
+                const SizedBox(height: 24),
+                _buildSectionTitle('DIRECT MESSAGES', isDark),
+                ...mockDirectMessages.map((m) => _SidebarItem(
+                      icon: Icons.person_rounded,
+                      label: m.$1,
+                      color: m.$2 ? SchoolColors.green : (isDark ? Colors.white54 : Colors.black54),
+                      isSelected: false,
+                      onTap: () {},
+                      isDark: isDark,
+                      isOnline: m.$2,
+                    )),
               ],
             ),
           ),
         ],
       ),
+    );
+
+    return widget.isSplitView
+        ? content
+        : Scaffold(
+            backgroundColor: isDark ? const Color(0xFF0F172A) : Theme.of(context).colorScheme.surface,
+            body: content,
+          );
+  }
+
+  Widget _buildSectionTitle(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: isDark ? Colors.white54 : Colors.black54,
+          letterSpacing: 1.0,
+        ),
       ),
     );
   }
 }
 
-class _ClassCard extends ConsumerStatefulWidget {
-  const _ClassCard({
-    required this.c,
-    required this.repository,
+class _SidebarItem extends StatefulWidget {
+  const _SidebarItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.isSelected,
     required this.onTap,
-    this.isSelected = false,
+    required this.isDark,
+    this.isOnline = false,
   });
 
-  final Map<String, dynamic> c;
-  final SchoolRepository repository;
-  final VoidCallback onTap;
+  final IconData icon;
+  final String label;
+  final Color color;
   final bool isSelected;
+  final VoidCallback onTap;
+  final bool isDark;
+  final bool isOnline;
 
   @override
-  ConsumerState<_ClassCard> createState() => _ClassCardState();
+  State<_SidebarItem> createState() => _SidebarItemState();
 }
 
-class _ClassCardState extends ConsumerState<_ClassCard> {
+class _SidebarItemState extends State<_SidebarItem> {
   bool _hovered = false;
-  bool _pressed = false;
-
-  Stream<QuerySnapshot<Map<String, dynamic>>>? _lastMessageStream;
-
-  @override
-  void initState() {
-    super.initState();
-    _initStreams();
-  }
-
-  @override
-  void didUpdateWidget(covariant _ClassCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.c['chatRoomId'] != widget.c['chatRoomId']) {
-      _initStreams();
-    }
-  }
-
-  void _initStreams() {
-    final roomId = widget.c['chatRoomId'] as String?;
-    if (roomId != null && roomId.isNotEmpty) {
-      _lastMessageStream = widget.repository.firestore
-          .collection('rooms')
-          .doc(roomId)
-          .collection('messages')
-          .orderBy('createdAt', descending: true)
-          .limit(1)
-          .snapshots();
-    } else {
-      _lastMessageStream = null;
-    }
-  }
-
-  Widget _buildParticipantCount(Map<String, dynamic> c, Color color) {
-    if (c['isTeachersLounge'] == true) {
-      return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: widget.repository.firestore
-            .collection('rooms')
-            .doc('global_teachers_lounge')
-            .snapshots(),
-        builder: (context, snap) {
-          final userIds = List<String>.from(
-            snap.data?.data()?['userIds'] ?? [],
-          );
-          return _buildParticipantBadge(userIds.length, color);
-        },
-      );
-    } else {
-      final studentIds = List<String>.from(c['studentIds'] ?? []);
-      final teacherId = c['teacherId'] as String?;
-      final count = (teacherId != null ? 1 : 0) + studentIds.length;
-      return _buildParticipantBadge(count, color);
-    }
-  }
-
-  Widget _buildParticipantBadge(int count, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.people_outline_rounded, size: 11, color: color),
-          const SizedBox(width: 4),
-          Text(
-            '$count',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    final c = widget.c;
-    final color = parseHexColor(c['coverColor']);
-    final roomId = c['chatRoomId'] as String?;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
         onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _pressed ? 0.98 : (_hovered ? 1.02 : 1.0),
+        child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOutCubic,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: context.screenPadding,
-            decoration: BoxDecoration(
-              color: widget.isSelected 
-                  ? (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05))
-                  : isDark
-                      ? Colors.black.withValues(alpha: _hovered ? 0.45 : 0.35)
-                      : Colors.white.withValues(alpha: _hovered ? 0.75 : 0.65),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: widget.isSelected
-                    ? color.withValues(alpha: 0.5)
-                    : (isDark ? Colors.white : Colors.black).withValues(
-                        alpha: _hovered ? 0.15 : 0.08,
-                      ),
-                width: widget.isSelected ? 1.5 : 1.0,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: _hovered || widget.isSelected ? 0.18 : 0.06),
-                  blurRadius: _hovered || widget.isSelected ? 16 : 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          margin: const EdgeInsets.only(bottom: 4),
+          decoration: BoxDecoration(
+            color: widget.isSelected
+                ? widget.color.withValues(alpha: 0.15)
+                : (_hovered
+                    ? (widget.isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05))
+                    : Colors.transparent),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    widget.icon,
+                    size: 18,
+                    color: widget.isSelected ? widget.color : (widget.isDark ? Colors.white70 : Colors.black87),
                   ),
-                  child: ClassBadge(
-                    name: c['name'] ?? '?',
-                    color: color,
-                    size: 52,
-                    radius: 14,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              c['name'] ?? '',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.4,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          _buildParticipantCount(c, color),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      if (roomId != null && roomId.isNotEmpty)
-                        StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                          stream: _lastMessageStream,
-                          builder: (context, msgSnap) {
-                            if (msgSnap.hasError) {
-                              return Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!.errorLoadingMessage,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: SchoolColors.red,
-                                ),
-                              );
-                            }
-                            final docs = msgSnap.data?.docs ?? [];
-                            if (docs.isEmpty) {
-                              return Text(
-                                AppLocalizations.of(context)!.noMessagesYet1,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: SchoolColors.muted,
-                                ),
-                              );
-                            }
-                            final data = docs.first.data();
-                            final text = data['text'] as String? ?? '';
-                            final authorName =
-                                data['authorName'] as String? ?? '';
-                            final type = data['type'] as String? ?? 'text';
-
-                            String displaySnippet = text;
-                            if (type == 'image') {
-                              displaySnippet = AppLocalizations.of(
-                                context,
-                              )!.photography;
-                            } else if (type == 'video') {
-                              displaySnippet = AppLocalizations.of(
-                                context,
-                              )!.video;
-                            } else if (type == 'file') {
-                              displaySnippet = AppLocalizations.of(
-                                context,
-                              )!.file1;
-                            } else if (type == 'audio') {
-                              displaySnippet = AppLocalizations.of(
-                                context,
-                              )!.voiceMessage1;
-                            }
-
-                            final display = authorName.isNotEmpty
-                                ? '$authorName: $displaySnippet'
-                                : displaySnippet;
-
-                            return Text(
-                              display,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isDark
-                                    ? const Color(0xFF94A3B8)
-                                    : const Color(0xFF64748B),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            );
-                          },
-                        )
-                      else
-                        Text(
-                          AppLocalizations.of(context)!.clickToOpenChat,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: SchoolColors.muted,
-                          ),
+                  if (widget.isOnline)
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: SchoolColors.green,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: widget.isDark ? const Color(0xFF0F172A) : Colors.white, width: 1.5),
                         ),
-                    ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: widget.isSelected
+                        ? (widget.isDark ? Colors.white : Colors.black)
+                        : (widget.isDark ? Colors.white70 : Colors.black87),
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.3),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
