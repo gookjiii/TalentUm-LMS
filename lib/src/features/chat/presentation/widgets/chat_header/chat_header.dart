@@ -308,7 +308,39 @@ class _ChatHeaderState extends State<ChatHeader> {
           memberCount = allIds.length;
         }
 
-        final statusText = '$memberCount участников, онлайн';
+
+
+        // ── Tactile online status widget (sw-tactile-chat.html: success dot)
+        Widget onlineStatus = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: const Color(0xFF059669),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF059669).withValues(alpha: 0.5),
+                    blurRadius: 6,
+                    spreadRadius: 1,
+                  )
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '$memberCount online',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF059669),
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        );
 
         return Container(
           padding: EdgeInsets.symmetric(
@@ -522,21 +554,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                                                     ],
                                                   ],
                                                 ),
-                                                Text(
-                                                  statusText,
-                                                  style: theme
-                                                      .textTheme
-                                                      .labelSmall
-                                                      ?.copyWith(
-                                                        color: theme
-                                                            .colorScheme
-                                                            .primary
-                                                            .withOpacity(0.8),
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 9,
-                                                      ),
-                                                ),
+                                                onlineStatus,
                                               ],
                                             ),
                                           ),
@@ -735,14 +753,8 @@ class _ChatHeaderState extends State<ChatHeader> {
                                     letterSpacing: -0.2,
                                   ),
                                 ),
-                                Text(
-                                  statusText,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: theme.colorScheme.primary
-                                        .withOpacity(0.8),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                const SizedBox(height: 2),
+                                onlineStatus,
                               ],
                             ),
                           ),
