@@ -33,7 +33,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
   late DateTime _weekStart;
   static const _startHour = 6;
   static const _endHour = 22;
-  static const _hourHeight = 56.0;
+
   String? _selectedClassId; // null means My Schedule
 
   @override

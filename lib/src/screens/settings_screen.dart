@@ -489,60 +489,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 28),
 
-          // ── Danger zone ─────────────────────────────────────
-          _SectionLabel(label: isRu ? AppLocalizations.of(context)!.dangerZone : 'Danger Zone', color: SchoolColors.red),
+          // ── Danger zone (Elite horizontal layout) ────────────────
           Container(
+            padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
+              color: SchoolColors.red.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: SchoolColors.red.withValues(alpha: 0.25),
+                color: SchoolColors.red.withValues(alpha: 0.2),
                 width: 1.5,
               ),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Material(
-                color: isDark
-                    ? SchoolColors.red.withValues(alpha: 0.06)
-                    : SchoolColors.redContainer.withValues(alpha: 0.4),
-                child: ListTile(
-                  leading: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: SchoolColors.red.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.logout_rounded,
-                      color: SchoolColors.red,
-                      size: 18,
-                    ),
-                  ),
-                  title: Text(
-                    l10n.signOut,
-                    style: const TextStyle(
-                      color: SchoolColors.red,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                    ),
-                  ),
-                  subtitle: Text(
-                    isRu
-                        ? AppLocalizations.of(context)!.youWillBeRedirectedTo
-                        : 'You will be redirected to the sign in screen',
-                    style: TextStyle(
-                      color: SchoolColors.red.withValues(alpha: 0.65),
-                      fontSize: 12,
-                    ),
-                  ),
-                  onTap: () => _signOut(context, l10n),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isRu ? 'Безопасность сессии' : 'Session Security',
+                        style: const TextStyle(
+                          color: SchoolColors.red,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 17,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        isRu
+                            ? AppLocalizations.of(context)!.youWillBeRedirectedTo
+                            : 'You will be securely logged out of this session',
+                        style: TextStyle(
+                          color: SchoolColors.red.withValues(alpha: 0.6),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                const SizedBox(width: 20),
+                GestureDetector(
+                  onTap: () => _signOut(context, l10n),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: SchoolColors.red,
+                      borderRadius: BorderRadius.circular(99),
+                      boxShadow: [
+                        BoxShadow(
+                          color: SchoolColors.red.withValues(alpha: 0.35),
+                          blurRadius: 20,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      l10n.signOut.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 

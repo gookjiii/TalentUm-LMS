@@ -139,11 +139,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     return SliverPadding(
                       padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                       sliver: SliverGrid(
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 0.85,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: MediaQuery.sizeOf(context).width > 1024 ? 3 : 2,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                          childAspectRatio: 0.78,
                         ),
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final data = docs[index].data();
@@ -264,107 +264,158 @@ class _MaterialTile extends StatelessWidget {
     
     IconData iconData = Icons.insert_drive_file_rounded;
     Color accentColor = SchoolColors.muted;
+    String typeLabel = 'File';
     
     if (ext == 'pdf') {
       iconData = Icons.picture_as_pdf_rounded;
       accentColor = SchoolColors.red;
+      typeLabel = 'PDF';
     } else if (['doc', 'docx'].contains(ext)) {
       iconData = Icons.description_rounded;
-      accentColor = const Color(0xFF2563EB); // Word Blue
+      accentColor = const Color(0xFF2563EB);
+      typeLabel = 'Document';
     } else if (['ppt', 'pptx'].contains(ext)) {
       iconData = Icons.slideshow_rounded;
-      accentColor = const Color(0xFFEA580C); // PPT Orange
+      accentColor = const Color(0xFFEA580C);
+      typeLabel = 'Slides';
     } else if (['xls', 'xlsx'].contains(ext)) {
       iconData = Icons.table_view_rounded;
-      accentColor = const Color(0xFF16A34A); // Excel Green
+      accentColor = const Color(0xFF16A34A);
+      typeLabel = 'Spreadsheet';
     } else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'].contains(ext)) {
       iconData = Icons.image_rounded;
-      accentColor = const Color(0xFF0D9488); // Teal
+      accentColor = const Color(0xFF0D9488);
+      typeLabel = 'Image';
     } else if (['mp3', 'wav', 'm4a'].contains(ext)) {
       iconData = Icons.audiotrack_rounded;
-      accentColor = const Color(0xFF8B5CF6); // Purple
+      accentColor = const Color(0xFF8B5CF6);
+      typeLabel = 'Audio';
     } else if (['mp4', 'mov', 'avi', 'webm', 'mkv'].contains(ext)) {
       iconData = Icons.video_library_rounded;
-      accentColor = const Color(0xFFEF4444); // Red
+      accentColor = const Color(0xFFEF4444);
+      typeLabel = 'Video';
     } else if (['zip', 'rar', '7z'].contains(ext)) {
       iconData = Icons.folder_zip_rounded;
-      accentColor = const Color(0xFFF59E0B); // Amber
+      accentColor = const Color(0xFFF59E0B);
+      typeLabel = 'Archive';
     }
     
     return GestureDetector(
       onTap: () => _handleTap(context),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              accentColor.withOpacity(isDark ? 0.2 : 0.8),
-              accentColor.withOpacity(isDark ? 0.05 : 0.6),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: accentColor.withOpacity(0.2),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            )
-          ],
-        ),
+      child: NestedBezelCard(
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(16),
+            // ── Thumbnail / preview area (16:9 ratio)
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      accentColor.withValues(alpha: isDark ? 0.3 : 0.7),
+                      accentColor.withValues(alpha: isDark ? 0.08 : 0.4),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: Icon(iconData, color: Colors.white, size: 24),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 ),
-                if (canDelete)
-                  GestureDetector(
-                    onTap: onDelete,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.2),
-                        shape: BoxShape.circle,
+                child: Stack(
+                  children: [
+                    // Background icon watermark
+                    Positioned(
+                      right: -8,
+                      bottom: -8,
+                      child: Icon(
+                        iconData,
+                        size: 80,
+                        color: Colors.white.withValues(alpha: 0.08),
                       ),
-                      child: const Icon(Icons.delete_outline, color: Colors.white, size: 16),
                     ),
-                  ),
-              ],
-            ),
-            const Spacer(),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                height: 1.2,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (description != null && description!.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                description!,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 12,
+                    // Centered icon
+                    Center(
+                      child: Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Icon(iconData, color: Colors.white, size: 26),
+                      ),
+                    ),
+                    // Delete button
+                    if (canDelete)
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: GestureDetector(
+                          onTap: onDelete,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.delete_outline, color: Colors.white, size: 14),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-            ],
+            ),
+            // ── Card info area
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Type tag (Accent color, caps)
+                    Text(
+                      typeLabel.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                        color: Color(0xFF7C3AED),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : SchoolColors.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        height: 1.3,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (description != null && description!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        description!,
+                        style: TextStyle(
+                          color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),

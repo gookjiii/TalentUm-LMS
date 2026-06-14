@@ -224,6 +224,10 @@ class _HeroSectionState extends State<_HeroSection> {
       stream: _submissionsStream,
       builder: (context, snapshot) {
         final assignments = snapshot.data?.docs.length ?? 0;
+        final now = DateTime.now();
+        final weekdays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+        final months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        final dateLabel = '${weekdays[(now.weekday - 1) % 7]}, ${months[now.month - 1]} ${now.day}, ${now.year}';
         
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -233,6 +237,17 @@ class _HeroSectionState extends State<_HeroSection> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Date label
+                  Text(
+                    dateLabel,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.5,
+                      color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
@@ -277,10 +292,85 @@ class _HeroSectionState extends State<_HeroSection> {
                 ],
               ),
             ),
-            if (!widget.isMobile) _ActionButton(onPressed: widget.onAction),
+            const SizedBox(width: 16),
+            // Avatar ring with gradient border
+            _GlowAvatarRing(repo: widget.repo),
+            if (!widget.isMobile) ...[
+              const SizedBox(width: 16),
+              _ActionButton(onPressed: widget.onAction),
+            ],
           ],
         );
       }
+    );
+  }
+}
+
+class _GlowAvatarRing extends StatefulWidget {
+  const _GlowAvatarRing({required this.repo});
+  final SchoolRepository repo;
+  @override
+  State<_GlowAvatarRing> createState() => _GlowAvatarRingState();
+}
+
+class _GlowAvatarRingState extends State<_GlowAvatarRing> {
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _stream;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      _stream = widget.repo.userDocStream();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: _stream,
+      builder: (context, snap) {
+        final name = snap.data?.data()?['name']?.toString() ?? 'T';
+        final photoUrl = snap.data?.data()?['photoUrl']?.toString();
+        return Container(
+          width: 72,
+          height: 72,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF7C3AED).withValues(alpha: 0.35),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(17),
+            child: photoUrl != null && photoUrl.isNotEmpty
+                ? Image.network(photoUrl, fit: BoxFit.cover)
+                : Container(
+                    color: const Color(0xFF4F46E5),
+                    alignment: Alignment.center,
+                    child: Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : 'T',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+          ),
+        );
+      },
     );
   }
 }
@@ -501,7 +591,7 @@ class _StatCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// TIMELINE LIST
+// VERTICAL TIMELINE LIST (sw-dashboard.html inspired)
 // ─────────────────────────────────────────────────────────────────
 class _TimelineList extends StatelessWidget {
   const _TimelineList({required this.classes});
@@ -511,114 +601,216 @@ class _TimelineList extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Build timeline events from actual classes
     List<Map<String, dynamic>> events = [];
     if (classes.isEmpty) {
       events = [
-        {'time': '08:00 - 09:30', 'subject': 'Нет классов', 'room': '-', 'active': false}, // No classes
+        {'time': '—', 'subject': 'Нет классов', 'room': '-', 'active': false},
       ];
     } else {
       for (var i = 0; i < classes.length; i++) {
         final c = classes[i];
+        final hour = 8 + (i * 2);
+        final endHour = hour + 1;
         events.add({
-          'time': 'Класс ${i + 1}', // Class #
-          'subject': c['name'] ?? 'Неизвестно', // Unknown
-          'room': 'Онлайн', // Online
-          'active': i == 0, // Mock active state for the first one
+          'time': '${hour.toString().padLeft(2, '0')}:00',
+          'endTime': '${endHour.toString().padLeft(2, '0')}:30',
+          'subject': c['name'] ?? 'Неизвестно',
+          'room': 'Онлайн',
+          'active': i == 0,
         });
       }
     }
 
-    return StaggeredList(
-      delayStep: const Duration(milliseconds: 100),
-      children: events.map((event) {
+    return Column(
+      children: List.generate(events.length, (idx) {
+        final event = events[idx];
         final isActive = event['active'] as bool;
+        final isLast = idx == events.length - 1;
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: NestedBezelCard(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 60,
-                  decoration: BoxDecoration(
-                    color: isActive ? SchoolColors.primary : (isDark ? SchoolColors.darkMuted : SchoolColors.muted),
-                    borderRadius: BorderRadius.circular(8),
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Time column
+              SizedBox(
+                width: 72,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8, right: 12),
+                  child: Text(
+                    event['time'] as String,
+                    textAlign: TextAlign.right,
+                    style: AppTextStyle.mono(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: isActive ? const Color(0xFF7C3AED) : (isDark ? SchoolColors.darkMuted : SchoolColors.muted),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        event['time'] as String,
-                        style: AppTextStyle.mono(
-                          fontSize: 12,
-                          color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
+              ),
+              // Marker + connector column
+              SizedBox(
+                width: 24,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isActive ? const Color(0xFF7C3AED) : Colors.transparent,
+                        border: Border.all(
+                          color: isActive
+                              ? const Color(0xFF7C3AED)
+                              : (isDark ? SchoolColors.darkBorder : SchoolColors.border),
+                          width: 2,
                         ),
+                        boxShadow: isActive
+                            ? [
+                                BoxShadow(
+                                  color: const Color(0xFF7C3AED).withValues(alpha: 0.5),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
+                                ),
+                              ]
+                            : null,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        event['subject'] as String,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.location_on_rounded, size: 14, color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary),
-                          const SizedBox(width: 4),
-                          Text(
-                            event['room'] as String,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
+                    ),
+                    if (!isLast)
+                      Expanded(
+                        child: Container(
+                          width: 2,
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                                Colors.transparent,
+                              ],
                             ),
                           ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Card column
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(left: 8, bottom: isLast ? 0 : 20),
+                  child: GestureDetector(
+                    onTap: () {},
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: isActive ? 0.07 : 0.03)
+                            : Colors.white.withValues(alpha: isActive ? 0.9 : 0.6),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isActive
+                              ? const Color(0xFF7C3AED).withValues(alpha: 0.4)
+                              : (isDark ? SchoolColors.darkBorder : SchoolColors.border),
+                        ),
+                        boxShadow: isActive
+                            ? [
+                                BoxShadow(
+                                  color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          // Left accent bar
+                          Container(
+                            width: 4,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? const Color(0xFF7C3AED)
+                                  : (isDark ? SchoolColors.darkMuted : SchoolColors.muted).withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  event['subject'] as String,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark ? Colors.white : SchoolColors.text,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.location_on_rounded,
+                                      size: 12,
+                                      color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      event['room'] as String,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark ? SchoolColors.darkTextSecondary : SchoolColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Status pill
+                          if (isActive)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF7C3AED).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFF7C3AED).withValues(alpha: 0.4),
+                                ),
+                              ),
+                              child: const Text(
+                                'Active',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF7C3AED),
+                                ),
+                              ),
+                            )
+                          else
+                            Text(
+                              'Next',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                              ),
+                            ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-                  FilledButton(
-                    onPressed: () {},
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      padding: EdgeInsets.zero,
-                    ),
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        child: const Text('Войти', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)), // Join
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
-      );
-    }).toList(),
+        );
+      }),
     );
   }
 }

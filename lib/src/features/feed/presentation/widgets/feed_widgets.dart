@@ -70,11 +70,12 @@ class _PostCardState extends State<PostCard> {
     final classColor = parseHexColor(widget.classData['coverColor']);
     final className = widget.classData['name']?.toString() ?? '';
 
-    return SchoolCard(
-      padding: const EdgeInsets.all(20),
+    return NestedBezelCard(
+      padding: const EdgeInsets.all(32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Post header: avatar + author meta + menu
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -83,15 +84,40 @@ class _PostCardState extends State<PostCard> {
                 builder: (context, userSnap) {
                   final authorName =
                       userSnap.data?.data()?['name']?.toString() ?? authorId;
+                  final avatarUrl = userSnap.data?.data()?['avatarUrl']?.toString();
                   return Expanded(
                     child: Row(
                       children: [
-                        SchoolAvatar(
-                          name: authorName,
-                          color: classColor,
-                          radius: 20,
+                        // Elite avatar: 52px, border-radius 14px
+                        Container(
+                          width: 52,
+                          height: 52,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            color: classColor.withValues(alpha: 0.3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: classColor.withValues(alpha: 0.2),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: avatarUrl != null && avatarUrl.isNotEmpty
+                              ? Image.network(avatarUrl, fit: BoxFit.cover)
+                              : Center(
+                                  child: Text(
+                                    authorName.isNotEmpty ? authorName[0].toUpperCase() : 'U',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,17 +125,19 @@ class _PostCardState extends State<PostCard> {
                               Text(
                                 authorId == uid ? AppLocalizations.of(context)!.you : authorName,
                                 style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 16,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
+                              const SizedBox(height: 2),
                               Text(
                                 _formatTimestamp(data['createdAt']),
                                 style: const TextStyle(
                                   color: SchoolColors.muted,
-                                  fontSize: 11,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
@@ -120,10 +148,9 @@ class _PostCardState extends State<PostCard> {
                   );
                 },
               ),
-              const Spacer(),
               if (pinned)
                 Padding(
-                  padding: EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: 8),
                   child: StatusChip(
                     label: AppLocalizations.of(context)!.pinned,
                     color: SchoolColors.yellow,
@@ -134,22 +161,25 @@ class _PostCardState extends State<PostCard> {
               if (widget.canManage) _PostMenu(doc: widget.doc),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          // ── Class pill tag (Accent identity)
           _PostTag(name: className, color: classColor),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          // ── Content
           Text(
             content,
             style: const TextStyle(
-              fontSize: 15,
-              height: 1.6,
-              color: SchoolColors.text,
+              fontSize: 16,
+              height: 1.65,
+              letterSpacing: -0.2,
             ),
           ),
+          // ── Attachment
           if (attachments.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 16),
+              padding: const EdgeInsets.only(top: 20),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 child: CachedNetworkImage(
                   imageUrl: (attachments.first['url'] as String)
                       .toDirectImageUrl
@@ -157,20 +187,31 @@ class _PostCardState extends State<PostCard> {
                         performance:
                             AppScope.of(context).appState.performanceMode,
                       ),
-                  height: 240,
+                  height: 280,
                   width: double.infinity,
                   fit: BoxFit.cover,
                   memCacheWidth:
                       AppScope.of(context).appState.performanceMode ? 500 : 900,
                   placeholder: (c, u) => Container(
-                    color: Colors.grey.withValues(alpha: 0.1),
+                    height: 280,
+                    decoration: BoxDecoration(
+                      color: classColor.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
               ),
             ),
           const SizedBox(height: 20),
-          const Divider(height: 1),
-          const SizedBox(height: 8),
+          // ── Divider
+          Container(
+            height: 1,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? SchoolColors.darkBorder
+                : SchoolColors.border,
+          ),
+          const SizedBox(height: 12),
+          // ── Reaction row (Elite style)
           _PostReactionRow(
             doc: widget.doc,
             isLiked: isLiked,
