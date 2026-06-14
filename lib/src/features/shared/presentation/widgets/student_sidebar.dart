@@ -42,19 +42,13 @@ class StudentSidebar extends StatelessWidget {
     return Container(
       width: extended ? 260 : 80,
       margin: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.darkSurface.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.darkBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 30,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
+      child: GlassCard(
+        borderRadius: 24,
+        padding: EdgeInsets.zero,
+        color: Theme.of(context).brightness == Brightness.dark 
+           ? SchoolColors.darkBg.withValues(alpha: 0.5) 
+           : Colors.white.withValues(alpha: 0.7),
+        child: Column(
         children: [
           // Header
           _SidebarHeader(extended: extended, subtitle: AppLocalizations.of(context)!.studentPortal),
@@ -147,6 +141,7 @@ class StudentSidebar extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -206,6 +201,7 @@ class _SidebarHeader extends StatelessWidget {
                       return Text(
                         appName,
                         style: const TextStyle(
+                          fontFamily: 'Plus Jakarta Sans',
                           fontSize: 15,
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.2,
@@ -265,6 +261,11 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
         ? Colors.white.withValues(alpha: 0.05)
         : Colors.transparent;
 
+    Matrix4 transform = Matrix4.identity();
+    if (_hovered && !widget.selected) {
+      transform.translate(4.0, 0.0, 0.0);
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       child: Tooltip(
@@ -276,9 +277,11 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
           child: GestureDetector(
             onTap: widget.onTap,
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
+              duration: const Duration(milliseconds: 250),
+              curve: const Cubic(0.34, 1.56, 0.64, 1.0),
               height: 44,
+              transform: transform,
+              transformAlignment: Alignment.centerLeft,
               padding: EdgeInsets.symmetric(
                 horizontal: widget.extended ? 14 : 0,
               ),
@@ -373,6 +376,11 @@ class _SidebarClassItemState extends State<_SidebarClassItem> {
         ? Colors.white.withValues(alpha: 0.04)
         : Colors.transparent;
 
+    Matrix4 transform = Matrix4.identity();
+    if (_hovered && !widget.selected) {
+      transform.translate(4.0, 0.0, 0.0);
+    }
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -381,8 +389,11 @@ class _SidebarClassItemState extends State<_SidebarClassItem> {
         child: GestureDetector(
           onTap: widget.onTap,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
+            duration: const Duration(milliseconds: 250),
+            curve: const Cubic(0.34, 1.56, 0.64, 1.0),
             height: 46,
+            transform: transform,
+            transformAlignment: Alignment.centerLeft,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: bgColor,

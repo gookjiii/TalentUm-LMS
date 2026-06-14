@@ -95,12 +95,20 @@ class SchoolColors {
 
   // ── Dark-mode Palette ─────────────────────────────────────────
   static const Color darkBg = Color(0xFF0F172A);
-  static const Color darkSurface = Color(0xFF1E293B);
+  static const Color darkSurface = Color(0x801E293B); // rgba(30, 41, 59, 0.5)
   static const darkSurfaceElevated = Color(0xFF1B1E3B);
-  static const darkBorder = Color(0x1AFFFFFF); // rgba(255, 255, 255, 0.1)
+  static const darkBorder = Color(0x14FFFFFF); // rgba(255, 255, 255, 0.08)
+  static const darkBorderBright = Color(0x26FFFFFF); // rgba(255, 255, 255, 0.15)
   static const darkText = Color(0xFFF8FAFC);
   static const darkTextSecondary = Color(0xFF94A3B8);
   static const darkMuted = Color(0xFF64748B);
+
+  // ── Gradients ─────────────────────────────────────────────────
+  static const gradPrimary = LinearGradient(
+    colors: [Color(0xFF7C3AED), Color(0xFF059669)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   // ── Sidebar ───────────────────────────────────────────────────
   static const sidebarBg = Color(0xFF1E1B4B);
@@ -235,19 +243,19 @@ class AppTextStyle {
     height: 1.5,
   );
 
-  static final titleSm = GoogleFonts.inter(
+  static final titleSm = GoogleFonts.plusJakartaSans(
     fontSize: 18,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.2,
   );
 
-  static final titleLg = GoogleFonts.inter(
+  static final titleLg = GoogleFonts.plusJakartaSans(
     fontSize: 24,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.4,
   );
   
-  static TextStyle display(BuildContext context) => GoogleFonts.inter(
+  static TextStyle display(BuildContext context) => GoogleFonts.plusJakartaSans(
         fontSize: 32,
         fontWeight: FontWeight.w800,
         letterSpacing: -0.8,

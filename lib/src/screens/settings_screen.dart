@@ -1042,7 +1042,7 @@ class _GlassmorphismProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    return NestedBezelCard(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

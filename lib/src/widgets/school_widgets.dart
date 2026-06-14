@@ -303,7 +303,7 @@ class SchoolCard extends HookWidget {
 // ─────────────────────────────────────────────────────────────────
 // GLASS CARD  (frosted glassmorphism surface)
 // ─────────────────────────────────────────────────────────────────
-class GlassCard extends StatelessWidget {
+class GlassCard extends HookWidget {
   const GlassCard({
     super.key,
     required this.child,
@@ -323,6 +323,9 @@ class GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isHovered = useState(false);
+    final isPressed = useState(false);
+
     final resolvedPadding =
         padding ??
         (MediaQuery.sizeOf(context).width < 600
@@ -340,100 +343,210 @@ class GlassCard extends StatelessWidget {
       isPerformance = AppScope.of(context).appState.performanceMode;
     } catch (_) {}
 
-    if (isPerformance) {
-      return Container(
-        margin: margin,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(borderRadius),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.12)
-                : Colors.black.withValues(alpha: 0.08),
-            width: 1,
-          ),
-        ),
-        child: Material(
-          color:
-              color ??
-              (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-          borderRadius: BorderRadius.circular(borderRadius),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(borderRadius),
-            child: Padding(padding: resolvedPadding, child: child),
-          ),
-        ),
-      );
+    Matrix4 transform = Matrix4.identity();
+    if (onTap != null && !isPerformance) {
+      if (isPressed.value) {
+        transform.scale(0.97);
+      } else if (isHovered.value) {
+        transform.translate(0.0, -4.0, 0.0);
+      }
     }
 
-    return Container(
-      margin: margin,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(borderRadius),
-        boxShadow: isPerformance
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(borderRadius),
-              // Liquid Glass Refraction: 1px inner border
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.12)
-                    : SchoolColors.border.withValues(alpha: 0.6),
-                width: 1.0,
-              ),
+    final Widget innerCard = isPerformance
+      ? Container(
+          margin: margin,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: Border.all(
+              color: isDark
+                  ? SchoolColors.darkBorder
+                  : Colors.black.withValues(alpha: 0.08),
+              width: 1,
             ),
-            child: Stack(
-              children: [
-                // Inner highlight for refraction
-                if (!isPerformance)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(borderRadius),
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Colors.white.withValues(alpha: isDark ? 0.15 : 0.4),
-                            Colors.white.withValues(alpha: 0.0),
-                          ],
-                        ),
-                        border: Border.all(
-                          color: Colors.white.withValues(
-                            alpha: isDark ? 0.08 : 0.4,
+          ),
+          child: Material(
+            color:
+                color ??
+                (isDark ? SchoolColors.darkSurface : const Color(0xFFF1F5F9)),
+            borderRadius: BorderRadius.circular(borderRadius),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(borderRadius),
+              child: Padding(padding: resolvedPadding, child: child),
+            ),
+          ),
+        )
+      : AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          curve: const Cubic(0.34, 1.56, 0.64, 1.0),
+          margin: margin,
+          transform: transform,
+          transformAlignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(borderRadius),
+            boxShadow: [
+              if (isHovered.value && onTap != null && !isPressed.value)
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 120,
+                  offset: const Offset(0, 60),
+                )
+              else
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 100,
+                  offset: const Offset(0, 40),
+                ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(borderRadius),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  border: Border.all(
+                    color: isDark
+                        ? SchoolColors.darkBorder
+                        : SchoolColors.border.withValues(alpha: 0.6),
+                    width: 1.0,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(borderRadius),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.03),
+                              Colors.transparent,
+                            ],
                           ),
-                          width: 1.0,
                         ),
                       ),
                     ),
-                  ),
-                Material(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: onTap,
-                    borderRadius: BorderRadius.circular(borderRadius),
-                    child: Padding(padding: resolvedPadding, child: child),
-                  ),
+                    Material(
+                      color: bg,
+                      borderRadius: BorderRadius.circular(borderRadius),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: onTap,
+                        borderRadius: BorderRadius.circular(borderRadius),
+                        child: Padding(padding: resolvedPadding, child: child),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+
+    if (onTap == null) return innerCard;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => isHovered.value = true,
+      onExit: (_) => isHovered.value = false,
+      child: GestureDetector(
+        onTapDown: (_) => isPressed.value = true,
+        onTapUp: (_) => isPressed.value = false,
+        onTapCancel: () => isPressed.value = false,
+        onTap: onTap,
+        child: innerCard,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// NESTED BEZEL CARD (Double-Bezel High-Fidelity Container)
+// ─────────────────────────────────────────────────────────────────
+class NestedBezelCard extends StatelessWidget {
+  const NestedBezelCard({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: SchoolColors.darkBorder),
+      ),
+      child: GlassCard(
+        borderRadius: 26,
+        padding: const EdgeInsets.all(32),
+        child: child,
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// GRADIENT BUTTON (Positive Action)
+// ─────────────────────────────────────────────────────────────────
+class GradientButton extends HookWidget {
+  const GradientButton({super.key, required this.text, required this.onTap, this.icon});
+  final String text;
+  final VoidCallback onTap;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final isHovered = useState(false);
+    final isPressed = useState(false);
+
+    Matrix4 transform = Matrix4.identity();
+    if (isPressed.value) transform.scale(0.96);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => isHovered.value = true,
+      onExit: (_) => isHovered.value = false,
+      child: GestureDetector(
+        onTapDown: (_) => isPressed.value = true,
+        onTapUp: (_) => isPressed.value = false,
+        onTapCancel: () => isPressed.value = false,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: const Cubic(0.34, 1.56, 0.64, 1.0),
+          transform: transform,
+          transformAlignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: SchoolColors.gradPrimary,
+            borderRadius: BorderRadius.circular(99),
+            boxShadow: isHovered.value ? [
+              BoxShadow(
+                color: SchoolColors.primary.withValues(alpha: 0.3),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              )
+            ] : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+              if (icon != null) ...[
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+                  child: Icon(icon, color: Colors.white, size: 16),
                 ),
               ],
-            ),
+            ],
           ),
         ),
       ),

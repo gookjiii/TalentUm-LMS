@@ -290,30 +290,26 @@ class _StudentTodayState extends ConsumerState<StudentToday> {
   }
 
   Widget _buildAnnouncements(bool isDark) {
-    return GlassCard(
-      borderRadius: 24,
-      padding: const EdgeInsets.all(24),
-      color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.6),
+    return NestedBezelCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Announcements',
+            'Recent Events',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : SchoolColors.text),
           ),
           const SizedBox(height: 24),
           _AnnouncementItem(
-            title: 'Elite Digital Art Updates',
-            body: 'Elite Digital Campus news to latest updates.',
-            time: '4 days ago',
+            title: 'Annual Science Fair',
+            body: 'Registrations are now open for the 2026 Science Fair.',
+            time: '2 hours ago',
             isDark: isDark,
           ),
           const SizedBox(height: 16),
-          _AnnouncementItem(
-            title: 'Announcements Update',
-            body: 'The news sentation to most makers reading...',
-            time: '2 hours ago',
-            isDark: isDark,
+          GradientButton(
+            text: 'Read Details',
+            icon: Icons.arrow_forward_rounded,
+            onTap: () {},
           ),
         ],
       ),
@@ -490,14 +486,9 @@ class _ActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     if (primary) {
-      return FilledButton(
-        onPressed: onTap,
-        style: FilledButton.styleFrom(
-          backgroundColor: SchoolColors.primary, // Vibrant Amethyst
-          minimumSize: const Size(double.infinity, 48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+      return GradientButton(
+        text: label,
+        onTap: onTap,
       );
     } else {
       return OutlinedButton(
