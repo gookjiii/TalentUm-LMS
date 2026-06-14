@@ -151,10 +151,10 @@ class _HubContent extends StatelessWidget {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _BrandHero(),
-              const SizedBox(height: 80),
-              const _ProductGrid(),
+            children: const [
+              _BrandHero(),
+              SizedBox(height: 80),
+              _ProductGrid(),
             ],
           ),
         ),

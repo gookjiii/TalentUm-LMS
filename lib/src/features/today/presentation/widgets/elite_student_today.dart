@@ -28,10 +28,10 @@ class EliteStudentToday extends HookWidget {
 
           CustomScrollView(
             physics: const BouncingScrollPhysics(),
-            slivers: [
-              const _EliteHeader(),
+            slivers: const [
+              _EliteHeader(),
               SliverPadding(
-                padding: const EdgeInsets.all(32),
+                padding: EdgeInsets.all(32),
                 sliver: SliverToBoxAdapter(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,8 +41,8 @@ class EliteStudentToday extends HookWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const _SectionHeader(title: 'Mission Timeline', icon: Icons.auto_awesome),
-                            const SizedBox(height: 24),
+                            _SectionHeader(title: 'Mission Timeline', icon: Icons.auto_awesome),
+                            SizedBox(height: 24),
                             _TimelineItem(
                               time: '08:30',
                               title: 'Advanced Calculus',
@@ -73,14 +73,14 @@ class EliteStudentToday extends HookWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 40),
+                      SizedBox(width: 40),
                       Expanded(
                         flex: 5,
                         child: Column(
                           children: [
-                            const _VitalityCard(),
-                            const SizedBox(height: 24),
-                            const _UpcomingAssignmentCard(),
+                            _VitalityCard(),
+                            SizedBox(height: 24),
+                            _UpcomingAssignmentCard(),
                           ],
                         ),
                       ),
@@ -162,13 +162,13 @@ class _EliteHeader extends StatelessWidget {
           ),
         ),
       ),
-      actions: [
+      actions: const [
         Padding(
-          padding: const EdgeInsets.only(right: 40),
+          padding: EdgeInsets.only(right: 40),
           child: CircleAvatar(
             radius: 28,
             backgroundColor: SchoolColors.darkSurface,
-            child: const Icon(Icons.person_outline, color: Colors.white),
+            child: Icon(Icons.person_outline, color: Colors.white),
           ),
         ),
       ],
@@ -444,9 +444,9 @@ class _VitalityCard extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Row(
-            children: [
+            children: const [
               Expanded(child: _MiniStat(label: 'STREAK', value: '12d')),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(child: _MiniStat(label: 'TASKS', value: '4/6')),
             ],
           ),
