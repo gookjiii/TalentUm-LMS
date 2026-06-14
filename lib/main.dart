@@ -18,6 +18,7 @@ import 'src/screens/onboarding_screen.dart';
 import 'src/screens/student_shell.dart';
 import 'src/screens/teacher_workspace_screen.dart';
 import 'src/features/parent_dashboard/presentation/screens/parent_home_screen.dart';
+import 'src/screens/elite_design_hub.dart';
 import 'src/theme.dart';
 import 'src/utils/reload_app.dart';
 import 'src/utils/splash_loader.dart';
@@ -26,6 +27,9 @@ import 'src/firebase/push_notification_manager.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
+// Toggle this to show the Design Hub instead of the normal app flow
+const bool showDesignHub = true;
 
 Future<void> main() async {
   try {
@@ -224,7 +228,9 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
                 ),
               );
             },
-            home: AuthGate(repository: repository, appState: appState),
+            home: showDesignHub 
+                ? EliteDesignHub(repository: repository, appState: appState) 
+                : AuthGate(repository: repository, appState: appState),
           );
         },
       ),

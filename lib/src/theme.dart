@@ -5,15 +5,16 @@ import 'package:google_fonts/google_fonts.dart';
 /// Quản lý toàn bộ màu sắc, tách biệt hoàn toàn để dễ tái sử dụng
 class AppColors {
   // Brand Colors
-  static const Color primary = Color(0xFF8A2BE2); // Vibrant Blue Violet
+  static const Color primary = Color(0xFF7C3AED); // Vibrant Amethyst
   static const Color secondary = Color(0xFF6366F1); // Indigo
-  static const Color accent = Color(0xFF059669); // Emerald
+  static const Color accent = Color(0xFF7C3AED);
+  static const Color success = Color(0xFF059669); // Emerald Growth
   static const Color orange = Color(0xFFF59E0B);
 
   // Dark Theme Colors (Elite Digital Campus)
-  static const Color darkBackground = Color(0xFF0B1120); // Midnight Deep
-  static const Color darkSurface = Color(0xFF151E32); // Thẻ kính
-  static const Color darkBorder = Color(0x1AFFFFFF); // Viền 10% trắng
+  static const Color darkBackground = Color(0xFF0F172A); // Deep Indigo Foundation
+  static const Color darkSurface = Color(0x801E293B); // rgba(30, 41, 59, 0.5)
+  static const Color darkBorder = Color(0x14FFFFFF); // rgba(255, 255, 255, 0.08)
   static const Color darkTextMain = Color(0xFFF8FAFC);
   static const Color darkTextMuted = Color(0xFF94A3B8);
 
@@ -26,7 +27,7 @@ class AppColors {
 
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primary, secondary],
+    colors: [primary, Color(0xFF059669)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -37,7 +38,7 @@ class AppShadows {
   // Thay vì blur 40px gây lag, ta dùng blur 20px với màu đậm hơn để tạo Glow
   static final List<BoxShadow> glowPrimary = [
     BoxShadow(
-      color: Color(0x408A2BE2), // AppColors.primary.withOpacity(0.25)
+      color: Color(0x407C3AED), // AppColors.primary.withOpacity(0.25)
       blurRadius: 20,
       offset: Offset(0, 8),
     ),
@@ -54,12 +55,12 @@ class AppShadows {
 
 
 class SchoolColors {
-  // ── Primary Purple (More Vibrant) ─────────────────────────────────
-  static const primary = Color(0xFF8A2BE2); // Vibrant Blue Violet
-  static const primaryLight = Color(0xFFB066FF);
-  static const primaryDark = Color(0xFF5A189A);
-  static const primaryContainer = Color(0xFFF3E8FF);
-  static const onPrimaryContainer = Color(0xFF3B0764);
+  // ── Primary Purple (Vibrant Amethyst) ──────────────────────────────
+  static const primary = Color(0xFF7C3AED); // Vibrant Amethyst
+  static const primaryLight = Color(0xFFA78BFA);
+  static const primaryDark = Color(0xFF5B21B6);
+  static const primaryContainer = Color(0xFFEDE9FE);
+  static const onPrimaryContainer = Color(0xFF1E1B4B);
 
   // ── Secondary / Indigo ────────────────────────────────────────
   static const secondary = Color(0xFF6366F1); // Vibrant Indigo
@@ -67,18 +68,19 @@ class SchoolColors {
   static const secondaryContainer = Color(0xFFEEF2FF);
   static const onSecondaryContainer = Color(0xFF312E81);
 
-  // ── Accent / Emerald ───────────────────────────────────────
-  static const accent = Color(0xFF059669);
+  // ── Accent / Success / Growth ───────────────────────────────────
+  static const accent = Color(0xFF7C3AED); // Same as primary for accent consistency
+  static const success = Color(0xFF059669); // Emerald Growth
   static const accentContainer = Color(0xFFD1FAE5);
 
-  // ── Semantic Colors (WCAG AA Compliant on White) ──────────────
+  // ── Semantic Colors (WCAG AA Compliant) ────────────────────────
   static const green = Color(0xFF059669); // Emerald 600
   static const greenContainer = Color(0xFFD1FAE5);
-  static const red = Color(0xFFDC2626); // Red 600
+  static const red = Color(0xFFEF4444); // Red 500
   static const redContainer = Color(0xFFFEE2E2);
-  static const orange = Color(0xFFB45309); // Amber 700
+  static const orange = Color(0xFFF59E0B); // Amber 500
   static const orangeContainer = Color(0xFFFFEDD5);
-  static const yellow = Color(0xFFFBBC04);
+  static const yellow = Color(0xFFFBBF24);
   static const purple = Color(0xFF7C3AED); // Primary
   static const purpleContainer = Color(0xFFEDE9FE);
 
@@ -89,25 +91,34 @@ class SchoolColors {
   static const surfaceElevated = Color(0xFFF1F5F9);
   static const text = Color(0xFF0F172A);
   static const textSecondary = Color(0xFF475569);
-  static const muted = Color(0xFF64748B);
+  static const muted = Color(0xFF94A3B8);
   static const border = Color(0xFFECEBF3);
   static const borderFocus = Color(0xFFC4B5FD);
 
-  // ── Dark-mode Palette ─────────────────────────────────────────
-  static const Color darkBg = Color(0xFF0F172A);
+  // ── Dark-mode Palette (Elite Digital Campus) ────────────────────
+  static const Color darkBg = Color(0xFF0F172A); // Deep Indigo Foundation
   static const Color darkSurface = Color(0x801E293B); // rgba(30, 41, 59, 0.5)
-  static const darkSurfaceElevated = Color(0xFF1B1E3B);
-  static const darkBorder = Color(0x14FFFFFF); // rgba(255, 255, 255, 0.08)
-  static const darkBorderBright = Color(0x26FFFFFF); // rgba(255, 255, 255, 0.15)
-  static const darkText = Color(0xFFF8FAFC);
-  static const darkTextSecondary = Color(0xFF94A3B8);
-  static const darkMuted = Color(0xFF64748B);
+  static const Color darkSurfaceElevated = Color(0xFF1B1E3B);
+  static const Color darkBorder = Color(0x14FFFFFF); // rgba(255, 255, 255, 0.08)
+  static const Color darkBorderBright = Color(0x26FFFFFF); // rgba(255, 255, 255, 0.15)
+  static const Color darkText = Color(0xFFF8FAFC);
+  static const Color darkTextSecondary = Color(0xFF94A3B8);
+  static const Color darkMuted = Color(0xFF64748B);
 
   // ── Gradients ─────────────────────────────────────────────────
   static const gradPrimary = LinearGradient(
     colors: [Color(0xFF7C3AED), Color(0xFF059669)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
+  );
+
+  static const gradSurface = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color(0x08FFFFFF), // rgba(255, 255, 255, 0.03)
+      Colors.transparent,
+    ],
   );
 
   // ── Sidebar ───────────────────────────────────────────────────
@@ -135,14 +146,14 @@ class SchoolColors {
 
   // ── Glow / Shadow helpers (Enhanced) ─────────────────────────
   static BoxShadow cardShadow = BoxShadow(
-    color: const Color(0xFF8A2BE2).withValues(alpha: 0.06), // Colored shadow
+    color: const Color(0xFF7C3AED).withValues(alpha: 0.06), // Colored shadow
     blurRadius: 24,
     offset: const Offset(0, 6),
     spreadRadius: 0,
   );
 
   static BoxShadow cardShadowHover = BoxShadow(
-    color: const Color(0xFF8A2BE2).withValues(alpha: 0.15), // Stronger glow on hover
+    color: const Color(0xFF7C3AED).withValues(alpha: 0.15), // Stronger glow on hover
     blurRadius: 36,
     offset: const Offset(0, 10),
     spreadRadius: 2,
@@ -286,7 +297,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
     onSecondary: Colors.white,
     secondaryContainer: SchoolColors.secondaryContainer,
     onSecondaryContainer: SchoolColors.onSecondaryContainer,
-    tertiary: SchoolColors.accent,
+    tertiary: SchoolColors.success,
     onTertiary: Colors.white,
     error: SchoolColors.red,
     surface: SchoolColors.surface,
