@@ -245,81 +245,161 @@ class _ChatClassListState extends State<_ChatClassList> {
     ];
 
     Widget content = SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-            child: Text(
-              'ELITE DIGITAL CAMPUS',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 14,
-                letterSpacing: 1.2,
-                color: isDark ? Colors.white : SchoolColors.text,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (v) => setState(() => _searchQuery = v),
-                style: TextStyle(fontSize: 14, color: isDark ? Colors.white : SchoolColors.text),
-                decoration: InputDecoration(
-                  hintText: 'Search chats...',
-                  hintStyle: TextStyle(
-                    color: isDark ? Colors.white54 : Colors.black54,
-                    fontSize: 14,
-                  ),
-                  prefixIcon: Icon(Icons.search_rounded, color: isDark ? Colors.white54 : Colors.black54, size: 18),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      child: widget.isSplitView
+        ? NestedBezelCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionTitle('CHANNELS', isDark),
-                if (filteredChannels.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text('No channels found', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
-                  )
-                else
-                  ...filteredChannels.map((c) => _SidebarItem(
-                        icon: Icons.tag_rounded,
-                        label: c['name']?.toString() ?? '',
-                        color: parseHexColor(c['coverColor']),
-                        isSelected: widget.selectedClassId == c['id'],
-                        onTap: () => widget.onSelect(c['id'] as String),
-                        isDark: isDark,
-                      )),
-                const SizedBox(height: 24),
-                _buildSectionTitle('DIRECT MESSAGES', isDark),
-                ...mockDirectMessages.map((m) => _SidebarItem(
-                      icon: Icons.person_rounded,
-                      label: m.$1,
-                      color: m.$2 ? SchoolColors.green : (isDark ? Colors.white54 : Colors.black54),
-                      isSelected: false,
-                      onTap: () {},
-                      isDark: isDark,
-                      isOnline: m.$2,
-                    )),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                  child: Text(
+                    'ELITE DIGITAL CAMPUS',
+                    style: TextStyle(
+                      fontFamily: 'Plus Jakarta Sans',
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                      letterSpacing: 1.2,
+                      color: isDark ? Colors.white : SchoolColors.text,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (v) => setState(() => _searchQuery = v),
+                      style: TextStyle(fontSize: 14, color: isDark ? Colors.white : SchoolColors.text),
+                      decoration: InputDecoration(
+                        hintText: 'Search chats...',
+                        hintStyle: TextStyle(
+                          color: isDark ? Colors.white54 : Colors.black54,
+                          fontSize: 14,
+                        ),
+                        prefixIcon: Icon(Icons.search_rounded, color: isDark ? Colors.white54 : Colors.black54, size: 18),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                    children: [
+                      _buildSectionTitle('CHANNELS', isDark),
+                      if (filteredChannels.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text('No channels found', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
+                        )
+                      else
+                        ...filteredChannels.map((c) => _SidebarItem(
+                              icon: Icons.tag_rounded,
+                              label: c['name']?.toString() ?? '',
+                              color: parseHexColor(c['coverColor']),
+                              isSelected: widget.selectedClassId == c['id'],
+                              onTap: () => widget.onSelect(c['id'] as String),
+                              isDark: isDark,
+                            )),
+                      const SizedBox(height: 24),
+                      _buildSectionTitle('DIRECT MESSAGES', isDark),
+                      ...mockDirectMessages.map((m) => _SidebarItem(
+                            icon: Icons.person_rounded,
+                            label: m.$1,
+                            color: m.$2 ? SchoolColors.green : (isDark ? Colors.white54 : Colors.black54),
+                            isSelected: false,
+                            onTap: () {},
+                            isDark: isDark,
+                            isOnline: m.$2,
+                          )),
+                    ],
+                  ),
+                ),
               ],
             ),
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                child: Text(
+                  'ELITE DIGITAL CAMPUS',
+                  style: TextStyle(
+                    fontFamily: 'Plus Jakarta Sans',
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                    letterSpacing: 1.2,
+                    color: isDark ? Colors.white : SchoolColors.text,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Container(
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.04),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    style: TextStyle(fontSize: 14, color: isDark ? Colors.white : SchoolColors.text),
+                    decoration: InputDecoration(
+                      hintText: 'Search chats...',
+                      hintStyle: TextStyle(
+                        color: isDark ? Colors.white54 : Colors.black54,
+                        fontSize: 14,
+                      ),
+                      prefixIcon: Icon(Icons.search_rounded, color: isDark ? Colors.white54 : Colors.black54, size: 18),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  children: [
+                    _buildSectionTitle('CHANNELS', isDark),
+                    if (filteredChannels.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text('No channels found', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
+                      )
+                    else
+                      ...filteredChannels.map((c) => _SidebarItem(
+                            icon: Icons.tag_rounded,
+                            label: c['name']?.toString() ?? '',
+                            color: parseHexColor(c['coverColor']),
+                            isSelected: widget.selectedClassId == c['id'],
+                            onTap: () => widget.onSelect(c['id'] as String),
+                            isDark: isDark,
+                          )),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('DIRECT MESSAGES', isDark),
+                    ...mockDirectMessages.map((m) => _SidebarItem(
+                          icon: Icons.person_rounded,
+                          label: m.$1,
+                          color: m.$2 ? SchoolColors.green : (isDark ? Colors.white54 : Colors.black54),
+                          isSelected: false,
+                          onTap: () {},
+                          isDark: isDark,
+                          isOnline: m.$2,
+                        )),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     return widget.isSplitView
@@ -380,9 +460,12 @@ class _SidebarItemState extends State<_SidebarItem> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: const Duration(milliseconds: 250),
+          curve: const Cubic(0.34, 1.56, 0.64, 1.0),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           margin: const EdgeInsets.only(bottom: 4),
+          transform: _hovered && !widget.isSelected ? (Matrix4.identity()..translate(4.0, 0.0, 0.0)) : Matrix4.identity(),
+          transformAlignment: Alignment.centerLeft,
           decoration: BoxDecoration(
             color: widget.isSelected
                 ? widget.color.withValues(alpha: 0.15)
@@ -390,6 +473,7 @@ class _SidebarItemState extends State<_SidebarItem> {
                     ? (widget.isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05))
                     : Colors.transparent),
             borderRadius: BorderRadius.circular(10),
+            border: widget.isSelected ? Border.all(color: widget.color.withValues(alpha: 0.2)) : null,
           ),
           child: Row(
             children: [
@@ -406,12 +490,18 @@ class _SidebarItemState extends State<_SidebarItem> {
                       right: -2,
                       bottom: -2,
                       child: Container(
-                        width: 8,
-                        height: 8,
+                        width: 10,
+                        height: 10,
                         decoration: BoxDecoration(
-                          color: SchoolColors.green,
+                          color: const Color(0xFF10B981),
                           shape: BoxShape.circle,
-                          border: Border.all(color: widget.isDark ? const Color(0xFF0F172A) : Colors.white, width: 1.5),
+                          border: Border.all(color: widget.isDark ? const Color(0xFF0F172A) : Colors.white, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.5),
+                              blurRadius: 4,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -422,6 +512,7 @@ class _SidebarItemState extends State<_SidebarItem> {
                 child: Text(
                   widget.label,
                   style: TextStyle(
+                    fontFamily: 'Plus Jakarta Sans',
                     fontSize: 14,
                     fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: widget.isSelected

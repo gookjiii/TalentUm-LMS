@@ -399,7 +399,7 @@ class HomeworkCard extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: GestureDetector(
+      child: GlassCard(
         onTap: () {
           Navigator.push(
             context,
@@ -412,44 +412,41 @@ class HomeworkCard extends StatelessWidget {
             ),
           );
         },
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkSurface.withOpacity(0.6) : Colors.white.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-            boxShadow: [
-              if (isOverdue && !submitted)
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.2),
-                  blurRadius: 20,
-                  spreadRadius: -5,
-                )
-              else
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                )
-            ],
-          ),
-          child: Column(
+        padding: const EdgeInsets.all(20),
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
-                      color: submitted ? const Color(0xFF10B981).withOpacity(0.15) : (isOverdue ? const Color(0xFFEF4444).withOpacity(0.15) : AppColors.primary.withOpacity(0.15)),
+                      color: submitted 
+                          ? const Color(0xFF10B981).withOpacity(0.15) 
+                          : (isOverdue ? const Color(0xFFEF4444).withOpacity(0.15) : SchoolColors.primary.withOpacity(0.15)),
                       borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: submitted 
+                            ? const Color(0xFF10B981).withOpacity(0.5) 
+                            : (isOverdue ? const Color(0xFFEF4444).withOpacity(0.5) : SchoolColors.primary.withOpacity(0.5)),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: submitted 
+                              ? const Color(0xFF10B981).withOpacity(0.3) 
+                              : (isOverdue ? const Color(0xFFEF4444).withOpacity(0.3) : SchoolColors.primary.withOpacity(0.3)),
+                          blurRadius: 8,
+                        )
+                      ],
                     ),
                     child: Text(
-                      submitted ? AppLocalizations.of(context)!.delivered : (isOverdue ? 'Quá hạn' : 'Bài tập'),
+                      submitted ? AppLocalizations.of(context)!.delivered : (isOverdue ? 'Overdue' : 'In Progress'),
                       style: TextStyle(
+                        fontFamily: 'Plus Jakarta Sans',
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: submitted ? const Color(0xFF10B981) : (isOverdue ? const Color(0xFFEF4444) : AppColors.primary),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: submitted ? const Color(0xFF10B981) : (isOverdue ? const Color(0xFFEF4444) : SchoolColors.primary),
                       ),
                     ),
                   ),
@@ -549,7 +546,6 @@ class HomeworkCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
   void _showQuickSubmit(BuildContext context) {
@@ -763,38 +759,67 @@ class _QuickSubmitBottomSheetState extends State<_QuickSubmitBottomSheet> {
             ),
           ],
           const SizedBox(height: 20),
-          Row(
-            children: [
-              OutlinedButton.icon(
-                onPressed: _loading ? null : _pickImage,
-                icon: const Icon(Icons.add_a_photo_rounded, size: 18),
-                label: Text(l10n.attachPhoto),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 48),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+          GestureDetector(
+            onTap: _loading ? null : _pickImage,
+            child: Container(
+              height: 100,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F172A).withValues(alpha: 0.5) : const Color(0xFFF8FAFC).withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: SchoolColors.primary.withValues(alpha: 0.3),
+                  width: 1.5,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: _loading ? null : _submit,
-                  icon: _loading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.send_rounded, size: 18),
-                  label: Text(l10n.submit),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 48),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cloud_upload_rounded, size: 32, color: SchoolColors.primary.withValues(alpha: 0.8)),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.attachPhoto,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: SchoolColors.primary,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                  if (_loading)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.black54 : Colors.white54,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 24, height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _loading ? null : _submit,
+            icon: const Icon(Icons.send_rounded, size: 18),
+            label: Text(l10n.submit),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(double.infinity, 54),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              backgroundColor: SchoolColors.primary,
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),

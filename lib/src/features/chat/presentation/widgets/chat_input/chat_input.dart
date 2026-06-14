@@ -267,7 +267,7 @@ class _ChatInputState extends State<ChatInput> {
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           color: isDark 
-              ? const Color(0xFF151E32).withValues(alpha: 0.5) 
+              ? const Color(0xFF0F172A).withValues(alpha: 0.5) 
               : const Color(0xFFFFFFFF).withValues(alpha: 0.75),
           borderRadius: BorderRadius.circular(isMobile ? 20 : 24),
           border: Border.all(
@@ -734,14 +734,17 @@ class _GradientSendButtonState extends State<_GradientSendButton>
           height: 42,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            gradient: LinearGradient(
-              colors: const [Color(0xFF2563EB), Color(0xFF6366F1)],
+            gradient: const LinearGradient(
+              colors: [
+                SchoolColors.chatBubbleStart,
+                SchoolColors.chatBubbleEnd,
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF2563EB).withValues(alpha: 0.4),
+                color: SchoolColors.chatBubbleStart.withValues(alpha: 0.4),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),

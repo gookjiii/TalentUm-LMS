@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/src/features/chat/data/reactions_notifier.dart';
 import 'package:school_world/src/features/chat/presentation/widgets/chat_bubble/inline_video_player.dart';
 import 'package:school_world/src/utils/string_extensions.dart';
+import 'dart:ui' as ui;
 
 class ChatBubbleBuilders {
   final FirebaseChatController? chatController;
@@ -78,39 +79,50 @@ class ChatBubbleBuilders {
       onLongPress: (details) =>
           showMessageOptions(message, position: details.globalPosition),
       onReply: () => onReply(message),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-        decoration: BoxDecoration(
-          color: isSentByMe ? null : SchoolColors.chatBubbleOther,
-          border: !isSentByMe
-              ? Border.all(color: SchoolColors.chatBubbleOtherBorder, width: 1)
-              : null,
-          gradient: isSentByMe
-              ? const LinearGradient(
-                  colors: [
-                    SchoolColors.chatBubbleStart,
-                    SchoolColors.chatBubbleEnd,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(isSentByMe ? 18 : 2),
-            topRight: Radius.circular(isSentByMe ? 2 : 18),
-            bottomLeft: const Radius.circular(18),
-            bottomRight: const Radius.circular(18),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isSentByMe
-                  ? const Color(0xFF2563EB).withOpacity(0.15)
-                  : Colors.black.withOpacity(0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(isSentByMe ? 18 : 2),
+          topRight: Radius.circular(isSentByMe ? 2 : 18),
+          bottomLeft: const Radius.circular(18),
+          bottomRight: const Radius.circular(18),
         ),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: isSentByMe ? 0.001 : 12, sigmaY: isSentByMe ? 0.001 : 12),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            decoration: BoxDecoration(
+              color: isSentByMe 
+                  ? null 
+                  : (Theme.of(context).brightness == Brightness.dark 
+                      ? Colors.white.withValues(alpha: 0.04) 
+                      : Colors.black.withValues(alpha: 0.03)),
+              border: !isSentByMe
+                  ? Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.white.withValues(alpha: 0.1) 
+                          : Colors.black.withValues(alpha: 0.06), 
+                      width: 1)
+                  : null,
+              gradient: isSentByMe
+                  ? const LinearGradient(
+                      colors: [
+                        SchoolColors.chatBubbleStart,
+                        SchoolColors.chatBubbleEnd,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : null,
+              boxShadow: [
+                BoxShadow(
+                  color: isSentByMe
+                      ? const Color(0xFF7C3AED).withOpacity(0.3)
+                      : Colors.black.withOpacity(0.03),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -164,6 +176,8 @@ class ChatBubbleBuilders {
           ],
         ),
       ),
+      ),
+      ),
     );
   }
 
@@ -183,25 +197,28 @@ class ChatBubbleBuilders {
       isSentByMe: isSentByMe,
       onLongPress: null,
       onReply: null,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-        decoration: BoxDecoration(
-          color: isDark
-              ? SchoolColors.deletedBubbleDark
-              : SchoolColors.deletedBubble,
-          border: Border.all(
-            color: isDark
-                ? SchoolColors.deletedBubbleBorderDark
-                : SchoolColors.deletedBubbleBorder,
-            width: 1.5,
-          ),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(isSentByMe ? 18 : 2),
-            topRight: Radius.circular(isSentByMe ? 2 : 18),
-            bottomLeft: const Radius.circular(18),
-            bottomRight: const Radius.circular(18),
-          ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(isSentByMe ? 18 : 2),
+          topRight: Radius.circular(isSentByMe ? 2 : 18),
+          bottomLeft: const Radius.circular(18),
+          bottomRight: const Radius.circular(18),
         ),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: isSentByMe ? 0.001 : 12, sigmaY: isSentByMe ? 0.001 : 12),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? SchoolColors.deletedBubbleDark.withValues(alpha: 0.2)
+                  : SchoolColors.deletedBubble.withValues(alpha: 0.2),
+              border: Border.all(
+                color: isDark
+                    ? SchoolColors.deletedBubbleBorderDark.withValues(alpha: 0.3)
+                    : SchoolColors.deletedBubbleBorder.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+            ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -240,6 +257,8 @@ class ChatBubbleBuilders {
             ),
           ],
         ),
+      ),
+      ),
       ),
     );
   }
