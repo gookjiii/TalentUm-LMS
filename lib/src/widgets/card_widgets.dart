@@ -70,6 +70,8 @@ class SchoolCard extends HookWidget {
             [
               if (isHovered.value && onTap != null && !isPressed.value)
                 SchoolColors.cardShadowHover
+              else if (!isDark)
+                SchoolColors.lightNavyShadow
               else
                 SchoolColors.cardShadow,
             ],
@@ -195,10 +197,12 @@ class GlassCard extends HookWidget {
             boxShadow: [
               if (isHovered.value && onTap != null && !isPressed.value)
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.4),
+                  color: isDark ? Colors.black.withValues(alpha: 0.4) : SchoolColors.navyShadowColor.withValues(alpha: 0.2),
                   blurRadius: 120,
                   offset: const Offset(0, 60),
                 )
+              else if (!isDark)
+                SchoolColors.lightNavyShadow
               else
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.2),
@@ -227,14 +231,7 @@ class GlassCard extends HookWidget {
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(borderRadius),
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.white.withValues(alpha: 0.03),
-                              Colors.transparent,
-                            ],
-                          ),
+                          gradient: isDark ? SchoolColors.gradSurface : SchoolColors.gradSurfaceLight,
                         ),
                       ),
                     ),
@@ -282,12 +279,14 @@ class NestedBezelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
+        color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: SchoolColors.darkBorder),
+        border: Border.all(color: isDark ? SchoolColors.darkBorder : SchoolColors.border),
       ),
       child: GlassCard(
         borderRadius: 26,
@@ -316,43 +315,44 @@ class EliteNestedBezel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final performance = isPerformanceMode ?? AppScope.of(context).appState.performanceMode;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return RepaintBoundary(
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white.withOpacity(0.03)),
-          color: SchoolColors.darkBg,
+          border: Border.all(color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02)),
+          color: isDark ? SchoolColors.darkBg : SchoolColors.bg,
         ),
         padding: padding,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: performance 
-            ? _buildFallbackGlass() 
-            : _buildTrueGlass(),
+            ? _buildFallbackGlass(isDark) 
+            : _buildTrueGlass(isDark),
         ),
       ),
     );
   }
 
-  Widget _buildTrueGlass() {
+  Widget _buildTrueGlass(bool isDark) {
     return BackdropFilter(
       filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.03),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          color: isDark ? Colors.white.withOpacity(0.03) : Colors.white.withOpacity(0.65),
+          border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04)),
         ),
         child: child,
       ),
     );
   }
 
-  Widget _buildFallbackGlass() {
+  Widget _buildFallbackGlass(bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: SchoolColors.darkSurface.withOpacity(0.9),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        color: isDark ? SchoolColors.darkSurface.withOpacity(0.9) : SchoolColors.surfaceElevated.withOpacity(0.9),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04)),
       ),
       child: child,
     );

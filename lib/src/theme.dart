@@ -85,15 +85,16 @@ class SchoolColors {
   static const purpleContainer = Color(0xFFEDE9FE);
 
 
-  // ── Light-mode Neutrals ───────────────────────────────────────
-  static const bg = Color(0xFFF9FAFC);
-  static const surface = Color(0xFFFFFFFF);
-  static const surfaceElevated = Color(0xFFF1F5F9);
-  static const text = Color(0xFF0F172A);
-  static const textSecondary = Color(0xFF475569);
-  static const muted = Color(0xFF94A3B8);
-  static const border = Color(0xFFECEBF3);
-  static const borderFocus = Color(0xFFC4B5FD);
+  // ── Light-mode Palette (Elite Digital Campus) ───────────────────
+  static const Color bg = Color(0xFFF8FAFC); // Slate 50
+  static const Color surface = Color(0xA6FFFFFF); // rgba(255, 255, 255, 0.65)
+  static const Color surfaceElevated = Color(0xFFF1F5F9);
+  static const Color text = Color(0xFF0F172A); // Ink Navy
+  static const Color textSecondary = Color(0xFF475569);
+  static const Color muted = Color(0xFF64748B);
+  static const Color border = Color(0x0FFFFFFF); // rgba(0, 0, 0, 0.06) - Note: In CSS it was black but here it was defined as Color(0xFFECEBF3) previously. Let's use the new spec.
+  static const Color borderBright = Color(0x1FFFFFFF); // rgba(0, 0, 0, 0.12)
+  static const Color borderFocus = Color(0xFFC4B5FD);
 
   // ── Dark-mode Palette (Elite Digital Campus) ────────────────────
   static const Color darkBg = Color(0xFF0F172A); // Deep Indigo Foundation
@@ -121,6 +122,15 @@ class SchoolColors {
     ],
   );
 
+  static const gradSurfaceLight = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color(0xCCFFFFFF), // rgba(255, 255, 255, 0.8)
+      Color(0x4DFFFFFF), // rgba(255, 255, 255, 0.3)
+    ],
+  );
+
   // ── Sidebar ───────────────────────────────────────────────────
   static const sidebarBg = Color(0xFF1E1B4B);
   static const sidebarBorder = Color(0xFF312E81);
@@ -128,7 +138,7 @@ class SchoolColors {
   // ── Chat Bubbles ──────────────────────────────────────────────
   static const chatBubbleStart = Color(0xFF7C3AED);
   static const chatBubbleEnd = Color(0xFF8B5CF6);
-  static const chatBubbleOther = Color(0xFFFFFFFF);
+  static const chatBubbleOther = Colors.white;
   static const chatBubbleOtherBorder = Color(0xFFEFE7FC);
 
   // ── Deleted Message Styling ─────────────────────────────────
@@ -145,11 +155,19 @@ class SchoolColors {
   static const replyDeletedText = Color(0xFF64748B);
 
   // ── Glow / Shadow helpers (Enhanced) ─────────────────────────
+  static final navyShadowColor = const Color(0xFF0F172A).withValues(alpha: 0.06);
+
   static BoxShadow cardShadow = BoxShadow(
     color: const Color(0xFF7C3AED).withValues(alpha: 0.06), // Colored shadow
     blurRadius: 24,
     offset: const Offset(0, 6),
     spreadRadius: 0,
+  );
+
+  static BoxShadow lightNavyShadow = BoxShadow(
+    color: navyShadowColor,
+    blurRadius: 60,
+    offset: const Offset(0, 30),
   );
 
   static BoxShadow cardShadowHover = BoxShadow(
