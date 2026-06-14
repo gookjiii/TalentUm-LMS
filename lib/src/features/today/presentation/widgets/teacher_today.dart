@@ -249,7 +249,7 @@ class _HeroSectionState extends State<_HeroSection> {
                       ),
                       ShaderMask(
                         shaderCallback: (bounds) => const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF6366F1)],
+                          colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         ).createShader(bounds),
@@ -298,13 +298,13 @@ class _ActionButton extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: const LinearGradient(
-          colors: [Color(0xFF2563EB), Color(0xFF6366F1)],
+          colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2563EB).withValues(alpha: 0.2),
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -448,24 +448,30 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    return GlassCard(
-      padding: const EdgeInsets.all(24),
-      borderRadius: 20,
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+    return NestedBezelCard(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: iconColor.withValues(alpha: 0.3),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: iconColor.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                  ),
+                ],
               ),
+              child: Icon(icon, color: iconColor, size: 24),
             ),
-            child: Icon(icon, color: iconColor, size: 24),
-          ),
-          const SizedBox(width: 16),
+            const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,8 +498,9 @@ class _StatCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -532,15 +539,14 @@ class _TimelineList extends StatelessWidget {
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
-          child: GlassCard(
-            padding: const EdgeInsets.all(20),
-            borderRadius: 20,
-            color: isActive ? (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white) : null,
-            child: Row(
-              children: [
-                Container(
-                  width: 6,
-                  height: 60,
+          child: NestedBezelCard(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 60,
                   decoration: BoxDecoration(
                     color: isActive ? SchoolColors.primary : (isDark ? SchoolColors.darkMuted : SchoolColors.muted),
                     borderRadius: BorderRadius.circular(8),
@@ -583,22 +589,39 @@ class _TimelineList extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (isActive)
                   FilledButton(
                     onPressed: () {},
                     style: FilledButton.styleFrom(
-                      backgroundColor: SchoolColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                      minimumSize: const Size(0, 36),
+                      backgroundColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: EdgeInsets.zero,
                     ),
-                    child: const Text('Войти', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)), // Join
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: const Text('Войти', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)), // Join
+                      ),
+                    ),
                   ),
               ],
             ),
           ),
-        );
-      }).toList(),
+        ),
+      );
+    }).toList(),
     );
   }
 }
@@ -639,12 +662,13 @@ class _UpcomingTasksListState extends State<_UpcomingTasksList> {
         final docs = snapshot.data?.docs ?? [];
         
         if (docs.isEmpty) {
-          return GlassCard(
-            padding: const EdgeInsets.all(20),
-            borderRadius: 20,
-            child: const Center(
-              child: Text("Всё проверено!", style: TextStyle(color: SchoolColors.green, fontWeight: FontWeight.bold)), // All checked
-            )
+          return NestedBezelCard(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: const Center(
+                child: Text("Всё проверено!", style: TextStyle(color: SchoolColors.green, fontWeight: FontWeight.bold)), // All checked
+              ),
+            ),
           );
         }
 
@@ -659,42 +683,48 @@ class _UpcomingTasksListState extends State<_UpcomingTasksList> {
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: GlassCard(
-                padding: const EdgeInsets.all(20),
-                borderRadius: 20,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
+              child: NestedBezelCard(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.1),
-                            border: Border.all(color: statusColor.withValues(alpha: 0.2)),
-                            borderRadius: BorderRadius.circular(6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.15),
+                              border: Border.all(color: statusColor.withValues(alpha: 0.5)),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: statusColor.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              statusStr.toUpperCase(),
+                              style: AppTextStyle.mono(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: statusColor,
+                              ).copyWith(letterSpacing: 0.5),
+                            ),
                           ),
-                          child: Text(
-                            statusStr.toUpperCase(),
-                            style: AppTextStyle.mono(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: statusColor,
-                            ).copyWith(letterSpacing: 0.5),
-                          ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                     const SizedBox(height: 8),
                     Text(
                       due,
@@ -706,8 +736,9 @@ class _UpcomingTasksListState extends State<_UpcomingTasksList> {
                   ],
                 ),
               ),
-            );
-          }).toList(),
+            ),
+          );
+        }).toList(),
         );
       }
     );
