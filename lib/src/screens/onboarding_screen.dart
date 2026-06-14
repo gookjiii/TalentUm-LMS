@@ -5,7 +5,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import '../../main.dart';
-import '../theme.dart';
 import '../widgets/school_widgets.dart';
 
 class OnboardingScreen extends HookWidget {
@@ -89,9 +88,11 @@ class OnboardingScreen extends HookWidget {
           Navigator.of(context).popUntil((route) => route.isFirst);
         }
       } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(e.toString())));
+        }
       } finally {
         loading.value = false;
       }

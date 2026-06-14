@@ -95,8 +95,6 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     if (widget.desktopMode) {
       return Container(
         color: Colors.transparent,

@@ -470,8 +470,9 @@ class GlassCard extends HookWidget {
 // NESTED BEZEL CARD (Double-Bezel High-Fidelity Container)
 // ─────────────────────────────────────────────────────────────────
 class NestedBezelCard extends StatelessWidget {
-  const NestedBezelCard({super.key, required this.child});
+  const NestedBezelCard({super.key, required this.child, this.padding});
   final Widget child;
+  final EdgeInsetsGeometry? padding;
 
   @override
   Widget build(BuildContext context) {
@@ -484,7 +485,7 @@ class NestedBezelCard extends StatelessWidget {
       ),
       child: GlassCard(
         borderRadius: 26,
-        padding: const EdgeInsets.all(32),
+        padding: padding ?? const EdgeInsets.all(32),
         child: child,
       ),
     );

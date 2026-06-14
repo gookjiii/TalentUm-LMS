@@ -469,9 +469,13 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      itemCount: sortedColumns.length,
+      itemCount: sortedColumns.length + 1,
       itemBuilder: (context, index) {
-        final col = sortedColumns[index];
+        if (index == 0) {
+          final allGrades = sortedColumns.map((col) => studentMarks[col.id]?.toString() ?? '').toList();
+          return _GpaCircularRing(grades: allGrades);
+        }
+        final col = sortedColumns[index - 1];
         final colId = col.id;
         final data = col.data() ?? {};
         final date = (data['date'] as Timestamp?)?.toDate() ?? DateTime.now();
@@ -520,22 +524,7 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? SchoolColors.darkSurface : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-          ),
-          boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-          ],
-        ),
+      child: NestedBezelCard(
         padding: context.screenPadding,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -668,6 +657,83 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GpaCircularRing extends StatelessWidget {
+  const _GpaCircularRing({required this.grades});
+  final List<String> grades;
+
+  @override
+  Widget build(BuildContext context) {
+    int sum = 0;
+    int count = 0;
+    for (final g in grades) {
+      final v = int.tryParse(g);
+      if (v != null && v >= 2 && v <= 5) {
+        sum += v;
+        count++;
+      }
+    }
+    final double gpa = count > 0 ? sum / count : 0.0;
+    final double percentage = count > 0 ? (gpa - 2) / 3 : 0.0; 
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24, top: 8),
+      child: Center(
+        child: TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: percentage),
+          duration: const Duration(milliseconds: 1500),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            return SizedBox(
+              width: 140,
+              height: 140,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CircularProgressIndicator(
+                    value: 1.0,
+                    strokeWidth: 12,
+                    color: SchoolColors.primary.withValues(alpha: 0.1),
+                  ),
+                  CircularProgressIndicator(
+                    value: value,
+                    strokeWidth: 12,
+                    backgroundColor: Colors.transparent,
+                    valueColor: const AlwaysStoppedAnimation<Color>(SchoolColors.primary),
+                  ),
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          gpa.toStringAsFixed(2),
+                          style: const TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w900,
+                            color: SchoolColors.primary,
+                          ),
+                        ),
+                        const Text(
+                          'GPA',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: SchoolColors.muted,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

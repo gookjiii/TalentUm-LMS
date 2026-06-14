@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../main.dart';
-import '../theme.dart';
 import '../widgets/school_widgets.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -314,7 +313,7 @@ class _MobileAuthLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AmbientGlowBackground(
+    return _AnimatedMeshBackground(
       child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -323,7 +322,7 @@ class _MobileAuthLayout extends StatelessWidget {
             ).copyWith(top: 28, bottom: 28),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
-              child: GlassCard(
+              child: NestedBezelCard(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                 child: child,
               ),
@@ -344,103 +343,72 @@ class _WideAuthLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        // Left hero panel
-        Expanded(
-          child: Container(
-            height: double.infinity,
-            padding: AppLayout.pagePadding(
-              context,
-            ).copyWith(top: 56, bottom: 56),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF1D4ED8),
-                  Color(0xFF2563EB),
-                  Color(0xFF6366F1),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Stack(
-              children: [
-                // Subtle circle decorations
-                Positioned(
-                  top: -40,
-                  right: -40,
-                  child: _DecorativeCircle(
-                    size: 220,
-                    color: Colors.white.withValues(alpha: 0.06),
-                  ),
-                ),
-                Positioned(
-                  bottom: 40,
-                  left: -60,
-                  child: _DecorativeCircle(
-                    size: 300,
-                    color: Colors.white.withValues(alpha: 0.04),
-                  ),
-                ),
-                Positioned(
-                  bottom: 160,
-                  right: 20,
-                  child: _DecorativeCircle(
-                    size: 120,
-                    color: Colors.white.withValues(alpha: 0.07),
-                  ),
-                ),
-                // Hero content
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SchoolLogo(size: 72),
-                    const SizedBox(height: 32),
-                    const Text(
-                      'School\nWorld',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 54,
-                        height: 1.0,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -2,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      AppLocalizations.of(context)!.singleClassForChatnfeedAnd,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 18,
-                        height: 1.45,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    _FeaturePills(),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Right form panel
-        Expanded(
-          child: Center(
-            child: SingleChildScrollView(
+    return _AnimatedMeshBackground(
+      child: Row(
+        children: [
+          // Left hero panel
+          Expanded(
+            child: Container(
+              height: double.infinity,
               padding: AppLayout.pagePadding(
                 context,
-              ).copyWith(top: 48, bottom: 48),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
-                child: form,
+              ).copyWith(top: 56, bottom: 56),
+              child: Stack(
+                children: [
+                  // Hero content
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SchoolLogo(size: 72),
+                      const SizedBox(height: 32),
+                      const Text(
+                        'School\nWorld',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 54,
+                          height: 1.0,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -2,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        AppLocalizations.of(context)!.singleClassForChatnfeedAnd,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 18,
+                          height: 1.45,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      _FeaturePills(),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
-        ),
-      ],
+          // Right form panel
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: AppLayout.pagePadding(
+                  context,
+                ).copyWith(top: 48, bottom: 48),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: NestedBezelCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
+                    child: form,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -899,6 +867,11 @@ class _AuthForm extends StatelessWidget {
         _SubmitButton(isSignUp: isSignUp, loading: loading, onSubmit: onSubmit),
         const SizedBox(height: 14),
 
+        if (!isSignUp) ...[
+          const _BiometricButton(),
+          const SizedBox(height: 14),
+        ],
+
         TextButton(
           onPressed: onToggleMode,
           child: RichText(
@@ -1091,4 +1064,153 @@ String _getEnterNameErrorText(BuildContext context) {
   if (locale == 'ru') return 'Имя không được để trống';
   if (locale == 'vi') return 'Tên không được để trống';
   return 'Name cannot be empty';
+}
+
+class _AnimatedMeshBackground extends StatefulWidget {
+  const _AnimatedMeshBackground({required this.child});
+  final Widget child;
+
+  @override
+  State<_AnimatedMeshBackground> createState() => _AnimatedMeshBackgroundState();
+}
+
+class _AnimatedMeshBackgroundState extends State<_AnimatedMeshBackground> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 12),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment(
+                -0.5 + _controller.value,
+                -0.5 + (_controller.value * 0.5),
+              ),
+              radius: 1.5,
+              colors: isDark ? const [
+                Color(0xFF7C3AED),
+                Color(0xFF0F172A),
+                Color(0xFF000000),
+              ] : const [
+                Color(0xFF7C3AED),
+                Color(0xFFE2E8F0),
+                Color(0xFFFFFFFF),
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ),
+          ),
+          child: child,
+        );
+      },
+      child: widget.child,
+    );
+  }
+}
+
+class _BiometricButton extends StatefulWidget {
+  const _BiometricButton();
+
+  @override
+  State<_BiometricButton> createState() => _BiometricButtonState();
+}
+
+class _BiometricButtonState extends State<_BiometricButton> with SingleTickerProviderStateMixin {
+  late AnimationController _scaleController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+      lowerBound: 0.95,
+      upperBound: 1.0,
+      value: 1.0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    _scaleController.reverse();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _scaleController.forward();
+    // Biometric mock action
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Biometric authentication initiated...')),
+    );
+  }
+
+  void _onTapCancel() {
+    _scaleController.forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: CurvedAnimation(
+        parent: _scaleController,
+        curve: const Cubic(0.34, 1.56, 0.64, 1),
+      ),
+      child: GestureDetector(
+        onTapDown: _onTapDown,
+        onTapUp: _onTapUp,
+        onTapCancel: _onTapCancel,
+        child: Container(
+          height: 52,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: SchoolColors.primary.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+            color: Colors.transparent,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(
+                Icons.fingerprint_rounded,
+                color: SchoolColors.primary,
+                size: 24,
+              ),
+              SizedBox(width: 10),
+              Text(
+                'Face ID / Fingerprint',
+                style: TextStyle(
+                  color: SchoolColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

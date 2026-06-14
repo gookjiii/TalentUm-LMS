@@ -105,7 +105,6 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
     super.didChangeDependencies();
     if (!_topicsInitialized) {
       _topicsInitialized = true;
-      final wide = MediaQuery.sizeOf(context).width >= 700;
       _showTopicsSidebar = widget.initialShowTopicsSidebar; // Disabled auto-showing to prefer the global chat sidebar
     }
   }

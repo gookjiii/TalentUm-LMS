@@ -1,9 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-
-import '../../../../app_state.dart';
 import '../../../../firebase/school_repository.dart';
 import '../../../../theme.dart';
 import '../../../../widgets/school_widgets.dart';
@@ -319,10 +316,10 @@ class _ActionButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.analytics_rounded, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                const Text(
+              children: const [
+                Icon(Icons.analytics_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text(
                   'Аналитика', // Analytics
                   style: TextStyle(
                     color: Colors.white,
@@ -677,9 +674,9 @@ class _UpcomingTasksListState extends State<_UpcomingTasksList> {
           children: docs.map((doc) {
             final data = doc.data();
             final title = data['assignmentId']?.toString() ?? 'Неизвестное задание'; // Unknown assignment
-            final due = "Ожидает проверки"; // Pending review
-            final statusColor = SchoolColors.orange;
-            final statusStr = "важное"; // important
+            const due = "Ожидает проверки"; // Pending review
+            const statusColor = SchoolColors.orange;
+            const statusStr = "важное"; // important
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),

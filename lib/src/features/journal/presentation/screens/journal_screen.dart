@@ -160,7 +160,7 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                 dividerColor: Colors.transparent,
                 indicatorPadding: EdgeInsets.zero,
                 indicator: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [
                       AppColors.primary,
                       AppColors.secondary,

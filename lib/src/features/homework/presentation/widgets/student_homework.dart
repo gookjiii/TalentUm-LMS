@@ -395,7 +395,6 @@ class HomeworkCard extends StatelessWidget {
     final isOverdue = due != null && due.isBefore(DateTime.now());
     final submitted = submission != null;
     final grade = submission?['grade'];
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
