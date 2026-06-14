@@ -1,15 +1,92 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'dart:ui' as ui;
+import 'package:school_world/main.dart';
 import '../../../../theme.dart';
 import '../../../../widgets/school_widgets.dart';
+import '../../../../models/schedule.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EliteStudentToday extends HookWidget {
   const EliteStudentToday({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final scope = AppScope.of(context);
+    final repo = scope.repository;
+    
+    final userSnap = useStream(repo.userDocStream());
+    final userData = userSnap.data?.data() ?? {};
+    final String name = userData['name']?.toString() ?? 'Student';
+    final int streak = userData['streak'] as int? ?? 0;
+    final List<String> classIds = List<String>.from(userData['classIds'] ?? []);
+
+    final classesSnap = useStream(useMemoized(() => repo.studentClassesCached(), [repo.uid]));
+    final classes = classesSnap.data ?? [];
+
+    final schedulesSnap = useStream(useMemoized(() => repo.studentSchedulesStream(classIds), [classIds]));
+    final overridesSnap = useStream(useMemoized(() => repo.studentScheduleOverridesStream(classIds), [classIds]));
+    
+    final assignmentsSnap = useStream(useMemoized(() => repo.assignmentsForClasses(classIds, limit: 10), [classIds]));
+
+    // Calculate Today's Timeline
+    final now = DateTime.now();
+    final todayWeekday = now.weekday; // 1 (Mon) - 7 (Sun)
+    
+    final List<_TimelineData> timeline = [];
+    if (schedulesSnap.hasData) {
+      for (final entry in schedulesSnap.data!) {
+        if (entry.dayOfWeek == todayWeekday) {
+          // Check for overrides
+          final override = overridesSnap.data?.firstWhere(
+            (o) => o.scheduleId == entry.id && 
+                   o.date.year == now.year && 
+                   o.date.month == now.month && 
+                   o.date.day == now.day,
+            orElse: () => ScheduleOverride(id: '', scheduleId: '', date: now, cancelled: false),
+          );
+
+          if (override?.cancelled == true) continue;
+
+          final startMinute = override?.newStartMinute ?? entry.startMinute;
+          final endMinute = override?.newEndMinute ?? entry.endMinute;
+          
+          final cls = classes.firstWhere((c) => c['id'] == entry.classId, orElse: () => {});
+          final subject = cls['name']?.toString() ?? 'Class';
+
+          timeline.add(_TimelineData(
+            time: _formatTime(startMinute),
+            title: subject,
+            subtitle: entry.room ?? 'Room',
+            status: _getStatus(startMinute, endMinute),
+            startMinute: startMinute,
+          ));
+        }
+      }
+      timeline.sort((a, b) => a.startMinute.compareTo(b.startMinute));
+    }
+
+    // Find Next Deadline
+    Map<String, dynamic>? nextDeadline;
+    if (assignmentsSnap.hasData) {
+      final docs = assignmentsSnap.data!.docs;
+      final futureAssignments = docs.where((doc) {
+        final due = (doc.data()['dueDate'] as Timestamp?)?.toDate();
+        return due != null && due.isAfter(now);
+      }).toList();
+      
+      if (futureAssignments.isNotEmpty) {
+        futureAssignments.sort((a, b) {
+            final aDue = (a.data()['dueDate'] as Timestamp).toDate();
+            final bDue = (b.data()['dueDate'] as Timestamp).toDate();
+            return aDue.compareTo(bDue);
+        });
+        nextDeadline = futureAssignments.first.data();
+      }
+    }
+
     return Scaffold(
       backgroundColor: SchoolColors.darkBg,
       body: Stack(
@@ -28,10 +105,10 @@ class EliteStudentToday extends HookWidget {
 
           CustomScrollView(
             physics: const BouncingScrollPhysics(),
-            slivers: const [
-              _EliteHeader(),
+            slivers: [
+              _EliteHeader(name: name),
               SliverPadding(
-                padding: EdgeInsets.all(32),
+                padding: const EdgeInsets.all(32),
                 sliver: SliverToBoxAdapter(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,46 +118,42 @@ class EliteStudentToday extends HookWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _SectionHeader(title: 'Mission Timeline', icon: Icons.auto_awesome),
-                            SizedBox(height: 24),
-                            _TimelineItem(
-                              time: '08:30',
-                              title: 'Advanced Calculus',
-                              subtitle: 'Room 402 • Dr. Jenkins',
-                              status: 'Completed',
-                              isFirst: true,
-                            ),
-                            _TimelineItem(
-                              time: '10:15',
-                              title: 'Computational Thinking',
-                              subtitle: 'Lab 2 • Prof. Sarah',
-                              status: 'Ongoing',
-                              isActive: true,
-                            ),
-                            _TimelineItem(
-                              time: '13:00',
-                              title: 'AI Ethics & Society',
-                              subtitle: 'Auditorium • Dr. Aris',
-                              status: 'Upcoming',
-                            ),
-                            _TimelineItem(
-                              time: '15:30',
-                              title: 'Physics Lab',
-                              subtitle: 'Science Wing • Mr. Newton',
-                              status: 'Upcoming',
-                              isLast: true,
-                            ),
+                            const _SectionHeader(title: 'Mission Timeline', icon: Icons.auto_awesome),
+                            const SizedBox(height: 24),
+                            if (timeline.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 40),
+                                child: EmptyStateWidget(
+                                  icon: Icons.calendar_today_outlined,
+                                  title: 'No classes today',
+                                  subtitle: 'Enjoy your free time or catch up on assignments!',
+                                ),
+                              )
+                            else
+                              ...List.generate(timeline.length, (index) {
+                                final item = timeline[index];
+                                return _TimelineItem(
+                                  time: item.time,
+                                  title: item.title,
+                                  subtitle: item.subtitle,
+                                  status: item.status,
+                                  isActive: item.status == 'Ongoing',
+                                  isFirst: index == 0,
+                                  isLast: index == timeline.length - 1,
+                                );
+                              }),
                           ],
                         ),
                       ),
-                      SizedBox(width: 40),
+                      const SizedBox(width: 40),
                       Expanded(
                         flex: 5,
                         child: Column(
                           children: [
-                            _VitalityCard(),
-                            SizedBox(height: 24),
-                            _UpcomingAssignmentCard(),
+                            _VitalityCard(streak: streak, taskCount: 0), // Task count placeholder
+                            const SizedBox(height: 24),
+                            if (nextDeadline != null)
+                              _UpcomingAssignmentCard(assignment: nextDeadline),
                           ],
                         ),
                       ),
@@ -94,6 +167,36 @@ class EliteStudentToday extends HookWidget {
       ),
     );
   }
+
+  String _formatTime(int minutes) {
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+  }
+
+  String _getStatus(int start, int end) {
+    final now = DateTime.now();
+    final nowMinutes = now.hour * 60 + now.minute;
+    if (nowMinutes < start) return 'Upcoming';
+    if (nowMinutes > end) return 'Completed';
+    return 'Ongoing';
+  }
+}
+
+class _TimelineData {
+  final String time;
+  final String title;
+  final String subtitle;
+  final String status;
+  final int startMinute;
+
+  _TimelineData({
+    required this.time,
+    required this.title,
+    required this.subtitle,
+    required this.status,
+    required this.startMinute,
+  });
 }
 
 class _AmbientGlow extends StatelessWidget {
@@ -118,7 +221,8 @@ class _AmbientGlow extends StatelessWidget {
 }
 
 class _EliteHeader extends StatelessWidget {
-  const _EliteHeader();
+  const _EliteHeader({required this.name});
+  final String name;
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +250,7 @@ class _EliteHeader extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    'Alex Rivera',
+                    name,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 48,
                       fontWeight: FontWeight.w900,
@@ -162,13 +266,13 @@ class _EliteHeader extends StatelessWidget {
           ),
         ),
       ),
-      actions: const [
+      actions: [
         Padding(
-          padding: EdgeInsets.only(right: 40),
+          padding: const EdgeInsets.only(right: 40),
           child: CircleAvatar(
             radius: 28,
             backgroundColor: SchoolColors.darkSurface,
-            child: Icon(Icons.person_outline, color: Colors.white),
+            child: const Icon(Icons.person_outline, color: Colors.white),
           ),
         ),
       ],
@@ -410,7 +514,9 @@ class _StatusBadge extends StatelessWidget {
 }
 
 class _VitalityCard extends StatelessWidget {
-  const _VitalityCard();
+  const _VitalityCard({required this.streak, required this.taskCount});
+  final int streak;
+  final int taskCount;
 
   @override
   Widget build(BuildContext context) {
@@ -444,10 +550,10 @@ class _VitalityCard extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Row(
-            children: const [
-              Expanded(child: _MiniStat(label: 'STREAK', value: '12d')),
-              SizedBox(width: 12),
-              Expanded(child: _MiniStat(label: 'TASKS', value: '4/6')),
+            children: [
+              Expanded(child: _MiniStat(label: 'STREAK', value: '${streak}d')),
+              const SizedBox(width: 12),
+              Expanded(child: _MiniStat(label: 'TASKS', value: '$taskCount/6')),
             ],
           ),
         ],
@@ -489,10 +595,16 @@ class _MiniStat extends StatelessWidget {
 }
 
 class _UpcomingAssignmentCard extends StatelessWidget {
-  const _UpcomingAssignmentCard();
+  const _UpcomingAssignmentCard({required this.assignment});
+  final Map<String, dynamic> assignment;
 
   @override
   Widget build(BuildContext context) {
+    final dueDate = (assignment['dueDate'] as Timestamp?)?.toDate();
+    final timeStr = dueDate != null ? DateFormat('HH:mm').format(dueDate) : 'Unknown';
+    final diff = dueDate?.difference(DateTime.now());
+    final hoursLeft = diff?.inHours ?? 0;
+
     return NestedBezelCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,7 +615,7 @@ class _UpcomingAssignmentCard extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'Tích phân bội ba nâng cao',
+            assignment['title']?.toString() ?? 'Assignment',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -512,8 +624,11 @@ class _UpcomingAssignmentCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Advanced Calculus • Due in 4h',
-            style: AppTextStyle.bodyMd.copyWith(color: SchoolColors.orange, fontWeight: FontWeight.w600),
+            'Due at $timeStr • ${hoursLeft}h left',
+            style: AppTextStyle.bodyMd.copyWith(
+              color: hoursLeft < 24 ? SchoolColors.red : SchoolColors.orange, 
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 24),
           GradientButton(

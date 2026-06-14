@@ -20,6 +20,17 @@ class EliteDesignHub extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    final classesSnap = useStream(useMemoized(() => repository.studentClassesCached(), [repository.uid]));
+    final classes = classesSnap.data ?? [];
+    final selectedClassId = useState<String?>(null);
+
+    useEffect(() {
+      if (selectedClassId.value == null && classes.isNotEmpty) {
+        selectedClassId.value = classes.first['id']?.toString();
+      }
+      return null;
+    }, [classes]);
+
     return Scaffold(
       backgroundColor: SchoolColors.darkBg,
       body: Stack(
@@ -53,7 +64,13 @@ class EliteDesignHub extends HookWidget {
                   child: Center(
                     child: Container(
                       constraints: const BoxConstraints(maxWidth: 1400),
-                      child: const _HubContent(),
+                      child: _HubContent(
+                        repository: repository,
+                        appState: appState,
+                        classes: classes,
+                        selectedClassId: selectedClassId.value,
+                        onClassSelect: (id) => selectedClassId.value = id,
+                      ),
                     ),
                   ),
                 ),
@@ -141,7 +158,19 @@ class _TickerItem extends StatelessWidget {
 }
 
 class _HubContent extends StatelessWidget {
-  const _HubContent();
+  const _HubContent({
+    required this.repository,
+    required this.appState,
+    required this.classes,
+    this.selectedClassId,
+    required this.onClassSelect,
+  });
+
+  final SchoolRepository repository;
+  final SchoolAppState appState;
+  final List<Map<String, dynamic>> classes;
+  final String? selectedClassId;
+  final ValueChanged<String> onClassSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -153,10 +182,14 @@ class _HubContent extends StatelessWidget {
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              _BrandHero(),
-              SizedBox(height: 80),
-              _ProductGrid(),
+            children: [
+              _BrandHero(repository: repository, appState: appState),
+              const SizedBox(height: 80),
+              _ProductGrid(
+                classes: classes,
+                selectedClassId: selectedClassId,
+                onClassSelect: onClassSelect,
+              ),
             ],
           ),
         ),
@@ -173,7 +206,9 @@ class _HubContent extends StatelessWidget {
 }
 
 class _BrandHero extends StatelessWidget {
-  const _BrandHero();
+  const _BrandHero({required this.repository, required this.appState});
+  final SchoolRepository repository;
+  final SchoolAppState appState;
 
   @override
   Widget build(BuildContext context) {
@@ -217,13 +252,12 @@ class _BrandHero extends StatelessWidget {
               child: GradientButton(
                 text: 'Launch Full App',
                 onTap: () {
-                  final scope = AppScope.of(context);
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                       builder: (_) => AuthGate(
-                        repository: scope.repository,
-                        appState: scope.appState,
+                        repository: repository,
+                        appState: appState,
                       ),
                     ),
                   ); 
@@ -243,7 +277,15 @@ class _BrandHero extends StatelessWidget {
 }
 
 class _ProductGrid extends StatelessWidget {
-  const _ProductGrid();
+  const _ProductGrid({
+    required this.classes,
+    this.selectedClassId,
+    required this.onClassSelect,
+  });
+
+  final List<Map<String, dynamic>> classes;
+  final String? selectedClassId;
+  final ValueChanged<String> onClassSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -257,7 +299,7 @@ class _ProductGrid extends StatelessWidget {
       children: [
         _ProductCard(
           title: 'Today Screen',
-          description: 'Hệ thống Mission Control học tập với dòng thời gian trực quan, chỉ số tiến độ D3.js và quản lý tác vụ thông minh.',
+          description: 'Hệ thống Mission Control học tập với dòng thời gian trực quan và chỉ số tiến độ thông minh.',
           icon: Icons.dashboard_outlined,
           onTap: () {
             Navigator.push(
@@ -268,22 +310,32 @@ class _ProductGrid extends StatelessWidget {
         ),
         _ProductCard(
           title: 'Classroom Feed',
-          description: 'Không gian kết nối giảng đường 2 cột, tối ưu cho việc theo dõi thông báo, tài liệu và tương tác cộng đồng.',
+          description: 'Không gian kết nối giảng đường 2 cột, tối ưu cho việc theo dõi thông báo và tương tác cộng đồng.',
           icon: Icons.rss_feed,
           iconColor: SchoolColors.success,
           onTap: () {
+            if (selectedClassId == null) {
+              _showNoClassError(context);
+              return;
+            }
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const EliteStudentFeed()),
+              MaterialPageRoute(
+                builder: (_) => EliteStudentFeed(
+                  classId: selectedClassId!,
+                  classes: classes,
+                  onClassSelect: onClassSelect,
+                ),
+              ),
             );
           },
         ),
         _ProductCard(
           title: 'Campus Chat',
-          description: 'Hệ thống nhắn tin Elite với cấu trúc Double-Bezel, chỉ báo trạng thái sống động và quản lý tệp đính kèm thông minh.',
+          description: 'Hệ thống nhắn tin Elite với cấu trúc Double-Bezel và quản lý tệp đính kèm thông minh.',
           icon: Icons.chat_bubble_outline,
           iconColor: Colors.blue,
-          badge: 'Elite v4',
+          badge: 'v2.6',
           onTap: () {
             Navigator.push(
               context,
@@ -293,17 +345,33 @@ class _ProductGrid extends StatelessWidget {
         ),
         _ProductCard(
           title: 'Assignment Hub',
-          description: 'Quản lý tiến độ học tập, nộp bài với khu vực Drag & Drop Glassmorphism và trạng thái cảnh báo Overdue trực quan.',
+          description: 'Quản lý tiến độ học tập, nộp bài với khu vực Drag & Drop Glassmorphism trực quan.',
           icon: Icons.assignment_outlined,
           iconColor: SchoolColors.primary,
           onTap: () {
+            if (selectedClassId == null) {
+              _showNoClassError(context);
+              return;
+            }
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const EliteAssignmentHub()),
+              MaterialPageRoute(
+                builder: (_) => EliteAssignmentHub(
+                  classId: selectedClassId!,
+                  classes: classes,
+                  onClassSelect: onClassSelect,
+                ),
+              ),
             );
           },
         ),
       ],
+    );
+  }
+
+  void _showNoClassError(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please join a class to access this feature.')),
     );
   }
 }

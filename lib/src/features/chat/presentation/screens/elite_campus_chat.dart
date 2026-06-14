@@ -1,48 +1,92 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:school_world/main.dart';
 import '../../../../theme.dart';
 import '../../../../widgets/school_widgets.dart';
 
 class EliteCampusChat extends HookWidget {
-  const EliteCampusChat({super.key});
+  const EliteCampusChat({super.key, this.initialRoomId, this.classId});
+  final String? initialRoomId;
+  final String? classId;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: SchoolColors.darkBg,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: const [
-              // Chat Explorer Sidebar
-              SizedBox(
-                width: 380,
-                child: EliteNestedBezel(
-                  padding: EdgeInsets.zero,
-                  child: _ChatExplorer(),
-                ),
+    final repo = AppScope.of(context).repository;
+    final selectedRoomId = useState<String?>(initialRoomId);
+    
+    // Fetch user's rooms
+    var query = repo.firestore
+        .collection('rooms')
+        .where('userIds', arrayContains: repo.uid);
+    
+    if (classId != null) {
+      query = query.where('metadata.classId', isEqualTo: classId);
+    }
+    
+    final roomsSnap = useStream(useMemoized(() => query
+        .orderBy('updatedAt', descending: true)
+        .snapshots(), [repo.uid, classId]));
+
+    // Auto-select first room if none selected
+    useEffect(() {
+      if (selectedRoomId.value == null && roomsSnap.hasData && roomsSnap.data!.docs.isNotEmpty) {
+        selectedRoomId.value = roomsSnap.data!.docs.first.id;
+      }
+      return null;
+    }, [roomsSnap.hasData]);
+
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Chat Explorer Sidebar
+          SizedBox(
+            width: 380,
+            child: EliteNestedBezel(
+              padding: EdgeInsets.zero,
+              child: _ChatExplorer(
+                roomsSnap: roomsSnap,
+                selectedRoomId: selectedRoomId.value,
+                onRoomSelect: (id) => selectedRoomId.value = id,
               ),
-              SizedBox(width: 12),
-              // Main Chat View
-              Expanded(
-                child: EliteNestedBezel(
-                  padding: EdgeInsets.zero,
-                  child: _ChatView(),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(width: 12),
+          // Main Chat View
+          Expanded(
+            child: EliteNestedBezel(
+              padding: EdgeInsets.zero,
+              child: selectedRoomId.value != null
+                  ? _ChatView(roomId: selectedRoomId.value!)
+                  : const Center(
+                      child: EmptyStateWidget(
+                        icon: Icons.chat_bubble_outline_rounded,
+                        title: 'Select a conversation',
+                        subtitle: 'Pick a room from the list to start chatting.',
+                      ),
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _ChatExplorer extends StatelessWidget {
-  const _ChatExplorer();
+  const _ChatExplorer({
+    required this.roomsSnap,
+    required this.selectedRoomId,
+    required this.onRoomSelect,
+  });
+
+  final AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> roomsSnap;
+  final String? selectedRoomId;
+  final ValueChanged<String> onRoomSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -91,47 +135,38 @@ class _ChatExplorer extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(12),
-            children: const [
-              _ChannelItem(
-                name: 'Advanced Calculus',
-                initial: 'AC',
-                lastMessage: 'Dr. Jenkins: Em đã nhận được file chưa?',
-                unread: 3,
-                isOnline: true,
-                color: SchoolColors.primary,
-                isActive: true,
-              ),
-              _ChannelItem(
-                name: 'Project TalentUm',
-                initial: 'PT',
-                lastMessage: 'Sarah: Deadline is tonight!',
-                unread: 0,
-                isOnline: true,
-                color: Colors.lightBlue,
-              ),
-              _ChannelItem(
-                name: 'Student Council',
-                initial: 'SC',
-                lastMessage: 'Meeting at 5PM in Library.',
-                unread: 12,
-                isOnline: false,
-                color: SchoolColors.orange,
-              ),
-              _ChannelItem(
-                name: 'Deep Learning Group',
-                initial: 'DL',
-                lastMessage: 'Alex: Model is training...',
-                unread: 0,
-                isOnline: true,
-                color: SchoolColors.success,
-              ),
-            ],
-          ),
+          child: !roomsSnap.hasData
+              ? const Center(child: BrandedLoader())
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: roomsSnap.data!.docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = roomsSnap.data!.docs[index];
+                    final data = doc.data();
+                    final name = data['name']?.toString() ?? 'Group';
+                    final type = data['type']?.toString() ?? 'group';
+                    
+                    return _ChannelItem(
+                      name: name,
+                      initial: name.isNotEmpty ? name[0].toUpperCase() : '?',
+                      lastMessage: data['lastMessage']?.toString() ?? 'No messages yet',
+                      unread: 0, // Logic for unread count can be added later
+                      isOnline: false, // RTDB presence integration
+                      color: _getColorForType(type),
+                      isActive: selectedRoomId == doc.id,
+                      onTap: () => onRoomSelect(doc.id),
+                    );
+                  },
+                ),
         ),
       ],
     );
+  }
+
+  Color _getColorForType(String type) {
+    if (type == 'class_main') return SchoolColors.primary;
+    if (type == 'direct') return Colors.lightBlue;
+    return SchoolColors.orange;
   }
 }
 
@@ -143,6 +178,7 @@ class _ChannelItem extends HookWidget {
     required this.unread,
     required this.isOnline,
     required this.color,
+    required this.onTap,
     this.isActive = false,
   });
 
@@ -153,6 +189,7 @@ class _ChannelItem extends HookWidget {
   final bool isOnline;
   final Color color;
   final bool isActive;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -161,123 +198,126 @@ class _ChannelItem extends HookWidget {
     return MouseRegion(
       onEnter: (_) => isHovered.value = true,
       onExit: (_) => isHovered.value = false,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: isActive 
-              ? SchoolColors.primary.withOpacity(0.1) 
-              : (isHovered.value ? Colors.white.withOpacity(0.03) : Colors.transparent),
-          border: Border.all(
-            color: isActive ? SchoolColors.primary.withOpacity(0.2) : Colors.transparent,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.only(bottom: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: isActive 
+                ? SchoolColors.primary.withOpacity(0.1) 
+                : (isHovered.value ? Colors.white.withOpacity(0.03) : Colors.transparent),
+            border: Border.all(
+              color: isActive ? SchoolColors.primary.withOpacity(0.2) : Colors.transparent,
+            ),
+            borderRadius: BorderRadius.circular(16),
           ),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 48,
-              height: 48,
-              child: Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: SchoolColors.darkBorder),
-                    ),
-                    child: Center(
-                      child: Text(
-                        initial,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 18,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 48,
+                height: 48,
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: SchoolColors.darkBorder),
+                      ),
+                      child: Center(
+                        child: Text(
+                          initial,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  if (isOnline)
-                    Positioned(
-                      bottom: -2,
-                      right: -2,
-                      child: Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: SchoolColors.success,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: SchoolColors.darkBg, width: 3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: SchoolColors.success.withOpacity(0.6),
-                              blurRadius: 6,
-                            ),
-                          ],
+                    if (isOnline)
+                      Positioned(
+                        bottom: -2,
+                        right: -2,
+                        child: Container(
+                          width: 14,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: SchoolColors.success,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: SchoolColors.darkBg, width: 3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: SchoolColors.success.withOpacity(0.6),
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    lastMessage,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: SchoolColors.darkMuted,
-                      fontWeight: unread > 0 ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            if (unread > 0)
-              Container(
-                constraints: const BoxConstraints(minWidth: 22),
-                height: 22,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                decoration: BoxDecoration(
-                  color: SchoolColors.primary,
-                  borderRadius: BorderRadius.circular(11),
-                  boxShadow: [
-                    BoxShadow(
-                      color: SchoolColors.primary.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                    const SizedBox(height: 2),
+                    Text(
+                      lastMessage,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: SchoolColors.darkMuted,
+                        fontWeight: unread > 0 ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Text(
-                    unread.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
+              ),
+              if (unread > 0)
+                Container(
+                  constraints: const BoxConstraints(minWidth: 22),
+                  height: 22,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  decoration: BoxDecoration(
+                    color: SchoolColors.primary,
+                    borderRadius: BorderRadius.circular(11),
+                    boxShadow: [
+                      BoxShadow(
+                        color: SchoolColors.primary.withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      unread.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -285,42 +325,49 @@ class _ChannelItem extends HookWidget {
 }
 
 class _ChatView extends HookWidget {
-  const _ChatView();
+  const _ChatView({required this.roomId});
+  final String roomId;
 
   @override
   Widget build(BuildContext context) {
-    final messages = useState([
-      { 'id': 1, 'type': 'received', 'sender': 'DR. JENKINS', 'time': '09:15 AM', 'text': 'Alex, thầy đã tải lên tài liệu ôn tập cho bài kiểm tra giữa kỳ.' },
-      { 'id': 2, 'type': 'received', 'sender': 'DR. JENKINS', 'time': '09:16 AM', 'file': 'Calculus_Midterm_Review.pdf', 'size': '2.4 MB', 'fileType': 'pdf' },
-      { 'id': 3, 'type': 'sent', 'sender': 'YOU', 'time': '09:45 AM', 'text': 'Dạ em đã thấy rồi ạ. Em cảm ơn thầy! Em có một câu hỏi về phần Tích phân bội ba...' },
-      { 'id': 4, 'type': 'received', 'sender': 'DR. JENKINS', 'time': '10:02 AM', 'text': 'Cứ hỏi đi Alex. Đây là ví dụ trực quan về mặt bậc hai em cần lưu ý.' },
-      { 'id': 5, 'type': 'received', 'sender': 'DR. JENKINS', 'time': '10:03 AM', 'file': 'Quadric_Surfaces_3D.jpg', 'size': '1.8 MB', 'fileType': 'image' },
-    ]);
-    final scrollController = useScrollController();
+    final repo = AppScope.of(context).repository;
     final textController = useTextEditingController();
+    
+    final messagesSnap = useStream(useMemoized(() => repo.firestore
+        .collection('rooms')
+        .doc(roomId)
+        .collection('messages')
+        .orderBy('createdAt', descending: true)
+        .limit(50)
+        .snapshots(), [roomId]));
 
-    void sendMessage() {
-      if (textController.text.trim().isEmpty) return;
-      messages.value = [
-        ...messages.value,
-        {
-          'id': DateTime.now().millisecondsSinceEpoch,
-          'type': 'sent',
-          'sender': 'YOU',
-          'time': 'Just now',
-          'text': textController.text,
-        }
-      ];
+    final roomSnap = useFuture(useMemoized(() => repo.firestore.collection('rooms').doc(roomId).get(), [roomId]));
+    final roomData = roomSnap.data?.data() ?? {};
+    final roomName = roomData['name']?.toString() ?? 'Chat';
+
+    void sendMessage() async {
+      final text = textController.text.trim();
+      if (text.isEmpty) return;
+      
+      final now = FieldValue.serverTimestamp();
+      final msgData = {
+        'authorId': repo.uid,
+        'text': text,
+        'createdAt': now,
+        'type': 'text',
+      };
+      
       textController.clear();
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (scrollController.hasClients) {
-          scrollController.animateTo(
-            scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
+      
+      final batch = repo.firestore.batch();
+      final msgRef = repo.firestore.collection('rooms').doc(roomId).collection('messages').doc();
+      batch.set(msgRef, msgData);
+      batch.update(repo.firestore.collection('rooms').doc(roomId), {
+        'lastMessage': text,
+        'updatedAt': now,
       });
+      
+      await batch.commit();
     }
 
     return Column(
@@ -337,38 +384,21 @@ class _ChatView extends HookWidget {
               SizedBox(
                 width: 56,
                 height: 56,
-                child: Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: SchoolColors.primary,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'AC',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 20,
-                          ),
-                        ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: SchoolColors.primary,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Center(
+                    child: Text(
+                      roomName.isNotEmpty ? roomName[0].toUpperCase() : '?',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 20,
                       ),
                     ),
-                    Positioned(
-                      bottom: -2,
-                      right: -2,
-                      child: Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: SchoolColors.success,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: SchoolColors.darkSurface, width: 4),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(width: 20),
@@ -378,7 +408,7 @@ class _ChatView extends HookWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Advanced Calculus',
+                      roomName,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
@@ -388,7 +418,7 @@ class _ChatView extends HookWidget {
                     ),
                     const SizedBox(height: 2),
                     const Text(
-                      'Active now • 42 students',
+                      'Live Collaboration',
                       style: TextStyle(
                         fontSize: 13,
                         color: SchoolColors.success,
@@ -407,53 +437,51 @@ class _ChatView extends HookWidget {
 
         // Message Stream
         Expanded(
-          child: ListView.builder(
-            controller: scrollController,
-            padding: const EdgeInsets.all(40),
-            itemCount: messages.value.length + 1, // +1 for typing indicator
-            itemBuilder: (context, index) {
-              if (index == messages.value.length) {
-                return const Padding(
-                  padding: EdgeInsets.only(top: 12),
-                  child: _TypingIndicator(),
-                );
-              }
+          child: !messagesSnap.hasData
+              ? const Center(child: BrandedLoader())
+              : ListView.builder(
+                  reverse: true,
+                  padding: const EdgeInsets.all(40),
+                  itemCount: messagesSnap.data!.docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = messagesSnap.data!.docs[index];
+                    final msg = doc.data();
+                    final isSent = msg['authorId'] == repo.uid;
+                    final createdAt = (msg['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now();
+                    final timeStr = DateFormat('hh:mm a').format(createdAt);
 
-              final msg = messages.value[index];
-              final isSent = msg['type'] == 'sent';
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 32),
-                child: Column(
-                  crossAxisAlignment: isSent ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        msg['sender'] as String,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                          color: SchoolColors.darkMuted,
-                          letterSpacing: 1.2,
-                        ),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 32),
+                      child: Column(
+                        crossAxisAlignment: isSent ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                        children: [
+                          if (!isSent)
+                             Padding(
+                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                               child: StudentName(
+                                 studentId: msg['authorId']?.toString() ?? '',
+                                 style: const TextStyle(
+                                   fontSize: 11,
+                                   fontWeight: FontWeight.w900,
+                                   color: SchoolColors.darkMuted,
+                                   letterSpacing: 1.2,
+                                 ),
+                               ),
+                             ),
+                          if (msg['text'] != null)
+                            _MessageBubble(text: msg['text'] as String, time: timeStr, isSent: isSent),
+                          if (msg['fileUrl'] != null)
+                             _AttachmentCard(
+                               fileName: msg['fileName']?.toString() ?? 'File',
+                               fileSize: msg['fileSize']?.toString() ?? '',
+                               fileType: msg['fileType']?.toString() ?? 'file',
+                               isSent: isSent,
+                             ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    if (msg['text'] != null)
-                      _MessageBubble(text: msg['text'] as String, time: msg['time'] as String, isSent: isSent),
-                    if (msg['file'] != null)
-                      _AttachmentCard(
-                        fileName: msg['file'] as String,
-                        fileSize: msg['size'] as String,
-                        fileType: msg['fileType'] as String,
-                        isSent: isSent,
-                      ),
-                  ],
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
 
         // Input Dock
@@ -481,7 +509,7 @@ class _ChatView extends HookWidget {
                     controller: textController,
                     style: const TextStyle(color: Colors.white, fontSize: 17),
                     decoration: const InputDecoration(
-                      hintText: 'Gửi tin nhắn cho lớp học...',
+                      hintText: 'Gửi tin nhắn...',
                       hintStyle: TextStyle(color: SchoolColors.darkMuted),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -530,7 +558,7 @@ class _HeaderIconButton extends StatelessWidget {
       child: Container(
         width: 52,
         height: 52,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: Colors.transparent,
           shape: BoxShape.circle,
         ),
@@ -552,7 +580,7 @@ class _DockIconButton extends StatelessWidget {
       child: Container(
         width: 52,
         height: 52,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: Colors.transparent,
           shape: BoxShape.circle,
         ),
@@ -678,73 +706,6 @@ class _AttachmentCard extends StatelessWidget {
             const Icon(Icons.download_rounded, color: SchoolColors.darkMuted),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _TypingIndicator extends HookWidget {
-  const _TypingIndicator();
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = useAnimationController(
-      duration: const Duration(milliseconds: 1400),
-    )..repeat();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: List.generate(3, (index) {
-              final animation = Tween<double>(begin: 0.4, end: 1.0).animate(
-                CurvedAnimation(
-                  parent: controller,
-                  curve: Interval(
-                    index * 0.2,
-                    0.6 + index * 0.2,
-                    curve: Curves.easeInOut,
-                  ),
-                ),
-              );
-              return AnimatedBuilder(
-                animation: animation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: 0.6 + (0.4 * (animation.value - 0.4) / 0.6),
-                    child: Opacity(
-                      opacity: animation.value,
-                      child: Container(
-                        width: 6,
-                        height: 6,
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                        decoration: const BoxDecoration(
-                          color: SchoolColors.darkMuted,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            }),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'Dr. Jenkins is typing',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: SchoolColors.darkMuted,
-            ),
-          ),
-        ],
       ),
     );
   }

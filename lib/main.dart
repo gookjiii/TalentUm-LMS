@@ -29,7 +29,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 // Toggle this to show the Design Hub instead of the normal app flow
-const bool showDesignHub = true;
+const bool showDesignHub = false;
 
 Future<void> main() async {
   try {

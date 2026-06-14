@@ -18,21 +18,17 @@ import 'package:school_world/src/widgets/school_widgets.dart';
 
 import '../features/today/presentation/widgets/teacher_today.dart';
 import '../features/feed/presentation/widgets/teacher_feed.dart';
-import 'package:school_world/src/features/chat/presentation/screens/class_chat_screen.dart';
-import 'package:school_world/src/features/chat/presentation/widgets/chat_tab_flow.dart';
+import '../features/chat/presentation/screens/elite_campus_chat.dart';
 import '../features/homework/presentation/widgets/teacher_homework.dart';
 import '../features/shared/presentation/widgets/teacher_sidebar.dart';
 import 'teacher_schedule_screen.dart';
 
-import '../features/shared/presentation/widgets/teacher_right_sidebar.dart';
 import '../features/roster/presentation/screens/roster_screen.dart';
 import '../features/settings/presentation/widgets/teacher_settings.dart';
 import '../features/settings/presentation/tabs/admin_dashboard_tab.dart';
 import '../features/library/presentation/widgets/library_screen.dart';
 import '../features/webinars/presentation/widgets/webinars_screen.dart';
 import '../features/journal/presentation/screens/journal_screen.dart';
-
-import 'package:school_world/src/widgets/skeletal_loaders.dart';
 
 class TeacherWorkspaceScreen extends ConsumerStatefulWidget {
   const TeacherWorkspaceScreen({super.key});
@@ -100,7 +96,6 @@ class _TeacherWorkspaceScreenState
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 900;
         final extraWide = constraints.maxWidth >= 1200;
-        const showRightSidebar = false;
 
         final navItems = [
           TeacherNavDest(
@@ -176,21 +171,7 @@ class _TeacherWorkspaceScreenState
 
         // Only the content area shows loading — sidebar/nav are always visible
         final content = isLoading
-            ? Column(
-                children: [
-                  const PageHeader(title: '...', subtitle: '...'),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(20),
-                      itemCount: 6,
-                      itemBuilder: (context, index) => const Padding(
-                        padding: EdgeInsets.only(bottom: 12),
-                        child: ClassCardSkeleton(),
-                      ),
-                    ),
-                  ),
-                ],
-              )
+            ? const Center(child: BrandedLoader())
             : FadeIndexedStack(
                 index: _tabIndex,
                 children: [
@@ -220,7 +201,6 @@ class _TeacherWorkspaceScreenState
                       onCopyGuestLink: _copyGuestInviteLink,
                       onCreateClass: _createClass,
                       onProfileTap: onProfileTap,
-                      showSidebar: showRightSidebar,
                     ),
 
                   hasClasses && activeId != null
@@ -230,33 +210,17 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.campaign_outlined,
                         ),
 
-                  hasClasses && activeId != null
-                      ? ChatTabFlow(
-                          repository: repo,
-                          appState: appState,
-                          classes: classes,
-                          initialClassId: activeId,
-                          desktopMode: wide,
-                          canInitializeRoom: true,
-                        )
-                      : _FeatureLockedEmptyState(
-                          title: AppLocalizations.of(context)!.chat,
-                          icon: Icons.chat_bubble_outline_rounded,
-                        ),
+                  if (hasClasses)
+                    EliteCampusChat(classId: activeId)
+                  else
+                    _FeatureLockedEmptyState(
+                      title: AppLocalizations.of(context)!.chat,
+                      icon: Icons.chat_bubble_outline_rounded,
+                    ),
 
                   // Учительская — lazily mounted only when tab is active
                   _tabIndex == 3
-                      ? ClassChatScreen(
-                          key: const ValueKey('chat-teachers_lounge'),
-                          repository: repo,
-                          appState: appState,
-                          classId: 'teachers_lounge',
-                          canInitializeRoom: true,
-                          initialTopicId:
-                              appState.lastChatClassId == 'teachers_lounge'
-                              ? appState.lastChatTopicId
-                              : null,
-                        )
+                      ? EliteCampusChat(classId: 'teachers_lounge')
                       : const SizedBox.expand(),
 
                   hasClasses && activeId != null
@@ -342,8 +306,6 @@ class _TeacherWorkspaceScreenState
                     ),
                   ),
                 Expanded(child: content),
-                if (showRightSidebar && hasClasses)
-                  TeacherRightSidebar(classes: classes),
               ],
             ),
           ),
@@ -1082,15 +1044,8 @@ class _TeacherWorkspaceScreenState
   ) {
     switch (index) {
       case 3:
-        return ClassChatScreen(
-          key: const ValueKey('chat-teachers_lounge'),
-          repository: repo,
-          appState: appState,
+        return EliteCampusChat(
           classId: 'teachers_lounge',
-          canInitializeRoom: true,
-          initialTopicId: appState.lastChatClassId == 'teachers_lounge'
-              ? appState.lastChatTopicId
-              : null,
         );
       case 4:
         return TeacherAssignments(

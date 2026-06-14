@@ -16,13 +16,14 @@ import 'package:school_world/src/app_state.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 
-import '../features/today/presentation/widgets/student_today.dart';
-import '../features/homework/presentation/widgets/student_homework.dart';
-import '../features/feed/presentation/widgets/student_feed.dart';
+import '../features/today/presentation/widgets/elite_student_today.dart';
+import '../features/feed/presentation/screens/elite_student_feed.dart';
+import '../features/chat/presentation/screens/elite_campus_chat.dart';
+import '../features/homework/presentation/screens/elite_assignment_hub.dart';
 import '../features/shared/presentation/widgets/student_sidebar.dart';
-import '../features/shared/presentation/widgets/student_right_sidebar.dart';
 import '../features/library/presentation/widgets/library_screen.dart';
 import '../features/webinars/presentation/widgets/webinars_screen.dart';
+
 class StudentShell extends ConsumerStatefulWidget {
   const StudentShell({super.key});
 
@@ -58,7 +59,6 @@ class _StudentShellState extends ConsumerState<StudentShell> {
         return LayoutBuilder(
           builder: (context, constraints) {
             final wide = constraints.maxWidth >= 900;
-            const showRightSidebar = false;
 
             final navItems = [
               NavDest(
@@ -109,18 +109,10 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                 if (!hasClasses)
                   const JoinClassEmptyState()
                 else
-                  StudentToday(
-                    classes: classes,
-                    selectedClassId: selectedId,
-                    onTabSelect: (i) => _handleTabSelection(i, wide, selectedId, repo, appState, l10n, classes),
-                    showSidebar: showRightSidebar,
-                    onHomeworkTap: selectedId != null
-                        ? () => _handleTabSelection(3, wide, selectedId, repo, appState, l10n, classes)
-                        : () {},
-                  ),
+                  const EliteStudentToday(),
 
                 if (hasClasses && selectedId != null)
-                  StudentFeed(
+                  EliteStudentFeed(
                     classId: selectedId,
                     classes: classes,
                     onClassSelect: (id) => appState.selectClass(id),
@@ -132,22 +124,19 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                   ),
 
                 if (hasClasses)
-                  ChatTabFlow(
-                    repository: repo,
-                    appState: appState,
-                    classes: classes,
-                    initialClassId: selectedId,
-                    desktopMode: wide,
-                    canInitializeRoom: false,
-                  )
+                  EliteCampusChat(classId: selectedId)
                 else
                   _FeatureLockedEmptyState(
                     title: AppLocalizations.of(context)!.chat,
                     icon: Icons.chat_bubble_outline_rounded,
                   ),
 
-                if (hasClasses && (!wide || selectedId != null))
-                  StudentHomework(classId: wide ? (selectedId ?? '') : '')
+                if (hasClasses && selectedId != null)
+                  EliteAssignmentHub(
+                    classId: selectedId,
+                    classes: classes,
+                    onClassSelect: (id) => appState.selectClass(id),
+                  )
                 else
                   _FeatureLockedEmptyState(
                     title: AppLocalizations.of(context)!.quests,
@@ -224,11 +213,6 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                       ),
                     ),
                   Expanded(child: content),
-                  if (showRightSidebar && hasClasses)
-                    SizedBox(
-                      width: 320,
-                      child: StudentRightSidebar(classes: classes),
-                    ),
                 ],
               ),
               ),
