@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import '../theme.dart';
 import '../widgets/school_widgets.dart';
 import '../features/today/presentation/widgets/elite_student_today.dart';
+import '../features/feed/presentation/screens/elite_student_feed.dart';
 import '../features/chat/presentation/screens/elite_campus_chat.dart';
 import '../features/shared/presentation/widgets/elite_placeholders.dart';
 
