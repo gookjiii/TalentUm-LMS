@@ -196,9 +196,10 @@ class _StudentShellState extends ConsumerState<StudentShell> {
               ],
             );
 
-            return Scaffold(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              body: SafeArea(
+            return AmbientGlowBackground(
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                body: SafeArea(
                 bottom: false,
                 child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -264,6 +265,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                         );
                       },
                     ),
+              ),
             );
           },
         );

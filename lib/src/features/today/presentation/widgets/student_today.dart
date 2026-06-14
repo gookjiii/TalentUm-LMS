@@ -58,7 +58,7 @@ class _StudentTodayState extends ConsumerState<StudentToday> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      color: isDark ? const Color(0xFF0F172A) : Theme.of(context).colorScheme.surface, // Deep Indigo background
+      color: Colors.transparent,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [

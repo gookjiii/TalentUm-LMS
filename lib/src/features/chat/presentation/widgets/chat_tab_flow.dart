@@ -99,7 +99,7 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
 
     if (widget.desktopMode) {
       return Container(
-        color: isDark ? const Color(0xFF0F172A) : Theme.of(context).colorScheme.surface,
+        color: Colors.transparent,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -325,7 +325,7 @@ class _ChatClassListState extends State<_ChatClassList> {
     return widget.isSplitView
         ? content
         : Scaffold(
-            backgroundColor: isDark ? const Color(0xFF0F172A) : Theme.of(context).colorScheme.surface,
+            backgroundColor: Colors.transparent,
             body: content,
           );
   }

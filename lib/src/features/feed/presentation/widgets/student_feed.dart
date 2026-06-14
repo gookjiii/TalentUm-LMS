@@ -71,7 +71,7 @@ class _StudentFeedState extends State<StudentFeed> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      color: isDark ? const Color(0xFF0F172A) : Theme.of(context).colorScheme.surface,
+      color: Colors.transparent,
       child: NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification scrollInfo) {
           if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
