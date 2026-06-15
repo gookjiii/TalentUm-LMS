@@ -72,7 +72,12 @@ class _TeacherTodayState extends ConsumerState<TeacherToday> {
             physics: const BouncingScrollPhysics(),
             slivers: [
               SliverPadding(
-                padding: const EdgeInsets.all(32),
+                padding: EdgeInsets.fromLTRB(
+                  isDesktop ? 32 : 16,
+                  isDesktop ? 32 : 16,
+                  isDesktop ? 32 : 16,
+                  isDesktop ? 32 : 100,
+                ),
                 sliver: SliverToBoxAdapter(
                   child: Center(
                     child: Container(
@@ -85,10 +90,10 @@ class _TeacherTodayState extends ConsumerState<TeacherToday> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _EliteTeacherHeader(teacherName: firstName),
-                                const SizedBox(height: 48),
-                                _TeacherStatsGrid(repo: repo, classes: widget.classes),
-                                const SizedBox(height: 48),
+                                _EliteTeacherHeader(teacherName: firstName, isDesktop: isDesktop),
+                                SizedBox(height: isDesktop ? 48 : 24),
+                                _TeacherStatsGrid(repo: repo, classes: widget.classes, isDesktop: isDesktop),
+                                SizedBox(height: isDesktop ? 48 : 32),
                                 const _SectionHeader(title: 'Mission Timeline', icon: Icons.auto_awesome),
                                 const SizedBox(height: 24),
                                 _TeacherTimelineList(classes: widget.classes),
@@ -123,8 +128,9 @@ class _TeacherTodayState extends ConsumerState<TeacherToday> {
 }
 
 class _EliteTeacherHeader extends StatelessWidget {
-  const _EliteTeacherHeader({required this.teacherName});
+  const _EliteTeacherHeader({required this.teacherName, required this.isDesktop});
   final String teacherName;
+  final bool isDesktop;
 
   @override
   Widget build(BuildContext context) {
@@ -143,17 +149,19 @@ class _EliteTeacherHeader extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              'Welcome back,\nProf. $teacherName',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 48,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-                height: 1.1,
-                letterSpacing: -1.5,
+            Expanded(
+              child: Text(
+                'Welcome back,\nProf. $teacherName',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: isDesktop ? 48 : 32,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  height: 1.1,
+                  letterSpacing: -1.5,
+                ),
               ),
             ),
-            const Spacer(),
+            if (isDesktop) const SizedBox(width: 16),
             GradientButton(
               text: 'Deep Analytics',
               icon: Icons.analytics_outlined,
@@ -167,9 +175,10 @@ class _EliteTeacherHeader extends StatelessWidget {
 }
 
 class _TeacherStatsGrid extends StatelessWidget {
-  const _TeacherStatsGrid({required this.repo, required this.classes});
+  const _TeacherStatsGrid({required this.repo, required this.classes, required this.isDesktop});
   final SchoolRepository repo;
   final List<Map<String, dynamic>> classes;
+  final bool isDesktop;
 
   @override
   Widget build(BuildContext context) {
@@ -180,6 +189,34 @@ class _TeacherStatsGrid extends StatelessWidget {
       builder: (context, snapshot) {
         final pendingGrades = snapshot.data?.docs.length ?? 0;
 
+        if (!isDesktop) {
+          return Column(
+            children: [
+              _StatCard(
+                value: classes.length.toString(),
+                label: 'Classes Today',
+                icon: Icons.school_outlined,
+                isDesktop: false,
+              ),
+              const SizedBox(height: 16),
+              _StatCard(
+                value: pendingGrades.toString(),
+                label: 'Pending Grades',
+                icon: Icons.assignment_outlined,
+                isAlert: pendingGrades > 0,
+                isDesktop: false,
+              ),
+              const SizedBox(height: 16),
+              _StatCard(
+                value: studentCount.toString(),
+                label: 'Active Students',
+                icon: Icons.people_outline,
+                isDesktop: false,
+              ),
+            ],
+          );
+        }
+
         return Row(
           children: [
             Expanded(
@@ -187,6 +224,7 @@ class _TeacherStatsGrid extends StatelessWidget {
                 value: classes.length.toString(),
                 label: 'Classes Today',
                 icon: Icons.school_outlined,
+                isDesktop: true,
               ),
             ),
             const SizedBox(width: 20),
@@ -196,6 +234,7 @@ class _TeacherStatsGrid extends StatelessWidget {
                 label: 'Pending Grades',
                 icon: Icons.assignment_outlined,
                 isAlert: pendingGrades > 0,
+                isDesktop: true,
               ),
             ),
             const SizedBox(width: 20),
@@ -204,6 +243,7 @@ class _TeacherStatsGrid extends StatelessWidget {
                 value: studentCount.toString(),
                 label: 'Active Students',
                 icon: Icons.people_outline,
+                isDesktop: true,
               ),
             ),
           ],
@@ -214,45 +254,87 @@ class _TeacherStatsGrid extends StatelessWidget {
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard({required this.value, required this.label, required this.icon, this.isAlert = false});
+  const _StatCard({required this.value, required this.label, required this.icon, this.isAlert = false, required this.isDesktop});
   final String value;
   final String label;
   final IconData icon;
   final bool isAlert;
+  final bool isDesktop;
 
   @override
   Widget build(BuildContext context) {
+    final iconColor = isAlert ? SchoolColors.red : SchoolColors.primaryLight;
+
     return NestedBezelCard(
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        padding: EdgeInsets.all(isDesktop ? 24 : 16),
+        child: isDesktop 
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      value,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: isAlert ? SchoolColors.red : Colors.white,
+                      ),
+                    ),
+                    Icon(icon, color: iconColor, size: 24),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Text(
-                  value,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900,
-                    color: isAlert ? SchoolColors.red : Colors.white,
+                  label.toUpperCase(),
+                  style: AppTextStyle.labelSm.copyWith(
+                    color: SchoolColors.darkMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                Icon(icon, color: isAlert ? SchoolColors.red : SchoolColors.primaryLight, size: 24),
+              ],
+            )
+          : Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: SchoolColors.darkMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        value,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: isAlert ? SchoolColors.red : Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              label.toUpperCase(),
-              style: AppTextStyle.labelSm.copyWith(
-                color: SchoolColors.darkMuted,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
