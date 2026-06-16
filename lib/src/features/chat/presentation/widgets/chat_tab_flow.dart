@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/src/app_state.dart';
 import 'package:school_world/src/features/chat/presentation/screens/class_chat_screen.dart';
