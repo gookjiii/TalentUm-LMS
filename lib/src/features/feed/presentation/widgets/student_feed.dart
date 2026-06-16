@@ -1,6 +1,7 @@
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
@@ -191,76 +192,111 @@ class _StudentFeedState extends State<StudentFeed> {
   }
 
   Widget _buildDeadlinesSidebar(bool isDark) {
-    final mockDeadlines = [
-      ('Physics Lab Report', 'Due Apr 28', SchoolColors.primary),
-      ('Coding Project', 'Due Apr 27', SchoolColors.green),
-      ('Coding Project', 'Due Feb 27', SchoolColors.green),
-      ('Physics Lab Report', 'Due Feb 23', SchoolColors.primary),
-      ('Physics Lab Report', 'Due Apr 28', SchoolColors.orange),
-    ];
+    final repo = AppScope.of(context).repository;
+    final classIds = widget.classes.map((c) => c['id'].toString()).toList();
+    
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: repo.assignmentsForClasses(classIds, limit: 10),
+      builder: (context, snapshot) {
+        final assignments = snapshot.data?.docs ?? [];
+        final now = DateTime.now().millisecondsSinceEpoch;
+        
+        final upcoming = assignments.where((doc) {
+          final dueMs = doc.data()['dueDateMs'] as int?;
+          return dueMs != null && dueMs >= now;
+        }).toList();
+        
+        upcoming.sort((a, b) {
+          final dueA = a.data()['dueDateMs'] as int? ?? 0;
+          final dueB = b.data()['dueDateMs'] as int? ?? 0;
+          return dueA.compareTo(dueB);
+        });
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Upcoming Deadlines',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: isDark ? Colors.white : SchoolColors.text,
-            ),
+        final displayDeadlines = upcoming.take(5).toList();
+
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(24),
           ),
-          const SizedBox(height: 24),
-          ...mockDeadlines.map((d) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.05) : d.$3.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Upcoming Deadlines',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : SchoolColors.text,
+                ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(color: d.$3, shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(d.$1, style: TextStyle(fontWeight: FontWeight.w700, color: isDark ? Colors.white : SchoolColors.text)),
-                        const SizedBox(height: 4),
-                        Text(d.$2, style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : SchoolColors.muted)),
-                      ],
+              const SizedBox(height: 24),
+              if (displayDeadlines.isEmpty)
+                Text('No upcoming deadlines', style: TextStyle(color: isDark ? Colors.white54 : SchoolColors.muted))
+              else
+                ...displayDeadlines.map((doc) {
+                  final data = doc.data();
+                  final title = data['title']?.toString() ?? 'Assignment';
+                  final dueMs = data['dueDateMs'] as int?;
+                  final dateStr = dueMs != null 
+                      ? 'Due ' + DateFormat('MMM dd').format(DateTime.fromMillisecondsSinceEpoch(dueMs))
+                      : 'No due date';
+                  final cId = data['classId']?.toString();
+                  final classData = widget.classes.firstWhere(
+                    (c) => c['id'] == cId,
+                    orElse: () => {},
+                  );
+                  final coverColorHex = classData['coverColor']?.toString() ?? '#4F46E5';
+                  final color = parseHexColor(coverColorHex);
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: isDark ? Colors.white : SchoolColors.text)),
+                                const SizedBox(height: 4),
+                                Text(dateStr, style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : SchoolColors.muted)),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.access_time_rounded, size: 16, color: isDark ? Colors.white54 : SchoolColors.muted),
+                        ],
+                      ),
                     ),
-                  ),
-                  Icon(Icons.access_time_rounded, size: 16, color: isDark ? Colors.white54 : SchoolColors.muted),
-                ],
+                  );
+                }),
+              const SizedBox(height: 16),
+              OutlinedButton(
+                onPressed: () {},
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 48),
+                  side: BorderSide(color: isDark ? Colors.white24 : SchoolColors.border),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text('View Full Calendar', style: TextStyle(color: isDark ? Colors.white : SchoolColors.text)),
               ),
-            ),
-          )),
-          const SizedBox(height: 16),
-          OutlinedButton(
-            onPressed: () {},
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 48),
-              side: BorderSide(color: isDark ? Colors.white24 : SchoolColors.border),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text('View Full Calendar', style: TextStyle(color: isDark ? Colors.white : SchoolColors.text)),
+            ],
           ),
-        ],
-      ),
+        );
+      }
     );
   }
 }

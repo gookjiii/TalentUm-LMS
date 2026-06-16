@@ -235,12 +235,6 @@ class _ChatClassListState extends State<_ChatClassList> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final mockDirectMessages = [
-      ('David Kim', true),
-      ('Aisha Khan', false),
-      ('Michael Chen', false),
-      ('Sarah Johnson', true),
-    ];
 
     Widget content = SafeArea(
       child: widget.isSplitView
@@ -306,16 +300,36 @@ class _ChatClassListState extends State<_ChatClassList> {
                               isDark: isDark,
                             )),
                       const SizedBox(height: 24),
-                      _buildSectionTitle('DIRECT MESSAGES', isDark),
-                      ...mockDirectMessages.map((m) => _SidebarItem(
-                            icon: Icons.person_rounded,
-                            label: m.$1,
-                            color: m.$2 ? SchoolColors.green : (isDark ? Colors.white54 : Colors.black54),
-                            isSelected: false,
-                            onTap: () {},
-                            isDark: isDark,
-                            isOnline: m.$2,
-                          )),
+                      StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        stream: widget.repository.firestore.collection('rooms')
+                            .where('type', isEqualTo: 'direct')
+                            .where('participants', arrayContains: widget.repository.uid)
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionTitle('DIRECT MESSAGES', isDark),
+                              ...snapshot.data!.docs.map((doc) {
+                                final data = doc.data();
+                                final name = data['name']?.toString() ?? 'Direct Message';
+                                return _SidebarItem(
+                                  icon: Icons.person_rounded,
+                                  label: name,
+                                  color: isDark ? Colors.white54 : Colors.black54,
+                                  isSelected: widget.selectedClassId == doc.id,
+                                  onTap: () => widget.onSelect(doc.id),
+                                  isDark: isDark,
+                                  isOnline: false,
+                                );
+                              }),
+                            ],
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -383,16 +397,36 @@ class _ChatClassListState extends State<_ChatClassList> {
                             isDark: isDark,
                           )),
                     const SizedBox(height: 24),
-                    _buildSectionTitle('DIRECT MESSAGES', isDark),
-                    ...mockDirectMessages.map((m) => _SidebarItem(
-                          icon: Icons.person_rounded,
-                          label: m.$1,
-                          color: m.$2 ? SchoolColors.green : (isDark ? Colors.white54 : Colors.black54),
-                          isSelected: false,
-                          onTap: () {},
-                          isDark: isDark,
-                          isOnline: m.$2,
-                        )),
+                    StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      stream: widget.repository.firestore.collection('rooms')
+                          .where('type', isEqualTo: 'direct')
+                          .where('participants', arrayContains: widget.repository.uid)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionTitle('DIRECT MESSAGES', isDark),
+                            ...snapshot.data!.docs.map((doc) {
+                              final data = doc.data();
+                              final name = data['name']?.toString() ?? 'Direct Message';
+                              return _SidebarItem(
+                                icon: Icons.person_rounded,
+                                label: name,
+                                color: isDark ? Colors.white54 : Colors.black54,
+                                isSelected: widget.selectedClassId == doc.id,
+                                onTap: () => widget.onSelect(doc.id),
+                                isDark: isDark,
+                                isOnline: false,
+                              );
+                            }),
+                          ],
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),

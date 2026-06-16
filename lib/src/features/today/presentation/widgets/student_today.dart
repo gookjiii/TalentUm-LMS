@@ -231,16 +231,8 @@ class _StudentTodayState extends ConsumerState<StudentToday> {
   }
 
   Widget _buildRecentGrades(bool isDark) {
-    final mockGrades = [
-      ('Assignment Analysis', 95, true),
-      ('Assignment Title 1', 75, true),
-      ('Assignment Test 1', 86, true),
-      ('Assignment Title 2', 75, true),
-      ('Assignment Title 3', 80, true),
-      ('Assignment Title 4', 86, true),
-      ('Assignment Title 5', 85, true),
-      ('Assignment Title 6', 75, true),
-    ];
+    final user = FirebaseAuth.instance.currentUser;
+    final repo = AppScope.of(context).repository;
 
     return GlassCard(
       borderRadius: 24,
@@ -260,36 +252,90 @@ class _StudentTodayState extends ConsumerState<StudentToday> {
             ],
           ),
           const SizedBox(height: 24),
-          ...mockGrades.map((g) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Course Name', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : SchoolColors.muted)),
-                      Text(g.$1, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : SchoolColors.text), overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
-                ),
-                Row(
-                  children: [
-                    Text('${g.$2}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: SchoolColors.green)), // Emerald Growth
-                    const SizedBox(width: 4),
-                    const Icon(Icons.arrow_drop_up_rounded, color: SchoolColors.green),
-                  ],
-                ),
-              ],
+          if (user == null)
+            const Text('Not logged in')
+          else
+            StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: repo.firestore
+                  .collection('submissions')
+                  .where('studentId', isEqualTo: user.uid)
+                  .where('status', isEqualTo: 'graded')
+                  .limit(5)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final docs = snapshot.data!.docs;
+                if (docs.isEmpty) {
+                  return Text('No recent grades', style: TextStyle(color: isDark ? Colors.white54 : SchoolColors.muted));
+                }
+                
+                // Sort by gradedAt client-side to avoid requiring a composite index immediately
+                final sortedDocs = docs.toList()..sort((a, b) {
+                  final tA = a.data()['gradedAt'] as Timestamp?;
+                  final tB = b.data()['gradedAt'] as Timestamp?;
+                  if (tA == null || tB == null) return 0;
+                  return tB.compareTo(tA);
+                });
+
+                return Column(
+                  children: sortedDocs.map((doc) {
+                    final data = doc.data();
+                    final grade = data['grade'] is num ? (data['grade'] as num).toInt() : 0;
+                    final assignmentId = data['assignmentId']?.toString() ?? '';
+
+                    return FutureBuilder<DocumentSnapshot>(
+                      future: repo.firestore.collection('assignments').doc(assignmentId).get(),
+                      builder: (context, assignSnap) {
+                        final assignData = assignSnap.data?.data() as Map<String, dynamic>?;
+                        final title = assignData?['title']?.toString() ?? 'Assignment';
+                        final classId = assignData?['classId']?.toString();
+                        
+                        final classData = widget.classes.firstWhere(
+                          (c) => c['id'] == classId,
+                          orElse: () => {},
+                        );
+                        final courseName = classData['name']?.toString() ?? 'Course';
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(courseName, style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : SchoolColors.muted)),
+                                    Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.white : SchoolColors.text), overflow: TextOverflow.ellipsis),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  Text('$grade', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: SchoolColors.green)),
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.arrow_drop_up_rounded, color: SchoolColors.green),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  }).toList(),
+                );
+              },
             ),
-          )),
         ],
       ),
     );
   }
 
   Widget _buildAnnouncements(bool isDark) {
+    final repo = AppScope.of(context).repository;
+
     return NestedBezelCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,17 +345,36 @@ class _StudentTodayState extends ConsumerState<StudentToday> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : SchoolColors.text),
           ),
           const SizedBox(height: 24),
-          _AnnouncementItem(
-            title: 'Annual Science Fair',
-            body: 'Registrations are now open for the 2026 Science Fair.',
-            time: '2 hours ago',
-            isDark: isDark,
-          ),
-          const SizedBox(height: 16),
-          GradientButton(
-            text: 'Read Details',
-            icon: Icons.arrow_forward_rounded,
-            onTap: () {},
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: repo.firestore.collection('posts').orderBy('createdAt', descending: true).limit(1).snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Text('No recent events', style: TextStyle(color: isDark ? Colors.white54 : SchoolColors.muted));
+              }
+              final doc = snapshot.data!.docs.first;
+              final data = doc.data();
+              final content = data['content']?.toString() ?? '';
+              final time = data['createdAt'] as Timestamp?;
+              final timeStr = time != null ? DateFormat('MMM dd, HH:mm').format(time.toDate()) : '';
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _AnnouncementItem(
+                    title: 'Announcement',
+                    body: content.length > 50 ? '${content.substring(0, 50)}...' : content,
+                    time: timeStr,
+                    isDark: isDark,
+                  ),
+                  const SizedBox(height: 16),
+                  GradientButton(
+                    text: 'Read Details',
+                    icon: Icons.arrow_forward_rounded,
+                    onTap: () => widget.onTabSelect(1), // Go to feed
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

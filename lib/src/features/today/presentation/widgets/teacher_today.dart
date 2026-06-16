@@ -161,12 +161,7 @@ class _EliteTeacherHeader extends StatelessWidget {
                 ),
               ),
             ),
-            if (isDesktop) const SizedBox(width: 16),
-            GradientButton(
-              text: 'Deep Analytics',
-              icon: Icons.analytics_outlined,
-              onTap: () {},
-            ),
+
           ],
         ),
       ],
