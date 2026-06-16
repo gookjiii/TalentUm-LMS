@@ -12,7 +12,8 @@ extension ImageUrlExtension on String {
         if (fileId != null && fileId.isNotEmpty) {
           const proxyUrl = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
           if (proxyUrl.isNotEmpty) {
-            return '$proxyUrl/api/library/image?id=$fileId';
+            // Temporarily bypass proxy due to 500 error
+            // return '$proxyUrl/api/library/image?id=$fileId';
           }
           return 'https://drive.google.com/thumbnail?id=$fileId&sz=w1000';
         }
