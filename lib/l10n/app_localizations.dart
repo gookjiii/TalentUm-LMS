@@ -4343,6 +4343,12 @@ abstract class AppLocalizations {
   /// **'Create an account'**
   String get createAnAccount;
 
+  /// No description provided for @welcomeToTalentum.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to TalentUm'**
+  String get welcomeToTalentum;
+
   /// No description provided for @welcomeBack.
   ///
   /// In en, this message translates to:

@@ -73,12 +73,12 @@ class _TeacherTodayState extends State<TeacherToday> {
         final firstName = name.split(RegExp(r'\s+')).first;
 
         final now = DateTime.now();
-        final hour = now.hour;
-        final greeting = hour < 12
-            ? l10n.goodMorning
-            : hour < 18
-            ? l10n.goodAfternoon
-            : l10n.goodEvening;
+        final greeting = l10n.welcomeToTalentum;
+
+        final date = DateFormat(
+          'EEEE, MMMM d',
+          l10n.localeName,
+        ).format(now);
 
         return CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),

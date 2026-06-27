@@ -2177,6 +2177,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get createAnAccount => 'Создать аккаунт';
 
   @override
+  String get welcomeToTalentum => 'Добро пожаловать в ТалантУм';
+
+  @override
   String get welcomeBack => 'С возвращением 👋';
 
   @override
@@ -2363,7 +2366,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get resetSystem => 'Сброс системы';
 
   @override
-  String get resetSystemDesc => 'Это навсегда удалит tất cả các lớp học, bài tập, tin nhắn và đặt lại liên kết người dùng. Các tài khoản quản trị sẽ được giữ lại.';
+  String get resetSystemDesc => 'Это навсегда удалит все классы, задания, сообщения и сбросит связи пользователей. Учетные записи администраторов будут сохранены.';
 
   @override
   String get confirmReset => 'Подтвердить сброс';

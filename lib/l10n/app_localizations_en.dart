@@ -2177,6 +2177,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createAnAccount => 'Create an account';
 
   @override
+  String get welcomeToTalentum => 'Welcome to TalentUm';
+
+  @override
   String get welcomeBack => 'Welcome back 👋';
 
   @override
