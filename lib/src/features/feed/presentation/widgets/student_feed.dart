@@ -88,7 +88,8 @@ class _StudentFeedState extends State<StudentFeed> {
         child: SizedBox.expand(
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
-              if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+              if (scrollInfo.metrics.pixels >=
+                  scrollInfo.metrics.maxScrollExtent - 200) {
                 _loadMore();
               }
               return false;
@@ -215,21 +216,24 @@ class _StudentFeedState extends State<StudentFeed> {
                   stream: _postsStream,
                   builder: (context, snapshot) {
                     var posts = snapshot.data?.docs ?? [];
-  
+
                     if (_searchQuery.isNotEmpty) {
                       posts = posts.where((doc) {
                         final content =
-                            doc.data()['content']?.toString().toLowerCase() ?? '';
+                            doc.data()['content']?.toString().toLowerCase() ??
+                            '';
                         return content.contains(_searchQuery);
                       }).toList();
                     }
-  
+
                     if (posts.isEmpty &&
                         snapshot.connectionState != ConnectionState.waiting) {
                       return SliverToBoxAdapter(
                         child: EmptyStateWidget(
                           icon: Icons.notifications_none_rounded,
-                          title: AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
+                          title: AppLocalizations.of(
+                            context,
+                          )!.thereAreNoAnnouncementsYet,
                           subtitle: AppLocalizations.of(
                             context,
                           )!.announcementsFromYourTeachers,
@@ -254,7 +258,7 @@ class _StudentFeedState extends State<StudentFeed> {
                                 ? widget.classes.first
                                 : {},
                           );
-  
+
                           if (classData.isEmpty) return const SizedBox.shrink();
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 16),

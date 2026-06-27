@@ -49,8 +49,6 @@ class ChatBubbleBuilders {
     required bool isSentByMe,
     dynamic groupStatus,
   }) {
-
-
     final query = chatController?.searchQuery ?? '';
     final isCurrentMatch =
         chatController?.searchResults.isNotEmpty == true &&
@@ -1757,8 +1755,6 @@ String _formatBytes(int bytes, {int decimals = 1}) {
   var i = (math.log(bytes) / math.log(1024)).floor();
   return '${(bytes / math.pow(1024, i)).toStringAsFixed(decimals)} ${suffixes[i]}';
 }
-
-
 
 class _SwipeToReplyWrapper extends StatefulWidget {
   const _SwipeToReplyWrapper({

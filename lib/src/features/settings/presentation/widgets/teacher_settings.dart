@@ -18,19 +18,22 @@ class TeacherSettingsTab extends StatefulWidget {
   State<TeacherSettingsTab> createState() => _TeacherSettingsTabState();
 }
 
-
 class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
   String _getAccentColorName(Color color, bool isRu) {
     final val = color.value;
     if (val == const Color(0xFF2563EB).value) {
       return isRu ? AppLocalizations.of(context)!.schoolBlue : 'School blue';
-    } else if (val == const Color(0xFF059669).value || val == SchoolColors.green.value) {
+    } else if (val == const Color(0xFF059669).value ||
+        val == SchoolColors.green.value) {
       return isRu ? AppLocalizations.of(context)!.emerald : 'Emerald';
-    } else if (val == const Color(0xFFF59E0B).value || val == SchoolColors.yellow.value) {
+    } else if (val == const Color(0xFFF59E0B).value ||
+        val == SchoolColors.yellow.value) {
       return isRu ? AppLocalizations.of(context)!.amber : 'Amber';
-    } else if (val == const Color(0xFFDC2626).value || val == SchoolColors.red.value) {
+    } else if (val == const Color(0xFFDC2626).value ||
+        val == SchoolColors.red.value) {
       return isRu ? AppLocalizations.of(context)!.scarlet : 'Crimson';
-    } else if (val == const Color(0xFF7C3AED).value || val == SchoolColors.primary.value) {
+    } else if (val == const Color(0xFF7C3AED).value ||
+        val == SchoolColors.primary.value) {
       return isRu ? AppLocalizations.of(context)!.violet : 'Purple';
     }
     return isRu ? AppLocalizations.of(context)!.schoolBlue : 'School blue';
@@ -54,7 +57,8 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
       final uid = repo.uid;
       if (uid == null) throw Exception('Not logged in');
 
-      final path = 'avatars/$uid/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+      final path =
+          'avatars/$uid/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
 
       Map<String, dynamic>? uploadResult;
       if (file.bytes != null) {
@@ -69,10 +73,12 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
           'avatarUrl': url,
         });
         await repo.auth.currentUser?.updatePhotoURL(url);
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.avatarUpdated)),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.avatarUpdated),
+            ),
           );
         }
       }
@@ -92,6 +98,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
       }
     }
   }
+
   Map<String, dynamic> _userData = {};
   int _classesCount = 0;
   int _studentsCount = 0;
@@ -130,9 +137,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
         .get();
     final uniqueStudents = <String>{};
     for (final doc in classesSnap.docs) {
-      uniqueStudents.addAll(
-        List<String>.from(doc.data()['studentIds'] ?? []),
-      );
+      uniqueStudents.addAll(List<String>.from(doc.data()['studentIds'] ?? []));
     }
     if (mounted) {
       setState(() {
@@ -189,317 +194,329 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                   onEditAvatar: _uploadingAvatar ? null : _pickAndUploadAvatar,
                 ),
 
-            const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-            // Stats Row
-            Row(
-              children: [
-                Expanded(
-                  child: _StatMiniCard(
-                    label: l10n
-                        .studentsCount(_studentsCount)
-                        .split(':')[0]
-                        .toUpperCase(),
-                    value: _studentsCount.toString(),
-                    color: SchoolColors.primary,
-                  ),
+                // Stats Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatMiniCard(
+                        label: l10n
+                            .studentsCount(_studentsCount)
+                            .split(':')[0]
+                            .toUpperCase(),
+                        value: _studentsCount.toString(),
+                        color: SchoolColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _StatMiniCard(
+                        label: l10n.createClass.split(' ')[1].toUpperCase(),
+                        value: _classesCount.toString(),
+                        color: SchoolColors.green,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _StatMiniCard(
+                        label: AppLocalizations.of(context)!.experience,
+                        value: _userData['experience']?.toString() ?? '—',
+                        color: SchoolColors.yellow,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _StatMiniCard(
-                    label: l10n.createClass.split(' ')[1].toUpperCase(),
-                    value: _classesCount.toString(),
-                    color: SchoolColors.green,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _StatMiniCard(
-                    label: AppLocalizations.of(context)!.experience,
-                    value: _userData['experience']?.toString() ?? '—',
-                    color: SchoolColors.yellow,
-                  ),
-                ),
-              ],
-            ),
 
-            const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-            _SettingsGroup(
-              label: l10n.studentAccount.split(' ')[1],
-              children: [
-                _SettingsRow(
-                  icon: Icons.person_outline_rounded,
-                  color: SchoolColors.primary,
-                  label: AppLocalizations.of(context)!.personalInformation,
-                  sub: name,
-                  onTap: () => _editName(context, name),
+                _SettingsGroup(
+                  label: l10n.studentAccount.split(' ')[1],
+                  children: [
+                    _SettingsRow(
+                      icon: Icons.person_outline_rounded,
+                      color: SchoolColors.primary,
+                      label: AppLocalizations.of(context)!.personalInformation,
+                      sub: name,
+                      onTap: () => _editName(context, name),
+                    ),
+                    _SettingsRow(
+                      icon: Icons.email_outlined,
+                      color: SchoolColors.yellow,
+                      label: l10n.email,
+                      sub: email,
+                      onTap: () => _editEmail(context, email),
+                    ),
+                    _SettingsRow(
+                      icon: Icons.link_rounded,
+                      color: SchoolColors.accent,
+                      label: AppLocalizations.of(context)!.linkedAccounts,
+                      sub: 'Google · Apple',
+                      onTap: () => _showLinkedAccounts(context),
+                      last: true,
+                    ),
+                  ],
                 ),
-                _SettingsRow(
-                  icon: Icons.email_outlined,
-                  color: SchoolColors.yellow,
-                  label: l10n.email,
-                  sub: email,
-                  onTap: () => _editEmail(context, email),
-                ),
-                _SettingsRow(
-                  icon: Icons.link_rounded,
-                  color: SchoolColors.accent,
-                  label: AppLocalizations.of(context)!.linkedAccounts,
-                  sub: 'Google · Apple',
-                  onTap: () => _showLinkedAccounts(context),
-                  last: true,
-                ),
-              ],
-            ),
 
-            _SettingsGroup(
-              label: l10n.notifications,
-              children: [
-                _SettingsRow(
-                  icon: Icons.notifications_none_rounded,
-                  color: SchoolColors.red,
-                  label: AppLocalizations.of(context)!.pushNotifications,
-                  sub: AppLocalizations.of(context)!.allowedForChatAndTasks,
-                  right: _CustomToggle(
-                    on: settings['pushEnabled'] ?? true,
-                    onChanged: (v) => _updateSetting('pushEnabled', v),
-                  ),
+                _SettingsGroup(
+                  label: l10n.notifications,
+                  children: [
+                    _SettingsRow(
+                      icon: Icons.notifications_none_rounded,
+                      color: SchoolColors.red,
+                      label: AppLocalizations.of(context)!.pushNotifications,
+                      sub: AppLocalizations.of(context)!.allowedForChatAndTasks,
+                      right: _CustomToggle(
+                        on: settings['pushEnabled'] ?? true,
+                        onChanged: (v) => _updateSetting('pushEnabled', v),
+                      ),
+                    ),
+                    _SettingsRow(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      color: SchoolColors.primary,
+                      label: AppLocalizations.of(context)!.newMessages,
+                      sub: AppLocalizations.of(context)!.soundVibration,
+                      right: _CustomToggle(
+                        on: settings['msgNotifs'] ?? true,
+                        onChanged: (v) => _updateSetting('msgNotifs', v),
+                      ),
+                    ),
+                    _SettingsRow(
+                      icon: Icons.push_pin_outlined,
+                      color: SchoolColors.yellow,
+                      label: AppLocalizations.of(context)!.updates,
+                      sub: AppLocalizations.of(context)!.quietMode22000700,
+                      right: _CustomToggle(
+                        on: settings['pinNotifs'] ?? false,
+                        onChanged: (v) => _updateSetting('pinNotifs', v),
+                      ),
+                      last: true,
+                    ),
+                  ],
                 ),
-                _SettingsRow(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  color: SchoolColors.primary,
-                  label: AppLocalizations.of(context)!.newMessages,
-                  sub: AppLocalizations.of(context)!.soundVibration,
-                  right: _CustomToggle(
-                    on: settings['msgNotifs'] ?? true,
-                    onChanged: (v) => _updateSetting('msgNotifs', v),
-                  ),
-                ),
-                _SettingsRow(
-                  icon: Icons.push_pin_outlined,
-                  color: SchoolColors.yellow,
-                  label: AppLocalizations.of(context)!.updates,
-                  sub: AppLocalizations.of(context)!.quietMode22000700,
-                  right: _CustomToggle(
-                    on: settings['pinNotifs'] ?? false,
-                    onChanged: (v) => _updateSetting('pinNotifs', v),
-                  ),
-                  last: true,
-                ),
-              ],
-            ),
 
-            _SettingsGroup(
-              label: AppLocalizations.of(context)!.registration,
-              children: [
-                _SettingsRow(
-                  icon: Icons.dark_mode_outlined,
-                  color: SchoolColors.accent,
-                  label: l10n.darkMode,
-                  sub: appState.isDarkMode ? AppLocalizations.of(context)!.enabled : AppLocalizations.of(context)!.system,
-                  right: _CustomToggle(
-                    on: appState.isDarkMode,
-                    onChanged: (v) => appState.toggleDarkMode(),
-                  ),
-                ),
-                _SettingsRow(
-                  icon: Icons.speed_rounded,
-                  color: SchoolColors.yellow,
-                  label: Localizations.localeOf(context).languageCode == 'ru'
-                      ? 'Режим высокой производительности'
-                      : 'High Performance Mode',
-                  sub: Localizations.localeOf(context).languageCode == 'ru'
-                      ? 'Снижает графическую нагрузку для слабых устройств'
-                      : 'Reduces graphics load for low-end devices',
-                  right: _CustomToggle(
-                    on: appState.performanceMode,
-                    onChanged: (v) => appState.setPerformanceMode(v),
-                  ),
-                ),
-                _SettingsRow(
-                  icon: Icons.palette_outlined,
-                  color: SchoolColors.primary,
-                  label: AppLocalizations.of(context)!.accentColor,
-                  sub: _getAccentColorName(appState.accentColor, Localizations.localeOf(context).languageCode == 'ru'),
-                  right: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (final c in [
-                        const Color(0xFF2563EB),
-                        SchoolColors.green,
-                        SchoolColors.yellow,
-                        SchoolColors.red,
-                      ])
-                        GestureDetector(
-                          onTap: () {
-                            final isSelected = c.value == appState.accentColor.value;
-                            if (!isSelected) {
-                              appState.setAccentColor(c);
-                              Future.delayed(const Duration(milliseconds: 250), () {
-                                reloadApp();
-                              });
-                            }
-                          },
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            margin: const EdgeInsets.only(left: 8),
-                            decoration: BoxDecoration(
-                              color: c,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: c.value == appState.accentColor.value
-                                    ? Colors.white
-                                    : Colors.transparent,
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                if (c.value == appState.accentColor.value)
-                                  BoxShadow(
-                                    color: c.withOpacity(0.4),
-                                    blurRadius: 4,
-                                    spreadRadius: 1,
-                                  ),
-                              ],
-                            ),
-                            child: c.value == appState.accentColor.value
-                                ? const Icon(
-                                    Icons.check,
-                                    size: 14,
-                                    color: Colors.white,
-                                  )
-                                : null,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                _SettingsRow(
-                  icon: Icons.language_rounded,
-                  color: SchoolColors.green,
-                  label: l10n.language,
-                  sub: appState.locale?.languageCode == 'ru'
-                      ? AppLocalizations.of(context)!.russianRu
-                      : 'English (en)',
-                  onTap: () => _editLanguage(context),
-                  last: true,
-                ),
-              ],
-            ),
-
-            _SettingsGroup(
-              label: AppLocalizations.of(context)!.tariffPlan,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      Row(
+                _SettingsGroup(
+                  label: AppLocalizations.of(context)!.registration,
+                  children: [
+                    _SettingsRow(
+                      icon: Icons.dark_mode_outlined,
+                      color: SchoolColors.accent,
+                      label: l10n.darkMode,
+                      sub: appState.isDarkMode
+                          ? AppLocalizations.of(context)!.enabled
+                          : AppLocalizations.of(context)!.system,
+                      right: _CustomToggle(
+                        on: appState.isDarkMode,
+                        onChanged: (v) => appState.toggleDarkMode(),
+                      ),
+                    ),
+                    _SettingsRow(
+                      icon: Icons.speed_rounded,
+                      color: SchoolColors.yellow,
+                      label:
+                          Localizations.localeOf(context).languageCode == 'ru'
+                          ? 'Режим высокой производительности'
+                          : 'High Performance Mode',
+                      sub: Localizations.localeOf(context).languageCode == 'ru'
+                          ? 'Снижает графическую нагрузку для слабых устройств'
+                          : 'Reduces graphics load for low-end devices',
+                      right: _CustomToggle(
+                        on: appState.performanceMode,
+                        onChanged: (v) => appState.setPerformanceMode(v),
+                      ),
+                    ),
+                    _SettingsRow(
+                      icon: Icons.palette_outlined,
+                      color: SchoolColors.primary,
+                      label: AppLocalizations.of(context)!.accentColor,
+                      sub: _getAccentColorName(
+                        appState.accentColor,
+                        Localizations.localeOf(context).languageCode == 'ru',
+                      ),
+                      right: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: SchoolColors.primary.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.star_rounded,
-                              color: SchoolColors.primary,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  l10n.freePlan,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                          for (final c in [
+                            const Color(0xFF2563EB),
+                            SchoolColors.green,
+                            SchoolColors.yellow,
+                            SchoolColors.red,
+                          ])
+                            GestureDetector(
+                              onTap: () {
+                                final isSelected =
+                                    c.value == appState.accentColor.value;
+                                if (!isSelected) {
+                                  appState.setAccentColor(c);
+                                  Future.delayed(
+                                    const Duration(milliseconds: 250),
+                                    () {
+                                      reloadApp();
+                                    },
+                                  );
+                                }
+                              },
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                margin: const EdgeInsets.only(left: 8),
+                                decoration: BoxDecoration(
+                                  color: c,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: c.value == appState.accentColor.value
+                                        ? Colors.white
+                                        : Colors.transparent,
+                                    width: 2,
                                   ),
+                                  boxShadow: [
+                                    if (c.value == appState.accentColor.value)
+                                      BoxShadow(
+                                        color: c.withOpacity(0.4),
+                                        blurRadius: 4,
+                                        spreadRadius: 1,
+                                      ),
+                                  ],
                                 ),
-                                Text(
-                                  l10n.currentPlan,
-                                  style: const TextStyle(
-                                    color: SchoolColors.muted,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          FilledButton(
-                            onPressed: () =>
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(l10n.soonAvailable)),
-                                ),
-                            style: FilledButton.styleFrom(
-                              minimumSize: Size.zero,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
+                                child: c.value == appState.accentColor.value
+                                    ? const Icon(
+                                        Icons.check,
+                                        size: 14,
+                                        color: Colors.white,
+                                      )
+                                    : null,
                               ),
                             ),
-                            child: Text(
-                              l10n.upgrade,
-                              style: const TextStyle(fontSize: 12),
-                            ),
+                        ],
+                      ),
+                    ),
+                    _SettingsRow(
+                      icon: Icons.language_rounded,
+                      color: SchoolColors.green,
+                      label: l10n.language,
+                      sub: appState.locale?.languageCode == 'ru'
+                          ? AppLocalizations.of(context)!.russianRu
+                          : 'English (en)',
+                      onTap: () => _editLanguage(context),
+                      last: true,
+                    ),
+                  ],
+                ),
+
+                _SettingsGroup(
+                  label: AppLocalizations.of(context)!.tariffPlan,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: SchoolColors.primary.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.star_rounded,
+                                  color: SchoolColors.primary,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      l10n.freePlan,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      l10n.currentPlan,
+                                      style: const TextStyle(
+                                        color: SchoolColors.muted,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              FilledButton(
+                                onPressed: () =>
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(l10n.soonAvailable),
+                                      ),
+                                    ),
+                                style: FilledButton.styleFrom(
+                                  minimumSize: Size.zero,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                child: Text(
+                                  l10n.upgrade,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+
+                _SettingsGroup(
+                  label: AppLocalizations.of(context)!.safety,
+                  children: [
+                    _SettingsRow(
+                      icon: Icons.security_outlined,
+                      color: SchoolColors.red,
+                      label: AppLocalizations.of(context)!.twofactorProtection,
+                      sub: AppLocalizations.of(context)!.enabledAuthenticator,
+                      right: StatusChip(
+                        label: AppLocalizations.of(context)!.actively,
+                        color: SchoolColors.green,
+                      ),
+                    ),
+                    _SettingsRow(
+                      icon: Icons.download_outlined,
+                      color: SchoolColors.accent,
+                      label: AppLocalizations.of(context)!.downloadMyData,
+                      sub: AppLocalizations.of(context)!.exportToZip,
+                      onTap: () => _downloadMyData(context),
+                      last: true,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+                OutlinedButton(
+                  onPressed: () => _confirmSignOut(context),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: SchoolColors.red,
+                    side: BorderSide(color: SchoolColors.red.withOpacity(0.3)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
+                  child: Text(l10n.signOut),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'School World v 2.4.0',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: SchoolColors.muted, fontSize: 11),
                 ),
               ],
             ),
-
-            _SettingsGroup(
-              label: AppLocalizations.of(context)!.safety,
-              children: [
-                _SettingsRow(
-                  icon: Icons.security_outlined,
-                  color: SchoolColors.red,
-                  label: AppLocalizations.of(context)!.twofactorProtection,
-                  sub: AppLocalizations.of(context)!.enabledAuthenticator,
-                  right: StatusChip(
-                    label: AppLocalizations.of(context)!.actively,
-                    color: SchoolColors.green,
-                  ),
-                ),
-                _SettingsRow(
-                  icon: Icons.download_outlined,
-                  color: SchoolColors.accent,
-                  label: AppLocalizations.of(context)!.downloadMyData,
-                  sub: AppLocalizations.of(context)!.exportToZip,
-                  onTap: () => _downloadMyData(context),
-                  last: true,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-            OutlinedButton(
-              onPressed: () => _confirmSignOut(context),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: SchoolColors.red,
-                side: BorderSide(color: SchoolColors.red.withOpacity(0.3)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: Text(l10n.signOut),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'School World v 2.4.0',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: SchoolColors.muted, fontSize: 11),
-            ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
       },
     );
   }
@@ -659,7 +676,9 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
         ),
         const Spacer(),
         StatusChip(
-          label: linked ? AppLocalizations.of(context)!.related : AppLocalizations.of(context)!.notRelated,
+          label: linked
+              ? AppLocalizations.of(context)!.related
+              : AppLocalizations.of(context)!.notRelated,
           color: linked ? SchoolColors.green : SchoolColors.muted,
         ),
       ],
@@ -689,7 +708,12 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _buildLanguageTile(ctx, AppLocalizations.of(context)!.russianRu, 'ru', appState),
+                  _buildLanguageTile(
+                    ctx,
+                    AppLocalizations.of(context)!.russianRu,
+                    'ru',
+                    appState,
+                  ),
                   const SizedBox(height: 12),
                   _buildLanguageTile(ctx, 'English (en)', 'en', appState),
                   const SizedBox(height: 28),
@@ -774,7 +798,9 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                             ),
                             const SizedBox(height: 20),
                             Text(
-                              AppLocalizations.of(context)!.preparingAZipArchive,
+                              AppLocalizations.of(
+                                context,
+                              )!.preparingAZipArchive,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
@@ -846,7 +872,9 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                                       ).showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                            AppLocalizations.of(context)!.theArchiveWasSuccessfullySaved,
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.theArchiveWasSuccessfullySaved,
                                           ),
                                         ),
                                       );

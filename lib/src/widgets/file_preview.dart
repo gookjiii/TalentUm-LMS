@@ -11,7 +11,6 @@ import 'package:school_world/src/widgets/image_viewer.dart';
 import 'package:school_world/src/widgets/document_preview_dialog.dart';
 import '../utils/string_extensions.dart';
 
-
 /// Formatting helper for file sizes.
 String _formatBytes(int bytes) {
   if (bytes <= 0) return '0 B';
@@ -126,15 +125,28 @@ class FilePreviewWidget extends StatelessWidget {
         );
       }
     } else if (isRemote && url.isNotEmpty) {
-      final isDoc = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv'].contains(_extension.toLowerCase());
-      final isVideo = ['mp4', 'mov', 'webm', 'avi', 'mkv'].contains(_extension.toLowerCase());
+      final isDoc = [
+        'pdf',
+        'doc',
+        'docx',
+        'ppt',
+        'pptx',
+        'xls',
+        'xlsx',
+        'txt',
+        'csv',
+      ].contains(_extension.toLowerCase());
+      final isVideo = [
+        'mp4',
+        'mov',
+        'webm',
+        'avi',
+        'mkv',
+      ].contains(_extension.toLowerCase());
       if (isDoc || isVideo) {
         showDialog(
           context: context,
-          builder: (_) => DocumentPreviewDialog(
-            url: url,
-            fileName: name,
-          ),
+          builder: (_) => DocumentPreviewDialog(url: url, fileName: name),
         );
       } else {
         openExternalUrl(url);
@@ -170,6 +182,8 @@ class FilePreviewWidget extends StatelessWidget {
           fit: BoxFit.cover,
           width: 56,
           height: 56,
+          memCacheWidth: 140,
+          memCacheHeight: 140,
           placeholder: (_, __) => Container(
             color: theme.colorScheme.surfaceVariant,
             width: 56,
@@ -312,7 +326,9 @@ class FilePreviewWidget extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              isImage ? AppLocalizations.of(context)!.view : AppLocalizations.of(context)!.open,
+                              isImage
+                                  ? AppLocalizations.of(context)!.view
+                                  : AppLocalizations.of(context)!.open,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: docAccentColor,

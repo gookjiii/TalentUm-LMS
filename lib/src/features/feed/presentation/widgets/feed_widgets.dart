@@ -58,7 +58,8 @@ class _PostCardState extends State<PostCard> {
     final data = widget.doc.data();
     final repo = AppScope.of(context).repository;
     final uid = repo.uid;
-    final authorId = data['authorId']?.toString() ?? AppLocalizations.of(context)!.teacher;
+    final authorId =
+        data['authorId']?.toString() ?? AppLocalizations.of(context)!.teacher;
     final content = data['content']?.toString() ?? '';
     final pinned = data['pinned'] == true;
     final likes = List<String>.from(data['likes'] ?? []);
@@ -97,7 +98,9 @@ class _PostCardState extends State<PostCard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                authorId == uid ? AppLocalizations.of(context)!.you : authorName,
+                                authorId == uid
+                                    ? AppLocalizations.of(context)!.you
+                                    : authorName,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
@@ -154,17 +157,18 @@ class _PostCardState extends State<PostCard> {
                   imageUrl: (attachments.first['url'] as String)
                       .toDirectImageUrl
                       .toOptimizedCloudinary(
-                        performance:
-                            AppScope.of(context).appState.performanceMode,
+                        performance: AppScope.of(
+                          context,
+                        ).appState.performanceMode,
                       ),
                   height: 240,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  memCacheWidth:
-                      AppScope.of(context).appState.performanceMode ? 500 : 900,
-                  placeholder: (c, u) => Container(
-                    color: Colors.grey.withValues(alpha: 0.1),
-                  ),
+                  memCacheWidth: AppScope.of(context).appState.performanceMode
+                      ? 500
+                      : 900,
+                  placeholder: (c, u) =>
+                      Container(color: Colors.grey.withValues(alpha: 0.1)),
                 ),
               ),
             ),
@@ -287,7 +291,9 @@ class _PostReactionRow extends StatelessWidget {
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(AppLocalizations.of(context)!.bookmarksWillAppearInThe),
+                content: Text(
+                  AppLocalizations.of(context)!.bookmarksWillAppearInThe,
+                ),
               ),
             );
           },
@@ -432,8 +438,12 @@ class _CommentSheetState extends State<_CommentSheet> {
                                       children: [
                                         Text(
                                           c['authorId'] == repo.uid
-                                              ? AppLocalizations.of(context)!.you
-                                              : AppLocalizations.of(context)!.user,
+                                              ? AppLocalizations.of(
+                                                  context,
+                                                )!.you
+                                              : AppLocalizations.of(
+                                                  context,
+                                                )!.user,
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 13,
@@ -548,11 +558,18 @@ class _PostMenu extends StatelessWidget {
       itemBuilder: (_) => [
         PopupMenuItem(
           value: 'pin',
-          child: Text(pinned ? AppLocalizations.of(context)!.unpin : AppLocalizations.of(context)!.pin),
+          child: Text(
+            pinned
+                ? AppLocalizations.of(context)!.unpin
+                : AppLocalizations.of(context)!.pin,
+          ),
         ),
         PopupMenuItem(
           value: 'delete',
-          child: Text(AppLocalizations.of(context)!.delete, style: TextStyle(color: Colors.red)),
+          child: Text(
+            AppLocalizations.of(context)!.delete,
+            style: TextStyle(color: Colors.red),
+          ),
         ),
       ],
     );

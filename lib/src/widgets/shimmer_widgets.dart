@@ -3,7 +3,11 @@ import 'package:shimmer/shimmer.dart';
 import 'package:school_world/src/theme.dart';
 
 class _ShimmerBox extends StatelessWidget {
-  const _ShimmerBox({required this.width, required this.height, this.radius = 12});
+  const _ShimmerBox({
+    required this.width,
+    required this.height,
+    this.radius = 12,
+  });
   final double width;
   final double height;
   final double radius;
@@ -15,7 +19,9 @@ class _ShimmerBox extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: isDark ? SchoolColors.darkSurfaceElevated : SchoolColors.surfaceElevated,
+        color: isDark
+            ? SchoolColors.darkSurfaceElevated
+            : SchoolColors.surfaceElevated,
         borderRadius: BorderRadius.circular(radius),
       ),
     );
@@ -25,7 +31,9 @@ class _ShimmerBox extends StatelessWidget {
 Widget _shimmerWrap(BuildContext context, Widget child) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   return Shimmer.fromColors(
-    baseColor: isDark ? SchoolColors.darkSurfaceElevated : const Color(0xFFE8EAF0),
+    baseColor: isDark
+        ? SchoolColors.darkSurfaceElevated
+        : const Color(0xFFE8EAF0),
     highlightColor: isDark ? SchoolColors.darkBorder : Colors.white,
     child: child,
   );

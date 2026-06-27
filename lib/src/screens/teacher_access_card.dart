@@ -16,9 +16,13 @@ class TeacherAccessCard extends StatelessWidget {
     if (uid == null) return const SizedBox.shrink();
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: repo.firestore.collection('teacher_requests').doc(uid).snapshots(),
+      stream: repo.firestore
+          .collection('teacher_requests')
+          .doc(uid)
+          .snapshots(),
       builder: (context, snapshot) {
-        final hasRequested = snapshot.hasData && (snapshot.data?.exists ?? false);
+        final hasRequested =
+            snapshot.hasData && (snapshot.data?.exists ?? false);
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final l10n = AppLocalizations.of(context)!;
 
@@ -34,7 +38,11 @@ class TeacherAccessCard extends StatelessWidget {
                       color: SchoolColors.accent.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.school_outlined, color: SchoolColors.accent, size: 20),
+                    child: const Icon(
+                      Icons.school_outlined,
+                      color: SchoolColors.accent,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -44,13 +52,20 @@ class TeacherAccessCard extends StatelessWidget {
                       children: [
                         Text(
                           l10n.teacherAccess,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                         Text(
-                          hasRequested ? l10n.requestSent : l10n.requestTeacherPermissions,
+                          hasRequested
+                              ? l10n.requestSent
+                              : l10n.requestTeacherPermissions,
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                            color: isDark
+                                ? SchoolColors.darkMuted
+                                : SchoolColors.muted,
                           ),
                         ),
                       ],
@@ -59,7 +74,8 @@ class TeacherAccessCard extends StatelessWidget {
                   if (!hasRequested)
                     Flexible(
                       child: FilledButton(
-                        onPressed: () => _requestTeacherAccess(context, uid, repo),
+                        onPressed: () =>
+                            _requestTeacherAccess(context, uid, repo),
                         style: FilledButton.styleFrom(
                           backgroundColor: SchoolColors.accent,
                           visualDensity: VisualDensity.compact,
@@ -69,7 +85,10 @@ class TeacherAccessCard extends StatelessWidget {
                       ),
                     )
                   else
-                    const Icon(Icons.check_circle_rounded, color: SchoolColors.green),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: SchoolColors.green,
+                    ),
                 ],
               ),
             ],
@@ -79,9 +98,13 @@ class TeacherAccessCard extends StatelessWidget {
     );
   }
 
-  Future<void> _requestTeacherAccess(BuildContext context, String uid, dynamic repo) async {
+  Future<void> _requestTeacherAccess(
+    BuildContext context,
+    String uid,
+    dynamic repo,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -99,23 +122,23 @@ class TeacherAccessCard extends StatelessWidget {
         ],
       ),
     );
-    
+
     if (ok == true) {
       final user = FirebaseAuth.instance.currentUser;
       final doc = await repo.firestore.collection('users').doc(uid).get();
       final data = doc.data() as Map<String, dynamic>? ?? {};
-      
+
       await repo.firestore.collection('teacher_requests').doc(uid).set({
         'userId': uid,
         'name': data['name'] ?? l10n.student,
         'email': user?.email ?? '',
         'timestamp': FieldValue.serverTimestamp(),
       });
-      
+
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.requestSent)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.requestSent)));
       }
     }
   }

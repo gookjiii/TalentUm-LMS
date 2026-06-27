@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../../main.dart';
+
 class PushNotificationManager {
   static bool _listenersInitialized = false;
 
@@ -36,14 +37,18 @@ class PushNotificationManager {
               token = await FirebaseMessaging.instance.getToken();
             }
           } catch (e) {
-            debugPrint('FCM token generation warning (could be running in simulator): $e');
+            debugPrint(
+              'FCM token generation warning (could be running in simulator): $e',
+            );
           }
 
           // 3. Register token persistently in Firestore
           if (token != null && token.isNotEmpty) {
             final platform = kIsWeb
                 ? 'web'
-                : (defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android');
+                : (defaultTargetPlatform == TargetPlatform.iOS
+                      ? 'ios'
+                      : 'android');
 
             await FirebaseFirestore.instance
                 .collection('users')
@@ -51,20 +56,18 @@ class PushNotificationManager {
                 .collection('tokens')
                 .doc(token)
                 .set({
-              'token': token,
-              'platform': platform,
-              'createdAt': FieldValue.serverTimestamp(),
-              'updatedAt': FieldValue.serverTimestamp(),
-              'active': true,
-            });
+                  'token': token,
+                  'platform': platform,
+                  'createdAt': FieldValue.serverTimestamp(),
+                  'updatedAt': FieldValue.serverTimestamp(),
+                  'active': true,
+                });
 
             // Sync with single fcmToken field on the user doc for Cloud Functions compatibility
             await FirebaseFirestore.instance
                 .collection('users')
                 .doc(userId)
-                .update({
-              'fcmToken': token,
-            });
+                .update({'fcmToken': token});
 
             debugPrint('FCM device token registered in Firestore successfully');
           }
@@ -81,9 +84,7 @@ class PushNotificationManager {
   }
 
   /// Remove the active device FCM token from the Firestore profile collection.
-  static Future<void> unregisterToken({
-    required String userId,
-  }) async {
+  static Future<void> unregisterToken({required String userId}) async {
     try {
       String? token;
       try {
@@ -107,9 +108,7 @@ class PushNotificationManager {
           await FirebaseFirestore.instance
               .collection('users')
               .doc(userId)
-              .update({
-            'fcmToken': FieldValue.delete(),
-          });
+              .update({'fcmToken': FieldValue.delete()});
         }
 
         debugPrint('FCM token deleted from Firestore successfully');
@@ -139,18 +138,15 @@ class PushNotificationManager {
             .collection('tokens')
             .doc(newToken)
             .set({
-          'token': newToken,
-          'platform': platform,
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-          'active': true,
-        });
+              'token': newToken,
+              'platform': platform,
+              'createdAt': FieldValue.serverTimestamp(),
+              'updatedAt': FieldValue.serverTimestamp(),
+              'active': true,
+            });
 
         // Sync with single fcmToken field on the user doc for Cloud Functions compatibility
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .update({
+        await FirebaseFirestore.instance.collection('users').doc(uid).update({
           'fcmToken': newToken,
         });
 
@@ -183,7 +179,8 @@ class PushNotificationManager {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        notification.title ?? 'Новое уведомление / New notification',
+                        notification.title ??
+                            'Новое уведомление / New notification',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -252,7 +249,9 @@ class PushNotificationManager {
     required String body,
     Map<String, dynamic>? data,
   }) async {
-    if ((tokens == null || tokens.isEmpty) && (userIds == null || userIds.isEmpty)) return;
+    if ((tokens == null || tokens.isEmpty) &&
+        (userIds == null || userIds.isEmpty))
+      return;
     try {
       const proxyUrl = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
       if (proxyUrl.isEmpty) return;
@@ -269,9 +268,7 @@ class PushNotificationManager {
           'body': body,
           'data': data,
         },
-        options: Options(
-          headers: {'Authorization': 'Bearer $idToken'},
-        ),
+        options: Options(headers: {'Authorization': 'Bearer $idToken'}),
       );
     } catch (e) {
       debugPrint('Push send error: $e');

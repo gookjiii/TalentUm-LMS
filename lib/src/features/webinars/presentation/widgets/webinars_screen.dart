@@ -42,7 +42,12 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
   @override
   Widget build(BuildContext context) {
     final effectiveClassId =
-        (ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))?.isNotEmpty == true
+        (ref
+                    .watch(
+                      schoolAppStateProvider.select((s) => s.selectedClassId),
+                    )
+                    ?.isNotEmpty ==
+                true
             ? ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))
             : null) ??
         (widget.classId.isNotEmpty ? widget.classId : null);
@@ -59,10 +64,15 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
       );
     }
 
-    final webinarsAsync = ref.watch(webinarsProvider((effectiveClassId, _limit)));
+    final webinarsAsync = ref.watch(
+      webinarsProvider((effectiveClassId, _limit)),
+    );
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: repo.firestore.collection('classes').doc(effectiveClassId).snapshots(),
+      stream: repo.firestore
+          .collection('classes')
+          .doc(effectiveClassId)
+          .snapshots(),
       builder: (context, classSnap) {
         final isLeadOfClass = appState.isLeadTeacher;
         final className = classSnap.data?.data()?['name']?.toString();
@@ -71,7 +81,8 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
           backgroundColor: Colors.transparent,
           body: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
-              if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+              if (scrollInfo.metrics.pixels >=
+                  scrollInfo.metrics.maxScrollExtent - 200) {
                 _loadMore();
               }
               return false;
@@ -81,12 +92,18 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                 SliverToBoxAdapter(
                   child: Consumer(
                     builder: (context, ref, _) {
-                      final allClassAsync = ref.watch(isTeacher ? teacherClassesStreamProvider : studentClassesStreamProvider);
+                      final allClassAsync = ref.watch(
+                        isTeacher
+                            ? teacherClassesStreamProvider
+                            : studentClassesStreamProvider,
+                      );
                       final allVisibleClasses = allClassAsync.value ?? [];
-                      
+
                       return PageHeader(
                         title: AppLocalizations.of(context)!.webinars,
-                        subtitle: AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        )!.lessonRecordingsAndVideosWill,
                         classContext: className,
                         onClassContextTap: allVisibleClasses.length > 1
                             ? () {
@@ -104,7 +121,11 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                             : null,
                         trailing: isTeacher
                             ? IconButton.filledTonal(
-                                onPressed: () => _showAddDialog(context, ref, effectiveClassId),
+                                onPressed: () => _showAddDialog(
+                                  context,
+                                  ref,
+                                  effectiveClassId,
+                                ),
                                 icon: const Icon(Icons.add_rounded),
                                 tooltip: AppLocalizations.of(context)!.add,
                               )
@@ -120,12 +141,13 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                         child: EmptyState(
                           icon: Icons.ondemand_video_outlined,
                           title: AppLocalizations.of(context)!.noWebinars,
-                          subtitle:
-                              AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
+                          subtitle: AppLocalizations.of(
+                            context,
+                          )!.lessonRecordingsAndVideosWill,
                         ),
                       );
                     }
-  
+
                     return SliverPadding(
                       padding: EdgeInsets.symmetric(horizontal: 24),
                       sliver: SliverList(
@@ -134,7 +156,9 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                           final id = docs[index].id;
                           return _WebinarTile(
                             id: id,
-                            title: data['title'] ?? AppLocalizations.of(context)!.unknownKey7,
+                            title:
+                                data['title'] ??
+                                AppLocalizations.of(context)!.unknownKey7,
                             description: data['description'],
                             videoUrl: data['videoUrl'] ?? '',
                             canDelete: isLeadOfClass,
@@ -148,7 +172,8 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                     child: Center(child: CircularProgressIndicator()),
                   ),
                   error: (err, stack) => SliverFillRemaining(
-                      child: Center(child: Text('Ошибка: $err'))),
+                    child: Center(child: Text('Ошибка: $err')),
+                  ),
                 ),
               ],
             ),
@@ -236,7 +261,7 @@ class _WebinarTile extends StatelessWidget {
       if (cleanUrl.contains('rutube.ru/play/embed/')) {
         return cleanUrl;
       }
-      
+
       // 2a. Private/custom RuTube videos (Check FIRST to avoid matching 'private' as videoId in general match)
       final privateRegExp = RegExp(
         r'rutube\.ru/video/private/([a-zA-Z0-9]+)',
@@ -274,7 +299,7 @@ class _WebinarTile extends StatelessWidget {
       if (cleanUrl.contains('video_ext.php')) {
         return cleanUrl;
       }
-      
+
       // 3a. VK Clips
       final clipRegExp = RegExp(
         r'clip(-?[0-9]+)_([0-9]+)',
@@ -288,12 +313,9 @@ class _WebinarTile extends StatelessWidget {
           return 'https://vk.com/video_ext.php?oid=$oid&id=$id';
         }
       }
-      
+
       // 3b. VK Video
-      final regExp = RegExp(
-        r'video(-?[0-9]+)_([0-9]+)',
-        caseSensitive: false,
-      );
+      final regExp = RegExp(r'video(-?[0-9]+)_([0-9]+)', caseSensitive: false);
       final match = regExp.firstMatch(cleanUrl);
       if (match != null && match.groupCount >= 2) {
         final oid = match.group(1);
@@ -336,8 +358,13 @@ class _WebinarTile extends StatelessWidget {
           final isDark = Theme.of(context).brightness == Brightness.dark;
           return Dialog(
             backgroundColor: isDark ? SchoolColors.darkSurface : Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 40,
+            ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
               child: AspectRatio(
@@ -354,7 +381,10 @@ class _WebinarTile extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.close_rounded, color: Colors.white),
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                          ),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ),
@@ -504,7 +534,7 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   final _urlController = TextEditingController();
-  
+
   bool _uploadMode = false;
   PlatformFile? _selectedFile;
   bool _isUploading = false;
@@ -545,7 +575,7 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
               maxLines: 3,
             ),
             const SizedBox(height: 20),
-            
+
             // Mode Selector Toggle
             Container(
               padding: const EdgeInsets.all(4),
@@ -565,8 +595,8 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
                         decoration: BoxDecoration(
                           color: !_uploadMode
                               ? (Theme.of(context).brightness == Brightness.dark
-                                  ? SchoolColors.darkSurface
-                                  : Colors.white)
+                                    ? SchoolColors.darkSurface
+                                    : Colors.white)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
                           boxShadow: !_uploadMode
@@ -575,7 +605,7 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
                                     color: Colors.black.withValues(alpha: 0.05),
                                     blurRadius: 4,
                                     offset: Offset(0, 2),
-                                  )
+                                  ),
                                 ]
                               : null,
                         ),
@@ -601,8 +631,8 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
                         decoration: BoxDecoration(
                           color: _uploadMode
                               ? (Theme.of(context).brightness == Brightness.dark
-                                  ? SchoolColors.darkSurface
-                                  : Colors.white)
+                                    ? SchoolColors.darkSurface
+                                    : Colors.white)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
                           boxShadow: _uploadMode
@@ -611,7 +641,7 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
                                     color: Colors.black.withValues(alpha: 0.05),
                                     blurRadius: 4,
                                     offset: Offset(0, 2),
-                                  )
+                                  ),
                                 ]
                               : null,
                         ),
@@ -633,14 +663,16 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
               ),
             ),
             SizedBox(height: 16),
-            
+
             // Mode Fields
             if (!_uploadMode) ...[
               TextField(
                 controller: _urlController,
                 decoration: InputDecoration(
                   labelText: AppLocalizations.of(context)!.videoLink,
-                  hintText: AppLocalizations.of(context)!.httpsyoutubecomOrLinkToFile,
+                  hintText: AppLocalizations.of(
+                    context,
+                  )!.httpsyoutubecomOrLinkToFile,
                 ),
                 onChanged: (_) => setState(() {}),
               ),
@@ -678,7 +710,9 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
                 LinearProgressIndicator(
                   value: _uploadProgress,
                   backgroundColor: SchoolColors.muted.withValues(alpha: 0.1),
-                  valueColor: AlwaysStoppedAnimation<Color>(SchoolColors.primary),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    SchoolColors.primary,
+                  ),
                 ),
                 SizedBox(height: 8),
                 Row(
@@ -713,7 +747,8 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
           child: Text(AppLocalizations.of(context)!.unknownKey),
         ),
         ElevatedButton(
-          onPressed: (_isLoading ||
+          onPressed:
+              (_isLoading ||
                   _titleController.text.trim().isEmpty ||
                   (!_uploadMode && _urlController.text.trim().isEmpty) ||
                   (_uploadMode && _selectedFile == null))
@@ -726,7 +761,8 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
   }
 
   Future<void> _pickVideo() async {
-    final result = await FilePicker.pickFiles(withData: true, 
+    final result = await FilePicker.pickFiles(
+      withData: true,
       type: FileType.custom,
       allowedExtensions: ['mp4', 'mov', 'avi', 'webm', 'mkv'],
     );
@@ -741,22 +777,23 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
       _isUploading = false;
       _uploadProgress = 0;
     });
-    
+
     try {
       final repo = ref.read(repositoryProvider);
       String finalVideoUrl = _urlController.text.trim();
-      
+
       if (_uploadMode) {
         if (_selectedFile == null) {
           throw Exception(AppLocalizations.of(context)!.pleaseSelectAVideoFile);
         }
-        
+
         setState(() {
           _isUploading = true;
         });
 
         final storage = ref.read(libraryStorageProvider);
-        final path = 'classes/${widget.classId}/webinars/${DateTime.now().millisecondsSinceEpoch}_${_selectedFile!.name}';
+        final path =
+            'classes/${widget.classId}/webinars/${DateTime.now().millisecondsSinceEpoch}_${_selectedFile!.name}';
 
         Map<String, dynamic> result;
         if (kIsWeb) {
@@ -774,14 +811,14 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
         }
         finalVideoUrl = result['url'] as String;
       }
-      
+
       await repo.addWebinar(
         classId: widget.classId,
         title: _titleController.text.trim(),
         description: _descController.text.trim(),
         videoUrl: finalVideoUrl,
       );
-      
+
       if (mounted) Navigator.pop(context);
     } catch (e) {
       debugPrint('Webinar save error: $e');

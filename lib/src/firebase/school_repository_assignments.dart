@@ -23,31 +23,35 @@ mixin SchoolRepositoryAssignments {
       'attachments': attachments,
     });
     final assignmentId = res.data['assignmentId'] as String;
-    
+
     // Fire-and-forget push notification
     _sendClassNotification(classId, 'Новое задание: $title', description);
-    
+
     return assignmentId;
   }
 
-  Future<void> _sendClassNotification(String classId, String title, String body) async {
+  Future<void> _sendClassNotification(
+    String classId,
+    String title,
+    String body,
+  ) async {
     try {
       final classDoc = await firestore.collection('classes').doc(classId).get();
       if (!classDoc.exists) return;
       final data = classDoc.data()!;
       final List<dynamic> studentIds = data['studentIds'] ?? [];
       final List<dynamic> parentIds = data['parentIds'] ?? [];
-      
-      final targetUserIds = [...studentIds, ...parentIds]
-          .map((id) => id.toString())
-          .toSet()
-          .toList();
-          
+
+      final targetUserIds = [
+        ...studentIds,
+        ...parentIds,
+      ].map((id) => id.toString()).toSet().toList();
+
       if (targetUserIds.isEmpty) return;
-      
+
       final className = data['name'] ?? '';
       final finalTitle = className.isNotEmpty ? '$className - $title' : title;
-      
+
       await PushNotificationManager.sendPushNotification(
         userIds: targetUserIds,
         title: finalTitle,
@@ -88,12 +92,12 @@ mixin SchoolRepositoryAssignments {
     int? limit,
   }) {
     if (classIds.isEmpty) return const Stream.empty();
-    
+
     // Firestore whereIn supports up to 30 elements
     var query = firestore
         .collection('assignments')
         .where('classId', whereIn: classIds.take(30).toList());
-        
+
     if (limit != null) {
       query = query.limit(limit);
     }

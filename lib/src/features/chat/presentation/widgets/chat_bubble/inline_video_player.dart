@@ -10,10 +10,7 @@ import 'package:school_world/src/utils/string_extensions.dart';
 class InlineVideoPlayer extends StatefulWidget {
   final String videoUrl;
 
-  const InlineVideoPlayer({
-    super.key,
-    required this.videoUrl,
-  });
+  const InlineVideoPlayer({super.key, required this.videoUrl});
 
   @override
   State<InlineVideoPlayer> createState() => _InlineVideoPlayerState();
@@ -38,7 +35,9 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
     });
 
     try {
-      final controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(widget.videoUrl),
+      );
       _videoPlayerController = controller;
       await controller.initialize();
 
@@ -54,10 +53,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
         allowFullScreen: true,
         errorBuilder: (context, errorMessage) {
           return Center(
-            child: Text(
-              errorMessage,
-              style: TextStyle(color: Colors.white),
-            ),
+            child: Text(errorMessage, style: TextStyle(color: Colors.white)),
           );
         },
       );
@@ -90,7 +86,10 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
   @override
   Widget build(BuildContext context) {
     final thumbnailUrl = widget.videoUrl.contains('cloudinary.com')
-        ? widget.videoUrl.replaceAll(RegExp(r'\.(mp4|mov|webm|mkv)$', caseSensitive: false), '.jpg')
+        ? widget.videoUrl.replaceAll(
+            RegExp(r'\.(mp4|mov|webm|mkv)$', caseSensitive: false),
+            '.jpg',
+          )
         : null;
 
     if (_hasError) {
@@ -101,7 +100,11 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 28),
+            Icon(
+              Icons.error_outline_rounded,
+              color: Colors.redAccent,
+              size: 28,
+            ),
             SizedBox(height: 8),
             Text(
               AppLocalizations.of(context)!.failedToLoadVideo,
@@ -112,12 +115,12 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
       );
     }
 
-    if (_isInitialized && _chewieController != null && _videoPlayerController != null) {
+    if (_isInitialized &&
+        _chewieController != null &&
+        _videoPlayerController != null) {
       return AspectRatio(
         aspectRatio: _videoPlayerController!.value.aspectRatio,
-        child: Chewie(
-          controller: _chewieController!,
-        ),
+        child: Chewie(controller: _chewieController!),
       );
     }
 
@@ -140,9 +143,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
               _buildPlaceholder(),
 
             // Dark overlay for contrast
-            Container(
-              color: Colors.black.withOpacity(0.25),
-            ),
+            Container(color: Colors.black.withOpacity(0.25)),
 
             // Play button or Loading Indicator
             Center(
@@ -161,7 +162,10 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.25),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withOpacity(0.6), width: 1.5),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.6),
+                          width: 1.5,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.15),

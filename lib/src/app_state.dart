@@ -16,7 +16,8 @@ class SchoolAppState extends ChangeNotifier {
     _accentColorValue = box.get('accentColor') as int?;
     final localeCode = box.get('locale') as String?;
     _locale = localeCode != null ? Locale(localeCode) : const Locale('ru');
-    _pushNotifications = box.get('pushNotifications', defaultValue: true) as bool;
+    _pushNotifications =
+        box.get('pushNotifications', defaultValue: true) as bool;
     _soundAndVibe = box.get('soundAndVibe', defaultValue: true) as bool;
     _quietModeUpdates = box.get('quietModeUpdates', defaultValue: true) as bool;
 
@@ -49,14 +50,17 @@ class SchoolAppState extends ChangeNotifier {
         final iosInfo = await deviceInfo.iosInfo;
         // detect older iPhones (e.g., iPhone 8 and older have < 3GB RAM)
         final machine = iosInfo.utsname.machine;
-        if (machine.contains('iPhone8') || 
-            machine.contains('iPhone9') || 
+        if (machine.contains('iPhone8') ||
+            machine.contains('iPhone9') ||
             machine.contains('iPhone10') ||
-            machine.contains('iPhone11')) { // 11 has 4GB, but we might want to be conservative
-           // Actually, let's just stick to iPhone 8 and older (3GB or less)
-           if (machine.contains('iPhone8') || machine.contains('iPhone9') || machine.contains('iPhone10')) {
-             isLowEnd = true;
-           }
+            machine.contains('iPhone11')) {
+          // 11 has 4GB, but we might want to be conservative
+          // Actually, let's just stick to iPhone 8 and older (3GB or less)
+          if (machine.contains('iPhone8') ||
+              machine.contains('iPhone9') ||
+              machine.contains('iPhone10')) {
+            isLowEnd = true;
+          }
         }
       }
 
@@ -147,7 +151,7 @@ class SchoolAppState extends ChangeNotifier {
 
   bool _isChatRoomMobileOpen = false;
   bool get isChatRoomMobileOpen => _isChatRoomMobileOpen;
-  
+
   void setChatRoomMobileOpen(bool value) {
     if (_isChatRoomMobileOpen == value) return;
     _isChatRoomMobileOpen = value;
@@ -201,7 +205,7 @@ class SchoolAppState extends ChangeNotifier {
     _pushNotifications = value;
     Hive.box('app_settings').put('pushNotifications', value);
     notifyListeners();
-    
+
     // Reactively register or unregister the device push token on toggle
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
@@ -239,11 +243,13 @@ class SchoolAppState extends ChangeNotifier {
       if (_performanceMode) {
         // High performance / Low-end graphics mode: limit RAM usage
         PaintingBinding.instance.imageCache.maximumSize = 400; // items
-        PaintingBinding.instance.imageCache.maximumSizeBytes = 40 * 1024 * 1024; // 40 MB
+        PaintingBinding.instance.imageCache.maximumSizeBytes =
+            40 * 1024 * 1024; // 40 MB
       } else {
         // Normal mode
         PaintingBinding.instance.imageCache.maximumSize = 2000; // items
-        PaintingBinding.instance.imageCache.maximumSizeBytes = 200 * 1024 * 1024; // 200 MB
+        PaintingBinding.instance.imageCache.maximumSizeBytes =
+            200 * 1024 * 1024; // 200 MB
       }
     } catch (e) {
       debugPrint('Error applying image cache limits: $e');

@@ -25,7 +25,8 @@ import 'package:provider/provider.dart' as provider_pkg;
 import 'src/firebase/push_notification_manager.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
   try {
@@ -75,7 +76,9 @@ Future<void> main() async {
     await Hive.openBox('data_cache');
     await Hive.openBox('chat_cache');
     try {
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
     } catch (e) {
       if (!e.toString().contains('duplicate-app')) {
         rethrow;
@@ -88,10 +91,10 @@ Future<void> main() async {
       );
     }
     await initializeDateFormatting('ru', null);
-    
+
     // Hide splash early to avoid getting stuck if streams take too long
     hideSplash();
-    
+
     runApp(const ProviderScope(child: SchoolWorldApp()));
   } catch (e, stack) {
     debugPrint('Fatal init error: $e\n$stack');
@@ -129,7 +132,10 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
     super.initState();
     // Cache the future so it doesn't re-fire on every rebuild
     final repository = ref.read(repositoryProvider);
-    _settingsFuture = repository.firestore.collection('settings').doc('system').get();
+    _settingsFuture = repository.firestore
+        .collection('settings')
+        .doc('system')
+        .get();
   }
 
   @override
@@ -166,7 +172,8 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
                       const CircularProgressIndicator(),
                       const SizedBox(height: 16),
                       Text(
-                        AppLocalizations.of(context)?.loadingSystemSettings ?? 'Загрузка настроек...',
+                        AppLocalizations.of(context)?.loadingSystemSettings ??
+                            'Загрузка настроек...',
                         style: const TextStyle(
                           color: Colors.black,
                           fontSize: 14,
@@ -210,13 +217,13 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
             builder: (context, child) {
               final mediaQueryData = MediaQuery.of(context);
               final isMobile = mediaQueryData.size.width < 700;
-              
+
               // Force a directionality and default text style to prevent crashes in sub-widgets
               return Directionality(
                 textDirection: TextDirection.ltr,
                 child: MediaQuery(
                   data: mediaQueryData.copyWith(
-                    textScaler: isMobile 
+                    textScaler: isMobile
                         ? const TextScaler.linear(1.15)
                         : mediaQueryData.textScaler,
                   ),
@@ -339,7 +346,9 @@ class _AppErrorWidget extends StatelessWidget {
                     child: FilledButton.icon(
                       onPressed: reloadApp,
                       icon: const Icon(Icons.refresh_rounded),
-                      label: Text(AppLocalizations.of(context)?.reload ?? 'Перезагрузить'),
+                      label: Text(
+                        AppLocalizations.of(context)?.reload ?? 'Перезагрузить',
+                      ),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size(200, 52),
                       ),
@@ -431,7 +440,7 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   bool _processingInvite = false;
   String? _initializedUid;
-  
+
   late Stream<User?> _authStream;
   Stream<DocumentSnapshot<Map<String, dynamic>>>? _profileStream;
   String? _currentProfileUid;
@@ -525,7 +534,7 @@ class _AuthGateState extends State<AuthGate> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             widget.repository.startPresenceMonitoring();
             widget.repository.updateActivity();
-            
+
             // Initialize push notifications reactively on login
             PushNotificationManager.syncTokenSubscription(
               userId: user.uid,

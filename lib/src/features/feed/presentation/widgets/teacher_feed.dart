@@ -49,7 +49,9 @@ class _TeacherFeedState extends State<TeacherFeed> {
 
   void _initStream() {
     final repo = AppScope.of(context).repository;
-    setState(() => _postsStream = repo.postsForClass(widget.classId, limit: _limit));
+    setState(
+      () => _postsStream = repo.postsForClass(widget.classId, limit: _limit),
+    );
   }
 
   void _loadMore() {
@@ -63,7 +65,8 @@ class _TeacherFeedState extends State<TeacherFeed> {
   Widget build(BuildContext context) {
     return NotificationListener<ScrollNotification>(
       onNotification: (ScrollNotification scrollInfo) {
-        if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+        if (scrollInfo.metrics.pixels >=
+            scrollInfo.metrics.maxScrollExtent - 200) {
           _loadMore();
         }
         return false;
@@ -75,8 +78,17 @@ class _TeacherFeedState extends State<TeacherFeed> {
               builder: (context, ref, _) {
                 final allClassAsync = ref.watch(teacherClassesStreamProvider);
                 final allVisibleClasses = allClassAsync.value ?? [];
-                final effectiveClassId = ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ?? widget.classId;
-                final currentClassName = allVisibleClasses.firstWhere((c) => c['id'] == effectiveClassId, orElse: () => {})['name']?.toString();
+                final effectiveClassId =
+                    ref.watch(
+                      schoolAppStateProvider.select((s) => s.selectedClassId),
+                    ) ??
+                    widget.classId;
+                final currentClassName = allVisibleClasses
+                    .firstWhere(
+                      (c) => c['id'] == effectiveClassId,
+                      orElse: () => {},
+                    )['name']
+                    ?.toString();
 
                 return Padding(
                   padding: EdgeInsets.symmetric(
@@ -85,7 +97,9 @@ class _TeacherFeedState extends State<TeacherFeed> {
                   child: PageHeader(
                     padding: EdgeInsets.zero,
                     title: AppLocalizations.of(context)!.ribbon,
-                    subtitle: AppLocalizations.of(context)!.declarationsForYourClasses,
+                    subtitle: AppLocalizations.of(
+                      context,
+                    )!.declarationsForYourClasses,
                     classContext: currentClassName,
                     onClassContextTap: allVisibleClasses.length > 1
                         ? () {
@@ -94,7 +108,9 @@ class _TeacherFeedState extends State<TeacherFeed> {
                               classes: allVisibleClasses,
                               currentClassId: effectiveClassId,
                               onSelect: (id) {
-                                ref.read(schoolAppStateProvider).selectClass(id);
+                                ref
+                                    .read(schoolAppStateProvider)
+                                    .selectClass(id);
                               },
                             );
                           }
@@ -127,7 +143,9 @@ class _TeacherFeedState extends State<TeacherFeed> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+              padding: EdgeInsets.symmetric(
+                horizontal: context.horizontalPadding,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -167,8 +185,7 @@ class _TeacherFeedState extends State<TeacherFeed> {
                             prefixIcon: const Icon(Icons.search_rounded),
                             filled: true,
                             fillColor:
-                                Theme.of(context).brightness ==
-                                    Brightness.dark
+                                Theme.of(context).brightness == Brightness.dark
                                 ? SchoolColors.darkSurface
                                 : SchoolColors.surfaceElevated,
                             border: OutlineInputBorder(
@@ -197,7 +214,7 @@ class _TeacherFeedState extends State<TeacherFeed> {
             stream: _postsStream,
             builder: (context, snapshot) {
               var posts = snapshot.data?.docs ?? [];
-  
+
               if (_searchQuery.isNotEmpty) {
                 posts = posts.where((doc) {
                   final content =
@@ -205,13 +222,15 @@ class _TeacherFeedState extends State<TeacherFeed> {
                   return content.contains(_searchQuery);
                 }).toList();
               }
-  
+
               if (posts.isEmpty &&
                   snapshot.connectionState != ConnectionState.waiting) {
                 return SliverToBoxAdapter(
                   child: EmptyStateWidget(
                     icon: Icons.campaign_outlined,
-                    title: AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
+                    title: AppLocalizations.of(
+                      context,
+                    )!.thereAreNoAnnouncementsYet,
                     subtitle: AppLocalizations.of(
                       context,
                     )!.declarationsForYourClasses,
@@ -219,7 +238,9 @@ class _TeacherFeedState extends State<TeacherFeed> {
                 );
               }
               return SliverPadding(
-                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.horizontalPadding,
+                ),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final doc = posts[index];
@@ -240,7 +261,6 @@ class _TeacherFeedState extends State<TeacherFeed> {
                         ),
                       ),
                     );
-
                   }, childCount: posts.length),
                 ),
               );
@@ -378,7 +398,9 @@ class _InlineComposerState extends State<_InlineComposer> {
                     maxLines: 10,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context)!.postAnAnnouncementForClasses,
+                      hintText: AppLocalizations.of(
+                        context,
+                      )!.postAnAnnouncementForClasses,
                       hintStyle: const TextStyle(color: SchoolColors.muted),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
@@ -479,10 +501,7 @@ class _InlineComposerState extends State<_InlineComposer> {
                   style: FilledButton.styleFrom(
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 14,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
                   child: Text(AppLocalizations.of(context)!.publish),
                 ),

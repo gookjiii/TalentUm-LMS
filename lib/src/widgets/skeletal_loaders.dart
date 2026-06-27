@@ -44,7 +44,9 @@ class ChatMessageSkeleton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
@@ -52,7 +54,9 @@ class ChatMessageSkeleton extends StatelessWidget {
             const SizedBox(width: 8),
           ],
           Column(
-            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            crossAxisAlignment: isMe
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
             children: [
               if (!isMe)
                 const Padding(
@@ -99,11 +103,7 @@ class ClassCardSkeleton extends StatelessWidget {
                   children: [
                     SkeletalLoader(width: 120, height: 16),
                     Spacer(),
-                    SkeletalLoader(
-                      width: 30,
-                      height: 16,
-                      borderRadius: 8,
-                    ),
+                    SkeletalLoader(width: 30, height: 16, borderRadius: 8),
                   ],
                 ),
                 SizedBox(height: 8),

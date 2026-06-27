@@ -47,127 +47,132 @@ class TeacherSidebar extends StatelessWidget {
     final repo = AppScope.of(context).repository;
     final l10n = AppLocalizations.of(context)!;
 
-    return Container(
-      width: extended ? 292 : 88,
-      margin: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-      decoration: BoxDecoration(
-        color: SchoolColors.sidebarBg,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: SchoolColors.sidebarBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.24),
-            blurRadius: 36,
-            offset: const Offset(0, 16),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Header
-          _TeacherSidebarHeader(extended: extended, l10n: l10n),
-          _SidebarDivider(),
-          const SizedBox(height: 6),
-          // Nav items + classes in scrollable area
-          Expanded(
-            child: ListView(
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              children: [
-                for (int i = 0; i < navigationItems.length; i++)
-                  _TeacherNavItem(
-                    icon: selectedIndex == i
-                        ? navigationItems[i].selectedIcon
-                        : navigationItems[i].icon,
-                    label: navigationItems[i].label,
-                    selected: selectedIndex == i,
-                    extended: extended,
-                    onTap: () => onSelect(i),
-                  ),
-                if (extended) ...[
-                  if (AppScope.of(context).appState.isLeadTeacher)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-                      child: _AdminModeToggle(),
+    return RepaintBoundary(
+      child: Container(
+        width: extended ? 292 : 88,
+        margin: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+        decoration: BoxDecoration(
+          color: SchoolColors.sidebarBg,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: SchoolColors.sidebarBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.24),
+              blurRadius: 36,
+              offset: const Offset(0, 16),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Header
+            _TeacherSidebarHeader(extended: extended, l10n: l10n),
+            _SidebarDivider(),
+            const SizedBox(height: 6),
+            // Nav items + classes in scrollable area
+            Expanded(
+              child: ListView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                children: [
+                  for (int i = 0; i < navigationItems.length; i++)
+                    _TeacherNavItem(
+                      icon: selectedIndex == i
+                          ? navigationItems[i].selectedIcon
+                          : navigationItems[i].icon,
+                      label: navigationItems[i].label,
+                      selected: selectedIndex == i,
+                      extended: extended,
+                      onTap: () => onSelect(i),
                     ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 24, 14, 10),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            l10n.myClasses.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white.withValues(alpha: 0.42),
-                            ),
-                          ),
-                        ),
-                        if (AppScope.of(context).appState.isLeadTeacher)
-                          SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: IconButton(
-                              onPressed: onCreateClass,
-                              icon: const Icon(Icons.add_rounded, size: 14),
-                              color: Colors.white.withValues(alpha: 0.4),
-                              padding: EdgeInsets.zero,
-                              tooltip: l10n.createClass,
-                              style: IconButton.styleFrom(
-                                backgroundColor: SchoolColors.sidebarSurface,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                  if (extended) ...[
+                    if (AppScope.of(context).appState.isLeadTeacher)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+                        child: _AdminModeToggle(),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 24, 14, 10),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              l10n.myClasses.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white.withValues(alpha: 0.42),
                               ),
                             ),
                           ),
-                      ],
-                    ),
-                  ),
-                  for (final c in classes)
-                    _TeacherClassItem(
-                      name: c['name'] ?? '',
-                      subject: c['subject'] ?? '',
-                      avatarUrl: c['avatarUrl'] as String?,
-                      color: parseHexColor(c['coverColor']),
-                      selected: c['id'] == activeClassId && selectedIndex != 0,
-                      isLead: AppScope.of(context).appState.isLeadTeacher,
-                      onTap: () {
-                        onSelectClass(c['id'] as String);
-                        if (selectedIndex == 0) onSelect(1);
-                      },
-                      onDeleteChat: () =>
-                          onDeleteChat(c['id'] as String, c['name'] ?? ''),
-                      onDeleteClass: () =>
-                          onDeleteClass(c['id'] as String, c['name'] ?? ''),
-                      onCopyLink: () => onCopyGuestLink(
-                        c['id'] as String,
-                        c['inviteCode'] ?? '',
+                          if (AppScope.of(context).appState.isLeadTeacher)
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: IconButton(
+                                onPressed: onCreateClass,
+                                icon: const Icon(Icons.add_rounded, size: 14),
+                                color: Colors.white.withValues(alpha: 0.4),
+                                padding: EdgeInsets.zero,
+                                tooltip: l10n.createClass,
+                                style: IconButton.styleFrom(
+                                  backgroundColor: SchoolColors.sidebarSurface,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
+                    for (final c in classes)
+                      _TeacherClassItem(
+                        name: c['name'] ?? '',
+                        subject: c['subject'] ?? '',
+                        avatarUrl: c['avatarUrl'] as String?,
+                        color: parseHexColor(c['coverColor']),
+                        selected:
+                            c['id'] == activeClassId && selectedIndex != 0,
+                        isLead: AppScope.of(context).appState.isLeadTeacher,
+                        onTap: () {
+                          onSelectClass(c['id'] as String);
+                          if (selectedIndex == 0) onSelect(1);
+                        },
+                        onDeleteChat: () =>
+                            onDeleteChat(c['id'] as String, c['name'] ?? ''),
+                        onDeleteClass: () =>
+                            onDeleteClass(c['id'] as String, c['name'] ?? ''),
+                        onCopyLink: () => onCopyGuestLink(
+                          c['id'] as String,
+                          c['inviteCode'] ?? '',
+                        ),
+                      ),
+                  ],
                 ],
-              ],
-            ),
-          ),
-          if (!extended && AppScope.of(context).appState.isLeadTeacher) ...[
-            IconButton(
-              onPressed: onCreateClass,
-              icon: Icon(
-                Icons.add_circle_outline_rounded,
-                color: Colors.white.withValues(alpha: 0.45),
               ),
-              tooltip: l10n.createClass,
             ),
-            const SizedBox(height: 4),
+            if (!extended && AppScope.of(context).appState.isLeadTeacher) ...[
+              IconButton(
+                onPressed: onCreateClass,
+                icon: Icon(
+                  Icons.add_circle_outline_rounded,
+                  color: Colors.white.withValues(alpha: 0.45),
+                ),
+                tooltip: l10n.createClass,
+              ),
+              const SizedBox(height: 4),
+            ],
+            _SidebarDivider(),
+            _TeacherUserCard(
+              extended: extended,
+              onSignOut: repo.signOut,
+              onTap: onProfileTap,
+            ),
           ],
-          _SidebarDivider(),
-          _TeacherUserCard(
-            extended: extended,
-            onSignOut: repo.signOut,
-            onTap: onProfileTap,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -180,11 +185,7 @@ class TeacherSidebar extends StatelessWidget {
 class _SidebarDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      thickness: 1,
-      color: SchoolColors.sidebarBorder,
-    );
+    return Divider(height: 1, thickness: 1, color: SchoolColors.sidebarBorder);
   }
 }
 
@@ -209,9 +210,7 @@ class _TeacherSidebarHeader extends StatelessWidget {
             decoration: BoxDecoration(
               color: SchoolColors.sidebarSurface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
             child: const SchoolLogo(size: 36),
           ),
@@ -291,6 +290,7 @@ class _TeacherNavItem extends StatefulWidget {
 
 class _TeacherNavItemState extends State<_TeacherNavItem> {
   bool _hovered = false;
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -302,6 +302,13 @@ class _TeacherNavItemState extends State<_TeacherNavItem> {
         ? SchoolColors.sidebarSurfaceHover
         : Colors.transparent;
 
+    Matrix4 transform = Matrix4.identity();
+    if (!AppScope.of(context).appState.performanceMode) {
+      if (_pressed) {
+        transform.scale(0.96);
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Tooltip(
@@ -311,10 +318,15 @@ class _TeacherNavItemState extends State<_TeacherNavItem> {
           onEnter: (_) => setState(() => _hovered = true),
           onExit: (_) => setState(() => _hovered = false),
           child: GestureDetector(
+            onTapDown: (_) => setState(() => _pressed = true),
+            onTapUp: (_) => setState(() => _pressed = false),
+            onTapCancel: () => setState(() => _pressed = false),
             onTap: widget.onTap,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
+              transform: transform,
+              transformAlignment: Alignment.center,
               height: 48,
               padding: EdgeInsets.symmetric(
                 horizontal: widget.extended ? 14 : 0,
@@ -723,7 +735,10 @@ class _TeacherUserCard extends StatelessWidget {
                   IconButton(
                     onPressed: onSignOut,
                     tooltip: l10n.signOut,
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
                     icon: const Icon(
                       Icons.logout_rounded,
                       size: 18,

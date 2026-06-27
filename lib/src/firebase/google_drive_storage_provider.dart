@@ -29,11 +29,7 @@ class GoogleDriveStorageProvider implements StorageProvider {
     // Step 1: Initiate resumable session via backend proxy
     final initiateResponse = await _dio.post(
       '$backendBaseUrl/api/upload/initiate',
-      data: {
-        'name': fileName,
-        'mimeType': mimeType,
-        'size': length,
-      },
+      data: {'name': fileName, 'mimeType': mimeType, 'size': length},
     );
 
     if (initiateResponse.statusCode != 200) {
@@ -53,10 +49,7 @@ class GoogleDriveStorageProvider implements StorageProvider {
       uploadUrl,
       data: file.openRead(),
       options: Options(
-        headers: {
-          'Content-Length': length,
-          'Content-Type': mimeType,
-        },
+        headers: {'Content-Length': length, 'Content-Type': mimeType},
       ),
       onSendProgress: (sent, total) {
         if (onProgress != null && total > 0) {
@@ -77,10 +70,7 @@ class GoogleDriveStorageProvider implements StorageProvider {
     // Step 3: Notify backend to finalize the record in DB
     final completeResponse = await _dio.post(
       '$backendBaseUrl/api/upload/complete',
-      data: {
-        'id': recordId,
-        'driveFileId': driveFileId,
-      },
+      data: {'id': recordId, 'driveFileId': driveFileId},
     );
 
     if (completeResponse.statusCode != 200) {
@@ -115,15 +105,13 @@ class GoogleDriveStorageProvider implements StorageProvider {
     // Step 1: Initiate session via backend proxy
     final initiateResponse = await _dio.post(
       '$backendBaseUrl/api/upload/initiate',
-      data: {
-        'name': fileName,
-        'mimeType': mimeType,
-        'size': length,
-      },
+      data: {'name': fileName, 'mimeType': mimeType, 'size': length},
     );
 
     if (initiateResponse.statusCode != 200) {
-      throw Exception('Failed to initiate resumable upload session on backend: ${initiateResponse.statusCode}');
+      throw Exception(
+        'Failed to initiate resumable upload session on backend: ${initiateResponse.statusCode}',
+      );
     }
 
     final data = initiateResponse.data as Map<String, dynamic>;
@@ -136,11 +124,7 @@ class GoogleDriveStorageProvider implements StorageProvider {
     final googleResponse = await _dio.put(
       uploadUrl,
       data: bytes,
-      options: Options(
-        headers: {
-          'Content-Type': mimeType,
-        },
-      ),
+      options: Options(headers: {'Content-Type': mimeType}),
       onSendProgress: (sent, total) {
         if (onProgress != null && total > 0) {
           onProgress(sent / total);
@@ -149,7 +133,9 @@ class GoogleDriveStorageProvider implements StorageProvider {
     );
 
     if (googleResponse.statusCode != 200 && googleResponse.statusCode != 201) {
-      throw Exception('Google Drive direct upload failed: ${googleResponse.statusCode}');
+      throw Exception(
+        'Google Drive direct upload failed: ${googleResponse.statusCode}',
+      );
     }
 
     final googleData = googleResponse.data as Map<String, dynamic>;
@@ -158,14 +144,13 @@ class GoogleDriveStorageProvider implements StorageProvider {
     // Step 3: Complete upload on backend to save metadata in DB
     final completeResponse = await _dio.post(
       '$backendBaseUrl/api/upload/complete',
-      data: {
-        'id': recordId,
-        'driveFileId': driveFileId,
-      },
+      data: {'id': recordId, 'driveFileId': driveFileId},
     );
 
     if (completeResponse.statusCode != 200) {
-      throw Exception('Failed to complete upload metadata in DB: ${completeResponse.statusCode}');
+      throw Exception(
+        'Failed to complete upload metadata in DB: ${completeResponse.statusCode}',
+      );
     }
 
     final completeData = completeResponse.data as Map<String, dynamic>;
@@ -187,7 +172,7 @@ class GoogleDriveStorageProvider implements StorageProvider {
       caseSensitive: false,
     );
     final match = regExp.firstMatch(pathOrUrl);
-    
+
     if (match != null && match.groupCount >= 1) {
       final driveFileId = match.group(1);
       if (driveFileId != null) {
@@ -196,11 +181,7 @@ class GoogleDriveStorageProvider implements StorageProvider {
           await _dio.post(
             '$backendBaseUrl/api/upload/delete_drive',
             data: {'driveFileId': driveFileId},
-            options: Options(
-              headers: {
-                'Authorization': 'Bearer $apiSecret',
-              },
-            ),
+            options: Options(headers: {'Authorization': 'Bearer $apiSecret'}),
           );
           debugPrint('Google Drive file deleted successfully: $driveFileId');
         } catch (e) {

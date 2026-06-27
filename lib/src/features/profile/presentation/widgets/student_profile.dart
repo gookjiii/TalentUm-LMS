@@ -78,7 +78,10 @@ class _StudentProfileState extends State<StudentProfile> {
           ? l10n.noClass
           : classNames.join(', ');
 
-      final requestDoc = await repo.firestore.collection('teacher_requests').doc(uid).get();
+      final requestDoc = await repo.firestore
+          .collection('teacher_requests')
+          .doc(uid)
+          .get();
 
       if (mounted) {
         setState(() {
@@ -100,9 +103,11 @@ class _StudentProfileState extends State<StudentProfile> {
     final l10n = AppLocalizations.of(context)!;
     if (_loading) return const Center(child: CircularProgressIndicator());
 
-    
     final user = FirebaseAuth.instance.currentUser;
-    final name = _userData['name'] ?? user?.displayName ?? AppLocalizations.of(context)!.student;
+    final name =
+        _userData['name'] ??
+        user?.displayName ??
+        AppLocalizations.of(context)!.student;
     final email = user?.email ?? '';
     final grade = _userData['grade'] ?? _classesLabel;
     final appState = AppScope.of(context).appState;
@@ -180,7 +185,9 @@ class _StudentProfileState extends State<StudentProfile> {
                   sub: email,
                   onTap: () => ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(AppLocalizations.of(context)!.toChangeYourEmailContact),
+                      content: Text(
+                        AppLocalizations.of(context)!.toChangeYourEmailContact,
+                      ),
                     ),
                   ),
                 ),
@@ -195,7 +202,9 @@ class _StudentProfileState extends State<StudentProfile> {
                   icon: Icons.school_outlined,
                   color: SchoolColors.accent,
                   label: AppLocalizations.of(context)!.teacherAccess,
-                  sub: _teacherRequestSent ? AppLocalizations.of(context)!.requestSent : AppLocalizations.of(context)!.requestTeacherPermissions,
+                  sub: _teacherRequestSent
+                      ? AppLocalizations.of(context)!.requestSent
+                      : AppLocalizations.of(context)!.requestTeacherPermissions,
                   onTap: _teacherRequestSent ? null : _requestTeacherAccess,
                   last: true,
                 ),
@@ -236,7 +245,9 @@ class _StudentProfileState extends State<StudentProfile> {
                   icon: Icons.dark_mode_outlined,
                   color: SchoolColors.accent,
                   label: l10n.darkMode,
-                  sub: appState.isDarkMode ? AppLocalizations.of(context)!.enabled : AppLocalizations.of(context)!.system,
+                  sub: appState.isDarkMode
+                      ? AppLocalizations.of(context)!.enabled
+                      : AppLocalizations.of(context)!.system,
                   right: _CustomToggle(
                     on: appState.isDarkMode,
                     onChanged: (v) => appState.toggleDarkMode(),
@@ -280,7 +291,7 @@ class _StudentProfileState extends State<StudentProfile> {
     final l10n = AppLocalizations.of(context)!;
     final uid = repo.uid;
     if (uid == null) return;
-    
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -298,7 +309,7 @@ class _StudentProfileState extends State<StudentProfile> {
         ],
       ),
     );
-    
+
     if (ok == true) {
       setState(() => _loading = true);
       await repo.firestore.collection('teacher_requests').doc(uid).set({
@@ -324,7 +335,7 @@ class _StudentProfileState extends State<StudentProfile> {
 
   Future<void> _editName(BuildContext context, String current) async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     final controller = TextEditingController(text: current);
     final ok = await showDialog<bool>(
       context: context,
@@ -402,7 +413,7 @@ class _StudentProfileState extends State<StudentProfile> {
 
   Future<void> _confirmSignOut(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
-    
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -523,7 +534,9 @@ class _ProfileCard extends StatelessWidget {
                           const SizedBox(width: 8),
                         ],
                         StatusChip(
-                          label: isTeacher ? AppLocalizations.of(context)!.teacher : AppLocalizations.of(context)!.student,
+                          label: isTeacher
+                              ? AppLocalizations.of(context)!.teacher
+                              : AppLocalizations.of(context)!.student,
                           color: isTeacher
                               ? SchoolColors.red
                               : SchoolColors.primary,

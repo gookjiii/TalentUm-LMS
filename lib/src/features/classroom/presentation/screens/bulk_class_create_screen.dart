@@ -16,14 +16,14 @@ class _ClassDraft {
   Color color;
 
   _ClassDraft({required String name, required this.color})
-      : controller = TextEditingController(text: name);
+    : controller = TextEditingController(text: name);
 
   void dispose() => controller.dispose();
 }
 
 class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
   final List<_ClassDraft> _drafts = [
-    _ClassDraft(name: '', color: SchoolColors.primary)
+    _ClassDraft(name: '', color: SchoolColors.primary),
   ];
   bool _loading = false;
 
@@ -39,13 +39,11 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
   ];
 
   void _addMore() => setState(() {
-        final lastColor = _drafts.lastOrNull?.color ?? SchoolColors.primary;
-        final nextIdx = (_availableColors.indexOf(lastColor) + 1) %
-            _availableColors.length;
-        _drafts.add(
-          _ClassDraft(name: '', color: _availableColors[nextIdx]),
-        );
-      });
+    final lastColor = _drafts.lastOrNull?.color ?? SchoolColors.primary;
+    final nextIdx =
+        (_availableColors.indexOf(lastColor) + 1) % _availableColors.length;
+    _drafts.add(_ClassDraft(name: '', color: _availableColors[nextIdx]));
+  });
 
   void _pasteList() async {
     final l10n = AppLocalizations.of(context)!;
@@ -117,12 +115,17 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
       for (final d in validDrafts) {
         await repo.createClass(
           name: d.controller.text.trim(),
-          coverColor: '#${d.color.value.toRadixString(16).substring(2).toUpperCase()}',
+          coverColor:
+              '#${d.color.value.toRadixString(16).substring(2).toUpperCase()}',
         );
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lớp học đã được tạo thành công: ${validDrafts.length}')),
+          SnackBar(
+            content: Text(
+              'Lớp học đã được tạo thành công: ${validDrafts.length}',
+            ),
+          ),
         );
         Navigator.pop(context);
       }
@@ -167,10 +170,7 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    l10n.coolFactory,
-                    style: AppTextStyle.display(context),
-                  ),
+                  Text(l10n.coolFactory, style: AppTextStyle.display(context)),
                   const SizedBox(height: 4),
                   Text(
                     l10n.enterTheNamesOfThe,
@@ -191,7 +191,8 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
                           ? () => setState(() => _drafts.removeAt(i))
                           : null,
                       availableColors: _availableColors,
-                      onColorChange: (c) => setState(() => _drafts[i].color = c),
+                      onColorChange: (c) =>
+                          setState(() => _drafts[i].color = c),
                     ),
                   ),
               ],
@@ -314,7 +315,10 @@ class _ClassDraftRow extends StatelessWidget {
           ),
           if (onRemove != null)
             IconButton(
-              icon: const Icon(Icons.remove_circle_outline, color: SchoolColors.red),
+              icon: const Icon(
+                Icons.remove_circle_outline,
+                color: SchoolColors.red,
+              ),
               onPressed: onRemove,
             ),
         ],

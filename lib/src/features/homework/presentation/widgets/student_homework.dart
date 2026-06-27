@@ -52,16 +52,23 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
 
   void _initStreams() {
     final repo = AppScope.of(context).repository;
-    
+
     setState(() {
       if (widget.classId.isEmpty) {
         final classesAsync = ref.read(studentClassesStreamProvider);
-        final classIds = classesAsync.value?.map((c) => c['id'] as String).toList() ?? [];
-        _assignmentsStream = repo.assignmentsForClasses(classIds, limit: _limit);
+        final classIds =
+            classesAsync.value?.map((c) => c['id'] as String).toList() ?? [];
+        _assignmentsStream = repo.assignmentsForClasses(
+          classIds,
+          limit: _limit,
+        );
       } else {
-        _assignmentsStream = repo.assignmentsForClass(widget.classId, limit: _limit);
+        _assignmentsStream = repo.assignmentsForClass(
+          widget.classId,
+          limit: _limit,
+        );
       }
-      
+
       _submissionsStream = repo.firestore
           .collection('submissions')
           .where('studentId', isEqualTo: repo.uid)
@@ -166,37 +173,42 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
                             StreamBuilder<List<Map<String, dynamic>>>(
                               stream: repo.studentClassesCached(),
                               builder: (context, allClassSnap) {
-                                final allVisibleClasses = allClassSnap.data ?? [];
+                                final allVisibleClasses =
+                                    allClassSnap.data ?? [];
                                 return PageHeader(
                                   title: AppLocalizations.of(context)!.myTasks,
-                                  subtitle:
-                                      AppLocalizations.of(context)!.studyHomework,
+                                  subtitle: AppLocalizations.of(
+                                    context,
+                                  )!.studyHomework,
                                   classContext: className,
                                   onClassContextTap:
                                       allVisibleClasses.length > 1
-                                          ? () {
-                                              showClassSwitcher(
-                                                context: context,
-                                                classes: allVisibleClasses,
-                                                currentClassId: widget.classId,
-                                                onSelect: (id) {
-                                                  ref
-                                                      .read(
-                                                        schoolAppStateProvider,
-                                                      )
-                                                      .selectClass(id);
-                                                },
-                                              );
-                                            }
-                                          : null,
-                                  padding:
-                                      const EdgeInsets.fromLTRB(24, 32, 24, 16),
+                                      ? () {
+                                          showClassSwitcher(
+                                            context: context,
+                                            classes: allVisibleClasses,
+                                            currentClassId: widget.classId,
+                                            onSelect: (id) {
+                                              ref
+                                                  .read(schoolAppStateProvider)
+                                                  .selectClass(id);
+                                            },
+                                          );
+                                        }
+                                      : null,
+                                  padding: const EdgeInsets.fromLTRB(
+                                    24,
+                                    32,
+                                    24,
+                                    16,
+                                  ),
                                 );
                               },
                             ),
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 24),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -205,23 +217,24 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
                                     onChanged: (v) =>
                                         setState(() => _searchQuery = v),
                                     decoration: InputDecoration(
-                                      hintText: AppLocalizations.of(context)!
-                                          .searchForTasks,
+                                      hintText: AppLocalizations.of(
+                                        context,
+                                      )!.searchForTasks,
                                       prefixIcon: const Icon(Icons.search),
                                       filled: true,
                                       fillColor:
                                           Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? SchoolColors.darkSurface
-                                              : Colors.white,
+                                              Brightness.dark
+                                          ? SchoolColors.darkSurface
+                                          : Colors.white,
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
                                         borderSide: BorderSide.none,
                                       ),
                                       contentPadding:
                                           const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
+                                            vertical: 12,
+                                          ),
                                     ),
                                   ),
                                   if (urgentAssignment != null &&
@@ -229,8 +242,10 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
                                       _searchQuery.isEmpty) ...[
                                     const SizedBox(height: 32),
                                     SectionHeader(
-                                        title: AppLocalizations.of(context)!
-                                            .focusMode),
+                                      title: AppLocalizations.of(
+                                        context,
+                                      )!.focusMode,
+                                    ),
                                     const SizedBox(height: 12),
                                     FocusAssignmentCard(doc: urgentAssignment),
                                   ],
@@ -240,32 +255,39 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
                                     child: Row(
                                       children: [
                                         FilterChipItem(
-                                          label: AppLocalizations.of(context)!
-                                              .all,
+                                          label: AppLocalizations.of(
+                                            context,
+                                          )!.all,
                                           active: _filter == 'All',
                                           onTap: () =>
                                               setState(() => _filter = 'All'),
                                         ),
                                         FilterChipItem(
-                                          label: AppLocalizations.of(context)!
-                                              .waiting,
+                                          label: AppLocalizations.of(
+                                            context,
+                                          )!.waiting,
                                           active: _filter == 'Pending',
-                                          onTap: () =>
-                                              setState(() => _filter = 'Pending'),
+                                          onTap: () => setState(
+                                            () => _filter = 'Pending',
+                                          ),
                                         ),
                                         FilterChipItem(
-                                          label: AppLocalizations.of(context)!
-                                              .delivered,
+                                          label: AppLocalizations.of(
+                                            context,
+                                          )!.delivered,
                                           active: _filter == 'Submitted',
-                                          onTap: () =>
-                                              setState(() => _filter = 'Submitted'),
+                                          onTap: () => setState(
+                                            () => _filter = 'Submitted',
+                                          ),
                                         ),
                                         FilterChipItem(
-                                          label: AppLocalizations.of(context)!
-                                              .rated,
+                                          label: AppLocalizations.of(
+                                            context,
+                                          )!.rated,
                                           active: _filter == 'Graded',
-                                          onTap: () =>
-                                              setState(() => _filter = 'Graded'),
+                                          onTap: () => setState(
+                                            () => _filter = 'Graded',
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -370,18 +392,21 @@ class HomeworkCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: (submitted
-                        ? SchoolColors.green
-                        : (isOverdue ? SchoolColors.red : SchoolColors.primary))
-                    .withValues(alpha: 0.1),
+                color:
+                    (submitted
+                            ? SchoolColors.green
+                            : (isOverdue
+                                  ? SchoolColors.red
+                                  : SchoolColors.primary))
+                        .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 submitted
                     ? Icons.task_alt_rounded
                     : (isOverdue
-                        ? Icons.running_with_errors_rounded
-                        : Icons.assignment_outlined),
+                          ? Icons.running_with_errors_rounded
+                          : Icons.assignment_outlined),
                 color: submitted
                     ? SchoolColors.green
                     : (isOverdue ? SchoolColors.red : SchoolColors.primary),
@@ -495,8 +520,9 @@ class HomeworkCard extends StatelessWidget {
                               minimumSize: const Size(0, 40),
                               padding: EdgeInsets.zero,
                               side: BorderSide(
-                                color:
-                                    SchoolColors.primary.withValues(alpha: 0.5),
+                                color: SchoolColors.primary.withValues(
+                                  alpha: 0.5,
+                                ),
                               ),
                             ),
                           ),
@@ -516,8 +542,10 @@ class HomeworkCard extends StatelessWidget {
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.arrow_forward_rounded,
-                                size: 18),
+                            icon: const Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 18,
+                            ),
                             label: Text(
                               AppLocalizations.of(context)!.viewMore,
                               style: const TextStyle(fontSize: 13),
@@ -620,8 +648,8 @@ class _QuickSubmitBottomSheetState extends State<_QuickSubmitBottomSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content:
-                  Text(AppLocalizations.of(context)!.submittedSuccessfully)),
+            content: Text(AppLocalizations.of(context)!.submittedSuccessfully),
+          ),
         );
         Navigator.pop(context);
       }
@@ -647,7 +675,11 @@ class _QuickSubmitBottomSheetState extends State<_QuickSubmitBottomSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(
-          24, 12, 24, MediaQuery.viewInsetsOf(context).bottom + 24),
+        24,
+        12,
+        24,
+        MediaQuery.viewInsetsOf(context).bottom + 24,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -671,8 +703,11 @@ class _QuickSubmitBottomSheetState extends State<_QuickSubmitBottomSheet> {
                   color: SchoolColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.bolt_rounded,
-                    color: SchoolColors.primary, size: 20),
+                child: const Icon(
+                  Icons.bolt_rounded,
+                  color: SchoolColors.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -682,14 +717,17 @@ class _QuickSubmitBottomSheetState extends State<_QuickSubmitBottomSheet> {
                     Text(
                       l10n.quickSubmit,
                       style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: SchoolColors.primary),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: SchoolColors.primary,
+                      ),
                     ),
                     Text(
                       widget.title,
                       style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.w800),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -705,8 +743,9 @@ class _QuickSubmitBottomSheetState extends State<_QuickSubmitBottomSheet> {
             autofocus: true,
             decoration: InputDecoration(
               hintText: l10n.writeYourAnswerHere,
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               filled: true,
               fillColor: isDark ? SchoolColors.darkBg : SchoolColors.bg,
             ),
@@ -725,10 +764,18 @@ class _QuickSubmitBottomSheetState extends State<_QuickSubmitBottomSheet> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: _files[i].bytes != null
-                            ? Image.memory(_files[i].bytes!,
-                                width: 80, height: 80, fit: BoxFit.cover)
-                            : Image.file(File(_files[i].path!),
-                                width: 80, height: 80, fit: BoxFit.cover),
+                            ? Image.memory(
+                                _files[i].bytes!,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.file(
+                                File(_files[i].path!),
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
                       ),
                       Positioned(
                         top: 4,
@@ -738,9 +785,14 @@ class _QuickSubmitBottomSheetState extends State<_QuickSubmitBottomSheet> {
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(
-                                color: Colors.black54, shape: BoxShape.circle),
-                            child: const Icon(Icons.close,
-                                size: 12, color: Colors.white),
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              size: 12,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -760,7 +812,8 @@ class _QuickSubmitBottomSheetState extends State<_QuickSubmitBottomSheet> {
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(0, 48),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -772,13 +825,17 @@ class _QuickSubmitBottomSheetState extends State<_QuickSubmitBottomSheet> {
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Icon(Icons.send_rounded, size: 18),
                   label: Text(l10n.submit),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(0, 48),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
               ),
@@ -825,8 +882,11 @@ class FocusAssignmentCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.bolt_rounded,
-                        color: SchoolColors.primary, size: 18),
+                    const Icon(
+                      Icons.bolt_rounded,
+                      color: SchoolColors.primary,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       l10n.upcomingAssignment,
@@ -843,7 +903,9 @@ class FocusAssignmentCard extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w900),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -852,14 +914,19 @@ class FocusAssignmentCard extends StatelessWidget {
                   Text(
                     '${l10n.deadline}: ${_getHumanFriendlyDate(context, due)}',
                     style: const TextStyle(
-                        color: SchoolColors.muted, fontSize: 13),
+                      color: SchoolColors.muted,
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ],
             ),
           ),
-          const Icon(Icons.arrow_forward_ios_rounded,
-              size: 16, color: SchoolColors.primary),
+          const Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 16,
+            color: SchoolColors.primary,
+          ),
         ],
       ),
     );

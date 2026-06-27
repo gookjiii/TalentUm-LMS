@@ -39,7 +39,8 @@ class StudentToday extends ConsumerWidget {
 
     final userAsync = ref.watch(userDocumentProvider);
     final userData = userAsync.value ?? {};
-    final rawName = userData['name']?.toString() ?? user?.displayName ?? l10n.student;
+    final rawName =
+        userData['name']?.toString() ?? user?.displayName ?? l10n.student;
     final name = rawName.trim().isNotEmpty
         ? rawName.split(RegExp(r'\s+')).first
         : l10n.student;
@@ -78,7 +79,10 @@ class StudentToday extends ConsumerWidget {
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding, vertical: 16),
+            padding: EdgeInsets.symmetric(
+              horizontal: context.horizontalPadding,
+              vertical: 16,
+            ),
             child: PageHeader(
               padding: EdgeInsets.zero,
               title: '$greeting, $name!',
@@ -124,7 +128,9 @@ class StudentToday extends ConsumerWidget {
                       Expanded(
                         flex: 3,
                         child: StreakCard(
-                          classIds: classes.map((c) => (c['id'] ?? '').toString()).toList(),
+                          classIds: classes
+                              .map((c) => (c['id'] ?? '').toString())
+                              .toList(),
                           onTap: onHomeworkTap,
                         ),
                       ),
@@ -135,7 +141,8 @@ class StudentToday extends ConsumerWidget {
                 if (upcomingClass != null) ...[
                   _UpcomingClassReminder(
                     item: upcomingClass,
-                    className: classInfo[upcomingClass.classId]?.name ?? 'Класс',
+                    className:
+                        classInfo[upcomingClass.classId]?.name ?? 'Класс',
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -150,7 +157,9 @@ class StudentToday extends ConsumerWidget {
         if (!showSidebar) ...[
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+              padding: EdgeInsets.symmetric(
+                horizontal: context.horizontalPadding,
+              ),
               child: SectionHeader(
                 title: l10n.todaysClasses.toUpperCase(),
                 action: l10n.viewAll,
@@ -162,14 +171,19 @@ class StudentToday extends ConsumerWidget {
           if (todaySchedules.isEmpty)
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.horizontalPadding,
+                ),
                 child: SwBentoCard(
                   padding: const EdgeInsets.symmetric(vertical: 48),
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(Icons.calendar_today_outlined,
-                            size: 32, color: SchoolColors.muted.withOpacity(0.5)),
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 32,
+                          color: SchoolColors.muted.withOpacity(0.5),
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           l10n.noLessonsForToday,
@@ -187,7 +201,9 @@ class StudentToday extends ConsumerWidget {
             )
           else
             SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+              padding: EdgeInsets.symmetric(
+                horizontal: context.horizontalPadding,
+              ),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
@@ -203,8 +219,9 @@ class StudentToday extends ConsumerWidget {
                       ),
                     );
                   },
-                  childCount:
-                      todaySchedules.length > 3 ? 3 : todaySchedules.length,
+                  childCount: todaySchedules.length > 3
+                      ? 3
+                      : todaySchedules.length,
                 ),
               ),
             ),
@@ -214,7 +231,9 @@ class StudentToday extends ConsumerWidget {
         // ── Quick links ───────────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+            padding: EdgeInsets.symmetric(
+              horizontal: context.horizontalPadding,
+            ),
             child: SectionHeader(title: l10n.quickLinks),
           ),
         ),
@@ -525,7 +544,9 @@ class _StreakCardState extends State<StreakCard> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: SchoolColors.primary.withValues(alpha: _hovered ? 0.45 : 0.28),
+                      color: SchoolColors.primary.withValues(
+                        alpha: _hovered ? 0.45 : 0.28,
+                      ),
                       blurRadius: _hovered ? 28 : 20,
                       offset: Offset(0, _hovered ? 12 : 8),
                     ),
@@ -762,14 +783,16 @@ class _StudentScheduleCardState extends State<StudentScheduleCard> {
     final subjectColor = widget.item.cancelled
         ? Colors.grey
         : (isNow
-            ? SchoolColors.green
-            : isNext
-                ? SchoolColors.orange
-                : isDark
-                    ? SchoolColors.darkMuted
-                    : SchoolColors.muted);
+              ? SchoolColors.green
+              : isNext
+              ? SchoolColors.orange
+              : isDark
+              ? SchoolColors.darkMuted
+              : SchoolColors.muted);
 
-    final primaryTitle = widget.subject.isNotEmpty ? widget.subject : widget.className;
+    final primaryTitle = widget.subject.isNotEmpty
+        ? widget.subject
+        : widget.className;
     final subtitle = widget.subject.isNotEmpty ? widget.className : '';
 
     return Padding(

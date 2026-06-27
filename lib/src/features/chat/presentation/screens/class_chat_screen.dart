@@ -371,8 +371,6 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
   String _resolveUserName(String authorId) =>
       _userCache[authorId]?.name ?? AppLocalizations.of(context)!.participant;
 
-
-
   Future<void> _onCamera() async {
     try {
       final picker = ImagePicker();
@@ -996,11 +994,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
                 ),
                 child: Row(
                   children: const [
-                    SkeletalLoader(
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                    ),
+                    SkeletalLoader(width: 44, height: 44, borderRadius: 12),
                     SizedBox(width: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

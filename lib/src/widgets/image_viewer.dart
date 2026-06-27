@@ -28,12 +28,12 @@ class _ImageViewerState extends State<ImageViewer> {
         options: Options(responseType: ResponseType.bytes),
       );
       final bytes = Uint8List.fromList(response.data!);
-      
+
       setState(() => _isLoading = false);
 
       if (mounted) {
         final navigator = Navigator.of(context);
-        
+
         final editedBytes = await navigator.push<Uint8List?>(
           MaterialPageRoute(
             builder: (context) => PhotoEditorScreen(
@@ -42,7 +42,7 @@ class _ImageViewerState extends State<ImageViewer> {
             ),
           ),
         );
-        
+
         if (editedBytes != null && mounted) {
           navigator.pop(editedBytes); // Close viewer and return edited bytes
         }
@@ -73,7 +73,8 @@ class _ImageViewerState extends State<ImageViewer> {
               minScale: 0.5,
               maxScale: 4.0,
               child: CachedNetworkImage(
-                imageUrl: widget.imageUrl.toDirectImageUrl.toOptimizedCloudinary(performance: performanceMode),
+                imageUrl: widget.imageUrl.toDirectImageUrl
+                    .toOptimizedCloudinary(performance: performanceMode),
                 fit: BoxFit.contain,
                 placeholder: (context, url) => const Center(
                   child: CircularProgressIndicator(
@@ -110,7 +111,11 @@ class _ImageViewerState extends State<ImageViewer> {
               children: [
                 if (!_isLoading)
                   IconButton(
-                    icon: const Icon(Icons.edit_rounded, color: Colors.white, size: 28),
+                    icon: const Icon(
+                      Icons.edit_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                     tooltip: 'Редактировать',
                     onPressed: _handleEdit,
                   ),

@@ -22,9 +22,12 @@ mixin SchoolRepositoryWebinars {
     });
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> webinarsForClasses(List<String> classIds, {int? limit}) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> webinarsForClasses(
+    List<String> classIds, {
+    int? limit,
+  }) {
     if (classIds.isEmpty) return const Stream.empty();
-    
+
     var query = firestore
         .collection('webinars')
         .where('classId', whereIn: classIds.take(30).toList())
@@ -35,7 +38,10 @@ mixin SchoolRepositoryWebinars {
     return query.safeSnapshots();
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> webinarsForClass(String classId, {int? limit}) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> webinarsForClass(
+    String classId, {
+    int? limit,
+  }) {
     var query = firestore
         .collection('webinars')
         .where('classId', isEqualTo: classId)
@@ -53,7 +59,9 @@ mixin SchoolRepositoryWebinars {
       final videoUrl = doc.data()?['videoUrl'] as String?;
       if (videoUrl != null && videoUrl.isNotEmpty) {
         try {
-          await CloudinaryStorageProvider.libraryProvider().deleteFile(videoUrl);
+          await CloudinaryStorageProvider.libraryProvider().deleteFile(
+            videoUrl,
+          );
         } catch (e) {
           // Ignore file deletion errors to allow doc deletion
         }

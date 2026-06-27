@@ -34,10 +34,14 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
           if (!snapshot.hasData)
             return const Center(child: CircularProgressIndicator());
           final data = snapshot.data!.data();
-          if (data == null) return Center(child: Text(AppLocalizations.of(context)!.unknownKey));
+          if (data == null)
+            return Center(
+              child: Text(AppLocalizations.of(context)!.unknownKey),
+            );
 
           final appState = AppScope.of(context).appState;
-          final isLeadOfClass = appState.isLeadTeacher ||
+          final isLeadOfClass =
+              appState.isLeadTeacher ||
               (data['teacherId'] != null && data['teacherId'] == repo.uid);
 
           final permissions = Map<String, dynamic>.from(
@@ -50,7 +54,9 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              SectionHeader(title: AppLocalizations.of(context)!.generalSettings1),
+              SectionHeader(
+                title: AppLocalizations.of(context)!.generalSettings1,
+              ),
               const SizedBox(height: 16),
               SchoolCard(
                 child: Column(
@@ -64,7 +70,10 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
                     const Divider(height: 1),
                     ListTile(
                       title: Text(AppLocalizations.of(context)!.invitationCode),
-                      subtitle: Text(data['inviteCode'] ?? AppLocalizations.of(context)!.unknownKey11),
+                      subtitle: Text(
+                        data['inviteCode'] ??
+                            AppLocalizations.of(context)!.unknownKey11,
+                      ),
                       trailing: const Icon(Icons.refresh_rounded, size: 20),
                       onTap: () {},
                     ),
@@ -72,7 +81,9 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              SectionHeader(title: AppLocalizations.of(context)!.studentPermissions),
+              SectionHeader(
+                title: AppLocalizations.of(context)!.studentPermissions,
+              ),
               const SizedBox(height: 16),
               SchoolCard(
                 child: Column(
@@ -80,7 +91,9 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
                     SwitchListTile(
                       title: Text(AppLocalizations.of(context)!.chat),
                       subtitle: Text(
-                        AppLocalizations.of(context)!.allowStudentsToWriteMessages,
+                        AppLocalizations.of(
+                          context,
+                        )!.allowStudentsToWriteMessages,
                       ),
                       value: canStudentChat,
                       activeColor: SchoolColors.primary,
@@ -89,7 +102,9 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
                     ),
                     const Divider(height: 1),
                     SwitchListTile(
-                      title: Text(AppLocalizations.of(context)!.publicationsInTheFeed),
+                      title: Text(
+                        AppLocalizations.of(context)!.publicationsInTheFeed,
+                      ),
                       subtitle: Text(
                         AppLocalizations.of(context)!.allowStudentsToCreateNews,
                       ),
@@ -100,9 +115,13 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
                     ),
                     const Divider(height: 1),
                     SwitchListTile(
-                      title: Text(AppLocalizations.of(context)!.moderationOfEntry),
+                      title: Text(
+                        AppLocalizations.of(context)!.moderationOfEntry,
+                      ),
                       subtitle: Text(
-                        AppLocalizations.of(context)!.requireTeacherApprovalForNew,
+                        AppLocalizations.of(
+                          context,
+                        )!.requireTeacherApprovalForNew,
                       ),
                       value: requireApproval,
                       activeColor: SchoolColors.primary,
@@ -158,7 +177,9 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
         title: Text(AppLocalizations.of(context)!.changeName),
         content: TextField(
           controller: ctrl,
-          decoration: InputDecoration(hintText: AppLocalizations.of(context)!.unknownKey),
+          decoration: InputDecoration(
+            hintText: AppLocalizations.of(context)!.unknownKey,
+          ),
         ),
         actions: [
           TextButton(

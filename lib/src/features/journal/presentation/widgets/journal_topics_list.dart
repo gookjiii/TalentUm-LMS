@@ -174,7 +174,9 @@ class JournalTopicsList extends ConsumerWidget {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                topic.isNotEmpty ? topic : AppLocalizations.of(context)!.noTheme,
+                                topic.isNotEmpty
+                                    ? topic
+                                    : AppLocalizations.of(context)!.noTheme,
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,

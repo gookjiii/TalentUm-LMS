@@ -4,11 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 class DrawingLine {
-  DrawingLine({
-    required this.points,
-    required this.color,
-    required this.width,
-  });
+  DrawingLine({required this.points, required this.color, required this.width});
   final List<Offset> points;
   final Color color;
   final double width;
@@ -45,7 +41,7 @@ class PhotoEditorScreen extends StatefulWidget {
 
 class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
   final GlobalKey _globalKey = GlobalKey();
-  
+
   double _imageAspectRatio = 1.0;
   bool _initialized = false;
 
@@ -82,16 +78,18 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
 
   void _loadImageDimensions() {
     final image = Image.memory(widget.imageBytes);
-    image.image.resolve(const ImageConfiguration()).addListener(
-      ImageStreamListener((ImageInfo info, bool _) {
-        if (mounted) {
-          setState(() {
-            _imageAspectRatio = info.image.width / info.image.height;
-            _initialized = true;
-          });
-        }
-      }),
-    );
+    image.image
+        .resolve(const ImageConfiguration())
+        .addListener(
+          ImageStreamListener((ImageInfo info, bool _) {
+            if (mounted) {
+              setState(() {
+                _imageAspectRatio = info.image.width / info.image.height;
+                _initialized = true;
+              });
+            }
+          }),
+        );
   }
 
   void _showTextDialog({TextOverlay? existingOverlay}) {
@@ -113,7 +111,9 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               padding: EdgeInsets.fromLTRB(
-                20, 20, 20,
+                20,
+                20,
+                20,
                 20 + MediaQuery.of(context).viewInsets.bottom,
               ),
               child: Column(
@@ -133,7 +133,9 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                         ),
                       ),
                       Text(
-                        existingOverlay == null ? 'Добавить текст' : 'Изменить текст',
+                        existingOverlay == null
+                            ? 'Добавить текст'
+                            : 'Изменить текст',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -189,7 +191,11 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                   ),
                   Row(
                     children: [
-                      const Icon(Icons.format_size_rounded, color: Colors.white, size: 20),
+                      const Icon(
+                        Icons.format_size_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                       Expanded(
                         child: Slider(
                           value: selectedFontSize,
@@ -221,14 +227,19 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                         return GestureDetector(
                           onTap: () => setModalState(() => selectedColor = c),
                           child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 8,
+                            ),
                             width: 34,
                             height: 34,
                             decoration: BoxDecoration(
                               color: c,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isSelected ? Colors.white : Colors.white.withOpacity(0.2),
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.2),
                                 width: isSelected ? 3 : 1.5,
                               ),
                             ),
@@ -277,13 +288,15 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
       });
       await Future.delayed(const Duration(milliseconds: 50));
 
-      final boundary = _globalKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          _globalKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) return;
-      
+
       final image = await boundary.toImage(pixelRatio: 2.5);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) return;
-      
+
       final pngBytes = byteData.buffer.asUint8List();
       if (mounted) {
         Navigator.pop(context, pngBytes);
@@ -301,7 +314,10 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -329,7 +345,10 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
             ),
           if (_lines.isNotEmpty || _textOverlays.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
+              icon: const Icon(
+                Icons.delete_sweep_outlined,
+                color: Colors.redAccent,
+              ),
               tooltip: 'Очистить всё',
               onPressed: () {
                 setState(() {
@@ -380,7 +399,7 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                             // Perfect fit for aspect ratio
                             final w = constraints.maxWidth;
                             final h = constraints.maxHeight;
-                            
+
                             double canvasWidth;
                             double canvasHeight;
                             if (w / h > _imageAspectRatio) {
@@ -432,49 +451,68 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                                             child: GestureDetector(
                                               onPanUpdate: (details) {
                                                 setState(() {
-                                                  _selectedOverlayId = overlay.id;
+                                                  _selectedOverlayId =
+                                                      overlay.id;
                                                   overlay.position = Offset(
-                                                    (overlay.position.dx + details.delta.dx)
-                                                        .clamp(0.0, canvasWidth - 60),
-                                                    (overlay.position.dy + details.delta.dy)
-                                                        .clamp(0.0, canvasHeight - 30),
+                                                    (overlay.position.dx +
+                                                            details.delta.dx)
+                                                        .clamp(
+                                                          0.0,
+                                                          canvasWidth - 60,
+                                                        ),
+                                                    (overlay.position.dy +
+                                                            details.delta.dy)
+                                                        .clamp(
+                                                          0.0,
+                                                          canvasHeight - 30,
+                                                        ),
                                                   );
                                                 });
                                               },
                                               onTap: () {
                                                 setState(() {
                                                   _selectedOverlayId =
-                                                      isSelected ? null : overlay.id;
+                                                      isSelected
+                                                      ? null
+                                                      : overlay.id;
                                                 });
                                               },
-                                              onDoubleTap: () => _showTextDialog(
-                                                existingOverlay: overlay,
-                                              ),
+                                              onDoubleTap: () =>
+                                                  _showTextDialog(
+                                                    existingOverlay: overlay,
+                                                  ),
                                               child: Container(
-                                                padding: const EdgeInsets.symmetric(
-                                                  horizontal: 8,
-                                                  vertical: 4,
-                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
                                                 decoration: BoxDecoration(
                                                   border: isSelected
                                                       ? Border.all(
-                                                          color: const Color(0xFF3B82F6),
+                                                          color: const Color(
+                                                            0xFF3B82F6,
+                                                          ),
                                                           width: 1.5,
                                                         )
                                                       : null,
                                                   borderRadius:
                                                       BorderRadius.circular(6),
-                                                  color: Colors.black.withOpacity(0.35),
+                                                  color: Colors.black
+                                                      .withOpacity(0.35),
                                                 ),
                                                 child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
                                                   children: [
                                                     Text(
                                                       overlay.text,
                                                       style: TextStyle(
                                                         color: overlay.color,
-                                                        fontSize: overlay.fontSize,
-                                                        fontWeight: FontWeight.bold,
+                                                        fontSize:
+                                                            overlay.fontSize,
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                       ),
                                                     ),
                                                     if (isSelected) ...[
@@ -482,15 +520,21 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                                                       GestureDetector(
                                                         onTap: () {
                                                           setState(() {
-                                                            _textOverlays.removeWhere(
-                                                              (o) => o.id == overlay.id,
-                                                            );
-                                                            _selectedOverlayId = null;
+                                                            _textOverlays
+                                                                .removeWhere(
+                                                                  (o) =>
+                                                                      o.id ==
+                                                                      overlay
+                                                                          .id,
+                                                                );
+                                                            _selectedOverlayId =
+                                                                null;
                                                           });
                                                         },
                                                         child: const Icon(
                                                           Icons.close_rounded,
-                                                          color: Colors.redAccent,
+                                                          color:
+                                                              Colors.redAccent,
                                                           size: 18,
                                                         ),
                                                       ),
@@ -522,8 +566,9 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                                         onPanUpdate: (details) {
                                           if (_currentLine == null) return;
                                           setState(() {
-                                            _currentLine!.points
-                                                .add(details.localPosition);
+                                            _currentLine!.points.add(
+                                              details.localPosition,
+                                            );
                                           });
                                         },
                                         onPanEnd: (_) {
@@ -542,9 +587,9 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                     ),
                   ),
                 ),
-                  _buildControlsUI(),
-                ],
-              ),
+                _buildControlsUI(),
+              ],
+            ),
     );
   }
 
@@ -567,7 +612,11 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Row(
                       children: [
-                        const Icon(Icons.edit_rounded, color: Colors.white70, size: 18),
+                        const Icon(
+                          Icons.edit_rounded,
+                          color: Colors.white70,
+                          size: 18,
+                        ),
                         Expanded(
                           child: Slider(
                             value: _currentBrushWidth,
@@ -622,7 +671,9 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                 ),
                 icon: Icon(
                   Icons.edit_rounded,
-                  color: _isDrawingMode ? const Color(0xFF3B82F6) : Colors.white70,
+                  color: _isDrawingMode
+                      ? const Color(0xFF3B82F6)
+                      : Colors.white70,
                 ),
                 tooltip: 'Рисовать',
                 onPressed: () {
@@ -672,7 +723,9 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
                               color: c,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isSelected ? Colors.white : Colors.white.withOpacity(0.2),
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.2),
                                 width: isSelected ? 2.5 : 1,
                               ),
                             ),

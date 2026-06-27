@@ -17,8 +17,9 @@ class _IframePlayerWebState extends State<IframePlayer> {
   @override
   void initState() {
     super.initState();
-    _viewId = 'iframe-player-${widget.embedUrl.hashCode}-${DateTime.now().microsecondsSinceEpoch}';
-    
+    _viewId =
+        'iframe-player-${widget.embedUrl.hashCode}-${DateTime.now().microsecondsSinceEpoch}';
+
     // Register the iframe view factory
     ui_web.platformViewRegistry.registerViewFactory(_viewId, (int viewId) {
       final iframe = html.IFrameElement()

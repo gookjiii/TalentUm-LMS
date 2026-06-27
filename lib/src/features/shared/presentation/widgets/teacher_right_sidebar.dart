@@ -11,42 +11,50 @@ class TeacherRightSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 320,
-      margin: const EdgeInsets.fromLTRB(8, 16, 16, 16),
-      decoration: BoxDecoration(
-        color: SchoolColors.sidebarBg,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: SchoolColors.sidebarBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.24),
-            blurRadius: 36,
-            offset: const Offset(0, 16),
+    return RepaintBoundary(
+      child: Container(
+        width: 320,
+        margin: const EdgeInsets.fromLTRB(8, 16, 16, 16),
+        decoration: BoxDecoration(
+          color: SchoolColors.sidebarBg,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: SchoolColors.sidebarBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.24),
+              blurRadius: 36,
+              offset: const Offset(0, 16),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: ListView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            padding: const EdgeInsets.all(24),
+            children: [
+              SectionHeader(
+                title: AppLocalizations.of(context)!.upcomingClasses,
+              ),
+              const SizedBox(height: 16),
+              if (classes.isEmpty)
+                Text(
+                  AppLocalizations.of(context)!.noClasses,
+                  style: TextStyle(color: SchoolColors.muted),
+                )
+              else
+                ...classes.take(3).map((c) => _ScheduleCard(data: c)),
+              const SizedBox(height: 32),
+              SectionHeader(
+                title: AppLocalizations.of(context)!.tasksForTesting,
+              ),
+              const SizedBox(height: 16),
+              _PendingSubmissionsList(classes: classes),
+            ],
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: ListView(
-          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-          padding: const EdgeInsets.all(24),
-        children: [
-          SectionHeader(title: AppLocalizations.of(context)!.upcomingClasses),
-          const SizedBox(height: 16),
-          if (classes.isEmpty)
-            Text(
-              AppLocalizations.of(context)!.noClasses,
-              style: TextStyle(color: SchoolColors.muted),
-            )
-          else
-            ...classes.take(3).map((c) => _ScheduleCard(data: c)),
-          const SizedBox(height: 32),
-          SectionHeader(title: AppLocalizations.of(context)!.tasksForTesting),
-          const SizedBox(height: 16),
-          _PendingSubmissionsList(classes: classes),
-        ],
-      ),
+        ),
       ),
     );
   }
@@ -79,7 +87,8 @@ class _ScheduleCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  data['subject']?.toString() ?? AppLocalizations.of(context)!.unknownKey12,
+                  data['subject']?.toString() ??
+                      AppLocalizations.of(context)!.unknownKey12,
                   style: const TextStyle(
                     fontSize: 12,
                     color: SchoolColors.muted,
@@ -99,7 +108,8 @@ class _PendingSubmissionsList extends StatefulWidget {
   final List<Map<String, dynamic>> classes;
 
   @override
-  State<_PendingSubmissionsList> createState() => _PendingSubmissionsListState();
+  State<_PendingSubmissionsList> createState() =>
+      _PendingSubmissionsListState();
 }
 
 class _PendingSubmissionsListState extends State<_PendingSubmissionsList> {

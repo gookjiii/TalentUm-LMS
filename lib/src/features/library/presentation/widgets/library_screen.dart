@@ -15,7 +15,6 @@ import 'package:school_world/src/widgets/image_viewer.dart';
 import 'package:pdf_manipulator/pdf_manipulator.dart';
 import 'package:school_world/src/services/ilovepdf_service.dart';
 
-
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key, required this.classId});
   final String classId;
@@ -46,7 +45,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   @override
   Widget build(BuildContext context) {
     final effectiveClassId =
-        (ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))?.isNotEmpty == true
+        (ref
+                    .watch(
+                      schoolAppStateProvider.select((s) => s.selectedClassId),
+                    )
+                    ?.isNotEmpty ==
+                true
             ? ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))
             : null) ??
         (widget.classId.isNotEmpty ? widget.classId : null);
@@ -63,8 +67,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       );
     }
 
-    final materialsAsync =
-        ref.watch(libraryMaterialsProvider((effectiveClassId, _limit)));
+    final materialsAsync = ref.watch(
+      libraryMaterialsProvider((effectiveClassId, _limit)),
+    );
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: repo.firestore
@@ -79,7 +84,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           backgroundColor: Colors.transparent,
           body: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
-              if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+              if (scrollInfo.metrics.pixels >=
+                  scrollInfo.metrics.maxScrollExtent - 200) {
                 _loadMore();
               }
               return false;
@@ -89,13 +95,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 SliverToBoxAdapter(
                   child: Consumer(
                     builder: (context, ref, _) {
-                      final allClassAsync = ref.watch(isTeacher ? teacherClassesStreamProvider : studentClassesStreamProvider);
+                      final allClassAsync = ref.watch(
+                        isTeacher
+                            ? teacherClassesStreamProvider
+                            : studentClassesStreamProvider,
+                      );
                       final allVisibleClasses = allClassAsync.value ?? [];
-                      
+
                       return PageHeader(
                         title: AppLocalizations.of(context)!.library,
-                        subtitle: AppLocalizations.of(context)!
-                            .studyMaterialsAndLecturesWill,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        )!.studyMaterialsAndLecturesWill,
                         classContext: className,
                         onClassContextTap: allVisibleClasses.length > 1
                             ? () {
@@ -113,7 +124,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             : null,
                         trailing: isTeacher
                             ? IconButton.filledTonal(
-                                onPressed: () => _showUploadDialog(context, ref, effectiveClassId),
+                                onPressed: () => _showUploadDialog(
+                                  context,
+                                  ref,
+                                  effectiveClassId,
+                                ),
                                 icon: const Icon(Icons.add_rounded),
                                 tooltip: AppLocalizations.of(context)!.add,
                               )
@@ -128,9 +143,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       return SliverFillRemaining(
                         child: EmptyState(
                           icon: Icons.library_books_outlined,
-                          title: AppLocalizations.of(context)!.theLibraryIsEmpty,
-                          subtitle: AppLocalizations.of(context)!
-                              .studyMaterialsAndLecturesWill,
+                          title: AppLocalizations.of(
+                            context,
+                          )!.theLibraryIsEmpty,
+                          subtitle: AppLocalizations.of(
+                            context,
+                          )!.studyMaterialsAndLecturesWill,
                         ),
                       );
                     }
@@ -143,7 +161,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           final id = docs[index].id;
                           return _MaterialTile(
                             id: id,
-                            title: data['title'] ??
+                            title:
+                                data['title'] ??
                                 AppLocalizations.of(context)!.unknownKey7,
                             description: data['description'],
                             fileUrl: data['fileUrl'] ?? '',
@@ -229,7 +248,17 @@ class _MaterialTile extends StatelessWidget {
   void _handleTap(BuildContext context) {
     final ext = (fileName ?? title).split('.').last.toLowerCase();
     final isImage = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'].contains(ext);
-    final isDoc = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv'].contains(ext);
+    final isDoc = [
+      'pdf',
+      'doc',
+      'docx',
+      'ppt',
+      'pptx',
+      'xls',
+      'xlsx',
+      'txt',
+      'csv',
+    ].contains(ext);
     final isVideo = ['mp4', 'mov', 'webm', 'avi', 'mkv'].contains(ext);
 
     if (isImage) {
@@ -240,10 +269,8 @@ class _MaterialTile extends StatelessWidget {
     } else if (isDoc || isVideo) {
       showDialog(
         context: context,
-        builder: (_) => DocumentPreviewDialog(
-          url: fileUrl,
-          fileName: fileName ?? title,
-        ),
+        builder: (_) =>
+            DocumentPreviewDialog(url: fileUrl, fileName: fileName ?? title),
       );
     } else {
       launchUrl(Uri.parse(fileUrl), mode: LaunchMode.externalApplication);
@@ -254,10 +281,10 @@ class _MaterialTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final ext = (fileName ?? title).split('.').last.toLowerCase();
-    
+
     IconData iconData = Icons.insert_drive_file_rounded;
     Color accentColor = SchoolColors.muted;
-    
+
     if (ext == 'pdf') {
       iconData = Icons.picture_as_pdf_rounded;
       accentColor = SchoolColors.red;
@@ -283,7 +310,7 @@ class _MaterialTile extends StatelessWidget {
       iconData = Icons.folder_zip_rounded;
       accentColor = const Color(0xFFF59E0B); // Amber
     }
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -314,11 +341,7 @@ class _MaterialTile extends StatelessWidget {
                       color: accentColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Icon(
-                      iconData,
-                      color: accentColor,
-                      size: 28,
-                    ),
+                    child: Icon(iconData, color: accentColor, size: 28),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -437,7 +460,9 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
             onChanged: (value) => setState(() {}),
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context)!.title,
-              hintText: AppLocalizations.of(context)!.forExampleLecture1Introduction,
+              hintText: AppLocalizations.of(
+                context,
+              )!.forExampleLecture1Introduction,
             ),
           ),
           const SizedBox(height: 16),
@@ -467,7 +492,14 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
                 } else if (['xls', 'xlsx'].contains(ext)) {
                   iconData = Icons.table_view_rounded;
                   accentColor = const Color(0xFF16A34A); // Excel Green
-                } else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'].contains(ext)) {
+                } else if ([
+                  'png',
+                  'jpg',
+                  'jpeg',
+                  'gif',
+                  'webp',
+                  'bmp',
+                ].contains(ext)) {
                   iconData = Icons.image_rounded;
                   accentColor = const Color(0xFF0D9488); // Teal
                 } else if (['mp3', 'wav', 'm4a'].contains(ext)) {
@@ -481,10 +513,7 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
                   accentColor = const Color(0xFFF59E0B); // Amber
                 }
                 return ListTile(
-                  leading: Icon(
-                    iconData,
-                    color: accentColor,
-                  ),
+                  leading: Icon(iconData, color: accentColor),
                   title: Text(_selectedFile!.name),
                   subtitle: Text(
                     '${(_selectedFile!.size / 1024 / 1024).toStringAsFixed(2)} MB',
@@ -502,7 +531,8 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
               icon: const Icon(Icons.attach_file_rounded),
               label: Text(AppLocalizations.of(context)!.selectFile),
             ),
-          if (_selectedFile != null && _selectedFile!.name.toLowerCase().endsWith('.pdf'))
+          if (_selectedFile != null &&
+              _selectedFile!.name.toLowerCase().endsWith('.pdf'))
             CheckboxListTile(
               value: _compressPdf,
               onChanged: (val) => setState(() => _compressPdf = val ?? true),
@@ -539,7 +569,8 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.pickFiles(withData: true, 
+    final result = await FilePicker.pickFiles(
+      withData: true,
       type: FileType.custom,
       allowedExtensions: [
         'pdf',
@@ -590,13 +621,20 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
       Map<String, dynamic> result;
       if (kIsWeb) {
         Uint8List finalBytes = _selectedFile!.bytes!;
-        if (_compressPdf && _selectedFile!.name.toLowerCase().endsWith('.pdf') && _selectedFile!.size > 50 * 1024 * 1024) {
+        if (_compressPdf &&
+            _selectedFile!.name.toLowerCase().endsWith('.pdf') &&
+            _selectedFile!.size > 50 * 1024 * 1024) {
           try {
-            finalBytes = await ILovePdfService().compressPdf(finalBytes, _selectedFile!.name);
+            finalBytes = await ILovePdfService().compressPdf(
+              finalBytes,
+              _selectedFile!.name,
+            );
           } catch (e) {
             debugPrint('Lỗi nén PDF Web: $e');
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(e.toString())));
             }
           }
         }
@@ -607,7 +645,9 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
         );
       } else {
         File fileToUpload = File(_selectedFile!.path!);
-        if (_compressPdf && _selectedFile!.name.toLowerCase().endsWith('.pdf') && _selectedFile!.size > 50 * 1024 * 1024) {
+        if (_compressPdf &&
+            _selectedFile!.name.toLowerCase().endsWith('.pdf') &&
+            _selectedFile!.size > 50 * 1024 * 1024) {
           try {
             final compressedPath = await PdfManipulator().pdfCompressor(
               params: PDFCompressorParams(
@@ -617,13 +657,13 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
               ),
             );
             if (compressedPath != null && compressedPath.isNotEmpty) {
-               fileToUpload = File(compressedPath);
+              fileToUpload = File(compressedPath);
             }
           } catch (e) {
             debugPrint('Lỗi nén PDF: $e');
           }
         }
-        
+
         result = await storage.uploadFile(
           path,
           fileToUpload,

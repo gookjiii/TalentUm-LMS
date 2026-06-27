@@ -67,7 +67,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: AppLocalizations.of(context)!.searchByNameEmailOr,
+                        hintText: AppLocalizations.of(
+                          context,
+                        )!.searchByNameEmailOr,
                         prefixIcon: const Icon(Icons.search_rounded),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
@@ -93,7 +95,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             ),
             Expanded(
               child: CachedStreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                streamFactory: () => repo.firestore.collection('users').snapshots(),
+                streamFactory: () =>
+                    repo.firestore.collection('users').snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData)
                     return const Center(child: CircularProgressIndicator());
@@ -111,7 +114,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   }).toList();
 
                   if (docs.isEmpty) {
-                    return Center(child: Text(AppLocalizations.of(context)!.noUsersFound));
+                    return Center(
+                      child: Text(AppLocalizations.of(context)!.noUsersFound),
+                    );
                   }
 
                   return ListView.separated(
@@ -146,8 +151,10 @@ class _UserListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = AppScope.of(context).repository;
     final role = data['role']?.toString() ?? 'student';
-    final name = data['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey6;
-    final email = data['email']?.toString() ?? AppLocalizations.of(context)!.noEmail;
+    final name =
+        data['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey6;
+    final email =
+        data['email']?.toString() ?? AppLocalizations.of(context)!.noEmail;
     final avatarUrl = data['avatarUrl']?.toString();
     final isBanned = data['isBanned'] == true;
 
@@ -265,7 +272,9 @@ class _UserListTile extends StatelessWidget {
                         child: Text(AppLocalizations.of(context)!.cancel),
                       ),
                       TextButton(
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
                         onPressed: () => Navigator.pop(context, true),
                         child: Text(AppLocalizations.of(context)!.delete),
                       ),
@@ -278,9 +287,8 @@ class _UserListTile extends StatelessWidget {
                     showDialog(
                       context: context,
                       barrierDismissible: false,
-                      builder: (context) => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      builder: (context) =>
+                          const Center(child: CircularProgressIndicator()),
                     );
                   }
 
@@ -300,7 +308,9 @@ class _UserListTile extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            AppLocalizations.of(context)!.errorPrefix(e.toString()),
+                            AppLocalizations.of(
+                              context,
+                            )!.errorPrefix(e.toString()),
                           ),
                         ),
                       );
@@ -349,7 +359,10 @@ class _UserListTile extends StatelessWidget {
                   value: 'delete_user',
                   child: Text(
                     _getDeleteAccountText(context),
-                    style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],

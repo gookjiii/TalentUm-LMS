@@ -36,7 +36,8 @@ class _FeedScreenState extends State<FeedScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final userName =
-        widget.repository.auth.currentUser?.displayName ?? AppLocalizations.of(context)!.user;
+        widget.repository.auth.currentUser?.displayName ??
+        AppLocalizations.of(context)!.user;
 
     return Scaffold(
       backgroundColor: SchoolColors.bg,
@@ -93,10 +94,16 @@ class _FeedScreenState extends State<FeedScreen> {
                 ),
               ),
               if (posts.isEmpty)
-                SliverFillRemaining(child: Center(child: Text(AppLocalizations.of(context)!.empty)))
+                SliverFillRemaining(
+                  child: Center(
+                    child: Text(AppLocalizations.of(context)!.empty),
+                  ),
+                )
               else
                 SliverPadding(
-                  padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: context.horizontalPadding,
+                  ),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       return FutureBuilder<Map<String, dynamic>?>(

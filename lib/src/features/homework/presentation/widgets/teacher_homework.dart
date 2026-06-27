@@ -46,11 +46,15 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
               children: [
                 TextField(
                   controller: titleCtrl,
-                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.title),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.title,
+                  ),
                 ),
                 TextField(
                   controller: descCtrl,
-                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.description),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.description,
+                  ),
                   maxLines: 3,
                 ),
                 SizedBox(height: 16),
@@ -112,9 +116,7 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.deleteTask),
-        content: Text(
-          AppLocalizations.of(context)!.allSubmittedWorkForThis,
-        ),
+        content: Text(AppLocalizations.of(context)!.allSubmittedWorkForThis),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -145,7 +147,10 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
     if (!_initialized) {
       _initialized = true;
       final repo = AppScope.of(context).repository;
-      _assignmentsStream = repo.assignmentsForClass(widget.classId, limit: _limit);
+      _assignmentsStream = repo.assignmentsForClass(
+        widget.classId,
+        limit: _limit,
+      );
     }
   }
 
@@ -156,7 +161,10 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
       final repo = AppScope.of(context).repository;
       setState(() {
         _limit = 20;
-        _assignmentsStream = repo.assignmentsForClass(widget.classId, limit: _limit);
+        _assignmentsStream = repo.assignmentsForClass(
+          widget.classId,
+          limit: _limit,
+        );
         _selectedId = null;
       });
     }
@@ -166,7 +174,10 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
     setState(() {
       _limit += 20;
       final repo = AppScope.of(context).repository;
-      _assignmentsStream = repo.assignmentsForClass(widget.classId, limit: _limit);
+      _assignmentsStream = repo.assignmentsForClass(
+        widget.classId,
+        limit: _limit,
+      );
     });
   }
 
@@ -178,7 +189,8 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
         child: NotificationListener<ScrollNotification>(
           onNotification: (ScrollNotification scrollInfo) {
             if (_selectedId == null &&
-                scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+                scrollInfo.metrics.pixels >=
+                    scrollInfo.metrics.maxScrollExtent - 200) {
               _loadMore();
             }
             return false;
@@ -196,7 +208,7 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                     onCreate: () => _createAssignment(context),
                   );
                 }
-  
+
                 if (_selectedId == null) {
                   return _AssignmentSummaryView(
                     classId: widget.classId,
@@ -205,14 +217,14 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                     onCreate: () => _createAssignment(context),
                   );
                 }
-  
+
                 QueryDocumentSnapshot<Map<String, dynamic>>? selectedDoc;
                 try {
                   selectedDoc = docs.firstWhere((d) => d.id == _selectedId);
                 } catch (_) {
                   selectedDoc = docs.first;
                 }
-  
+
                 return Column(
                   children: [
                     _HomeworkTopBar(
@@ -273,12 +285,16 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                 children: [
                   TextField(
                     controller: titleCtrl,
-                    decoration: InputDecoration(labelText: AppLocalizations.of(context)!.title),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.title,
+                    ),
                   ),
                   SizedBox(height: 12),
                   TextField(
                     controller: descCtrl,
-                    decoration: InputDecoration(labelText: AppLocalizations.of(context)!.description),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.description,
+                    ),
                     maxLines: 3,
                   ),
                   SizedBox(height: 12),
@@ -365,7 +381,9 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              AppLocalizations.of(context)!.pleaseEnterATitleAnd,
+                              AppLocalizations.of(
+                                context,
+                              )!.pleaseEnterATitleAnd,
                             ),
                           ),
                         );
@@ -471,13 +489,23 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
           builder: (context, ref, _) {
             final allClassAsync = ref.watch(teacherClassesStreamProvider);
             final allVisibleClasses = allClassAsync.value ?? [];
-            final effectiveClassId = ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ?? widget.classId;
-            final currentClassName = allVisibleClasses.firstWhere((c) => c['id'] == effectiveClassId, orElse: () => {})['name']?.toString();
+            final effectiveClassId =
+                ref.watch(
+                  schoolAppStateProvider.select((s) => s.selectedClassId),
+                ) ??
+                widget.classId;
+            final currentClassName = allVisibleClasses
+                .firstWhere(
+                  (c) => c['id'] == effectiveClassId,
+                  orElse: () => {},
+                )['name']
+                ?.toString();
 
             return PageHeader(
               title: AppLocalizations.of(context)!.quests,
-              subtitle: AppLocalizations.of(context)!
-                  .totalAssignmentsCount(widget.docs.length),
+              subtitle: AppLocalizations.of(
+                context,
+              )!.totalAssignmentsCount(widget.docs.length),
               classContext: currentClassName,
               onClassContextTap: allVisibleClasses.length > 1
                   ? () {
@@ -606,7 +634,8 @@ class _AssignmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = doc.data();
-    final title = data['title']?.toString() ?? AppLocalizations.of(context)!.unknownKey13;
+    final title =
+        data['title']?.toString() ?? AppLocalizations.of(context)!.unknownKey13;
     final desc = data['description']?.toString() ?? '';
     final due = (data['dueDate'] as Timestamp?)?.toDate();
     final isOverdue = due != null && due.isBefore(DateTime.now());
@@ -667,7 +696,9 @@ class _AssignmentCard extends StatelessWidget {
           Row(
             children: [
               StatusChip(
-                label: isOverdue ? AppLocalizations.of(context)!.expired : AppLocalizations.of(context)!.actively1,
+                label: isOverdue
+                    ? AppLocalizations.of(context)!.expired
+                    : AppLocalizations.of(context)!.actively1,
                 color: isOverdue ? SchoolColors.red : SchoolColors.green,
               ),
               const Spacer(),
@@ -763,7 +794,11 @@ class _HomeworkTopBar extends StatelessWidget {
           IconButton(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(AppLocalizations.of(context)!.exportWillBeAvailableSoon)),
+                SnackBar(
+                  content: Text(
+                    AppLocalizations.of(context)!.exportWillBeAvailableSoon,
+                  ),
+                ),
               );
             },
             icon: const Icon(Icons.download_outlined, size: 20),
@@ -778,7 +813,10 @@ class _HomeworkTopBar extends StatelessWidget {
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(value: 'edit', child: Text(AppLocalizations.of(context)!.edit)),
+              PopupMenuItem(
+                value: 'edit',
+                child: Text(AppLocalizations.of(context)!.edit),
+              ),
               PopupMenuItem(
                 value: 'delete',
                 child: Text(
@@ -814,11 +852,15 @@ class _HomeworkTopBar extends StatelessWidget {
               children: [
                 TextField(
                   controller: titleCtrl,
-                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.title),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.title,
+                  ),
                 ),
                 TextField(
                   controller: descCtrl,
-                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.description),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.description,
+                  ),
                   maxLines: 3,
                 ),
                 SizedBox(height: 16),
@@ -880,9 +922,7 @@ class _HomeworkTopBar extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.deleteTask),
-        content: Text(
-          AppLocalizations.of(context)!.allSubmittedWorkForThis,
-        ),
+        content: Text(AppLocalizations.of(context)!.allSubmittedWorkForThis),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -1005,7 +1045,8 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
                     future: _classFuture,
                     builder: (context, cSnap) {
                       final className =
-                          cSnap.data?['name']?.toString() ?? AppLocalizations.of(context)!.classText;
+                          cSnap.data?['name']?.toString() ??
+                          AppLocalizations.of(context)!.classText;
                       return Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -1418,7 +1459,9 @@ class _SubmissionRowState extends State<_SubmissionRow> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              AppLocalizations.of(context)!.pleaseEnterAValidRating,
+                              AppLocalizations.of(
+                                context,
+                              )!.pleaseEnterAValidRating,
                             ),
                           ),
                         );

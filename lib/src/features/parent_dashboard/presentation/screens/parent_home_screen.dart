@@ -23,7 +23,8 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
 
     return Scaffold(
       body: CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        streamFactory: () => repo.firestore.collection('users').doc(uid).snapshots(),
+        streamFactory: () =>
+            repo.firestore.collection('users').doc(uid).snapshots(),
         keys: [uid],
         builder: (context, userSnap) {
           if (!userSnap.hasData)
@@ -51,7 +52,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                         ),
                       ),
                       Text(
-                        AppLocalizations.of(context)!.monitoringYourChildrensProgress,
+                        AppLocalizations.of(
+                          context,
+                        )!.monitoringYourChildrensProgress,
                         style: TextStyle(
                           color: SchoolColors.muted,
                           fontSize: 14,
@@ -243,7 +246,10 @@ class _RecentGrades extends StatelessWidget {
         Spacer(),
         TextButton(
           onPressed: () {},
-          child: Text(AppLocalizations.of(context)!.allRatings, style: TextStyle(fontSize: 12)),
+          child: Text(
+            AppLocalizations.of(context)!.allRatings,
+            style: TextStyle(fontSize: 12),
+          ),
         ),
       ],
     );

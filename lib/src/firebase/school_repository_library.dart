@@ -29,7 +29,7 @@ mixin SchoolRepositoryLibrary {
     int? limit,
   }) {
     if (classIds.isEmpty) return const Stream.empty();
-    
+
     var query = firestore
         .collection('library_materials')
         .where('classId', whereIn: classIds.take(30).toList())

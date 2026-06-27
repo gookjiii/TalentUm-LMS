@@ -23,6 +23,7 @@ import '../features/shared/presentation/widgets/student_sidebar.dart';
 import '../features/shared/presentation/widgets/student_right_sidebar.dart';
 import '../features/library/presentation/widgets/library_screen.dart';
 import '../features/webinars/presentation/widgets/webinars_screen.dart';
+
 class StudentShell extends ConsumerStatefulWidget {
   const StudentShell({super.key});
 
@@ -48,7 +49,9 @@ class _StudentShellState extends ConsumerState<StudentShell> {
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (err, stack) => Scaffold(
         body: Center(
-          child: Text(AppLocalizations.of(context)!.errorPrefix(err.toString())),
+          child: Text(
+            AppLocalizations.of(context)!.errorPrefix(err.toString()),
+          ),
         ),
       ),
       data: (classes) {
@@ -112,10 +115,26 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                   StudentToday(
                     classes: classes,
                     selectedClassId: selectedId,
-                    onTabSelect: (i) => _handleTabSelection(i, wide, selectedId, repo, appState, l10n, classes),
+                    onTabSelect: (i) => _handleTabSelection(
+                      i,
+                      wide,
+                      selectedId,
+                      repo,
+                      appState,
+                      l10n,
+                      classes,
+                    ),
                     showSidebar: showRightSidebar,
                     onHomeworkTap: selectedId != null
-                        ? () => _handleTabSelection(3, wide, selectedId, repo, appState, l10n, classes)
+                        ? () => _handleTabSelection(
+                            3,
+                            wide,
+                            selectedId,
+                            repo,
+                            appState,
+                            l10n,
+                            classes,
+                          )
                         : () {},
                   ),
 
@@ -157,7 +176,9 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                 if (hasClasses)
                   TeacherScheduleScreen(
                     readOnly: true,
-                    studentClassIds: classes.map((c) => c['id'] as String).toList(),
+                    studentClassIds: classes
+                        .map((c) => c['id'] as String)
+                        .toList(),
                     studentClasses: classes,
                   )
                 else
@@ -184,10 +205,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
 
                 // Journal — read-only, filtered to the current student
                 if (hasClasses && selectedId != null)
-                  JournalScreen(
-                    classId: selectedId,
-                    studentId: repo.uid,
-                  )
+                  JournalScreen(classId: selectedId, studentId: repo.uid)
                 else
                   _FeatureLockedEmptyState(
                     title: AppLocalizations.of(context)!.magazine,
@@ -263,7 +281,9 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                         }
                         // 0=Today, 2=Chat, 3=Homework, 4=Schedule; More opens sheet
                         const mobileIndices = [0, 2, 3, 4];
-                        final mobileNavItems = mobileIndices.map((i) => navItems[i]).toList();
+                        final mobileNavItems = mobileIndices
+                            .map((i) => navItems[i])
+                            .toList();
                         var mobileSelected = mobileIndices.indexOf(_tabIndex);
 
                         if (mobileSelected < 0) mobileSelected = -1;
@@ -310,7 +330,15 @@ class _StudentShellState extends ConsumerState<StudentShell> {
       builder: (ctx) => _MoreSheet(
         onSelect: (index) {
           Navigator.pop(ctx);
-          _handleTabSelection(index, false, selectedId, repo, appState, l10n, classes);
+          _handleTabSelection(
+            index,
+            false,
+            selectedId,
+            repo,
+            appState,
+            l10n,
+            classes,
+          );
         },
         l10n: l10n,
         onJoinClass: () {
@@ -356,8 +384,12 @@ class _StudentShellState extends ConsumerState<StudentShell> {
         MaterialPageRoute(
           builder: (ctx) => Consumer(
             builder: (ctx, ref, _) {
-              final currentId = ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ?? selectedId;
-              
+              final currentId =
+                  ref.watch(
+                    schoolAppStateProvider.select((s) => s.selectedClassId),
+                  ) ??
+                  selectedId;
+
               return Scaffold(
                 appBar: AppBar(
                   title: Text(_getStudentTabTitle(index, l10n)),
@@ -381,7 +413,13 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                 ),
                 body: Container(
                   color: Theme.of(ctx).colorScheme.surface,
-                  child: _getStudentTabWidget(index, currentId, repo, appState, classes),
+                  child: _getStudentTabWidget(
+                    index,
+                    currentId,
+                    repo,
+                    appState,
+                    classes,
+                  ),
                 ),
               );
             },
@@ -427,10 +465,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
       case 6:
         return WebinarsScreen(classId: '');
       case 7:
-        return JournalScreen(
-          classId: selectedId ?? '',
-          studentId: repo.uid,
-        );
+        return JournalScreen(classId: selectedId ?? '', studentId: repo.uid);
       default:
         return const SizedBox.shrink();
     }
@@ -453,14 +488,15 @@ class _FeatureLockedEmptyState extends StatelessWidget {
 
 class JoinClassEmptyState extends ConsumerWidget {
   const JoinClassEmptyState({super.key});
-  
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final user = FirebaseAuth.instance.currentUser;
     final userAsync = ref.watch(userDocumentProvider);
     final userData = userAsync.value ?? {};
-    final rawName = userData['name']?.toString() ?? user?.displayName ?? l10n.student;
+    final rawName =
+        userData['name']?.toString() ?? user?.displayName ?? l10n.student;
     final name = rawName.trim().isNotEmpty
         ? rawName.split(RegExp(r'\s+')).first
         : l10n.student;
@@ -503,8 +539,9 @@ class JoinClassEmptyState extends ConsumerWidget {
           child: EmptyState(
             icon: Icons.school_outlined,
             title: AppLocalizations.of(context)!.joinYourFirstClass,
-            subtitle:
-                AppLocalizations.of(context)!.enterTheTeacherInvitationCode,
+            subtitle: AppLocalizations.of(
+              context,
+            )!.enterTheTeacherInvitationCode,
             actionLabel: AppLocalizations.of(context)!.enterInvitationCode,
             action: () => showDialog(
               context: context,
@@ -551,8 +588,8 @@ class _NavTabItem extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected
                     ? (isDark
-                        ? SchoolColors.primary.withValues(alpha: 0.18)
-                        : SchoolColors.primary.withValues(alpha: 0.1))
+                          ? SchoolColors.primary.withValues(alpha: 0.18)
+                          : SchoolColors.primary.withValues(alpha: 0.1))
                     : Colors.transparent,
                 shape: BoxShape.circle,
               ),
@@ -561,8 +598,10 @@ class _NavTabItem extends StatelessWidget {
                 color: selected
                     ? SchoolColors.primary
                     : (isDark
-                        ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
-                        : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                          ? SchoolColors.darkTextSecondary.withValues(
+                              alpha: 0.5,
+                            )
+                          : SchoolColors.textSecondary.withValues(alpha: 0.5)),
                 size: 28,
               ),
             ),
@@ -586,7 +625,11 @@ class _NavTabItem extends StatelessWidget {
 }
 
 class _MoreSheet extends StatelessWidget {
-  const _MoreSheet({required this.onSelect, required this.l10n, required this.onJoinClass});
+  const _MoreSheet({
+    required this.onSelect,
+    required this.l10n,
+    required this.onJoinClass,
+  });
   final ValueChanged<int> onSelect;
   final AppLocalizations l10n;
   final VoidCallback onJoinClass;
@@ -596,10 +639,30 @@ class _MoreSheet extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final items = [
-      (icon: Icons.campaign_rounded, label: l10n.feed, color: SchoolColors.secondary, index: 1),
-      (icon: Icons.library_books_rounded, label: l10n.library, color: SchoolColors.accent, index: 5),
-      (icon: Icons.ondemand_video_rounded, label: l10n.webinars, color: SchoolColors.primary, index: 6),
-      (icon: Icons.book_rounded, label: l10n.magazine, color: SchoolColors.orange, index: 7),
+      (
+        icon: Icons.campaign_rounded,
+        label: l10n.feed,
+        color: SchoolColors.secondary,
+        index: 1,
+      ),
+      (
+        icon: Icons.library_books_rounded,
+        label: l10n.library,
+        color: SchoolColors.accent,
+        index: 5,
+      ),
+      (
+        icon: Icons.ondemand_video_rounded,
+        label: l10n.webinars,
+        color: SchoolColors.primary,
+        index: 6,
+      ),
+      (
+        icon: Icons.book_rounded,
+        label: l10n.magazine,
+        color: SchoolColors.orange,
+        index: 7,
+      ),
     ];
 
     return Container(
@@ -646,13 +709,17 @@ class _MoreSheet extends StatelessWidget {
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
               childAspectRatio: 2.6,
-              children: items.map((item) => _MoreItem(
-                icon: item.icon,
-                label: item.label,
-                color: item.color,
-                isDark: isDark,
-                onTap: () => onSelect(item.index),
-              )).toList(),
+              children: items
+                  .map(
+                    (item) => _MoreItem(
+                      icon: item.icon,
+                      label: item.label,
+                      color: item.color,
+                      isDark: isDark,
+                      onTap: () => onSelect(item.index),
+                    ),
+                  )
+                  .toList(),
             ),
             const SizedBox(height: 12),
             Material(
@@ -662,10 +729,17 @@ class _MoreSheet extends StatelessWidget {
                 onTap: onJoinClass,
                 borderRadius: BorderRadius.circular(14),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   child: Row(
                     children: [
-                      Icon(Icons.group_add_rounded, color: SchoolColors.green, size: 20),
+                      Icon(
+                        Icons.group_add_rounded,
+                        color: SchoolColors.green,
+                        size: 20,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -673,14 +747,18 @@ class _MoreSheet extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                            color: isDark
+                                ? SchoolColors.darkText
+                                : SchoolColors.text,
                           ),
                         ),
                       ),
                       Icon(
                         Icons.arrow_forward_ios_rounded,
                         size: 14,
-                        color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                        color: isDark
+                            ? SchoolColors.darkMuted
+                            : SchoolColors.muted,
                       ),
                     ],
                   ),
@@ -786,7 +864,9 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(AppLocalizations.of(context)!.theCameraWillBeAvailable),
+                    content: Text(
+                      AppLocalizations.of(context)!.theCameraWillBeAvailable,
+                    ),
                   ),
                 );
               },

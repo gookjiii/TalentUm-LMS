@@ -21,28 +21,32 @@ mixin SchoolRepositoryFeed {
       'pinned': pinned,
       'attachments': attachments,
     });
-    
+
     _sendClassNotification(classId, 'Новый пост', content);
   }
 
-  Future<void> _sendClassNotification(String classId, String title, String body) async {
+  Future<void> _sendClassNotification(
+    String classId,
+    String title,
+    String body,
+  ) async {
     try {
       final classDoc = await firestore.collection('classes').doc(classId).get();
       if (!classDoc.exists) return;
       final data = classDoc.data()!;
       final List<dynamic> studentIds = data['studentIds'] ?? [];
       final List<dynamic> parentIds = data['parentIds'] ?? [];
-      
-      final targetUserIds = [...studentIds, ...parentIds]
-          .map((id) => id.toString())
-          .toSet()
-          .toList();
-          
+
+      final targetUserIds = [
+        ...studentIds,
+        ...parentIds,
+      ].map((id) => id.toString()).toSet().toList();
+
       if (targetUserIds.isEmpty) return;
-      
+
       final className = data['name'] ?? '';
       final finalTitle = className.isNotEmpty ? '$className - $title' : title;
-      
+
       await PushNotificationManager.sendPushNotification(
         userIds: targetUserIds,
         title: finalTitle,
@@ -104,7 +108,10 @@ mixin SchoolRepositoryFeed {
     });
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> postsForClass(String classId, {int? limit}) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> postsForClass(
+    String classId, {
+    int? limit,
+  }) {
     var query = firestore
         .collection('posts')
         .where('classId', isEqualTo: classId)

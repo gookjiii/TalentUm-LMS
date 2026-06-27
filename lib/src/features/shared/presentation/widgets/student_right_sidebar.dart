@@ -98,7 +98,8 @@ class _UpcomingAssignmentsList extends StatefulWidget {
   final List<Map<String, dynamic>> classes;
 
   @override
-  State<_UpcomingAssignmentsList> createState() => _UpcomingAssignmentsListState();
+  State<_UpcomingAssignmentsList> createState() =>
+      _UpcomingAssignmentsListState();
 }
 
 class _UpcomingAssignmentsListState extends State<_UpcomingAssignmentsList> {

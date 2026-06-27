@@ -198,7 +198,9 @@ class _ParentClassDetailScreen extends StatelessWidget {
                   final assignment = assignments[index].data();
                   final assignmentId = assignments[index].id;
 
-                  return CachedStreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  return CachedStreamBuilder<
+                    QuerySnapshot<Map<String, dynamic>>
+                  >(
                     streamFactory: () => repository.firestore
                         .collection('submissions')
                         .where('assignmentId', isEqualTo: assignmentId)

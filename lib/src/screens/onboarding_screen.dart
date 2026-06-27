@@ -216,9 +216,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           boxShadow: [
                             BoxShadow(
                               color: SchoolColors.primary.withValues(
-                                alpha: (_previewData != null && !_loading) ? 0.3 : 0.0,
+                                alpha: (_previewData != null && !_loading)
+                                    ? 0.3
+                                    : 0.0,
                               ),
-                              blurRadius: (_previewData != null && !_loading) ? 20 : 0,
+                              blurRadius: (_previewData != null && !_loading)
+                                  ? 20
+                                  : 0,
                               offset: (_previewData != null && !_loading)
                                   ? const Offset(0, 6)
                                   : Offset.zero,
@@ -258,9 +262,15 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                   : SchoolColors.textSecondary,
                             ),
                             children: [
-                              TextSpan(text: AppLocalizations.of(context)!.areYouATeacher),
                               TextSpan(
-                                text: AppLocalizations.of(context)!.loginAsTeacher,
+                                text: AppLocalizations.of(
+                                  context,
+                                )!.areYouATeacher,
+                              ),
+                              TextSpan(
+                                text: AppLocalizations.of(
+                                  context,
+                                )!.loginAsTeacher,
                                 style: TextStyle(
                                   color: SchoolColors.primary,
                                   fontWeight: FontWeight.w700,
@@ -285,7 +295,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   Future<void> _previewClass() async {
     final code = _codeController.text.trim();
     if (code.isEmpty) {
-      setState(() => _codeError = AppLocalizations.of(context)!.enterInvitationCode);
+      setState(
+        () => _codeError = AppLocalizations.of(context)!.enterInvitationCode,
+      );
       return;
     }
     setState(() {
@@ -319,7 +331,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       }
       await repo.createProfile(
         role: 'student',
-        name: user.displayName ?? user.email?.split('@').first ?? AppLocalizations.of(context)!.student,
+        name:
+            user.displayName ??
+            user.email?.split('@').first ??
+            AppLocalizations.of(context)!.student,
       );
       final result = await repo.joinClass(_previewData!['classId'].toString());
       if (mounted) {
@@ -344,7 +359,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       }
       await repo.createProfile(
         role: 'teacher',
-        name: user.displayName ?? user.email?.split('@').first ?? AppLocalizations.of(context)!.teacher,
+        name:
+            user.displayName ??
+            user.email?.split('@').first ??
+            AppLocalizations.of(context)!.teacher,
       );
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);

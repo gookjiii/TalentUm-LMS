@@ -1,9 +1,9 @@
 extension ImageUrlExtension on String {
-  /// Converts a Google Drive viewer URL to a direct download URL so it can be 
+  /// Converts a Google Drive viewer URL to a direct download URL so it can be
   /// rendered by Image providers like CachedNetworkImage.
   String get toDirectImageUrl {
     if (isEmpty) return this;
-    
+
     if (contains('drive.google.com')) {
       final regExp = RegExp(r'drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)');
       final match = regExp.firstMatch(this);
@@ -24,10 +24,12 @@ extension ImageUrlExtension on String {
   String toOptimizedCloudinary({bool performance = false}) {
     if (isEmpty) return this;
     if (!contains('cloudinary.com')) return this;
-    
+
     // Check if it already has transformations
     if (contains('/upload/')) {
-      final transformation = performance ? 'q_auto,f_auto,w_400/' : 'q_auto,f_auto/';
+      final transformation = performance
+          ? 'q_auto,f_auto,w_400/'
+          : 'q_auto,f_auto/';
       return replaceFirst('/upload/', '/upload/$transformation');
     }
     return this;

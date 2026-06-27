@@ -102,7 +102,7 @@ class CloudinaryStorageProvider implements StorageProvider {
   static const configuredGoogleDriveProxyUrl = String.fromEnvironment(
     'GOOGLE_DRIVE_PROXY_URL',
   );
- 
+
   static bool get isConfigured =>
       configuredCloudName.isNotEmpty && configuredUploadPreset.isNotEmpty;
 
@@ -113,7 +113,7 @@ class CloudinaryStorageProvider implements StorageProvider {
 
   static bool get isGoogleDriveConfigured =>
       configuredGoogleDriveProxyUrl.isNotEmpty;
- 
+
   static StorageProvider fromEnvironmentOrFirebase() {
     if (isGoogleDriveConfigured) {
       return GoogleDriveStorageProvider(
@@ -211,7 +211,7 @@ class CloudinaryStorageProvider implements StorageProvider {
       '/v1_1/$_cloudName/auto/upload',
     ).toString();
     final folder = path.split('/').take(2).join('/');
-    
+
     // Fallback to simple upload if file is empty
     if (totalSize == 0) {
       return _dio.post(
@@ -226,14 +226,16 @@ class CloudinaryStorageProvider implements StorageProvider {
 
     final uniqueUploadId = DateTime.now().millisecondsSinceEpoch.toString();
     const chunkSize = 10 * 1024 * 1024; // 10 MB per chunk
-    
+
     Response<dynamic>? lastResponse;
     int bytesUploaded = 0;
 
     for (int start = 0; start < totalSize; start += chunkSize) {
-      final end = (start + chunkSize < totalSize) ? start + chunkSize : totalSize;
+      final end = (start + chunkSize < totalSize)
+          ? start + chunkSize
+          : totalSize;
       final chunkLength = end - start;
-      
+
       var multipartFile = await getChunk(start, end);
 
       try {
@@ -255,7 +257,7 @@ class CloudinaryStorageProvider implements StorageProvider {
               ),
               onSendProgress: (sent, total) {
                 if (onProgress != null && chunkLength > 0) {
-                   onProgress((bytesUploaded + sent) / totalSize);
+                  onProgress((bytesUploaded + sent) / totalSize);
                 }
               },
             );
@@ -263,7 +265,9 @@ class CloudinaryStorageProvider implements StorageProvider {
           } on DioException catch (e) {
             // Only retry on network-layer errors (no HTTP response from server)
             if (e.response != null || attempt == maxRetries) {
-              throw Exception('Cloudinary error: ${e.response?.statusCode} - ${e.response?.data}');
+              throw Exception(
+                'Cloudinary error: ${e.response?.statusCode} - ${e.response?.data}',
+              );
             }
             // Exponential backoff: 500ms, 1s, 2s
             await Future.delayed(Duration(milliseconds: 500 * attempt));
@@ -274,10 +278,10 @@ class CloudinaryStorageProvider implements StorageProvider {
       } catch (e) {
         rethrow;
       }
-      
+
       bytesUploaded += chunkLength;
     }
-    
+
     return lastResponse!;
   }
 
@@ -308,27 +312,20 @@ class CloudinaryStorageProvider implements StorageProvider {
       if (uploadIndex != -1 && uploadIndex + 2 < segments.length) {
         // public_id is everything after the version string (v123...), minus the extension
         final publicIdWithExt = segments.sublist(uploadIndex + 2).join('/');
-        final publicId = publicIdWithExt.contains('.') 
+        final publicId = publicIdWithExt.contains('.')
             ? publicIdWithExt.substring(0, publicIdWithExt.lastIndexOf('.'))
             : publicIdWithExt;
 
         final resourceType = pathOrUrl.contains('/video/') ? 'video' : 'image';
-        
+
         const apiSecret = String.fromEnvironment('APP_API_SECRET');
         const proxyUrl = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
-        
+
         if (proxyUrl.isNotEmpty) {
           await _dio.post(
             '$proxyUrl/api/upload/delete_cloudinary',
-            data: {
-              'publicId': publicId,
-              'resourceType': resourceType,
-            },
-            options: Options(
-              headers: {
-                'Authorization': 'Bearer $apiSecret',
-              },
-            ),
+            data: {'publicId': publicId, 'resourceType': resourceType},
+            options: Options(headers: {'Authorization': 'Bearer $apiSecret'}),
           );
           debugPrint('Cloudinary file deleted: $publicId');
         }

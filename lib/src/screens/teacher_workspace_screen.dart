@@ -312,7 +312,8 @@ class _TeacherWorkspaceScreenState
               );
 
         return Scaffold(
-          extendBody: true, // Allow content to scroll under the frosted glass bottom bar
+          extendBody:
+              true, // Allow content to scroll under the frosted glass bottom bar
           backgroundColor: SchoolColors.shellBackground,
           body: SafeArea(
             bottom: false,
@@ -336,7 +337,9 @@ class _TeacherWorkspaceScreenState
                         tabIndex: _tabIndex,
                         onSelect: (i) {
                           setState(() => _tabIndex = i);
-                          ref.read(schoolAppStateProvider).setTeacherTabIndex(i);
+                          ref
+                              .read(schoolAppStateProvider)
+                              .setTeacherTabIndex(i);
                         },
                         navItems: navItems,
                         onDeleteChat: _deleteClassChat,
@@ -1389,8 +1392,12 @@ class _MobileBottomBar extends StatelessWidget {
                         color: selected
                             ? SchoolColors.primary
                             : (isDark
-                                  ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
-                                  : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                                  ? SchoolColors.darkTextSecondary.withValues(
+                                      alpha: 0.5,
+                                    )
+                                  : SchoolColors.textSecondary.withValues(
+                                      alpha: 0.5,
+                                    )),
                         size: 28,
                       ),
                     ),
@@ -1442,8 +1449,12 @@ class _MobileBottomBar extends StatelessWidget {
                       color: moreSelected
                           ? SchoolColors.primary
                           : (isDark
-                                ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
-                                : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                                ? SchoolColors.darkTextSecondary.withValues(
+                                    alpha: 0.5,
+                                  )
+                                : SchoolColors.textSecondary.withValues(
+                                    alpha: 0.5,
+                                  )),
                       size: 24,
                     ),
                   ),

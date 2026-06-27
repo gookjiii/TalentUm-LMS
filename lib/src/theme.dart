@@ -30,7 +30,6 @@ class SchoolColors {
   static const purple = Color(0xFF475569);
   static const purpleContainer = Color(0xFFF1F5F9);
 
-
   // ── Light-mode Neutrals ───────────────────────────────────────
   static const bg = Color(0xFFF4F7FB);
   static const surface = Color(0xFFFFFFFF);
@@ -111,7 +110,7 @@ class SchoolColors {
     blurRadius: 10,
     offset: const Offset(0, 4),
   );
-  
+
   static BoxShadow elevation2 = BoxShadow(
     color: Colors.black.withValues(alpha: 0.08),
     blurRadius: 20,
@@ -157,7 +156,7 @@ class AppRadius {
 
 class AppTextStyle {
   const AppTextStyle._();
-  
+
   static final labelSm = GoogleFonts.inter(
     fontSize: 11,
     fontWeight: FontWeight.w600,
@@ -187,21 +186,24 @@ class AppTextStyle {
     fontWeight: FontWeight.w800,
     letterSpacing: -0.4,
   );
-  
-  static TextStyle display(BuildContext context) => GoogleFonts.plusJakartaSans(
-        fontSize: 32,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.8,
-        height: 1.1,
-        color: Theme.of(context).colorScheme.onSurface,
-      );
 
-  static TextStyle mono({double fontSize = 13, FontWeight fontWeight = FontWeight.w500, Color? color}) => 
-      GoogleFonts.jetBrainsMono(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-      );
+  static TextStyle display(BuildContext context) => GoogleFonts.plusJakartaSans(
+    fontSize: 32,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.8,
+    height: 1.1,
+    color: Theme.of(context).colorScheme.onSurface,
+  );
+
+  static TextStyle mono({
+    double fontSize = 13,
+    FontWeight fontWeight = FontWeight.w500,
+    Color? color,
+  }) => GoogleFonts.jetBrainsMono(
+    fontSize: fontSize,
+    fontWeight: fontWeight,
+    color: color,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -240,12 +242,11 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
     useMaterial3: true,
     colorScheme: scheme,
     scaffoldBackgroundColor: SchoolColors.bg,
-    textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme)
-        .apply(
-          fontFamilyFallback: fallbackFonts,
-          bodyColor: SchoolColors.text,
-          displayColor: SchoolColors.text,
-        ),
+    textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).apply(
+      fontFamilyFallback: fallbackFonts,
+      bodyColor: SchoolColors.text,
+      displayColor: SchoolColors.text,
+    ),
 
     appBarTheme: AppBarTheme(
       backgroundColor: SchoolColors.bg,
@@ -285,10 +286,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
         ),
         minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 52)),
         textStyle: WidgetStatePropertyAll(
-          GoogleFonts.inter(
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-          ),
+          GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         elevation: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.pressed)) return 0;
@@ -306,20 +304,14 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         side: const BorderSide(color: SchoolColors.border, width: 1.5),
-        textStyle: GoogleFonts.inter(
-          fontWeight: FontWeight.w700,
-          fontSize: 16,
-        ),
+        textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
         minimumSize: const Size(double.infinity, 52),
       ),
     ),
 
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        textStyle: GoogleFonts.inter(
-          fontWeight: FontWeight.w700,
-          fontSize: 15,
-        ),
+        textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
       ),
     ),
 
@@ -410,10 +402,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
     chipTheme: ChipThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      labelStyle: GoogleFonts.inter(
-        fontWeight: FontWeight.w600,
-        fontSize: 12,
-      ),
+      labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 12),
     ),
 
     dividerTheme: const DividerThemeData(
@@ -481,10 +470,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       dividerColor: Colors.transparent,
       labelColor: primaryColor,
       unselectedLabelColor: SchoolColors.muted,
-      labelStyle: GoogleFonts.inter(
-        fontWeight: FontWeight.w700,
-        fontSize: 13,
-      ),
+      labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
       unselectedLabelStyle: GoogleFonts.inter(
         fontWeight: FontWeight.w600,
         fontSize: 13,
@@ -575,8 +561,8 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
     'EmojiOne',
   ];
 
-  final textTheme =
-      GoogleFonts.interTextTheme(ThemeData.dark().textTheme).apply(
+  final textTheme = GoogleFonts.interTextTheme(ThemeData.dark().textTheme)
+      .apply(
         fontFamilyFallback: fallbackFonts,
         bodyColor: SchoolColors.darkText,
         displayColor: SchoolColors.darkText,
@@ -627,10 +613,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
         ),
         minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 52)),
         textStyle: WidgetStatePropertyAll(
-          GoogleFonts.inter(
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-          ),
+          GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         elevation: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.pressed)) return 0;
@@ -648,20 +631,14 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         side: const BorderSide(color: SchoolColors.darkBorder, width: 1.5),
-        textStyle: GoogleFonts.inter(
-          fontWeight: FontWeight.w700,
-          fontSize: 16,
-        ),
+        textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
         minimumSize: const Size(double.infinity, 52),
       ),
     ),
 
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        textStyle: GoogleFonts.inter(
-          fontWeight: FontWeight.w700,
-          fontSize: 15,
-        ),
+        textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
       ),
     ),
 
@@ -731,10 +708,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return IconThemeData(
-            color: primaryColor,
-            size: 22,
-          );
+          return IconThemeData(color: primaryColor, size: 22);
         }
         return const IconThemeData(color: SchoolColors.darkMuted, size: 22);
       }),
@@ -817,10 +791,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       dividerColor: Colors.transparent,
       labelColor: primaryColor,
       unselectedLabelColor: SchoolColors.darkMuted,
-      labelStyle: GoogleFonts.inter(
-        fontWeight: FontWeight.w700,
-        fontSize: 13,
-      ),
+      labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
       unselectedLabelStyle: GoogleFonts.inter(
         fontWeight: FontWeight.w600,
         fontSize: 13,

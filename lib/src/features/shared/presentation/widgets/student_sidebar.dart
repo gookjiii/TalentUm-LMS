@@ -39,113 +39,120 @@ class StudentSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = AppScope.of(context).repository;
 
-    return Container(
-      width: extended ? 272 : 88,
-      margin: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-      decoration: BoxDecoration(
-        color: SchoolColors.sidebarBg,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: SchoolColors.sidebarBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.24),
-            blurRadius: 36,
-            offset: const Offset(0, 16),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Header
-          _SidebarHeader(extended: extended, subtitle: AppLocalizations.of(context)!.studentPortal),
-          _SidebarDivider(),
-
-          // Navigation items
-          const SizedBox(height: 6),
-          ...List.generate(navigationItems.length, (i) {
-            final item = navigationItems[i];
-            final selected = selectedIndex == i;
-            return _SidebarNavItem(
-              icon: selected ? item.selectedIcon : item.icon,
-              label: item.label,
-              selected: selected,
+    return RepaintBoundary(
+      child: Container(
+        width: extended ? 272 : 88,
+        margin: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+        decoration: BoxDecoration(
+          color: SchoolColors.sidebarBg,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: SchoolColors.sidebarBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.24),
+              blurRadius: 36,
+              offset: const Offset(0, 16),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Header
+            _SidebarHeader(
               extended: extended,
-              onTap: () => onSelect(i),
-            );
-          }),
+              subtitle: AppLocalizations.of(context)!.studentPortal,
+            ),
+            _SidebarDivider(),
 
-          // Classes section
-          if (extended) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      AppLocalizations.of(context)!.myClasses,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.42),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: IconButton(
-                      onPressed: () => showDialog(
-                        context: context,
-                        builder: (_) => JoinClassDialog(
-                          repository: AppScope.of(context).repository,
-                        ),
-                      ),
-                      icon: const Icon(Icons.add_rounded, size: 14),
-                      color: Colors.white.withValues(alpha: 0.4),
-                      padding: EdgeInsets.zero,
-                      tooltip: AppLocalizations.of(context)!.joinAClass,
-                      style: IconButton.styleFrom(
-                        backgroundColor: SchoolColors.sidebarSurface,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+            // Navigation items
+            const SizedBox(height: 6),
+            ...List.generate(navigationItems.length, (i) {
+              final item = navigationItems[i];
+              final selected = selectedIndex == i;
+              return _SidebarNavItem(
+                icon: selected ? item.selectedIcon : item.icon,
+                label: item.label,
+                selected: selected,
+                extended: extended,
+                onTap: () => onSelect(i),
+              );
+            }),
+
+            // Classes section
+            if (extended) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context)!.myClasses,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.42),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: IconButton(
+                        onPressed: () => showDialog(
+                          context: context,
+                          builder: (_) => JoinClassDialog(
+                            repository: AppScope.of(context).repository,
+                          ),
+                        ),
+                        icon: const Icon(Icons.add_rounded, size: 14),
+                        color: Colors.white.withValues(alpha: 0.4),
+                        padding: EdgeInsets.zero,
+                        tooltip: AppLocalizations.of(context)!.joinAClass,
+                        style: IconButton.styleFrom(
+                          backgroundColor: SchoolColors.sidebarSurface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
                   ),
-                ],
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  itemCount: classes.length,
+                  itemBuilder: (context, index) {
+                    final c = classes[index];
+                    final id = c['id'] as String;
+                    final isActive = id == activeClassId;
+                    return _SidebarClassItem(
+                      name: c['name']?.toString() ?? '',
+                      color: parseHexColor(c['coverColor']),
+                      selected: isActive,
+                      onTap: () {
+                        onSelectClass(id);
+                        if (selectedIndex == 0) onSelect(1);
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                itemCount: classes.length,
-                itemBuilder: (context, index) {
-                  final c = classes[index];
-                  final id = c['id'] as String;
-                  final isActive = id == activeClassId;
-                  return _SidebarClassItem(
-                    name: c['name']?.toString() ?? '',
-                    color: parseHexColor(c['coverColor']),
-                    selected: isActive,
-                    onTap: () {
-                      onSelectClass(id);
-                      if (selectedIndex == 0) onSelect(1);
-                    },
-                  );
-                },
-              ),
-            ),
-          ] else
-            const Spacer(),
+            ] else
+              const Spacer(),
 
-          _SidebarDivider(),
-          _UserCard(
-            extended: extended,
-            onSignOut: repo.signOut,
-            onTap: onProfileTap,
-          ),
-        ],
+            _SidebarDivider(),
+            _UserCard(
+              extended: extended,
+              onSignOut: repo.signOut,
+              onTap: onProfileTap,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -158,11 +165,7 @@ class StudentSidebar extends StatelessWidget {
 class _SidebarDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      thickness: 1,
-      color: SchoolColors.sidebarBorder,
-    );
+    return Divider(height: 1, thickness: 1, color: SchoolColors.sidebarBorder);
   }
 }
 
@@ -193,9 +196,7 @@ class _SidebarHeader extends StatelessWidget {
             decoration: BoxDecoration(
               color: SchoolColors.sidebarSurface,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.08),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
             child: const SchoolLogo(size: 36),
           ),
@@ -275,6 +276,7 @@ class _SidebarNavItem extends StatefulWidget {
 
 class _SidebarNavItemState extends State<_SidebarNavItem> {
   bool _hovered = false;
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -286,6 +288,13 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
         ? SchoolColors.sidebarSurfaceHover
         : Colors.transparent;
 
+    Matrix4 transform = Matrix4.identity();
+    if (!AppScope.of(context).appState.performanceMode) {
+      if (_pressed) {
+        transform.scale(0.96);
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       child: Tooltip(
@@ -295,10 +304,15 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
           onEnter: (_) => setState(() => _hovered = true),
           onExit: (_) => setState(() => _hovered = false),
           child: GestureDetector(
+            onTapDown: (_) => setState(() => _pressed = true),
+            onTapUp: (_) => setState(() => _pressed = false),
+            onTapCancel: () => setState(() => _pressed = false),
             onTap: widget.onTap,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
+              transform: transform,
+              transformAlignment: Alignment.center,
               height: 48,
               padding: EdgeInsets.symmetric(
                 horizontal: widget.extended ? 14 : 0,
@@ -481,12 +495,10 @@ class _UserCard extends StatelessWidget {
       stream: repo.userDocStream(),
       builder: (context, snapshot) {
         final data = snapshot.data?.data() ?? {};
-        final fallbackName =
-            repo.auth.currentUser?.displayName ?? l10n.student;
-        final name =
-            (data['name'] as String?)?.isNotEmpty == true
-                ? data['name'] as String
-                : fallbackName;
+        final fallbackName = repo.auth.currentUser?.displayName ?? l10n.student;
+        final name = (data['name'] as String?)?.isNotEmpty == true
+            ? data['name'] as String
+            : fallbackName;
         final avatarUrl = data['avatarUrl'] as String?;
 
         return Padding(
@@ -509,8 +521,9 @@ class _UserCard extends StatelessWidget {
                 ),
               ),
               child: Row(
-                mainAxisAlignment:
-                    extended ? MainAxisAlignment.start : MainAxisAlignment.center,
+                mainAxisAlignment: extended
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
                 children: [
                   SchoolAvatar(
                     name: name,
@@ -549,7 +562,10 @@ class _UserCard extends StatelessWidget {
                   IconButton(
                     onPressed: onSignOut,
                     tooltip: AppLocalizations.of(context)!.signOut,
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
                     icon: const Icon(
                       Icons.logout_rounded,
                       size: 18,

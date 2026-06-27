@@ -181,12 +181,16 @@ class HomeworkScreen extends StatelessWidget {
               children: [
                 TextField(
                   controller: titleCtrl,
-                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.title),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.title,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: descCtrl,
-                  decoration: InputDecoration(labelText: AppLocalizations.of(context)!.description),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.description,
+                  ),
                   maxLines: 2,
                 ),
                 const SizedBox(height: 8),

@@ -22,9 +22,9 @@ class TeacherScheduleScreen extends ConsumerStatefulWidget {
   final List<String>? studentClassIds;
   final List<Map<String, dynamic>>? studentClasses;
 
-
   @override
-  ConsumerState<TeacherScheduleScreen> createState() => _TeacherScheduleScreenState();
+  ConsumerState<TeacherScheduleScreen> createState() =>
+      _TeacherScheduleScreenState();
 }
 
 class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
@@ -42,6 +42,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
     final today = DateTime(now.year, now.month, now.day);
     _weekStart = today.subtract(Duration(days: today.weekday - 1));
   }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -71,7 +72,9 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
       }
     } else {
       schedulesStream = repo.studentSchedulesStream([_selectedClassId!]);
-      overridesStream = repo.studentScheduleOverridesStream([_selectedClassId!]);
+      overridesStream = repo.studentScheduleOverridesStream([
+        _selectedClassId!,
+      ]);
       streamKeys = [_selectedClassId!];
     }
 
@@ -151,7 +154,10 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            if (appState.isTeacher || (widget.readOnly && widget.studentClasses != null && widget.studentClasses!.length > 1))
+            if (appState.isTeacher ||
+                (widget.readOnly &&
+                    widget.studentClasses != null &&
+                    widget.studentClasses!.length > 1))
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                 child: Row(
@@ -160,17 +166,26 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                       Expanded(
                         child: classesAsync.when(
                           data: (classes) {
-                            final classIds = classes.map((c) => c['id'] as String).toList();
-                            if (_selectedClassId != null && !classIds.contains(_selectedClassId)) {
+                            final classIds = classes
+                                .map((c) => c['id'] as String)
+                                .toList();
+                            if (_selectedClassId != null &&
+                                !classIds.contains(_selectedClassId)) {
                               WidgetsBinding.instance.addPostFrameCallback((_) {
-                                if (mounted) setState(() => _selectedClassId = null);
+                                if (mounted)
+                                  setState(() => _selectedClassId = null);
                               });
                             }
-                            final safeSelectedId = classIds.contains(_selectedClassId) ? _selectedClassId : null;
-  
+                            final safeSelectedId =
+                                classIds.contains(_selectedClassId)
+                                ? _selectedClassId
+                                : null;
+
                             return Container(
                               height: 38,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
                                 color: isDark
                                     ? SchoolColors.darkSurfaceElevated
@@ -186,19 +201,25 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                                 child: DropdownButton<String?>(
                                   value: safeSelectedId,
                                   isExpanded: true,
-                                  dropdownColor: isDark ? SchoolColors.darkSurface : null,
+                                  dropdownColor: isDark
+                                      ? SchoolColors.darkSurface
+                                      : null,
                                   hint: Text(
                                     AppLocalizations.of(context)!.mySchedule,
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                                      color: isDark
+                                          ? SchoolColors.darkText
+                                          : SchoolColors.text,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   style: TextStyle(
-                                    color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                                    color: isDark
+                                        ? SchoolColors.darkText
+                                        : SchoolColors.text,
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -215,7 +236,9 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                                           const SizedBox(width: 8),
                                           Expanded(
                                             child: Text(
-                                              AppLocalizations.of(context)!.mySchedule,
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.mySchedule,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -232,14 +255,19 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                                               width: 8,
                                               height: 8,
                                               decoration: BoxDecoration(
-                                                color: parseHexColor(c['coverColor']),
+                                                color: parseHexColor(
+                                                  c['coverColor'],
+                                                ),
                                                 shape: BoxShape.circle,
                                               ),
                                             ),
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: Text(
-                                                c['name']?.toString() ?? AppLocalizations.of(context)!.classText,
+                                                c['name']?.toString() ??
+                                                    AppLocalizations.of(
+                                                      context,
+                                                    )!.classText,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
@@ -259,25 +287,35 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                           },
                           loading: () => const SizedBox(
                             height: 38,
-                            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                            child: Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
                           ),
                           error: (_, __) => const SizedBox.shrink(),
                         ),
                       ),
-                    if (widget.readOnly && widget.studentClasses != null && widget.studentClasses!.length > 1) ...[
+                    if (widget.readOnly &&
+                        widget.studentClasses != null &&
+                        widget.studentClasses!.length > 1) ...[
                       if (appState.isTeacher) const SizedBox(width: 16),
                       Expanded(
                         child: Builder(
                           builder: (context) {
                             final classes = widget.studentClasses!;
-                            final classIds = classes.map((c) => c['id'] as String).toList();
-                            final safeSelectedId = (_selectedClassId != null && classIds.contains(_selectedClassId))
+                            final classIds = classes
+                                .map((c) => c['id'] as String)
+                                .toList();
+                            final safeSelectedId =
+                                (_selectedClassId != null &&
+                                    classIds.contains(_selectedClassId))
                                 ? _selectedClassId
                                 : null;
-  
+
                             return Container(
                               height: 38,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
                                 color: isDark
                                     ? SchoolColors.darkSurfaceElevated
@@ -293,19 +331,25 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                                 child: DropdownButton<String?>(
                                   value: safeSelectedId,
                                   isExpanded: true,
-                                  dropdownColor: isDark ? SchoolColors.darkSurface : null,
+                                  dropdownColor: isDark
+                                      ? SchoolColors.darkSurface
+                                      : null,
                                   hint: Text(
                                     l10n.allClasses,
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                                      color: isDark
+                                          ? SchoolColors.darkText
+                                          : SchoolColors.text,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   style: TextStyle(
-                                    color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                                    color: isDark
+                                        ? SchoolColors.darkText
+                                        : SchoolColors.text,
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -339,14 +383,17 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                                               width: 8,
                                               height: 8,
                                               decoration: BoxDecoration(
-                                                color: parseHexColor(c['coverColor']),
+                                                color: parseHexColor(
+                                                  c['coverColor'],
+                                                ),
                                                 shape: BoxShape.circle,
                                               ),
                                             ),
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: Text(
-                                                c['name']?.toString() ?? l10n.classText,
+                                                c['name']?.toString() ??
+                                                    l10n.classText,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
@@ -372,41 +419,48 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
               ),
             Expanded(
               child: CachedStreamBuilder<List<ScheduleEntry>>(
-        streamFactory: () => schedulesStream,
-        keys: streamKeys,
-        builder: (context, scheduleSnap) {
-          return CachedStreamBuilder<List<ScheduleOverride>>(
-            streamFactory: () => overridesStream,
-            keys: streamKeys,
-            builder: (context, overrideSnap) {
-              final schedules = scheduleSnap.data ?? const <ScheduleEntry>[];
-              final overrides = overrideSnap.data ?? const <ScheduleOverride>[];
-              return _WeekGrid(
-                weekStart: _weekStart,
-                startHour: _startHour,
-                endHour: _endHour,
-                hourHeight: _hourHeight,
-                schedules: schedules,
-                overrides: overrides,
-                classes: appState.isTeacher ? (classesAsync.valueOrNull ?? []) : (widget.studentClasses ?? []),
-                onCellTap: widget.readOnly ? (date, minute) {} : (date, minute) => showScheduleEditor(
-                  context,
-                  prefillDate: date,
-                  prefillStartMinute: minute,
-                  prefillClassId: _selectedClassId,
-                ),
-                onItemTap: widget.readOnly ? (sched, date) {} : (sched, date) => showScheduleEditor(
-                  context,
-                  existing: sched,
-                  prefillDate: date,
-                  prefillClassId: _selectedClassId,
-                ),
-              );
-            },
-          );
-        },
-      ),
-
+                streamFactory: () => schedulesStream,
+                keys: streamKeys,
+                builder: (context, scheduleSnap) {
+                  return CachedStreamBuilder<List<ScheduleOverride>>(
+                    streamFactory: () => overridesStream,
+                    keys: streamKeys,
+                    builder: (context, overrideSnap) {
+                      final schedules =
+                          scheduleSnap.data ?? const <ScheduleEntry>[];
+                      final overrides =
+                          overrideSnap.data ?? const <ScheduleOverride>[];
+                      return _WeekGrid(
+                        weekStart: _weekStart,
+                        startHour: _startHour,
+                        endHour: _endHour,
+                        hourHeight: _hourHeight,
+                        schedules: schedules,
+                        overrides: overrides,
+                        classes: appState.isTeacher
+                            ? (classesAsync.valueOrNull ?? [])
+                            : (widget.studentClasses ?? []),
+                        onCellTap: widget.readOnly
+                            ? (date, minute) {}
+                            : (date, minute) => showScheduleEditor(
+                                context,
+                                prefillDate: date,
+                                prefillStartMinute: minute,
+                                prefillClassId: _selectedClassId,
+                              ),
+                        onItemTap: widget.readOnly
+                            ? (sched, date) {}
+                            : (sched, date) => showScheduleEditor(
+                                context,
+                                existing: sched,
+                                prefillDate: date,
+                                prefillClassId: _selectedClassId,
+                              ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -641,9 +695,7 @@ class _WeekGrid extends StatelessWidget {
                     Positioned.fill(
                       child: Container(
                         decoration: BoxDecoration(
-                          border: Border(
-                            left: BorderSide(color: borderColor),
-                          ),
+                          border: Border(left: BorderSide(color: borderColor)),
                         ),
                       ),
                     ),
@@ -676,10 +728,7 @@ class _WeekGrid extends StatelessWidget {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Container(
-                    height: 2,
-                    color: SchoolColors.primary,
-                  ),
+                  Container(height: 2, color: SchoolColors.primary),
                   Positioned(
                     left: (now.weekday - 1) * dayWidth - 4,
                     top: -4,
@@ -745,7 +794,9 @@ class _WeekGrid extends StatelessWidget {
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
                     color: color,
-                    decoration: it.cancelled ? TextDecoration.lineThrough : null,
+                    decoration: it.cancelled
+                        ? TextDecoration.lineThrough
+                        : null,
                   ),
                 ),
                 Flexible(
@@ -757,8 +808,9 @@ class _WeekGrid extends StatelessWidget {
                       fontSize: 11,
                       fontWeight: FontWeight.w900,
                       color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                      decoration:
-                          it.cancelled ? TextDecoration.lineThrough : null,
+                      decoration: it.cancelled
+                          ? TextDecoration.lineThrough
+                          : null,
                     ),
                   ),
                 ),
@@ -774,8 +826,9 @@ class _WeekGrid extends StatelessWidget {
                         color: isDark
                             ? SchoolColors.darkTextSecondary
                             : SchoolColors.textSecondary,
-                        decoration:
-                            it.cancelled ? TextDecoration.lineThrough : null,
+                        decoration: it.cancelled
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                   ),
@@ -972,7 +1025,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
               Consumer(
                 builder: (context, ref, _) {
                   final allClassAsync = ref.watch(teacherClassesStreamProvider);
-                  
+
                   return allClassAsync.when(
                     data: (docs) {
                       if (docs.isEmpty) {
@@ -988,12 +1041,14 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                           ),
                         );
                       }
-                      
-                      final docIds = docs.map((d) => d['id'] as String).toList();
+
+                      final docIds = docs
+                          .map((d) => d['id'] as String)
+                          .toList();
                       if (_classId == null || !docIds.contains(_classId)) {
                         _classId = docs.first['id'] as String;
                       }
-                      
+
                       return DropdownButtonFormField<String>(
                         value: _classId,
                         decoration: InputDecoration(
@@ -1004,7 +1059,9 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                           for (final d in docs)
                             DropdownMenuItem(
                               value: d['id'] as String,
-                              child: Text(d['name']?.toString() ?? d['id'] as String),
+                              child: Text(
+                                d['name']?.toString() ?? d['id'] as String,
+                              ),
                             ),
                         ],
                         onChanged: (v) => setState(() => _classId = v),
@@ -1061,7 +1118,10 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                   label: Text(
                     _oneOffDate == null
                         ? l10n.selectDate
-                        : DateFormat('EEE, d MMM', l10n.localeName).format(_oneOffDate!),
+                        : DateFormat(
+                            'EEE, d MMM',
+                            l10n.localeName,
+                          ).format(_oneOffDate!),
                   ),
                   onPressed: () async {
                     final picked = await showDatePicker(
@@ -1113,7 +1173,10 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                         label: Text(
                           _effectiveFrom == null
                               ? l10n.effectiveFrom
-                              : DateFormat('d MMM', l10n.localeName).format(_effectiveFrom!),
+                              : DateFormat(
+                                  'd MMM',
+                                  l10n.localeName,
+                                ).format(_effectiveFrom!),
                           style: const TextStyle(fontSize: 12),
                         ),
                         onPressed: () async {
@@ -1136,13 +1199,18 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                         label: Text(
                           _effectiveTo == null
                               ? l10n.untilDate
-                              : DateFormat('d MMM', l10n.localeName).format(_effectiveTo!),
+                              : DateFormat(
+                                  'd MMM',
+                                  l10n.localeName,
+                                ).format(_effectiveTo!),
                           style: const TextStyle(fontSize: 12),
                         ),
                         onPressed: () async {
                           final picked = await showDatePicker(
                             context: context,
-                            initialDate: _effectiveTo ?? DateTime.now().add(const Duration(days: 30)),
+                            initialDate:
+                                _effectiveTo ??
+                                DateTime.now().add(const Duration(days: 30)),
                             firstDate: DateTime(2020),
                             lastDate: DateTime(2100),
                           );
@@ -1158,7 +1226,13 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Text(l10n.colorOverride, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  Text(
+                    l10n.colorOverride,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   for (final hex in ['7C3AED', '059669', 'F97316', 'DC2626'])
                     Padding(
@@ -1247,7 +1321,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
     try {
       final repo = AppScope.of(context).repository;
       final fmt = DateFormat('yyyy-MM-dd');
-      
+
       if (widget.existing == null) {
         final draft = ScheduleEntry(
           id: '',
@@ -1272,18 +1346,20 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
           'room': _room.text.trim(),
           'oneOffDate': _recurring
               ? null
-              : (_oneOffDate == null
-                    ? null
-                    : fmt.format(_oneOffDate!)),
-          'effectiveFrom': _recurring && _effectiveFrom != null ? fmt.format(_effectiveFrom!) : null,
-          'effectiveTo': _recurring && _effectiveTo != null ? fmt.format(_effectiveTo!) : null,
+              : (_oneOffDate == null ? null : fmt.format(_oneOffDate!)),
+          'effectiveFrom': _recurring && _effectiveFrom != null
+              ? fmt.format(_effectiveFrom!)
+              : null,
+          'effectiveTo': _recurring && _effectiveTo != null
+              ? fmt.format(_effectiveTo!)
+              : null,
           'color': _colorOverride,
         });
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.savedSchedule)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.savedSchedule)));
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -1292,7 +1368,6 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
       if (mounted) setState(() => _saving = false);
     }
   }
-
 
   Future<void> _delete() async {
     final repo = AppScope.of(context).repository;

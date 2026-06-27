@@ -23,9 +23,7 @@ class TodayScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: context.isMobile
-          ? null
-          : AppBar(title: Text(l10n.today)),
+      appBar: context.isMobile ? null : AppBar(title: Text(l10n.today)),
       body: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         future: repository.firestore
             .collection('users')

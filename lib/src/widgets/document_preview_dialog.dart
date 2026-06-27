@@ -30,7 +30,7 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
   WebViewController? _controller;
   bool _isLoading = true;
   bool _isWebViewSupported = false;
-  
+
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
   String? _localFilePath;
@@ -38,10 +38,20 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
   bool get isPdf => widget.fileName.toLowerCase().endsWith('.pdf');
   bool get isDoc {
     final ext = widget.fileName.toLowerCase().split('.').last;
-    return ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv'].contains(ext);
+    return [
+      'doc',
+      'docx',
+      'ppt',
+      'pptx',
+      'xls',
+      'xlsx',
+      'txt',
+      'csv',
+    ].contains(ext);
   }
+
   bool get _isGoogleDrive => widget.url.contains('drive.google.com');
-  
+
   bool get isVideo {
     final ext = widget.fileName.toLowerCase().split('.').last;
     return ['mp4', 'mov', 'avi', 'webm', 'mkv'].contains(ext);
@@ -88,17 +98,18 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
     final useWebView = _isGoogleDrive || (!isPdf);
 
     if (useWebView) {
-      _isWebViewSupported = kIsWeb || 
-          defaultTargetPlatform == TargetPlatform.android || 
+      _isWebViewSupported =
+          kIsWeb ||
+          defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS;
 
       if (_isWebViewSupported) {
         if (kIsWeb) {
-          // WebViewPlatform.instance = WebWebViewPlatform(); 
+          // WebViewPlatform.instance = WebWebViewPlatform();
         }
-        
+
         _controller = WebViewController();
-        
+
         if (!kIsWeb) {
           _controller!
             ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -119,7 +130,7 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
         } else {
           _isLoading = false;
         }
-        
+
         _controller!.loadRequest(Uri.parse(_embedUrl));
       } else {
         _isLoading = false;
@@ -139,7 +150,7 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
       final fileId = _fileId;
       String downloadUrl = widget.url;
       String cookieString = '';
-      
+
       if (fileId.isNotEmpty) {
         final result = await GoogleDriveHelper.getDirectDownloadLink(fileId);
         downloadUrl = result['url'] ?? widget.url;
@@ -147,7 +158,8 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
       }
 
       final dir = await getTemporaryDirectory();
-      final tempFilePath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_${widget.fileName}';
+      final tempFilePath =
+          '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_${widget.fileName}';
 
       final dio = Dio();
       await dio.download(
@@ -170,7 +182,7 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
           _localFilePath = tempFilePath;
           _isDownloading = false;
         });
-        
+
         if (isDoc) {
           OpenFilex.open(tempFilePath);
         }
@@ -194,7 +206,8 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
     final isDark = theme.brightness == Brightness.dark;
 
     final usePdfViewerFile = isPdf && _localFilePath != null;
-    final usePdfViewerNetwork = isPdf && !_isGoogleDrive && _localFilePath == null;
+    final usePdfViewerNetwork =
+        isPdf && !_isGoogleDrive && _localFilePath == null;
 
     return Dialog(
       backgroundColor: isDark ? SchoolColors.darkSurface : Colors.white,
@@ -231,14 +244,25 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                 if (!kIsWeb)
                   IconButton(
                     onPressed: _downloadAndPreview,
-                    icon: const Icon(Icons.download_rounded, color: SchoolColors.primary, size: 22),
+                    icon: const Icon(
+                      Icons.download_rounded,
+                      color: SchoolColors.primary,
+                      size: 22,
+                    ),
                     splashRadius: 24,
                     tooltip: 'Tải xuống',
                   ),
                 const SizedBox(width: 4),
                 IconButton(
-                  onPressed: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
-                  icon: const Icon(Icons.open_in_new_rounded, color: SchoolColors.primary, size: 22),
+                  onPressed: () => launchUrl(
+                    Uri.parse(widget.url),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  icon: const Icon(
+                    Icons.open_in_new_rounded,
+                    color: SchoolColors.primary,
+                    size: 22,
+                  ),
                   splashRadius: 24,
                   tooltip: 'Open externally',
                 ),
@@ -253,7 +277,7 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
               ],
             ),
           ),
-          
+
           // Preview Area
           Flexible(
             child: AspectRatio(
@@ -264,7 +288,9 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            isPdf ? Icons.picture_as_pdf_rounded : Icons.description_rounded,
+                            isPdf
+                                ? Icons.picture_as_pdf_rounded
+                                : Icons.description_rounded,
                             size: 64,
                             color: isDark ? Colors.white54 : Colors.black45,
                           ),
@@ -272,9 +298,13 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 48),
                             child: LinearProgressIndicator(
-                              value: _downloadProgress > 0 ? _downloadProgress : null,
+                              value: _downloadProgress > 0
+                                  ? _downloadProgress
+                                  : null,
                               color: SchoolColors.primary,
-                              backgroundColor: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                              backgroundColor: isDark
+                                  ? Colors.grey.shade800
+                                  : Colors.grey.shade200,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -289,19 +319,19 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                       ),
                     )
                   : usePdfViewerFile
-                    ? SfPdfViewer.file(
-                        File(_localFilePath!),
-                        canShowScrollHead: false,
-                        canShowScrollStatus: false,
-                      )
-                    : usePdfViewerNetwork
-                      ? SfPdfViewer.network(
-                          widget.url,
-                          canShowScrollHead: false,
-                          canShowScrollStatus: false,
-                        )
-                      : Stack(
-                          children: [
+                  ? SfPdfViewer.file(
+                      File(_localFilePath!),
+                      canShowScrollHead: false,
+                      canShowScrollStatus: false,
+                    )
+                  : usePdfViewerNetwork
+                  ? SfPdfViewer.network(
+                      widget.url,
+                      canShowScrollHead: false,
+                      canShowScrollStatus: false,
+                    )
+                  : Stack(
+                      children: [
                         if (_isWebViewSupported && _controller != null)
                           WebViewWidget(controller: _controller!)
                         else
@@ -312,21 +342,30 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                                 Icon(
                                   Icons.insert_drive_file_rounded,
                                   size: 48,
-                                  color: isDark ? Colors.white54 : Colors.black45,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : Colors.black45,
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  AppLocalizations.of(context)!.previewNotAvailableOnThis,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.previewNotAvailableOnThis,
                                   style: TextStyle(
-                                    color: isDark ? Colors.white54 : Colors.black45,
+                                    color: isDark
+                                        ? Colors.white54
+                                        : Colors.black45,
                                   ),
                                 ),
                                 if (isDoc && _localFilePath != null) ...[
                                   const SizedBox(height: 24),
                                   ElevatedButton.icon(
-                                    onPressed: () => OpenFilex.open(_localFilePath!),
+                                    onPressed: () =>
+                                        OpenFilex.open(_localFilePath!),
                                     icon: const Icon(Icons.open_in_new_rounded),
-                                    label: const Text('Mở file bằng ứng dụng khác'),
+                                    label: const Text(
+                                      'Mở file bằng ứng dụng khác',
+                                    ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: SchoolColors.primary,
                                       foregroundColor: Colors.white,
@@ -335,13 +374,15 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                                       ),
                                     ),
                                   ),
-                                ]
+                                ],
                               ],
                             ),
                           ),
                         if (_isLoading)
                           Container(
-                            color: isDark ? SchoolColors.darkSurface : Colors.white,
+                            color: isDark
+                                ? SchoolColors.darkSurface
+                                : Colors.white,
                             child: const Center(
                               child: CircularProgressIndicator(
                                 color: SchoolColors.primary,

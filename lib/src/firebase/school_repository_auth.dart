@@ -148,21 +148,21 @@ mixin SchoolRepositoryAuth {
     const apiSecret = String.fromEnvironment('APP_API_SECRET');
     const proxyUrl = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
     if (proxyUrl.isEmpty) {
-      throw Exception('Backend GOOGLE_DRIVE_PROXY_URL is not configured. Please run with --dart-define=GOOGLE_DRIVE_PROXY_URL=...');
+      throw Exception(
+        'Backend GOOGLE_DRIVE_PROXY_URL is not configured. Please run with --dart-define=GOOGLE_DRIVE_PROXY_URL=...',
+      );
     }
     if (apiSecret.isEmpty) {
-      throw Exception('Backend APP_API_SECRET is not configured. Please run with --dart-define=APP_API_SECRET=...');
+      throw Exception(
+        'Backend APP_API_SECRET is not configured. Please run with --dart-define=APP_API_SECRET=...',
+      );
     }
 
     final dio = Dio();
     final res = await dio.post(
       '$proxyUrl/api/auth/delete_user',
       data: {'userId': userId},
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $apiSecret',
-        },
-      ),
+      options: Options(headers: {'Authorization': 'Bearer $apiSecret'}),
     );
 
     if (res.statusCode != 200) {

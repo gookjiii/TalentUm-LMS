@@ -69,80 +69,80 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
               maxHeight: MediaQuery.sizeOf(context).height * 0.7,
             ),
             child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  AppLocalizations.of(context)!.assignATeacher,
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    AppLocalizations.of(context)!.assignATeacher,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: allTeachers.length,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  itemBuilder: (context, index) {
-                    final doc = allTeachers[index];
-                    final data = doc.data();
-                    final id = doc.id;
-                    final name = data['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey6;
-                    final isCurrent = id == currentTeacherId;
+                const SizedBox(height: 16),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: allTeachers.length,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    itemBuilder: (context, index) {
+                      final doc = allTeachers[index];
+                      final data = doc.data();
+                      final id = doc.id;
+                      final name =
+                          data['name']?.toString() ??
+                          AppLocalizations.of(context)!.unknownKey6;
+                      final isCurrent = id == currentTeacherId;
 
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: SchoolAvatar(
-                        name: name,
-                        avatarUrl: data['avatarUrl']?.toString(),
-                        radius: 20,
-                        userId: id,
-                      ),
-                      title: Text(
-                        name,
-                        style: TextStyle(
-                          fontWeight: isCurrent
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: SchoolAvatar(
+                          name: name,
+                          avatarUrl: data['avatarUrl']?.toString(),
+                          radius: 20,
+                          userId: id,
                         ),
-                      ),
-                      subtitle: Text(data['email']?.toString() ?? ''),
-                      trailing: isCurrent
-                          ? const Icon(
-                              Icons.check_circle_rounded,
-                              color: SchoolColors.green,
-                            )
-                          : null,
-                      onTap: () async {
-                        Navigator.pop(context);
-                        await repo.firestore
-                            .collection('classes')
-                            .doc(classId)
-                            .update({'teacherId': id});
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Учитель $name назначен')),
-                          );
-                        }
-                      },
-                    );
-                  },
+                        title: Text(
+                          name,
+                          style: TextStyle(
+                            fontWeight: isCurrent
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                        subtitle: Text(data['email']?.toString() ?? ''),
+                        trailing: isCurrent
+                            ? const Icon(
+                                Icons.check_circle_rounded,
+                                color: SchoolColors.green,
+                              )
+                            : null,
+                        onTap: () async {
+                          Navigator.pop(context);
+                          await repo.firestore
+                              .collection('classes')
+                              .doc(classId)
+                              .update({'teacherId': id});
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Учитель $name назначен')),
+                            );
+                          }
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
+        );
+      },
+    );
   }
 
   void _openRoster(String classId) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => RosterScreen(classId: classId),
-      ),
+      MaterialPageRoute(builder: (_) => RosterScreen(classId: classId)),
     );
   }
 
@@ -199,7 +199,9 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: AppLocalizations.of(context)!.searchByTitleOrSubject,
+                        hintText: AppLocalizations.of(
+                          context,
+                        )!.searchByTitleOrSubject,
                         prefixIcon: const Icon(Icons.search_rounded),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
@@ -225,7 +227,8 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
             ),
             Expanded(
               child: CachedStreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                streamFactory: () => repo.firestore.collection('classes').snapshots(),
+                streamFactory: () =>
+                    repo.firestore.collection('classes').snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData)
                     return const Center(child: CircularProgressIndicator());
@@ -241,7 +244,9 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                   }).toList();
 
                   if (docs.isEmpty) {
-                    return Center(child: Text(AppLocalizations.of(context)!.noClassesFound));
+                    return Center(
+                      child: Text(AppLocalizations.of(context)!.noClassesFound),
+                    );
                   }
 
                   return ListView.separated(
@@ -255,7 +260,9 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                     itemBuilder: (context, index) {
                       final data = docs[index].data();
                       final id = docs[index].id;
-                      final name = data['name']?.toString() ?? AppLocalizations.of(context)!.unknownKey7;
+                      final name =
+                          data['name']?.toString() ??
+                          AppLocalizations.of(context)!.unknownKey7;
                       final subject = data['subject']?.toString();
                       final teacherId = data['teacherId']?.toString() ?? '';
 

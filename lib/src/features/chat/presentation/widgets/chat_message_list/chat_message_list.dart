@@ -106,22 +106,25 @@ class ChatMessageList extends StatelessWidget {
                       ),
                 ),
                 builders: Builders(
-                  chatAnimatedListBuilder: (context, itemBuilder) => ChatAnimatedList(
-                    itemBuilder: itemBuilder,
-                    reversed: true,
-                    bottomPadding: 16,
-                    physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
-                    ),
-                    insertAnimationDuration: const Duration(milliseconds: 350),
-                    bottomSliver: SliverToBoxAdapter(
-                      child: _TypingIndicatorBuilder(
-                        chatController: chatController,
-                        currentUserId: currentUserId,
-                        theme: theme,
+                  chatAnimatedListBuilder: (context, itemBuilder) =>
+                      ChatAnimatedList(
+                        itemBuilder: itemBuilder,
+                        reversed: true,
+                        bottomPadding: 16,
+                        physics: const BouncingScrollPhysics(
+                          parent: AlwaysScrollableScrollPhysics(),
+                        ),
+                        insertAnimationDuration: const Duration(
+                          milliseconds: 350,
+                        ),
+                        bottomSliver: SliverToBoxAdapter(
+                          child: _TypingIndicatorBuilder(
+                            chatController: chatController,
+                            currentUserId: currentUserId,
+                            theme: theme,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                   chatMessageBuilder:
                       (
                         context,
@@ -172,8 +175,11 @@ class ChatMessageList extends StatelessWidget {
                               child: VisibilityDetector(
                                 key: Key('msg-visibility-${message.id}'),
                                 onVisibilityChanged: (info) {
-                                  if (info.visibleFraction > 0.1 && !isSentByMe) {
-                                    final repo = AppScope.of(context).repository;
+                                  if (info.visibleFraction > 0.1 &&
+                                      !isSentByMe) {
+                                    final repo = AppScope.of(
+                                      context,
+                                    ).repository;
                                     final seenBy = List<String>.from(
                                       message.metadata?['seenBy'] ?? [],
                                     );
@@ -212,7 +218,12 @@ class ChatMessageList extends StatelessWidget {
                   composerBuilder: (_) => const SizedBox.shrink(),
                 ),
                 onMessageTap:
-                    (_, msg, {required int index, required TapUpDetails details}) {
+                    (
+                      _,
+                      msg, {
+                      required int index,
+                      required TapUpDetails details,
+                    }) {
                       if (msg is ImageMessage) onImageTap(msg);
                     },
                 onMessageLongPress:
@@ -246,7 +257,8 @@ class _TypingIndicatorBuilder extends StatefulWidget {
   final ThemeData theme;
 
   @override
-  State<_TypingIndicatorBuilder> createState() => _TypingIndicatorBuilderState();
+  State<_TypingIndicatorBuilder> createState() =>
+      _TypingIndicatorBuilderState();
 }
 
 class _TypingIndicatorBuilderState extends State<_TypingIndicatorBuilder> {
@@ -428,37 +440,45 @@ class _DotGridPainter extends CustomPainter {
     if (!performanceMode) {
       // 2. Animated fluid Aurora radial gradients
       final Paint glow1 = Paint()
-        ..shader = RadialGradient(
-          colors: [
-            const Color(0xFF2563EB).withOpacity(0.06), // Primary Blue
-            const Color(0xFF2563EB).withOpacity(0.0),
-          ],
-        ).createShader(
-          Rect.fromCircle(
-            center: Offset(
-              size.width * (0.3 + 0.3 * math.sin(animationValue * 2 * math.pi)),
-              size.height * (0.2 + 0.2 * math.cos(animationValue * 2 * math.pi)),
-            ),
-            radius: size.width * 0.9,
-          ),
-        );
+        ..shader =
+            RadialGradient(
+              colors: [
+                const Color(0xFF2563EB).withOpacity(0.06), // Primary Blue
+                const Color(0xFF2563EB).withOpacity(0.0),
+              ],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(
+                  size.width *
+                      (0.3 + 0.3 * math.sin(animationValue * 2 * math.pi)),
+                  size.height *
+                      (0.2 + 0.2 * math.cos(animationValue * 2 * math.pi)),
+                ),
+                radius: size.width * 0.9,
+              ),
+            );
       canvas.drawRect(Offset.zero & size, glow1);
 
       final Paint glow2 = Paint()
-        ..shader = RadialGradient(
-          colors: [
-            const Color(0xFF6366F1).withOpacity(0.05), // Indigo Purple
-            const Color(0xFF6366F1).withOpacity(0.0),
-          ],
-        ).createShader(
-          Rect.fromCircle(
-            center: Offset(
-              size.width * (0.7 + 0.2 * math.cos(animationValue * 2 * math.pi + 1.2)),
-              size.height * (0.6 + 0.2 * math.sin(animationValue * 2 * math.pi + 1.2)),
-            ),
-            radius: size.width * 0.8,
-          ),
-        );
+        ..shader =
+            RadialGradient(
+              colors: [
+                const Color(0xFF6366F1).withOpacity(0.05), // Indigo Purple
+                const Color(0xFF6366F1).withOpacity(0.0),
+              ],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(
+                  size.width *
+                      (0.7 +
+                          0.2 * math.cos(animationValue * 2 * math.pi + 1.2)),
+                  size.height *
+                      (0.6 +
+                          0.2 * math.sin(animationValue * 2 * math.pi + 1.2)),
+                ),
+                radius: size.width * 0.8,
+              ),
+            );
       canvas.drawRect(Offset.zero & size, glow2);
     }
 
