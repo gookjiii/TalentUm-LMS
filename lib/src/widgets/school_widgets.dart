@@ -2108,40 +2108,62 @@ class EmptyStateWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 32),
       child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: isDark ? SchoolColors.darkSurface : Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [SchoolColors.elevation2],
-              ),
-              child: Icon(
-                icon,
-                size: 64,
-                color: SchoolColors.primary.withValues(alpha: 0.7),
-              ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+          decoration: BoxDecoration(
+            color: isDark
+                ? SchoolColors.darkSurface.withValues(alpha: 0.5)
+                : Colors.white.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(
+              color: SchoolColors.muted.withValues(alpha: 0.1),
+              style: BorderStyle.solid,
             ),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                color: SchoolColors.muted,
-                height: 1.5,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: isDark ? SchoolColors.darkSurface : Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: SchoolColors.primary.withValues(alpha: 0.1),
+                      blurRadius: 32,
+                      offset: const Offset(0, 16),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  icon,
+                  size: 64,
+                  color: SchoolColors.primary.withValues(alpha: 0.8),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 32),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: SchoolColors.muted,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

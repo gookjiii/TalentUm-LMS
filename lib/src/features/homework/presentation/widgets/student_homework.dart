@@ -371,198 +371,202 @@ class HomeworkCard extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: SchoolCard(
-        padding: const EdgeInsets.all(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => HomeworkDetailScreen(
-                repository: AppScope.of(context).repository,
-                appState: AppScope.of(context).appState,
-                assignmentId: doc.id,
+      child: RepaintBoundary(
+        child: SchoolCard(
+          padding: const EdgeInsets.all(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => HomeworkDetailScreen(
+                  repository: AppScope.of(context).repository,
+                  appState: AppScope.of(context).appState,
+                  assignmentId: doc.id,
+                ),
               ),
-            ),
-          );
-        },
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color:
-                    (submitted
-                            ? SchoolColors.green
-                            : (isOverdue
-                                  ? SchoolColors.red
-                                  : SchoolColors.primary))
-                        .withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
+            );
+          },
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color:
+                      (submitted
+                              ? SchoolColors.green
+                              : (isOverdue
+                                    ? SchoolColors.red
+                                    : SchoolColors.primary))
+                          .withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  submitted
+                      ? Icons.task_alt_rounded
+                      : (isOverdue
+                            ? Icons.running_with_errors_rounded
+                            : Icons.assignment_outlined),
+                  color: submitted
+                      ? SchoolColors.green
+                      : (isOverdue ? SchoolColors.red : SchoolColors.primary),
+                  size: 20,
+                ),
               ),
-              child: Icon(
-                submitted
-                    ? Icons.task_alt_rounded
-                    : (isOverdue
-                          ? Icons.running_with_errors_rounded
-                          : Icons.assignment_outlined),
-                color: submitted
-                    ? SchoolColors.green
-                    : (isOverdue ? SchoolColors.red : SchoolColors.primary),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (desc.isNotEmpty) ...[
-                    const SizedBox(height: 4),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      desc,
+                      title,
                       style: const TextStyle(
-                        fontSize: 13,
-                        color: SchoolColors.muted,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      if (due != null)
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 14,
-                              color: isOverdue
-                                  ? SchoolColors.red
-                                  : SchoolColors.muted,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _getHumanFriendlyDate(context, due),
-                              style: TextStyle(
-                                fontSize: 12,
+                    if (desc.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        desc,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: SchoolColors.muted,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        if (due != null)
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 14,
                                 color: isOverdue
                                     ? SchoolColors.red
                                     : SchoolColors.muted,
-                                fontWeight: FontWeight.bold,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _getHumanFriendlyDate(context, due),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isOverdue
+                                      ? SchoolColors.red
+                                      : SchoolColors.muted,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        const Spacer(),
+                        if (grade != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: SchoolColors.green.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '$grade%',
+                              style: const TextStyle(
+                                color: SchoolColors.green,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 13,
                               ),
                             ),
-                          ],
-                        ),
-                      const Spacer(),
-                      if (grade != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: SchoolColors.green.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            '$grade%',
-                            style: const TextStyle(
-                              color: SchoolColors.green,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
-                            ),
-                          ),
-                        )
-                      else if (submitted && grade == null) ...[
-                        const SizedBox(width: 12),
-                        const Icon(
-                          Icons.check_circle,
-                          size: 14,
-                          color: SchoolColors.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          AppLocalizations.of(context)!.delivered,
-                          style: TextStyle(
-                            fontSize: 12,
+                          )
+                        else if (submitted && grade == null) ...[
+                          const SizedBox(width: 12),
+                          const Icon(
+                            Icons.check_circle,
+                            size: 14,
                             color: SchoolColors.primary,
-                            fontWeight: FontWeight.bold,
                           ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  if (!submitted) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => _showQuickSubmit(context),
-                            icon: const Icon(Icons.bolt_rounded, size: 18),
-                            label: Text(
-                              AppLocalizations.of(context)!.quickSubmit,
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 40),
-                              padding: EdgeInsets.zero,
-                              side: BorderSide(
-                                color: SchoolColors.primary.withValues(
-                                  alpha: 0.5,
-                                ),
-                              ),
+                          const SizedBox(width: 4),
+                          Text(
+                            AppLocalizations.of(context)!.delivered,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: SchoolColors.primary,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => HomeworkDetailScreen(
-                                    repository: AppScope.of(context).repository,
-                                    appState: AppScope.of(context).appState,
-                                    assignmentId: doc.id,
-                                  ),
-                                ),
-                              );
-                            },
-                            icon: const Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 18,
-                            ),
-                            label: Text(
-                              AppLocalizations.of(context)!.viewMore,
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size(0, 40),
-                              padding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ),
+                        ],
                       ],
                     ),
+                    if (!submitted) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _showQuickSubmit(context),
+                              icon: const Icon(Icons.bolt_rounded, size: 18),
+                              label: Text(
+                                AppLocalizations.of(context)!.quickSubmit,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(0, 40),
+                                padding: EdgeInsets.zero,
+                                side: BorderSide(
+                                  color: SchoolColors.primary.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => HomeworkDetailScreen(
+                                      repository: AppScope.of(
+                                        context,
+                                      ).repository,
+                                      appState: AppScope.of(context).appState,
+                                      assignmentId: doc.id,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 18,
+                              ),
+                              label: Text(
+                                AppLocalizations.of(context)!.viewMore,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size(0, 40),
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

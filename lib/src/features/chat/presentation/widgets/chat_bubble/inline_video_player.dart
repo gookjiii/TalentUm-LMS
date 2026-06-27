@@ -137,6 +137,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
               CachedNetworkImage(
                 imageUrl: thumbnailUrl.toDirectImageUrl,
                 fit: BoxFit.cover,
+                memCacheWidth: 600,
                 errorWidget: (_, __, ___) => _buildPlaceholder(),
               )
             else

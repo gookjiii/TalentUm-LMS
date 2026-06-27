@@ -71,117 +71,119 @@ class _PostCardState extends State<PostCard> {
     final classColor = parseHexColor(widget.classData['coverColor']);
     final className = widget.classData['name']?.toString() ?? '';
 
-    return SchoolCard(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                future: _authorFuture,
-                builder: (context, userSnap) {
-                  final authorName =
-                      userSnap.data?.data()?['name']?.toString() ?? authorId;
-                  return Expanded(
-                    child: Row(
-                      children: [
-                        SchoolAvatar(
-                          name: authorName,
-                          color: classColor,
-                          radius: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                authorId == uid
-                                    ? AppLocalizations.of(context)!.you
-                                    : authorName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                _formatTimestamp(data['createdAt']),
-                                style: const TextStyle(
-                                  color: SchoolColors.muted,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
+    return RepaintBoundary(
+      child: SchoolCard(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  future: _authorFuture,
+                  builder: (context, userSnap) {
+                    final authorName =
+                        userSnap.data?.data()?['name']?.toString() ?? authorId;
+                    return Expanded(
+                      child: Row(
+                        children: [
+                          SchoolAvatar(
+                            name: authorName,
+                            color: classColor,
+                            radius: 20,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  authorId == uid
+                                      ? AppLocalizations.of(context)!.you
+                                      : authorName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  _formatTimestamp(data['createdAt']),
+                                  style: const TextStyle(
+                                    color: SchoolColors.muted,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const Spacer(),
+                if (pinned)
+                  Padding(
+                    padding: EdgeInsets.only(right: 8),
+                    child: StatusChip(
+                      label: AppLocalizations.of(context)!.pinned,
+                      color: SchoolColors.yellow,
+                      icon: Icons.push_pin,
+                      iconSize: 10,
                     ),
-                  );
-                },
+                  ),
+                if (widget.canManage) _PostMenu(doc: widget.doc),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _PostTag(name: className, color: classColor),
+            const SizedBox(height: 12),
+            Text(
+              content,
+              style: const TextStyle(
+                fontSize: 15,
+                height: 1.6,
+                color: SchoolColors.text,
               ),
-              const Spacer(),
-              if (pinned)
-                Padding(
-                  padding: EdgeInsets.only(right: 8),
-                  child: StatusChip(
-                    label: AppLocalizations.of(context)!.pinned,
-                    color: SchoolColors.yellow,
-                    icon: Icons.push_pin,
-                    iconSize: 10,
+            ),
+            if (attachments.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: CachedNetworkImage(
+                    imageUrl: (attachments.first['url'] as String)
+                        .toDirectImageUrl
+                        .toOptimizedCloudinary(
+                          performance: AppScope.of(
+                            context,
+                          ).appState.performanceMode,
+                        ),
+                    height: 240,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    memCacheWidth: AppScope.of(context).appState.performanceMode
+                        ? 500
+                        : 900,
+                    placeholder: (c, u) =>
+                        Container(color: Colors.grey.withValues(alpha: 0.1)),
                   ),
                 ),
-              if (widget.canManage) _PostMenu(doc: widget.doc),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _PostTag(name: className, color: classColor),
-          const SizedBox(height: 12),
-          Text(
-            content,
-            style: const TextStyle(
-              fontSize: 15,
-              height: 1.6,
-              color: SchoolColors.text,
-            ),
-          ),
-          if (attachments.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: CachedNetworkImage(
-                  imageUrl: (attachments.first['url'] as String)
-                      .toDirectImageUrl
-                      .toOptimizedCloudinary(
-                        performance: AppScope.of(
-                          context,
-                        ).appState.performanceMode,
-                      ),
-                  height: 240,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  memCacheWidth: AppScope.of(context).appState.performanceMode
-                      ? 500
-                      : 900,
-                  placeholder: (c, u) =>
-                      Container(color: Colors.grey.withValues(alpha: 0.1)),
-                ),
               ),
+            const SizedBox(height: 20),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            _PostReactionRow(
+              doc: widget.doc,
+              isLiked: isLiked,
+              likesCount: likes.length,
+              commentsCount: (data['comments'] as List? ?? []).length,
             ),
-          const SizedBox(height: 20),
-          const Divider(height: 1),
-          const SizedBox(height: 8),
-          _PostReactionRow(
-            doc: widget.doc,
-            isLiked: isLiked,
-            likesCount: likes.length,
-            commentsCount: (data['comments'] as List? ?? []).length,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
