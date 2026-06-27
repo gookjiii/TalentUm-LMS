@@ -85,7 +85,7 @@ class StudentToday extends ConsumerWidget {
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding, vertical: 16),
             child: PageHeader(
-              title: '$greeting, $name',
+              title: '$greeting, $name!',
               subtitle: date,
               trailing: SchoolAvatar(
                 name: name,
@@ -112,26 +112,28 @@ class StudentToday extends ConsumerWidget {
           sliver: SliverToBoxAdapter(
             child: Column(
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: _BentoStats(
-                        classCount: classes.length,
-                        todayLessons: todaySchedules.length,
-                        activeLessons: activeLessons,
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: _BentoStats(
+                          classCount: classes.length,
+                          todayLessons: todaySchedules.length,
+                          activeLessons: activeLessons,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 3,
-                      child: StreakCard(
-                        classIds: classes.map((c) => (c['id'] ?? '').toString()).toList(),
-                        onTap: onHomeworkTap,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 3,
+                        child: StreakCard(
+                          classIds: classes.map((c) => (c['id'] ?? '').toString()).toList(),
+                          onTap: onHomeworkTap,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 if (upcomingClass != null) ...[
@@ -257,7 +259,7 @@ class StudentToday extends ConsumerWidget {
             ]),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 48)),
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
     );
   }

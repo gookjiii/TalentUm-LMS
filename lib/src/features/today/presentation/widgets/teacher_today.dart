@@ -8,6 +8,7 @@ import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/widgets/file_preview.dart';
 import 'package:school_world/src/models/schedule.dart' hide colorFromHex;
+import 'package:school_world/src/utils/responsive_utils.dart';
 
 class TeacherToday extends StatefulWidget {
   const TeacherToday({
@@ -84,7 +85,7 @@ class _TeacherTodayState extends State<TeacherToday> {
           slivers: [
             SliverToBoxAdapter(
               child: PageHeader(
-                title: '$greeting, $firstName',
+                title: '$greeting, $firstName!',
                 subtitle: date,
                 trailing: SchoolAvatar(
                   name: name,
@@ -94,12 +95,12 @@ class _TeacherTodayState extends State<TeacherToday> {
                 ),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
             _TeacherKpiRow(repo: repo, classes: widget.classes),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                 child: SectionHeader(
                   title: l10n.todaysClasses.toUpperCase(),
                   action: l10n.viewAll,
@@ -117,19 +118,19 @@ class _TeacherTodayState extends State<TeacherToday> {
               onDeleteClass: widget.onDeleteClass,
               onOpenSchedule: () => widget.onTabSelect(8),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                 child: SectionHeader(
                   title: AppLocalizations.of(context)!.quickLinks1,
                   action: "",
                 ),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 12)),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
               sliver: SliverGrid(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: MediaQuery.sizeOf(context).width >= 700 ? 4 : 2,
@@ -165,19 +166,19 @@ class _TeacherTodayState extends State<TeacherToday> {
                 ]),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            const SliverToBoxAdapter(child: SizedBox(height: 32)),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                 child: SectionHeader(
                   title: l10n.needsReviewToday.toUpperCase(),
                   action: "",
                 ),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 12)),
-            const SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: 24),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
               sliver: SliverToBoxAdapter(
                 child: RepaintBoundary(child: _NeedsAttentionCard()),
               ),
@@ -229,7 +230,7 @@ class _TeacherKpiRowState extends State<_TeacherKpiRow> {
     final l10n = AppLocalizations.of(context)!;
 
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 200,
@@ -774,14 +775,17 @@ class _TeacherTodayScheduleState extends State<_TeacherTodaySchedule> {
 
             if (todayItems.isEmpty) {
               return SliverToBoxAdapter(
-                child: _NoClassesEmptyState(
-                  onOpenSchedule: widget.onOpenSchedule,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+                  child: _NoClassesEmptyState(
+                    onOpenSchedule: widget.onOpenSchedule,
+                  ),
                 ),
               );
             }
 
             return SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {

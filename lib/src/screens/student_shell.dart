@@ -197,39 +197,62 @@ class _StudentShellState extends ConsumerState<StudentShell> {
             );
 
             return Scaffold(
-              backgroundColor: Theme.of(context).colorScheme.surface,
+              extendBody: true,
+              backgroundColor: SchoolColors.shellBackground,
               body: SafeArea(
                 bottom: false,
-                child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (wide)
-                    StudentSidebar(
-                      extended: constraints.maxWidth >= 1200,
-                      selectedIndex: _tabIndex,
-                      onSelect: (i) => setState(() => _tabIndex = i),
-                      navigationItems: navItems,
-                      classes: classes,
-                      activeClassId: selectedId,
-                      onSelectClass: (id) => appState.selectClass(id),
-                      onProfileTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (ctx) => SettingsScreen(
-                            repository: AppScope.of(ctx).repository,
-                            appState: AppScope.of(ctx).appState,
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        SchoolColors.shellBackground,
+                        SchoolColors.shellBackgroundAlt,
+                      ],
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (wide)
+                        StudentSidebar(
+                          extended: constraints.maxWidth >= 1200,
+                          selectedIndex: _tabIndex,
+                          onSelect: (i) => setState(() => _tabIndex = i),
+                          navigationItems: navItems,
+                          classes: classes,
+                          activeClassId: selectedId,
+                          onSelectClass: (id) => appState.selectClass(id),
+                          onProfileTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (ctx) => SettingsScreen(
+                                repository: AppScope.of(ctx).repository,
+                                appState: AppScope.of(ctx).appState,
+                              ),
+                            ),
                           ),
                         ),
+                      Expanded(
+                        child: WorkspacePanel(
+                          margin: EdgeInsets.fromLTRB(
+                            wide ? 0 : 12,
+                            12,
+                            12,
+                            wide ? 16 : 12,
+                          ),
+                          child: content,
+                        ),
                       ),
-                    ),
-                  Expanded(child: content),
-                  if (showRightSidebar && hasClasses)
-                    SizedBox(
-                      width: 320,
-                      child: StudentRightSidebar(classes: classes),
-                    ),
-                ],
-              ),
+                      if (showRightSidebar && hasClasses)
+                        SizedBox(
+                          width: 320,
+                          child: StudentRightSidebar(classes: classes),
+                        ),
+                    ],
+                  ),
+                ),
               ),
               bottomNavigationBar: wide
                   ? null

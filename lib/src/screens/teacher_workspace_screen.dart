@@ -313,36 +313,58 @@ class _TeacherWorkspaceScreenState
 
         return Scaffold(
           extendBody: true, // Allow content to scroll under the frosted glass bottom bar
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: SchoolColors.shellBackground,
           body: SafeArea(
             bottom: false,
-            child: Row(
-              children: [
-                if (wide)
-                  RepaintBoundary(
-                    child: _StableSidebar(
-                      extended: extraWide,
-                      tabIndex: _tabIndex,
-                      onSelect: (i) {
-                        setState(() => _tabIndex = i);
-                        ref.read(schoolAppStateProvider).setTeacherTabIndex(i);
-                      },
-                      navItems: navItems,
-                      onDeleteChat: _deleteClassChat,
-                      onDeleteClass: _deleteClass,
-                      onCopyGuestLink: _copyGuestInviteLink,
-                      onSelectClass: (id) {
-                        setState(() => selectedClassId = id);
-                        appState.selectClass(id);
-                      },
-                      onCreateClass: _createClass,
-                      onProfileTap: onProfileTap,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    SchoolColors.shellBackground,
+                    SchoolColors.shellBackgroundAlt,
+                  ],
+                ),
+              ),
+              child: Row(
+                children: [
+                  if (wide)
+                    RepaintBoundary(
+                      child: _StableSidebar(
+                        extended: extraWide,
+                        tabIndex: _tabIndex,
+                        onSelect: (i) {
+                          setState(() => _tabIndex = i);
+                          ref.read(schoolAppStateProvider).setTeacherTabIndex(i);
+                        },
+                        navItems: navItems,
+                        onDeleteChat: _deleteClassChat,
+                        onDeleteClass: _deleteClass,
+                        onCopyGuestLink: _copyGuestInviteLink,
+                        onSelectClass: (id) {
+                          setState(() => selectedClassId = id);
+                          appState.selectClass(id);
+                        },
+                        onCreateClass: _createClass,
+                        onProfileTap: onProfileTap,
+                      ),
+                    ),
+                  Expanded(
+                    child: WorkspacePanel(
+                      margin: EdgeInsets.fromLTRB(
+                        wide ? 0 : 12,
+                        12,
+                        12,
+                        wide ? 16 : 12,
+                      ),
+                      child: content,
                     ),
                   ),
-                Expanded(child: content),
-                if (showRightSidebar && hasClasses)
-                  TeacherRightSidebar(classes: classes),
-              ],
+                  if (showRightSidebar && hasClasses)
+                    TeacherRightSidebar(classes: classes),
+                ],
+              ),
             ),
           ),
           bottomNavigationBar: wide

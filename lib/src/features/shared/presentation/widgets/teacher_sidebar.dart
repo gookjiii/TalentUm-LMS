@@ -48,16 +48,17 @@ class TeacherSidebar extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Container(
-      width: extended ? 280 : 80,
-      margin: const EdgeInsets.all(12),
+      width: extended ? 292 : 88,
+      margin: const EdgeInsets.fromLTRB(16, 12, 12, 16),
       decoration: BoxDecoration(
         color: SchoolColors.sidebarBg,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: SchoolColors.sidebarBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 30,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.24),
+            blurRadius: 36,
+            offset: const Offset(0, 16),
           ),
         ],
       ),
@@ -98,8 +99,7 @@ class TeacherSidebar extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
-                              color: Colors.white.withValues(alpha: 0.3),
-                              letterSpacing: 1.2,
+                              color: Colors.white.withValues(alpha: 0.42),
                             ),
                           ),
                         ),
@@ -114,9 +114,9 @@ class TeacherSidebar extends StatelessWidget {
                               padding: EdgeInsets.zero,
                               tooltip: l10n.createClass,
                               style: IconButton.styleFrom(
-                                backgroundColor: Colors.white.withValues(alpha: 0.08),
+                                backgroundColor: SchoolColors.sidebarSurface,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                             ),
@@ -182,7 +182,7 @@ class _SidebarDivider extends StatelessWidget {
     return Divider(
       height: 1,
       thickness: 1,
-      color: Colors.white.withValues(alpha: 0.06),
+      color: SchoolColors.sidebarBorder,
     );
   }
 }
@@ -195,13 +195,25 @@ class _TeacherSidebarHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       child: Row(
         mainAxisAlignment: extended
             ? MainAxisAlignment.start
             : MainAxisAlignment.center,
         children: [
-          const SchoolLogo(size: 36),
+          Container(
+            width: 42,
+            height: 42,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: SchoolColors.sidebarSurface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+            child: const SchoolLogo(size: 36),
+          ),
           if (extended) ...[
             const SizedBox(width: 12),
             Expanded(
@@ -222,20 +234,29 @@ class _TeacherSidebarHeader extends StatelessWidget {
                         appName,
                         style: const TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.2,
+                          fontWeight: FontWeight.w800,
                           color: Colors.white,
                         ),
                       );
                     },
                   ),
-                  Text(
-                    l10n.teacherConsole,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.white.withValues(alpha: 0.45),
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: SchoolColors.sidebarSurface,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      l10n.teacherConsole,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white.withValues(alpha: 0.68),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -275,9 +296,9 @@ class _TeacherNavItemState extends State<_TeacherNavItem> {
     const activeColor = Colors.white;
     final inactiveColor = Colors.white.withValues(alpha: 0.55);
     final bgColor = widget.selected
-        ? Colors.white.withValues(alpha: 0.10)
+        ? SchoolColors.sidebarActive
         : _hovered
-        ? Colors.white.withValues(alpha: 0.05)
+        ? SchoolColors.sidebarSurfaceHover
         : Colors.transparent;
 
     return Padding(
@@ -293,13 +314,16 @@ class _TeacherNavItemState extends State<_TeacherNavItem> {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
-              height: 46,
+              height: 48,
               padding: EdgeInsets.symmetric(
                 horizontal: widget.extended ? 14 : 0,
               ),
               decoration: BoxDecoration(
                 color: bgColor,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
+                border: widget.selected
+                    ? Border.all(color: Colors.white.withValues(alpha: 0.08))
+                    : null,
               ),
               child: Row(
                 mainAxisAlignment: widget.extended
@@ -345,7 +369,6 @@ class _TeacherNavItemState extends State<_TeacherNavItem> {
                             ? FontWeight.w700
                             : FontWeight.w500,
                         color: widget.selected ? activeColor : inactiveColor,
-                        fontFamily: 'Plus Jakarta Sans',
                       ),
                       child: Text(widget.label),
                     ),
@@ -394,9 +417,9 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
   Widget build(BuildContext context) {
     final inactiveColor = Colors.white.withValues(alpha: 0.6);
     final bgColor = widget.selected
-        ? Colors.white.withValues(alpha: 0.09)
+        ? SchoolColors.sidebarActive
         : _hovered
-        ? Colors.white.withValues(alpha: 0.04)
+        ? SchoolColors.sidebarSurfaceHover
         : Colors.transparent;
 
     return MouseRegion(
@@ -408,14 +431,14 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
           onTap: widget.onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
-            height: 54,
+            height: 56,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               border: widget.selected
                   ? Border.all(
-                      color: widget.color.withValues(alpha: 0.22),
+                      color: Colors.white.withValues(alpha: 0.08),
                       width: 1,
                     )
                   : null,
@@ -576,25 +599,28 @@ class _AdminModeToggle extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.orange.shade700.withOpacity(0.15),
-            Colors.orange.shade900.withOpacity(0.05),
+            SchoolColors.accentContainer.withValues(alpha: 0.8),
+            const Color(0x00FFFFFF),
           ],
         ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.shade800.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: SchoolColors.accent.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          Icon(Icons.shield_rounded, color: Colors.orange.shade400, size: 18),
+          const Icon(
+            Icons.shield_rounded,
+            color: SchoolColors.accent,
+            size: 18,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.adminMode,
-              style: TextStyle(
-                color: Colors.orange.shade400,
+              style: const TextStyle(
+                color: SchoolColors.accent,
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 0.5,
               ),
             ),
           ),
@@ -647,10 +673,10 @@ class _TeacherUserCard extends StatelessWidget {
             child: Container(
               padding: EdgeInsets.all(extended ? 12 : 4),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(14),
+                color: SchoolColors.sidebarSurface,
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.07),
+                  color: Colors.white.withValues(alpha: 0.08),
                   width: 1,
                 ),
               ),

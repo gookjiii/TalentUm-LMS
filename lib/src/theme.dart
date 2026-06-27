@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SchoolColors {
-  // ── Primary Purple (More Vibrant) ─────────────────────────────────
-  static const primary = Color(0xFF8A2BE2); // Vibrant Blue Violet
-  static const primaryLight = Color(0xFFB066FF);
-  static const primaryDark = Color(0xFF5A189A);
-  static const primaryContainer = Color(0xFFF3E8FF);
-  static const onPrimaryContainer = Color(0xFF3B0764);
+  // ── Core Brand / Platform Blues ───────────────────────────────
+  static const primary = Color(0xFF2563EB);
+  static const primaryLight = Color(0xFF60A5FA);
+  static const primaryDark = Color(0xFF1D4ED8);
+  static const primaryContainer = Color(0xFFEFF6FF);
+  static const onPrimaryContainer = Color(0xFF1E3A8A);
 
-  // ── Secondary / Indigo ────────────────────────────────────────
-  static const secondary = Color(0xFF6366F1); // Vibrant Indigo
-  static const secondaryLight = Color(0xFFA5B4FC);
-  static const secondaryContainer = Color(0xFFEEF2FF);
-  static const onSecondaryContainer = Color(0xFF312E81);
+  // ── Secondary / Teal ──────────────────────────────────────────
+  static const secondary = Color(0xFF0F766E);
+  static const secondaryLight = Color(0xFF5EEAD4);
+  static const secondaryContainer = Color(0xFFCCFBF1);
+  static const onSecondaryContainer = Color(0xFF115E59);
 
-  // ── Accent / Emerald ───────────────────────────────────────
-  static const accent = Color(0xFF059669);
-  static const accentContainer = Color(0xFFD1FAE5);
+  // ── Accent / Amber ────────────────────────────────────────────
+  static const accent = Color(0xFFD97706);
+  static const accentContainer = Color(0xFFFFEDD5);
 
   // ── Semantic Colors (WCAG AA Compliant on White) ──────────────
   static const green = Color(0xFF059669); // Emerald 600
@@ -27,19 +27,19 @@ class SchoolColors {
   static const orange = Color(0xFFB45309); // Amber 700
   static const orangeContainer = Color(0xFFFFEDD5);
   static const yellow = Color(0xFFFBBC04);
-  static const purple = Color(0xFF7C3AED); // Primary
-  static const purpleContainer = Color(0xFFEDE9FE);
+  static const purple = Color(0xFF475569);
+  static const purpleContainer = Color(0xFFF1F5F9);
 
 
   // ── Light-mode Neutrals ───────────────────────────────────────
-  static const bg = Color(0xFFF9FAFC);
+  static const bg = Color(0xFFF4F7FB);
   static const surface = Color(0xFFFFFFFF);
-  static const surfaceElevated = Color(0xFFF1F5F9);
+  static const surfaceElevated = Color(0xFFF8FAFC);
   static const text = Color(0xFF0F172A);
-  static const textSecondary = Color(0xFF475569);
+  static const textSecondary = Color(0xFF334155);
   static const muted = Color(0xFF64748B);
-  static const border = Color(0xFFECEBF3);
-  static const borderFocus = Color(0xFFC4B5FD);
+  static const border = Color(0xFFE2E8F0);
+  static const borderFocus = Color(0xFF93C5FD);
 
   // ── Dark-mode Palette ─────────────────────────────────────────
   static const darkBg = Color(0xFF080C1E);
@@ -50,15 +50,26 @@ class SchoolColors {
   static const darkTextSecondary = Color(0xFF94A3B8);
   static const darkMuted = Color(0xFF64748B);
 
+  // ── Workspace / Shell ─────────────────────────────────────────
+  static const shellBackground = Color(0xFFF3F7FC);
+  static const shellBackgroundAlt = Color(0xFFEAF1FA);
+  static const shellStroke = Color(0xFFD7E3F2);
+  static const shellPanel = Color(0xFFFDFEFF);
+  static const shellPanelTint = Color(0xFFF6FAFE);
+  static const shellGlow = Color(0x662563EB);
+
   // ── Sidebar ───────────────────────────────────────────────────
-  static const sidebarBg = Color(0xFF1E1B4B);
-  static const sidebarBorder = Color(0xFF312E81);
+  static const sidebarBg = Color(0xFF0F172A);
+  static const sidebarBorder = Color(0xFF1E293B);
+  static const sidebarSurface = Color(0xFF162033);
+  static const sidebarSurfaceHover = Color(0xFF1C2940);
+  static const sidebarActive = Color(0xFF1E3A5F);
 
   // ── Chat Bubbles ──────────────────────────────────────────────
-  static const chatBubbleStart = Color(0xFF7C3AED);
-  static const chatBubbleEnd = Color(0xFF8B5CF6);
+  static const chatBubbleStart = Color(0xFF2563EB);
+  static const chatBubbleEnd = Color(0xFF0EA5E9);
   static const chatBubbleOther = Color(0xFFFFFFFF);
-  static const chatBubbleOtherBorder = Color(0xFFEFE7FC);
+  static const chatBubbleOtherBorder = Color(0xFFE2E8F0);
 
   // ── Deleted Message Styling ─────────────────────────────────
   static const deletedBubble = Color(0xFFFEE2E2);
@@ -75,17 +86,17 @@ class SchoolColors {
 
   // ── Glow / Shadow helpers (Enhanced) ─────────────────────────
   static BoxShadow cardShadow = BoxShadow(
-    color: const Color(0xFF8A2BE2).withValues(alpha: 0.06), // Colored shadow
-    blurRadius: 24,
-    offset: const Offset(0, 6),
+    color: const Color(0xFF2563EB).withValues(alpha: 0.06),
+    blurRadius: 26,
+    offset: const Offset(0, 10),
     spreadRadius: 0,
   );
 
   static BoxShadow cardShadowHover = BoxShadow(
-    color: const Color(0xFF8A2BE2).withValues(alpha: 0.15), // Stronger glow on hover
-    blurRadius: 36,
-    offset: const Offset(0, 10),
-    spreadRadius: 2,
+    color: const Color(0xFF2563EB).withValues(alpha: 0.12),
+    blurRadius: 34,
+    offset: const Offset(0, 14),
+    spreadRadius: 0,
   );
 
   static BoxShadow elevatedShadow = BoxShadow(

@@ -422,6 +422,61 @@ class GlassCard extends StatelessWidget {
   }
 }
 
+class WorkspacePanel extends StatelessWidget {
+  const WorkspacePanel({
+    super.key,
+    required this.child,
+    this.margin,
+    this.padding,
+    this.borderRadius = 28,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry? margin;
+  final EdgeInsetsGeometry? padding;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: margin,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: isDark
+              ? SchoolColors.darkBorder.withValues(alpha: 0.9)
+              : SchoolColors.shellStroke,
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? const [Color(0xFF10172C), Color(0xFF0F1C32)]
+              : [SchoolColors.shellPanel, SchoolColors.shellPanelTint],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.24)
+                : SchoolColors.shellGlow.withValues(alpha: 0.14),
+            blurRadius: 32,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: Padding(
+          padding: padding ?? EdgeInsets.zero,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────
 // CLASS BADGE
 // ─────────────────────────────────────────────────────────────────
@@ -1736,16 +1791,16 @@ class PageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final topPadding = MediaQuery.paddingOf(context).top;
+    final isMobile = context.isMobile;
 
     return Padding(
       padding:
           padding ??
           EdgeInsets.fromLTRB(
-            context.isMobile ? 16 : 24,
-            topPadding + (context.isMobile ? 16 : 24),
-            context.isMobile ? 16 : 24,
-            16,
+            isMobile ? 18 : 28,
+            isMobile ? 18 : 24,
+            isMobile ? 18 : 28,
+            isMobile ? 16 : 20,
           ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1782,7 +1837,6 @@ class PageHeader extends StatelessWidget {
                                   : SchoolColors.muted,
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5,
                             ),
                       ),
                       const SizedBox(height: 4),
@@ -1791,11 +1845,11 @@ class PageHeader extends StatelessWidget {
                       title,
                       style:
                           titleStyle ??
-                          GoogleFonts.outfit(
-                            fontSize: 32,
+                          GoogleFonts.plusJakartaSans(
+                            fontSize: isMobile ? 28 : 34,
                             fontWeight: FontWeight.w800,
                             height: 1.1,
-                            letterSpacing: -1.0, // Tighter tracking
+                            letterSpacing: 0,
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                     ),
