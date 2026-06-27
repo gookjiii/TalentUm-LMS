@@ -75,11 +75,6 @@ class _TeacherTodayState extends State<TeacherToday> {
         final now = DateTime.now();
         final greeting = l10n.welcomeToTalentum;
 
-        final date = DateFormat(
-          'EEEE, MMMM d',
-          l10n.localeName,
-        ).format(now);
-
         return CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [

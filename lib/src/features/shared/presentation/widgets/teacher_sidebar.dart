@@ -49,7 +49,7 @@ class TeacherSidebar extends StatelessWidget {
 
     return Container(
       width: extended ? 292 : 88,
-      margin: const EdgeInsets.fromLTRB(16, 12, 12, 16),
+      margin: const EdgeInsets.fromLTRB(16, 16, 8, 16),
       decoration: BoxDecoration(
         color: SchoolColors.sidebarBg,
         borderRadius: BorderRadius.circular(28),
@@ -71,6 +71,7 @@ class TeacherSidebar extends StatelessWidget {
           // Nav items + classes in scrollable area
           Expanded(
             child: ListView(
+              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               padding: const EdgeInsets.symmetric(horizontal: 10),
               children: [
                 for (int i = 0; i < navigationItems.length; i++)

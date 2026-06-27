@@ -13,18 +13,24 @@ class TeacherRightSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 320,
+      margin: const EdgeInsets.fromLTRB(8, 16, 16, 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          left: BorderSide(
-            color: Theme.of(
-              context,
-            ).colorScheme.outlineVariant.withOpacity(0.5),
+        color: SchoolColors.sidebarBg,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: SchoolColors.sidebarBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.24),
+            blurRadius: 36,
+            offset: const Offset(0, 16),
           ),
-        ),
+        ],
       ),
-      child: ListView(
-        padding: const EdgeInsets.all(24),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: ListView(
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          padding: const EdgeInsets.all(24),
         children: [
           SectionHeader(title: AppLocalizations.of(context)!.upcomingClasses),
           const SizedBox(height: 16),
@@ -40,6 +46,7 @@ class TeacherRightSidebar extends StatelessWidget {
           const SizedBox(height: 16),
           _PendingSubmissionsList(classes: classes),
         ],
+      ),
       ),
     );
   }

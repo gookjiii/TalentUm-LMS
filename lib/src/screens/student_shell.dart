@@ -237,10 +237,10 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                       Expanded(
                         child: WorkspacePanel(
                           margin: EdgeInsets.fromLTRB(
-                            wide ? 0 : 12,
-                            12,
-                            12,
-                            wide ? 16 : 12,
+                            wide ? 8 : 16,
+                            16,
+                            wide ? 8 : 16,
+                            wide ? 16 : 16,
                           ),
                           child: content,
                         ),

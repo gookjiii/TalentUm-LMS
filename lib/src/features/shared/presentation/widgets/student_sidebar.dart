@@ -41,7 +41,7 @@ class StudentSidebar extends StatelessWidget {
 
     return Container(
       width: extended ? 272 : 88,
-      margin: const EdgeInsets.fromLTRB(16, 12, 12, 16),
+      margin: const EdgeInsets.fromLTRB(16, 16, 8, 16),
       decoration: BoxDecoration(
         color: SchoolColors.sidebarBg,
         borderRadius: BorderRadius.circular(28),
@@ -117,6 +117,7 @@ class StudentSidebar extends StatelessWidget {
             ),
             Expanded(
               child: ListView.builder(
+                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 itemCount: classes.length,
                 itemBuilder: (context, index) {
