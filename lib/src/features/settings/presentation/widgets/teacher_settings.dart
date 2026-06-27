@@ -893,6 +893,7 @@ class _ProfileCard extends StatelessWidget {
     return SchoolCard(
       padding: const EdgeInsets.all(18),
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
           Positioned(
             top: -60,

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import '../../../../screens/settings_screen.dart';
 
@@ -72,10 +73,18 @@ class _StudentFeedState extends State<StudentFeed> {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final name = user?.displayName ?? AppLocalizations.of(context)!.student;
+    final selectedClassName = widget.classId == 'all'
+        ? AppLocalizations.of(context)!.allClasses
+        : widget.classes
+              .firstWhere(
+                (c) => c['id'] == widget.classId,
+                orElse: () => const <String, dynamic>{},
+              )['name']
+              ?.toString();
 
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800),
+        constraints: const BoxConstraints(maxWidth: 980),
         child: SizedBox.expand(
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
@@ -88,91 +97,111 @@ class _StudentFeedState extends State<StudentFeed> {
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 56, 24, 16),
+                    padding: EdgeInsets.fromLTRB(
+                      context.horizontalPadding,
+                      context.isMobile ? 18 : 12,
+                      context.horizontalPadding,
+                      16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    AppLocalizations.of(context)!.ribbon,
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  Text(
-                                    AppLocalizations.of(context)!.announcementsFromYourTeachers,
-                                    style: TextStyle(
-                                      color: SchoolColors.muted.withValues(
-                                        alpha: 0.7,
-                                      ),
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SchoolAvatar(
-                              name: name,
-                              userId: user?.uid,
-                              radius: 22,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (ctx) => SettingsScreen(
-                                    repository: AppScope.of(ctx).repository,
-                                    appState: AppScope.of(ctx).appState,
-                                  ),
+                        PageHeader(
+                          padding: EdgeInsets.zero,
+                          title: AppLocalizations.of(context)!.ribbon,
+                          subtitle: AppLocalizations.of(
+                            context,
+                          )!.announcementsFromYourTeachers,
+                          classContext: selectedClassName,
+                          trailing: SchoolAvatar(
+                            name: name,
+                            userId: user?.uid,
+                            radius: 22,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (ctx) => SettingsScreen(
+                                  repository: AppScope.of(ctx).repository,
+                                  appState: AppScope.of(ctx).appState,
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                        SizedBox(height: 24),
-                        TextField(
-                          onChanged: (v) => setState(
-                            () => _searchQuery = v.trim().toLowerCase(),
-                          ),
-                          decoration: InputDecoration(
-                            hintText: AppLocalizations.of(context)!.searchByAdvertisements,
-                            prefixIcon: const Icon(Icons.search_rounded),
-                            filled: true,
-                            fillColor:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? SchoolColors.darkSurface
-                                : Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                            ),
                           ),
                         ),
-                        SizedBox(height: 24),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
+                        const SizedBox(height: 16),
+                        SchoolCard(
+                          padding: EdgeInsets.all(context.isMobile ? 16 : 20),
+                          borderRadius: 22,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _FeedFilterChip(
-                                label: AppLocalizations.of(context)!.allClasses,
-                                active: widget.classId == 'all',
-                                onTap: () => widget.onClassSelect('all'),
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                children: [
+                                  _FeedStatPill(
+                                    icon: Icons.campaign_outlined,
+                                    label: AppLocalizations.of(
+                                      context,
+                                    )!.allClasses,
+                                    value: widget.classId == 'all'
+                                        ? '${widget.classes.length}'
+                                        : '1',
+                                  ),
+                                  _FeedStatPill(
+                                    icon: Icons.view_stream_outlined,
+                                    label: AppLocalizations.of(context)!.ribbon,
+                                    value: 'Live',
+                                  ),
+                                ],
                               ),
-                              ...widget.classes.map(
-                                (c) => _FeedFilterChip(
-                                  label: c['name']?.toString() ?? '',
-                                  active: c['id'] == widget.classId,
-                                  onTap: () =>
-                                      widget.onClassSelect(c['id'] as String),
+                              const SizedBox(height: 16),
+                              TextField(
+                                onChanged: (v) => setState(
+                                  () => _searchQuery = v.trim().toLowerCase(),
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: AppLocalizations.of(
+                                    context,
+                                  )!.searchByAdvertisements,
+                                  prefixIcon: const Icon(Icons.search_rounded),
+                                  filled: true,
+                                  fillColor:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? SchoolColors.darkSurface
+                                      : SchoolColors.surfaceElevated,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: [
+                                    _FeedFilterChip(
+                                      label: AppLocalizations.of(
+                                        context,
+                                      )!.allClasses,
+                                      active: widget.classId == 'all',
+                                      onTap: () => widget.onClassSelect('all'),
+                                    ),
+                                    ...widget.classes.map(
+                                      (c) => _FeedFilterChip(
+                                        label: c['name']?.toString() ?? '',
+                                        active: c['id'] == widget.classId,
+                                        onTap: () => widget.onClassSelect(
+                                          c['id'] as String,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -201,12 +230,19 @@ class _StudentFeedState extends State<StudentFeed> {
                         child: EmptyStateWidget(
                           icon: Icons.notifications_none_rounded,
                           title: AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
-                          subtitle: 'Bạn đã xem hết tất cả thông báo rồi!',
+                          subtitle: AppLocalizations.of(
+                            context,
+                          )!.announcementsFromYourTeachers,
                         ),
                       );
                     }
                     return SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+                      padding: EdgeInsets.fromLTRB(
+                        context.horizontalPadding,
+                        8,
+                        context.horizontalPadding,
+                        40,
+                      ),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final doc = posts[index];
@@ -254,32 +290,90 @@ class _FeedFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bgColor = active
+        ? SchoolColors.primary
+        : SchoolColors.surfaceElevated;
+
     return Semantics(
       button: true,
       selected: active,
       label: 'Фильтр: $label',
       child: Padding(
         padding: const EdgeInsets.only(right: 8),
-        child: ChoiceChip(
-          label: Text(label),
-          selected: active,
-          onSelected: (_) => onTap(),
-          backgroundColor: Colors.white,
-          selectedColor: SchoolColors.primary,
-          labelStyle: TextStyle(
-            color: active ? Colors.white : SchoolColors.muted,
-            fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-            fontSize: 13,
-          ),
-          shape: RoundedRectangleBorder(
+        child: Material(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(999),
+          child: InkWell(
+            onTap: onTap,
             borderRadius: BorderRadius.circular(999),
-            side: BorderSide(
-              color: active ? SchoolColors.primary : SchoolColors.border,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: active ? SchoolColors.primary : SchoolColors.border,
+                ),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: active ? Colors.white : SchoolColors.textSecondary,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
             ),
           ),
-          showCheckmark: false,
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         ),
+      ),
+    );
+  }
+}
+
+class _FeedStatPill extends StatelessWidget {
+  const _FeedStatPill({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: SchoolColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: SchoolColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: SchoolColors.primary),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: SchoolColors.textSecondary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: SchoolColors.text,
+            ),
+          ),
+        ],
       ),
     );
   }

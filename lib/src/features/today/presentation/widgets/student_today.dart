@@ -85,6 +85,7 @@ class StudentToday extends ConsumerWidget {
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding, vertical: 16),
             child: PageHeader(
+              padding: EdgeInsets.zero,
               title: '$greeting, $name!',
               subtitle: date,
               trailing: SchoolAvatar(

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/theme.dart';
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 
 import './feed_widgets.dart';
@@ -77,42 +78,48 @@ class _TeacherFeedState extends State<TeacherFeed> {
                 final effectiveClassId = ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ?? widget.classId;
                 final currentClassName = allVisibleClasses.firstWhere((c) => c['id'] == effectiveClassId, orElse: () => {})['name']?.toString();
 
-                return PageHeader(
-                  title: AppLocalizations.of(context)!.ribbon,
-                  subtitle: AppLocalizations.of(context)!.declarationsForYourClasses,
-                  classContext: currentClassName,
-                  onClassContextTap: allVisibleClasses.length > 1
-                      ? () {
-                          showClassSwitcher(
-                            context: context,
-                            classes: allVisibleClasses,
-                            currentClassId: effectiveClassId,
-                            onSelect: (id) {
-                              ref.read(schoolAppStateProvider).selectClass(id);
-                            },
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: context.horizontalPadding,
+                  ),
+                  child: PageHeader(
+                    padding: EdgeInsets.zero,
+                    title: AppLocalizations.of(context)!.ribbon,
+                    subtitle: AppLocalizations.of(context)!.declarationsForYourClasses,
+                    classContext: currentClassName,
+                    onClassContextTap: allVisibleClasses.length > 1
+                        ? () {
+                            showClassSwitcher(
+                              context: context,
+                              classes: allVisibleClasses,
+                              currentClassId: effectiveClassId,
+                              onSelect: (id) {
+                                ref.read(schoolAppStateProvider).selectClass(id);
+                              },
+                            );
+                          }
+                        : null,
+                    trailing: FilledButton.icon(
+                      onPressed: () {
+                        if (_composerKey.currentContext != null) {
+                          Scrollable.ensureVisible(
+                            _composerKey.currentContext!,
+                            duration: const Duration(milliseconds: 500),
+                            curve: Curves.easeInOut,
                           );
                         }
-                      : null,
-                  trailing: FilledButton.icon(
-                    onPressed: () {
-                      if (_composerKey.currentContext != null) {
-                        Scrollable.ensureVisible(
-                          _composerKey.currentContext!,
-                          duration: const Duration(milliseconds: 500),
-                          curve: Curves.easeInOut,
-                        );
-                      }
-                    },
-                    style: FilledButton.styleFrom(
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
+                      },
+                      style: FilledButton.styleFrom(
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                       ),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: Text(AppLocalizations.of(context)!.newPost),
                     ),
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: Text(AppLocalizations.of(context)!.newPost),
                   ),
                 );
               },
@@ -120,35 +127,65 @@ class _TeacherFeedState extends State<TeacherFeed> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 8),
-                  TextField(
-                    onChanged: (v) =>
-                        setState(() => _searchQuery = v.trim().toLowerCase()),
-                    decoration: InputDecoration(
-                      hintText:
-                          AppLocalizations.of(context)!.searchByAdvertisements,
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      filled: true,
-                      fillColor: Theme.of(context).brightness == Brightness.dark
-                          ? SchoolColors.darkSurface
-                          : Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
+                  SchoolCard(
                     key: _composerKey,
-                    child: _InlineComposer(
-                      classes: widget.classes,
-                      initialClassId: widget.classId,
+                    padding: EdgeInsets.all(context.isMobile ? 16 : 20),
+                    borderRadius: 22,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            _FeedOverviewPill(
+                              icon: Icons.groups_2_outlined,
+                              label: AppLocalizations.of(context)!.myClasses,
+                              value: '${widget.classes.length}',
+                            ),
+                            _FeedOverviewPill(
+                              icon: Icons.edit_note_rounded,
+                              label: AppLocalizations.of(context)!.newPost,
+                              value: 'Live',
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          onChanged: (v) => setState(
+                            () => _searchQuery = v.trim().toLowerCase(),
+                          ),
+                          decoration: InputDecoration(
+                            hintText: AppLocalizations.of(
+                              context,
+                            )!.searchByAdvertisements,
+                            prefixIcon: const Icon(Icons.search_rounded),
+                            filled: true,
+                            fillColor:
+                                Theme.of(context).brightness ==
+                                    Brightness.dark
+                                ? SchoolColors.darkSurface
+                                : SchoolColors.surfaceElevated,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        _InlineComposer(
+                          classes: widget.classes,
+                          initialClassId: widget.classId,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -172,19 +209,17 @@ class _TeacherFeedState extends State<TeacherFeed> {
               if (posts.isEmpty &&
                   snapshot.connectionState != ConnectionState.waiting) {
                 return SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 80),
-                    child: Center(
-                      child: Text(
-                        AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
-                        style: TextStyle(color: SchoolColors.muted),
-                      ),
-                    ),
+                  child: EmptyStateWidget(
+                    icon: Icons.campaign_outlined,
+                    title: AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
+                    subtitle: AppLocalizations.of(
+                      context,
+                    )!.declarationsForYourClasses,
                   ),
                 );
               }
               return SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final doc = posts[index];
@@ -265,10 +300,62 @@ class _InlineComposerState extends State<_InlineComposer> {
 
   @override
   Widget build(BuildContext context) {
-    return SchoolCard(
-      padding: EdgeInsets.all(24),
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: SchoolColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: SchoolColors.border),
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Text(
+                AppLocalizations.of(context)!.newPost.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: SchoolColors.textSecondary,
+                ),
+              ),
+              const Spacer(),
+              if (widget.classes.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: SchoolColors.border),
+                  ),
+                  child: DropdownButton<String>(
+                    value: widget.classes.any((c) => c['id'] == selectedClassId)
+                        ? selectedClassId
+                        : (widget.classes.first['id'] as String),
+                    underline: const SizedBox(),
+                    borderRadius: BorderRadius.circular(12),
+                    items: widget.classes
+                        .map(
+                          (c) => DropdownMenuItem(
+                            value: c['id'] as String,
+                            child: Text(
+                              c['name']?.toString() ?? '',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: SchoolColors.primary,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) => setState(() => selectedClassId = v!),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -279,19 +366,27 @@ class _InlineComposerState extends State<_InlineComposer> {
               ),
               SizedBox(width: 16),
               Expanded(
-                child: TextField(
-                  controller: controller,
-                  minLines: 1,
-                  maxLines: 10,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: AppLocalizations.of(context)!.postAnAnnouncementForClasses,
-                    hintStyle: TextStyle(color: SchoolColors.muted),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: SchoolColors.border),
                   ),
-                  style: const TextStyle(fontSize: 16, height: 1.5),
+                  child: TextField(
+                    controller: controller,
+                    minLines: 4,
+                    maxLines: 10,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context)!.postAnAnnouncementForClasses,
+                      hintStyle: const TextStyle(color: SchoolColors.muted),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: const EdgeInsets.all(16),
+                    ),
+                    style: const TextStyle(fontSize: 15, height: 1.5),
+                  ),
                 ),
               ),
             ],
@@ -337,31 +432,6 @@ class _InlineComposerState extends State<_InlineComposer> {
           const SizedBox(height: 12),
           Row(
             children: [
-              if (widget.classes.isNotEmpty)
-                DropdownButton<String>(
-                  value: widget.classes.any((c) => c['id'] == selectedClassId)
-                      ? selectedClassId
-                      : (widget.classes.first['id'] as String),
-                  underline: const SizedBox(),
-                  borderRadius: BorderRadius.circular(12),
-                  items: widget.classes
-                      .map(
-                        (c) => DropdownMenuItem(
-                          value: c['id'] as String,
-                          child: Text(
-                            c['name']?.toString() ?? '',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: SchoolColors.primary,
-                            ),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (v) => setState(() => selectedClassId = v!),
-                ),
-              SizedBox(width: 8),
               Semantics(
                 label: AppLocalizations.of(context)!.attachAnImage,
                 button: true,
@@ -467,5 +537,53 @@ class _InlineComposerState extends State<_InlineComposer> {
     } finally {
       setState(() => isUploading = false);
     }
+  }
+}
+
+class _FeedOverviewPill extends StatelessWidget {
+  const _FeedOverviewPill({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: SchoolColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: SchoolColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: SchoolColors.primary),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: SchoolColors.textSecondary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: SchoolColors.text,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

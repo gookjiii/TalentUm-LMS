@@ -996,43 +996,63 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labelColor = Theme.of(
+      context,
+    ).colorScheme.onSurface.withValues(alpha: 0.46);
+
     return SizedBox(
       width: double.infinity,
       child: Wrap(
         alignment: WrapAlignment.spaceBetween,
         crossAxisAlignment: WrapCrossAlignment.center,
-        runSpacing: 4,
-        spacing: 8,
+        runSpacing: 8,
+        spacing: 12,
         children: [
-          Text(
-            title.toUpperCase(),
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.4),
-              letterSpacing: 1.2,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 18,
+                height: 2,
+                decoration: BoxDecoration(
+                  color: SchoolColors.primary.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title.toUpperCase(),
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: labelColor,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ],
           ),
           if (action != null && action!.isNotEmpty)
             Semantics(
               label: action,
               button: true,
-              child: TextButton(
+              child: TextButton.icon(
                 onPressed: onActionTap,
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   minimumSize: const Size(44, 44),
                   tapTargetSize: MaterialTapTargetSize.padded,
                 ),
-                child: Text(
+                icon: const Icon(
+                  Icons.arrow_outward_rounded,
+                  size: 16,
+                  color: SchoolColors.primary,
+                ),
+                label: Text(
                   action!,
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
                     color: SchoolColors.primary,
-                    letterSpacing: -0.2,
                   ),
                 ),
               ),
@@ -1088,7 +1108,7 @@ class QuickTile extends HookWidget {
           child: Container(
             decoration: BoxDecoration(
               color: isDark ? SchoolColors.darkSurface : Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: isHovered.value
                     ? color.withValues(alpha: 0.3)
@@ -1122,21 +1142,33 @@ class QuickTile extends HookWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                color.withValues(alpha: 0.2),
-                                color.withValues(alpha: 0.1),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                        Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    color.withValues(alpha: 0.2),
+                                    color.withValues(alpha: 0.1),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(icon, color: color, size: 20),
                             ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(icon, color: color, size: 20),
+                            const Spacer(),
+                            Icon(
+                              Icons.arrow_outward_rounded,
+                              size: 16,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.34),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -1147,7 +1179,6 @@ class QuickTile extends HookWidget {
                             fontSize: 13,
                             height: 1.2,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: -0.2,
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
