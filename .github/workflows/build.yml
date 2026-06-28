@@ -238,6 +238,9 @@ jobs:
             --dart-define=CLOUDINARY_UPLOAD_PRESET=schoolWorld \
             --dart-define=APP_API_SECRET=talentum2026secret
 
+      - name: Force new deploy hash
+        run: echo "<!-- DEPLOY_TS_$(date +%s) -->" >> build/web/index.html
+
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
