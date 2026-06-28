@@ -80,3 +80,59 @@ sequenceDiagram
 - **Complete:** `vercel_backend/api/upload/complete.ts`
 - **Drive Permissions Management:** `vercel_backend/utils/drive.ts`
 - **Client Side (Dart):** `lib/src/firebase/google_drive_storage_provider.dart` (`uploadFileWeb` method)
+
+---
+
+## 6. Frontend Structure (Flutter) / Cấu trúc Frontend
+
+The source code is located in `lib/` and follows a **Feature-Driven Architecture**, making it easy to read, test, and audit.
+
+### Folder Structure `lib/src/`:
+- `features/`: Contains all core business features, packaged independently.
+  - `chat/`: Real-time chat, file uploads, emoji reactions.
+  - `classroom/`, `roster/`: Class management, student/parent invitation codes.
+  - `feed/`: Teacher announcements and posts.
+  - `homework/`, `grades/`, `journal/`: Assignment delivery, grading, and electronic gradebook.
+  - `library/`, `webinars/`: Document repository and video lecture storage.
+  - `parent_dashboard/`: Dedicated tracking screen for parents.
+  - `today/`: Main dashboard for teachers and students.
+  - `settings/`: System configurations, storage management, admin tools.
+  - `shared/`: Common UI widgets (Sidebar, Navbar).
+- `firebase/`: Direct integration Services and Repositories for Firestore and Storage Providers.
+- `models/`: Shared Data Classes / Models.
+- `providers/`: Dependency Injection and State Management (using Provider/Riverpod).
+- `screens/`: Root level screens (e.g., `auth_screen.dart`, `student_shell.dart`, `teacher_workspace_screen.dart`).
+- `utils/`: Utility functions (Extensions, formatters, helpers).
+- `widgets/`: Reusable UI components.
+
+### State Management & Routing
+- **Provider & Riverpod**: Used for asynchronous logic (e.g., Firestore Streams) and global state.
+- **GoRouter**: Handles complex multi-platform routing, especially URL paths on Web.
+
+---
+
+## 7. Backend Structure (Firebase) / Cấu trúc Backend
+
+The project uses a Serverless Architecture built primarily on Firebase.
+
+- **Database (Firestore)**:
+  - Hierarchical NoSQL structure.
+  - Real-time Sync for Chat and Notifications.
+  - Secured via Firestore Security Rules.
+- **Authentication (Firebase Auth)**:
+  - Phone, Email, and anonymous/invite-link sign-ins.
+- **Hosting (Firebase Hosting)**:
+  - Deployed to `talentum.web.app` using Firebase Hosting CDN.
+
+---
+
+## 8. Continuous Integration & Deployment (CI/CD)
+
+The project leverages **Github Actions** (`.github/workflows/build.yml`) for automated builds and deployments.
+
+### Deployment Flow:
+1. Triggered on pushes to the `main` branch.
+2. Injects environment variables (`CLOUDINARY_CLOUD_NAME`, `GOOGLE_DRIVE_PROXY_URL`, etc.) via `--dart-define`.
+3. Builds an optimized Flutter Web release (`flutter build web --release`).
+4. **Cache-Busting**: Injects a dynamic timestamp into `build/web/index.html` to bypass Firebase's "400 Identical Release" error.
+5. Uploads the build artifact to Firebase Hosting via the Firebase CLI.
