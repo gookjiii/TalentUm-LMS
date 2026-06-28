@@ -377,6 +377,8 @@
   "coolMagazine": "Классный журнал",
   "myGradesAndSubjects": "Мои оценки и предметы",
   "academicPerformanceAndSubjects": "Успеваемость и предметы",
+  "highPerformanceMode": "Режим высокой производительности",
+  "disableBlurEffects": "Отключить эффекты размытия для слабых устройств",
   "addALesson": "Добавить урок",
   "ratings": "Оценки",
   "items": "Предметы",

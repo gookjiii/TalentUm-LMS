@@ -38,6 +38,14 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
     const Color(0xFF06B6D4), // Cyan
   ];
 
+  @override
+  void dispose() {
+    for (final draft in _drafts) {
+      draft.dispose();
+    }
+    super.dispose();
+  }
+
   void _addMore() => setState(() {
     final lastColor = _drafts.lastOrNull?.color ?? SchoolColors.primary;
     final nextIdx =
@@ -89,6 +97,7 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
           .toList();
       if (names.isNotEmpty) {
         setState(() {
+          for (var d in _drafts) d.dispose();
           _drafts.clear();
           for (int i = 0; i < names.length; i++) {
             _drafts.add(
@@ -101,6 +110,7 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
         });
       }
     }
+    ctrl.dispose();
   }
 
   Future<void> _createAll() async {

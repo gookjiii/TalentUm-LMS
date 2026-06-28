@@ -11,6 +11,7 @@ import '../firebase/school_repository.dart';
 import '../theme.dart';
 import '../widgets/school_widgets.dart';
 import '../utils/reload_app.dart';
+import '../utils/responsive_utils.dart';
 import '../../main.dart';
 import '../features/settings/presentation/widgets/settings_components.dart';
 
@@ -268,12 +269,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final activeLanguageSub = widget.appState.locale?.languageCode == 'en'
             ? 'English (en)'
             : AppLocalizations.of(context)!.russianRu;
-        final performanceLabel = isRu
-            ? 'Режим высокой производительности'
-            : 'High Performance Mode';
-        final performanceSub = isRu
-            ? 'Отключить эффекты размытия для слабых устройств'
-            : 'Disable blur effects for low-end devices';
+        final performanceLabel = l10n.highPerformanceMode;
+        final performanceSub = l10n.disableBlurEffects;
 
         return Scaffold(
           appBar: AppBar(title: Text(l10n.settings), centerTitle: false),

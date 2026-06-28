@@ -12,8 +12,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get yourClassroomConnected => 'Твой класс,\nвсегда на связи.';
 
   @override
-  String get onboardingWelcomeDesc =>
-      'School World объединяет чат, домашние задания и объявления, чтобы вы не пропустили ничего важного от учителей.';
+  String get onboardingWelcomeDesc => 'School World объединяет чат, домашние задания и объявления, чтобы вы не пропустили ничего важного от учителей.';
 
   @override
   String get getStarted => 'Начать';
@@ -22,8 +21,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get whoIsJoining => 'Кто присоединяется сегодня?';
 
   @override
-  String get pickRoleDesc =>
-      'Выберите свою роль. Мы адаптируем приложение под ваши задачи.';
+  String get pickRoleDesc => 'Выберите свою роль. Мы адаптируем приложение под ваши задачи.';
 
   @override
   String get student => 'Ученик';
@@ -52,8 +50,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chooseYourClasses => 'Выберите ваши классы';
 
   @override
-  String get inviteCodeDesc =>
-      'Введите код приглашения, чтобы просмотреть и вступить в класс.';
+  String get inviteCodeDesc => 'Введите код приглашения, чтобы просмотреть и вступить в класс.';
 
   @override
   String get inviteCode => 'Код приглашения';
@@ -241,15 +238,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get errorJoiningClass => 'Произошла ошибка при вступлении в класс.';
 
   @override
-  String get invalidLinkOrExpired =>
-      'Неверная ссылка или код приглашения истек.';
+  String get invalidLinkOrExpired => 'Неверная ссылка или код приглашения истек.';
 
   @override
   String get classNotExists => 'Класс не существует.';
 
   @override
-  String get networkError =>
-      'Ошибка сети. Пожалуйста, проверьте интернет-соединение.';
+  String get networkError => 'Ошибка сети. Пожалуйста, проверьте интернет-соединение.';
 
   @override
   String get joiningWait => 'Вступление...';
@@ -309,8 +304,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get classmate => 'Одноклассник';
 
   @override
-  String get pickClassToReadAnnouncements =>
-      'Выберите класс для просмотра объявлений.';
+  String get pickClassToReadAnnouncements => 'Выберите класс для просмотра объявлений.';
 
   @override
   String get noAnnouncementsYet => 'Объявлений пока нет.';
@@ -370,8 +364,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get joinYourFirstClass => 'Вступите в свой первый класс';
 
   @override
-  String get joinFirstClassDesc =>
-      'Используйте код приглашения, чтобы открыть чат, ленту и задания.';
+  String get joinFirstClassDesc => 'Используйте код приглашения, чтобы открыть чат, ленту и задания.';
 
   @override
   String get noDueDate => 'Срок сдачи не установлен';
@@ -418,8 +411,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get createYourFirstClass => 'Создайте свой первый класс';
 
   @override
-  String get teacherEmptyDesc =>
-      'Классы включают коды приглашения для учеников и родителей.';
+  String get teacherEmptyDesc => 'Классы включают коды приглашения для учеников и родителей.';
 
   @override
   String get className => 'Название класса';
@@ -616,8 +608,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get deletePost => 'Удалить пост';
 
   @override
-  String get deletePostDesc =>
-      'Этот пост и комментарии к нему будут удалены навсегда.';
+  String get deletePostDesc => 'Этот пост и комментарии к нему будут удалены навсегда.';
 
   @override
   String get publishPost => 'Опубликовать пост';
@@ -750,8 +741,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get removeFromClass => 'Удалить из класса?';
 
   @override
-  String get removeFromClassDesc =>
-      'Ученик потеряет доступ к материалам и чату этого класса.';
+  String get removeFromClassDesc => 'Ученик потеряет доступ к материалам и чату этого класса.';
 
   @override
   String get badges => 'Значков';
@@ -787,8 +777,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get deleteAssignment => 'Удалить задание?';
 
   @override
-  String get deleteAssignmentDesc =>
-      'Все сданные работы этого задания также будут удалены.';
+  String get deleteAssignmentDesc => 'Все сданные работы этого задания также будут удалены.';
 
   @override
   String get editAssignment => 'Редактировать задание';
@@ -822,6 +811,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get academicPerformanceAndSubjects => 'Успеваемость и предметы';
+
+  @override
+  String get highPerformanceMode => 'Режим высокой производительности';
+
+  @override
+  String get disableBlurEffects => 'Отключить эффекты размытия для слабых устройств';
 
   @override
   String get addALesson => 'Добавить урок';
@@ -935,8 +930,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get adminPanel => 'Админ-панель';
 
   @override
-  String get systemManagementAndActivityAnalytics =>
-      'Управление системой и аналитика активности';
+  String get systemManagementAndActivityAnalytics => 'Управление системой и аналитика активности';
 
   @override
   String get totalUsers => 'Всего пользователей';
@@ -1101,8 +1095,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get personalMessages => 'Личные сообщения';
 
   @override
-  String get allowStudentsToWriteDirectly =>
-      'Разрешить ученикам писать напрямую';
+  String get allowStudentsToWriteDirectly => 'Разрешить ученикам писать напрямую';
 
   @override
   String get registration => 'Оформление';
@@ -1165,12 +1158,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get exportData => 'Экспорт данных';
 
   @override
-  String get aZipArchiveWillBe =>
-      'Будет создан ZIP-архив, содержащий все ваши личные данные, включая созданные вами классы, домашние задания, сообщения чата и профиль.';
+  String get aZipArchiveWillBe => 'Будет создан ZIP-архив, содержащий все ваши личные данные, включая созданные вами классы, домашние задания, сообщения чата и профиль.';
 
   @override
-  String get theArchiveWasSuccessfullySaved =>
-      'Архив успешно сохранен в папку Загрузки';
+  String get theArchiveWasSuccessfullySaved => 'Архив успешно сохранен в папку Загрузки';
 
   @override
   String get export => 'Экспортировать';
@@ -1212,8 +1203,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get deleteMessage => 'Удалить сообщение?';
 
   @override
-  String get areYouSureYouWant =>
-      'Вы действительно хотите удалить это сообщение?';
+  String get areYouSureYouWant => 'Вы действительно хотите удалить это сообщение?';
 
   @override
   String get change => 'Изменить';
@@ -1315,8 +1305,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get holdToRecordVoice => 'Удерживайте для записи голоса';
 
   @override
-  String get micPermissionDenied =>
-      'Доступ к микрофону запрещён. Включите его в настройках устройства.';
+  String get micPermissionDenied => 'Доступ к микрофону запрещён. Включите его в настройках устройства.';
 
   @override
   String get releaseToView => 'Отпустите для просмотра';
@@ -1331,8 +1320,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get clearChat1 => 'Очистить чат';
 
   @override
-  String get areYouSureYouWant1 =>
-      'Вы уверены, что хотите очистить всю историю чата Учительской? Это действие невозможно отменить.';
+  String get areYouSureYouWant1 => 'Вы уверены, что хотите очистить всю историю чата Учительской? Это действие невозможно отменить.';
 
   @override
   String get clear => 'Очистить';
@@ -1341,8 +1329,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get clearingChat => 'Очистка чата...';
 
   @override
-  String get teachersChatHasBeenSuccessfully =>
-      'Чат Учительской успешно очищен';
+  String get teachersChatHasBeenSuccessfully => 'Чат Учительской успешно очищен';
 
   @override
   String get back => 'Назад';
@@ -1441,8 +1428,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get removeAdmin => 'Убрать админа';
 
   @override
-  String get areYouSureYouWant2 =>
-      'Вы уверены, что хотите удалить этого ученика из класса?';
+  String get areYouSureYouWant2 => 'Вы уверены, что хотите удалить этого ученика из класса?';
 
   @override
   String get cancellation => 'ОТМЕНА';
@@ -1454,12 +1440,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get thereAreNoPollsYet => 'Опросов пока не было';
 
   @override
-  String get helloImYourTeachingAssistant =>
-      'Привет! Я твой учебный ассистент. Я могу помочь тебе разобраться с материалами этого класса. Спрашивай!';
+  String get helloImYourTeachingAssistant => 'Привет! Я твой учебный ассистент. Я могу помочь тебе разобраться с материалами этого класса. Спрашивай!';
 
   @override
-  String get interestingQuestionBasedOnThe =>
-      'Интересный вопрос! Основываясь на материалах класса, я могу сказать, что данный аспект очень важен для понимания темы. Рекомендую обратить внимание на вторую главу учебника.';
+  String get interestingQuestionBasedOnThe => 'Интересный вопрос! Основываясь на материалах класса, я могу сказать, что данный аспект очень важен для понимания темы. Рекомендую обратить внимание на вторую главу учебника.';
 
   @override
   String get askAi => 'Спросить ИИ...';
@@ -1507,8 +1491,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get teachersReview => 'Отзыв учителя';
 
   @override
-  String get pleaseEnterAValidRating =>
-      'Пожалуйста, введите корректную оценку (число)';
+  String get pleaseEnterAValidRating => 'Пожалуйста, введите корректную оценку (число)';
 
   @override
   String get giveARating => 'Поставить оценку';
@@ -1559,8 +1542,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noWebinars => 'Нет вебинаров';
 
   @override
-  String get lessonRecordingsAndVideosWill =>
-      'Здесь будут отображаться записи уроков и видеоматериалы.';
+  String get lessonRecordingsAndVideosWill => 'Здесь будут отображаться записи уроков и видеоматериалы.';
 
   @override
   String get deleteWebinar => 'Удалить вебинар?';
@@ -1587,8 +1569,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get videoLink => 'Ссылка на видео';
 
   @override
-  String get httpsyoutubecomOrLinkToFile =>
-      'https://youtube.com/... или ссылка на файл';
+  String get httpsyoutubecomOrLinkToFile => 'https://youtube.com/... или ссылка на файл';
 
   @override
   String get selectVideoFile => 'Выбрать видеофайл';
@@ -1600,15 +1581,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get pleaseSelectAVideoFile => 'Пожалуйста, выберите видеофайл';
 
   @override
-  String get theBuiltinPlayerIsAvailable =>
-      'Встроенный плеер доступен в веб-версии.';
+  String get theBuiltinPlayerIsAvailable => 'Встроенный плеер доступен в веб-версии.';
 
   @override
   String get parentsPanel => 'Панель родителей';
 
   @override
-  String get monitoringYourChildrensProgress =>
-      'Мониторинг успеваемости ваших детей';
+  String get monitoringYourChildrensProgress => 'Мониторинг успеваемости ваших детей';
 
   @override
   String get unknownKey10 => 'А';
@@ -1644,8 +1623,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get tieTheBaby => 'Привязать ребенка';
 
   @override
-  String get enterYourChildsEmailTo =>
-      'Введите Email вашего ребенка для привязки профиля.';
+  String get enterYourChildsEmailTo => 'Введите Email вашего ребенка для привязки профиля.';
 
   @override
   String get snap => 'Привязать';
@@ -1660,8 +1638,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get childrenAreNotAttached => 'Дети не привязаны';
 
   @override
-  String get useYourChildsCodeTo =>
-      'Используйте код ребенка, чтобы привязать профиль';
+  String get useYourChildsCodeTo => 'Используйте код ребенка, чтобы привязать профиль';
 
   @override
   String get creatingClasses => 'Создание классов';
@@ -1670,8 +1647,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get coolFactory => 'Классная фабрика';
 
   @override
-  String get enterTheNamesOfThe =>
-      'Введите названия классов, которые вы хотите создать массово.';
+  String get enterTheNamesOfThe => 'Введите названия классов, которые вы хотите создать массово.';
 
   @override
   String get addMore => 'Добавить еще';
@@ -1695,29 +1671,25 @@ class AppLocalizationsRu extends AppLocalizations {
   String get studentPermissions => 'Разрешения для учеников';
 
   @override
-  String get allowStudentsToWriteMessages =>
-      'Разрешить ученикам писать сообщения в общий чат';
+  String get allowStudentsToWriteMessages => 'Разрешить ученикам писать сообщения в общий чат';
 
   @override
   String get publicationsInTheFeed => 'Публикации в ленте';
 
   @override
-  String get allowStudentsToCreateNews =>
-      'Разрешить ученикам создавать посты в ленте новостей';
+  String get allowStudentsToCreateNews => 'Разрешить ученикам создавать посты в ленте новостей';
 
   @override
   String get moderationOfEntry => 'Модерация вступления';
 
   @override
-  String get requireTeacherApprovalForNew =>
-      'Требовать одобрение учителя для новых участников';
+  String get requireTeacherApprovalForNew => 'Требовать одобрение учителя для новых участников';
 
   @override
   String get dangerZone => 'Опасная зона';
 
   @override
-  String get thisActionCannotBeUndone1 =>
-      'Это действие нельзя отменить. Все данные будут удалены.';
+  String get thisActionCannotBeUndone1 => 'Это действие нельзя отменить. Все данные будут удалены.';
 
   @override
   String get changeName => 'Изменить название';
@@ -1726,15 +1698,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get deleteAClass => 'Удалить класс?';
 
   @override
-  String get allMessagesAssignmentsAndGrades =>
-      'Все сообщения, задания и оценки будут безвозвратно удалены.';
+  String get allMessagesAssignmentsAndGrades => 'Все сообщения, задания и оценки будут безвозвратно удалены.';
 
   @override
   String get theLibraryIsEmpty => 'Библиотека пуста';
 
   @override
-  String get studyMaterialsAndLecturesWill =>
-      'Здесь будут отображаться учебные материалы и лекции.';
+  String get studyMaterialsAndLecturesWill => 'Здесь будут отображаться учебные материалы и лекции.';
 
   @override
   String get deleteMaterial => 'Удалить материал?';
@@ -1812,8 +1782,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get onlyFromTeachers => 'Только от учителей';
 
   @override
-  String get submitARequestForA =>
-      'Отправить запрос на получение прав учителя? Администратор должен будет одобрить его.';
+  String get submitARequestForA => 'Отправить запрос на получение прав учителя? Администратор должен будет одобрить его.';
 
   @override
   String get studyHomework => 'Учёба · Домашние задания';
@@ -1879,8 +1848,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get deleteTask => 'Удалить задание?';
 
   @override
-  String get allSubmittedWorkForThis =>
-      'Все сданные работы этого задания также будут удалены.';
+  String get allSubmittedWorkForThis => 'Все сданные работы этого задания также будут удалены.';
 
   @override
   String get completedWorks => 'СДАННЫЕ РАБОТЫ';
@@ -1901,8 +1869,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get attachFiles => 'Прикрепить файлы';
 
   @override
-  String get pleaseEnterATitleAnd =>
-      'Пожалуйста, введите заголовок и выберите дату';
+  String get pleaseEnterATitleAnd => 'Пожалуйста, введите заголовок и выберите дату';
 
   @override
   String get active1 => 'Активные';
@@ -1950,15 +1917,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noTasks => 'Нет заданий';
 
   @override
-  String get createYourFirstAssignmentFor =>
-      'Создайте свое первое задание для этого класса.';
+  String get createYourFirstAssignmentFor => 'Создайте свое первое задание для этого класса.';
 
   @override
   String get justNow1 => 'только что';
 
   @override
-  String get bookmarksWillAppearInThe =>
-      'Закладки появятся в следующем обновлении';
+  String get bookmarksWillAppearInThe => 'Закладки появятся в следующем обновлении';
 
   @override
   String get comments => 'Комментарии';
@@ -1991,8 +1956,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get newPost => 'Новый пост';
 
   @override
-  String get postAnAnnouncementForClasses =>
-      'Опубликуйте объявление для классов…';
+  String get postAnAnnouncementForClasses => 'Опубликуйте объявление для классов…';
 
   @override
   String get attachAnImage => 'Прикрепить изображение';
@@ -2010,8 +1974,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get classes => 'Классы';
 
   @override
-  String get noClassesTeacherDesc =>
-      'У вас еще нет созданных классов. Создайте класс во вкладке «Классы» перед составлением расписания.';
+  String get noClassesTeacherDesc => 'У вас еще нет созданных классов. Создайте класс во вкладке «Классы» перед составлением расписания.';
 
   @override
   String errorLoadingClasses(String error) {
@@ -2079,8 +2042,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get enterInvitationCode => 'Ввести код приглашения';
 
   @override
-  String get codeNotFoundCheckAnd =>
-      'Код не найден. Проверьте и попробуйте снова.';
+  String get codeNotFoundCheckAnd => 'Код не найден. Проверьте и попробуйте снова.';
 
   @override
   String get pleaseLoginFirst => 'Пожалуйста, сначала войдите.';
@@ -2092,8 +2054,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get inviteToClass => 'Пригласить в класс';
 
   @override
-  String get showThisQrCodeTo =>
-      'Покажите этот QR-код ученикам или отправьте им прямую ссылку.';
+  String get showThisQrCodeTo => 'Покажите этот QR-код ученикам или отправьте им прямую ссылку.';
 
   @override
   String get linkCopied => 'Ссылка скопирована!';
@@ -2117,8 +2078,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get youDontHaveAnyClasses => 'У вас пока нет классов';
 
   @override
-  String get addStudentsAndGetStarted =>
-      'Добавьте учеников и начинайте работу.';
+  String get addStudentsAndGetStarted => 'Добавьте учеников и начинайте работу.';
 
   @override
   String get waitToBeAddedTo => 'Ожидайте, пока вас добавят в класс.';
@@ -2199,19 +2159,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get thisEmailIsAlreadyRegistered => 'Этот email уже зарегистрирован';
 
   @override
-  String get passwordIsTooWeakMinimum =>
-      'Пароль слишком слабый (минимум 6 символов)';
+  String get passwordIsTooWeakMinimum => 'Пароль слишком слабый (минимум 6 символов)';
 
   @override
   String get unknownKey15 => 'Нет подключения к сети';
 
   @override
-  String get somethingWentWrongTryAgain =>
-      'Что-то пошло не так. Попробуйте ещё раз.';
+  String get somethingWentWrongTryAgain => 'Что-то пошло не так. Попробуйте ещё раз.';
 
   @override
-  String get singleClassForChatnfeedAnd =>
-      'Единый класс для чата,\\nленты и домашних заданий.';
+  String get singleClassForChatnfeedAnd => 'Единый класс для чата,\\nленты и домашних заданий.';
 
   @override
   String get realtimeClassChat => 'Чат класса в реальном времени';
@@ -2253,12 +2210,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get register => 'Зарегистрироваться';
 
   @override
-  String get joinTheClassToAccess =>
-      'Вступите в класс, чтобы открыть этот раздел.';
+  String get joinTheClassToAccess => 'Вступите в класс, чтобы открыть этот раздел.';
 
   @override
-  String get enterTheTeacherInvitationCode =>
-      'Введите код приглашения от учителя, чтобы открыть чат, ленту и задания.';
+  String get enterTheTeacherInvitationCode => 'Введите код приглашения от учителя, чтобы открыть чат, ленту и задания.';
 
   @override
   String get joinTheClass => 'Вступить в класс';
@@ -2267,8 +2222,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get or => '— ИЛИ —';
 
   @override
-  String get theCameraWillBeAvailable =>
-      'Камера будет доступна в следующем обновлении';
+  String get theCameraWillBeAvailable => 'Камера будет доступна в следующем обновлении';
 
   @override
   String get scanQrCode => 'Сканировать QR-код';
@@ -2280,8 +2234,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get invalidCode => 'Неверный код';
 
   @override
-  String get previewNotAvailableOnThis =>
-      'Предпросмотр недоступен на этой платформе';
+  String get previewNotAvailableOnThis => 'Предпросмотр недоступен на этой платформе';
 
   @override
   String get teacher1 => 'УЧИТЕЛЬ';
@@ -2293,20 +2246,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get cloudStorageManagement => 'Управление облачным хранилищем';
 
   @override
-  String get loadingCloudStorageStats =>
-      'Загрузка статистики облачного хранилища...';
+  String get loadingCloudStorageStats => 'Загрузка статистики облачного хранилища...';
 
   @override
-  String get googleDriveSubtitle =>
-      'Хранение ресурсов библиотеки и крупных уроков';
+  String get googleDriveSubtitle => 'Хранение ресурсов библиотеки и крупных уроков';
 
   @override
-  String get cloudinarySubtitle =>
-      'Хранение изображений, коротких видео и постов ленты';
+  String get cloudinarySubtitle => 'Хранение изображений, коротких видео и постов ленты';
 
   @override
-  String get firebaseStorageSubtitle =>
-      'Хранение вспомогательных файлов, аватаров и конфигурационных изображений';
+  String get firebaseStorageSubtitle => 'Хранение вспомогательных файлов, аватаров и конфигурационных изображений';
 
   @override
   String get cleaningUpStorage => 'Очистка хранилища...';
@@ -2318,8 +2267,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get confirmCleanup => 'Подтверждение очистки';
 
   @override
-  String get confirmCleanupDesc =>
-      'Система просканирует и удалит потерянные файлы (мусорные файлы), которые были удалены в приложении, но все еще существуют в облачных сервисах (Google Drive, Cloudinary, Firebase). Этот процесс может занять 1–2 минуты.';
+  String get confirmCleanupDesc => 'Система просканирует и удалит потерянные файлы (мусорные файлы), которые были удалены в приложении, но все еще существуют в облачных сервисах (Google Drive, Cloudinary, Firebase). Этот процесс может занять 1–2 минуты.';
 
   @override
   String get startCleanup => 'Начать очистку';
@@ -2338,8 +2286,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get searchTasks => 'Поиск задач';
 
   @override
-  String get personalizationAndAccountManagement =>
-      'Персонализация и управление аккаунтом';
+  String get personalizationAndAccountManagement => 'Персонализация и управление аккаунтом';
 
   @override
   String cabinetWithNumber(String number) {
@@ -2350,8 +2297,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get importList => 'Импорт списка';
 
   @override
-  String get pasteClassNamesSeparated =>
-      'Вставьте названия классов, разделенные переносом строки';
+  String get pasteClassNamesSeparated => 'Вставьте названия классов, разделенные переносом строки';
 
   @override
   String get import => 'Импорт';
@@ -2372,8 +2318,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get linkingCode => 'Код для привязки';
 
   @override
-  String get showThisCodeToYourParent =>
-      'Покажите этот код родителю для связки аккаунтов';
+  String get showThisCodeToYourParent => 'Покажите этот код родителю для связки аккаунтов';
 
   @override
   String get familyTimeline => 'ЛЕНТА СОБЫТИЙ СЕМЬИ';
@@ -2412,8 +2357,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get compressPdfTitle => 'Сжать PDF (только для файлов > 50МБ)';
 
   @override
-  String get compressPdfSubtitle =>
-      'Уменьшает размер файла, но может немного снизить качество изображения';
+  String get compressPdfSubtitle => 'Уменьшает размер файла, но может немного снизить качество изображения';
 
   @override
   String get effectiveFrom => 'Действует с';
@@ -2428,8 +2372,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get resetSystem => 'Сброс системы';
 
   @override
-  String get resetSystemDesc =>
-      'Это навсегда удалит все классы, задания, сообщения и сбросит связи пользователей. Учетные записи администраторов будут сохранены.';
+  String get resetSystemDesc => 'Это навсегда удалит все классы, задания, сообщения и сбросит связи пользователей. Учетные записи администраторов будут сохранены.';
 
   @override
   String get confirmReset => 'Подтвердить сброс';

@@ -12,8 +12,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yourClassroomConnected => 'Your classroom,\nconnected.';
 
   @override
-  String get onboardingWelcomeDesc =>
-      'School World brings together chat, homework, and announcements so you never miss a thing your teachers post.';
+  String get onboardingWelcomeDesc => 'School World brings together chat, homework, and announcements so you never miss a thing your teachers post.';
 
   @override
   String get getStarted => 'Get started';
@@ -22,8 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whoIsJoining => 'Who\'s joining today?';
 
   @override
-  String get pickRoleDesc =>
-      'Pick your role. We will tailor the app to what you do most.';
+  String get pickRoleDesc => 'Pick your role. We will tailor the app to what you do most.';
 
   @override
   String get student => 'Student';
@@ -52,8 +50,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chooseYourClasses => 'Choose your classes';
 
   @override
-  String get inviteCodeDesc =>
-      'Enter your school invite code to preview and join your class.';
+  String get inviteCodeDesc => 'Enter your school invite code to preview and join your class.';
 
   @override
   String get inviteCode => 'Invite code';
@@ -235,8 +232,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get viewFullError => 'View full error';
 
   @override
-  String get unableToJoinServerErr =>
-      'Unable to join: Server responded with error.';
+  String get unableToJoinServerErr => 'Unable to join: Server responded with error.';
 
   @override
   String get errorJoiningClass => 'An error occurred while joining the class.';
@@ -248,8 +244,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get classNotExists => 'The class does not exist.';
 
   @override
-  String get networkError =>
-      'Network error. Please check your internet connection.';
+  String get networkError => 'Network error. Please check your internet connection.';
 
   @override
   String get joiningWait => 'Joining...';
@@ -309,8 +304,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get classmate => 'Classmate';
 
   @override
-  String get pickClassToReadAnnouncements =>
-      'Pick a class to read announcements.';
+  String get pickClassToReadAnnouncements => 'Pick a class to read announcements.';
 
   @override
   String get noAnnouncementsYet => 'No announcements yet.';
@@ -370,8 +364,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get joinYourFirstClass => 'Join your first class';
 
   @override
-  String get joinFirstClassDesc =>
-      'Use a teacher invite code to unlock chat, feed, and homework.';
+  String get joinFirstClassDesc => 'Use a teacher invite code to unlock chat, feed, and homework.';
 
   @override
   String get noDueDate => 'No due date';
@@ -418,8 +411,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createYourFirstClass => 'Create your first class';
 
   @override
-  String get teacherEmptyDesc =>
-      'Classes include invite codes for student and parent onboarding.';
+  String get teacherEmptyDesc => 'Classes include invite codes for student and parent onboarding.';
 
   @override
   String get className => 'Class name';
@@ -538,8 +530,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteSchedule => 'Delete schedule?';
 
   @override
-  String get deleteScheduleDesc =>
-      'This will remove the slot and its overrides.';
+  String get deleteScheduleDesc => 'This will remove the slot and its overrides.';
 
   @override
   String get deletedSchedule => 'Deleted schedule';
@@ -617,8 +608,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deletePost => 'Delete post';
 
   @override
-  String get deletePostDesc =>
-      'This post and its comments will be permanently removed.';
+  String get deletePostDesc => 'This post and its comments will be permanently removed.';
 
   @override
   String get publishPost => 'Publish post';
@@ -751,8 +741,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeFromClass => 'Remove from class?';
 
   @override
-  String get removeFromClassDesc =>
-      'The student will lose access to materials and chat of this class.';
+  String get removeFromClassDesc => 'The student will lose access to materials and chat of this class.';
 
   @override
   String get badges => 'Badges';
@@ -788,8 +777,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAssignment => 'Delete assignment?';
 
   @override
-  String get deleteAssignmentDesc =>
-      'All submitted works for this assignment will also be removed.';
+  String get deleteAssignmentDesc => 'All submitted works for this assignment will also be removed.';
 
   @override
   String get editAssignment => 'Edit assignment';
@@ -822,8 +810,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myGradesAndSubjects => 'My grades and subjects';
 
   @override
-  String get academicPerformanceAndSubjects =>
-      'Academic performance and subjects';
+  String get academicPerformanceAndSubjects => 'Academic performance and subjects';
+
+  @override
+  String get highPerformanceMode => 'High Performance Mode';
+
+  @override
+  String get disableBlurEffects => 'Disable blur effects for low-end devices';
 
   @override
   String get addALesson => 'Add a lesson';
@@ -898,8 +891,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get youDontHaveRatingsYet => 'You don\'t have ratings yet.';
 
   @override
-  String get theMagazineIsEmptyAdd =>
-      'The magazine is empty. Add your first lesson!';
+  String get theMagazineIsEmptyAdd => 'The magazine is empty. Add your first lesson!';
 
   @override
   String get myRatings => 'My ratings';
@@ -938,8 +930,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminPanel => 'Admin panel';
 
   @override
-  String get systemManagementAndActivityAnalytics =>
-      'System management and activity analytics';
+  String get systemManagementAndActivityAnalytics => 'System management and activity analytics';
 
   @override
   String get totalUsers => 'Total users';
@@ -1167,12 +1158,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportData => 'Export data';
 
   @override
-  String get aZipArchiveWillBe =>
-      'A ZIP archive will be created containing all of your personal data, including classes you\'ve created, homework assignments, chat messages, and profile.';
+  String get aZipArchiveWillBe => 'A ZIP archive will be created containing all of your personal data, including classes you\'ve created, homework assignments, chat messages, and profile.';
 
   @override
-  String get theArchiveWasSuccessfullySaved =>
-      'The archive was successfully saved to the Downloads folder';
+  String get theArchiveWasSuccessfullySaved => 'The archive was successfully saved to the Downloads folder';
 
   @override
   String get export => 'Export';
@@ -1214,8 +1203,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteMessage => 'Delete message?';
 
   @override
-  String get areYouSureYouWant =>
-      'Are you sure you want to delete this message?';
+  String get areYouSureYouWant => 'Are you sure you want to delete this message?';
 
   @override
   String get change => 'Change';
@@ -1317,8 +1305,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get holdToRecordVoice => 'Hold to record voice';
 
   @override
-  String get micPermissionDenied =>
-      'Microphone permission denied. Please enable it in device settings.';
+  String get micPermissionDenied => 'Microphone permission denied. Please enable it in device settings.';
 
   @override
   String get releaseToView => 'Release to view';
@@ -1333,8 +1320,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearChat1 => 'Clear chat';
 
   @override
-  String get areYouSureYouWant1 =>
-      'Are you sure you want to clear all Teacher\'s chat history? This action cannot be undone.';
+  String get areYouSureYouWant1 => 'Are you sure you want to clear all Teacher\'s chat history? This action cannot be undone.';
 
   @override
   String get clear => 'Clear';
@@ -1343,8 +1329,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearingChat => 'Clearing chat...';
 
   @override
-  String get teachersChatHasBeenSuccessfully =>
-      'Teacher\'s chat has been successfully cleared';
+  String get teachersChatHasBeenSuccessfully => 'Teacher\'s chat has been successfully cleared';
 
   @override
   String get back => 'Back';
@@ -1443,8 +1428,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeAdmin => 'Remove admin';
 
   @override
-  String get areYouSureYouWant2 =>
-      'Are you sure you want to remove this student from the class?';
+  String get areYouSureYouWant2 => 'Are you sure you want to remove this student from the class?';
 
   @override
   String get cancellation => 'CANCELLATION';
@@ -1456,12 +1440,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get thereAreNoPollsYet => 'There are no polls yet';
 
   @override
-  String get helloImYourTeachingAssistant =>
-      'Hello! I\'m your teaching assistant. I can help you understand the materials for this class. Ask!';
+  String get helloImYourTeachingAssistant => 'Hello! I\'m your teaching assistant. I can help you understand the materials for this class. Ask!';
 
   @override
-  String get interestingQuestionBasedOnThe =>
-      'Interesting question! Based on the class materials, I can say that this aspect is very important for understanding the topic. I recommend paying attention to the second chapter of the textbook.';
+  String get interestingQuestionBasedOnThe => 'Interesting question! Based on the class materials, I can say that this aspect is very important for understanding the topic. I recommend paying attention to the second chapter of the textbook.';
 
   @override
   String get askAi => 'Ask AI...';
@@ -1470,8 +1452,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todaysGoalAchieved => 'Today\'s goal achieved';
 
   @override
-  String get completeTheTaskSoAs =>
-      'Complete the task so as not to break the streak';
+  String get completeTheTaskSoAs => 'Complete the task so as not to break the streak';
 
   @override
   String get noLessonsForToday => 'No lessons for today';
@@ -1483,8 +1464,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get webinars => 'Webinars';
 
   @override
-  String get areYouReadyFornnewKnowledge =>
-      'Are you ready for\\nnew knowledge?';
+  String get areYouReadyFornnewKnowledge => 'Are you ready for\\nnew knowledge?';
 
   @override
   String get canceled => 'CANCELED';
@@ -1562,8 +1542,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noWebinars => 'No webinars';
 
   @override
-  String get lessonRecordingsAndVideosWill =>
-      'Lesson recordings and videos will be displayed here.';
+  String get lessonRecordingsAndVideosWill => 'Lesson recordings and videos will be displayed here.';
 
   @override
   String get deleteWebinar => 'Delete webinar?';
@@ -1590,8 +1569,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get videoLink => 'Video link';
 
   @override
-  String get httpsyoutubecomOrLinkToFile =>
-      'https://youtube.com/... or link to file';
+  String get httpsyoutubecomOrLinkToFile => 'https://youtube.com/... or link to file';
 
   @override
   String get selectVideoFile => 'Select video file';
@@ -1603,15 +1581,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pleaseSelectAVideoFile => 'Please select a video file';
 
   @override
-  String get theBuiltinPlayerIsAvailable =>
-      'The built-in player is available in the web version.';
+  String get theBuiltinPlayerIsAvailable => 'The built-in player is available in the web version.';
 
   @override
   String get parentsPanel => 'Parents panel';
 
   @override
-  String get monitoringYourChildrensProgress =>
-      'Monitoring your children\'s progress';
+  String get monitoringYourChildrensProgress => 'Monitoring your children\'s progress';
 
   @override
   String get unknownKey10 => 'А';
@@ -1647,8 +1623,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tieTheBaby => 'Tie the baby';
 
   @override
-  String get enterYourChildsEmailTo =>
-      'Enter your child\'s Email to link the profile.';
+  String get enterYourChildsEmailTo => 'Enter your child\'s Email to link the profile.';
 
   @override
   String get snap => 'Snap';
@@ -1657,15 +1632,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get userWithThisEmailWas => 'User with this email was not found';
 
   @override
-  String get theChildIsSuccessfullyAttached =>
-      'The child is successfully attached';
+  String get theChildIsSuccessfullyAttached => 'The child is successfully attached';
 
   @override
   String get childrenAreNotAttached => 'Children are not attached';
 
   @override
-  String get useYourChildsCodeTo =>
-      'Use your child\'s code to link your profile';
+  String get useYourChildsCodeTo => 'Use your child\'s code to link your profile';
 
   @override
   String get creatingClasses => 'Creating classes';
@@ -1674,8 +1647,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coolFactory => 'Cool factory';
 
   @override
-  String get enterTheNamesOfThe =>
-      'Enter the names of the classes you want to bulk create.';
+  String get enterTheNamesOfThe => 'Enter the names of the classes you want to bulk create.';
 
   @override
   String get addMore => 'Add more';
@@ -1699,29 +1671,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get studentPermissions => 'Student Permissions';
 
   @override
-  String get allowStudentsToWriteMessages =>
-      'Allow students to write messages in the general chat';
+  String get allowStudentsToWriteMessages => 'Allow students to write messages in the general chat';
 
   @override
   String get publicationsInTheFeed => 'Publications in the feed';
 
   @override
-  String get allowStudentsToCreateNews =>
-      'Allow students to create news feed posts';
+  String get allowStudentsToCreateNews => 'Allow students to create news feed posts';
 
   @override
   String get moderationOfEntry => 'Moderation of entry';
 
   @override
-  String get requireTeacherApprovalForNew =>
-      'Require teacher approval for new members';
+  String get requireTeacherApprovalForNew => 'Require teacher approval for new members';
 
   @override
   String get dangerZone => 'Danger zone';
 
   @override
-  String get thisActionCannotBeUndone1 =>
-      'This action cannot be undone. All data will be deleted.';
+  String get thisActionCannotBeUndone1 => 'This action cannot be undone. All data will be deleted.';
 
   @override
   String get changeName => 'Change name';
@@ -1730,15 +1698,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAClass => 'Delete a class?';
 
   @override
-  String get allMessagesAssignmentsAndGrades =>
-      'All messages, assignments and grades will be permanently deleted.';
+  String get allMessagesAssignmentsAndGrades => 'All messages, assignments and grades will be permanently deleted.';
 
   @override
   String get theLibraryIsEmpty => 'The library is empty';
 
   @override
-  String get studyMaterialsAndLecturesWill =>
-      'Study materials and lectures will be displayed here.';
+  String get studyMaterialsAndLecturesWill => 'Study materials and lectures will be displayed here.';
 
   @override
   String get deleteMaterial => 'Delete material?';
@@ -1747,8 +1713,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addMaterial => 'Add material';
 
   @override
-  String get forExampleLecture1Introduction =>
-      'for example: Lecture 1. Introduction';
+  String get forExampleLecture1Introduction => 'for example: Lecture 1. Introduction';
 
   @override
   String get selectFile => 'Select file';
@@ -1799,8 +1764,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get n9bClass => '9B class';
 
   @override
-  String get toChangeYourEmailContact =>
-      'To change your email, contact your teacher.';
+  String get toChangeYourEmailContact => 'To change your email, contact your teacher.';
 
   @override
   String get useInvitationCode => 'Use invitation code';
@@ -1818,8 +1782,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onlyFromTeachers => 'Only from teachers';
 
   @override
-  String get submitARequestForA =>
-      'Submit a request for a teacher\'s license? An administrator will need to approve it.';
+  String get submitARequestForA => 'Submit a request for a teacher\'s license? An administrator will need to approve it.';
 
   @override
   String get studyHomework => 'Study · Homework';
@@ -1885,8 +1848,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteTask => 'Delete task?';
 
   @override
-  String get allSubmittedWorkForThis =>
-      'All submitted work for this assignment will also be deleted.';
+  String get allSubmittedWorkForThis => 'All submitted work for this assignment will also be deleted.';
 
   @override
   String get completedWorks => 'COMPLETED WORKS';
@@ -1955,15 +1917,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTasks => 'No tasks';
 
   @override
-  String get createYourFirstAssignmentFor =>
-      'Create your first assignment for this class.';
+  String get createYourFirstAssignmentFor => 'Create your first assignment for this class.';
 
   @override
   String get justNow1 => 'just now';
 
   @override
-  String get bookmarksWillAppearInThe =>
-      'Bookmarks will appear in the next update';
+  String get bookmarksWillAppearInThe => 'Bookmarks will appear in the next update';
 
   @override
   String get comments => 'Comments';
@@ -1981,8 +1941,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ribbon => 'Ribbon';
 
   @override
-  String get announcementsFromYourTeachers =>
-      'Announcements from your teachers';
+  String get announcementsFromYourTeachers => 'Announcements from your teachers';
 
   @override
   String get searchByAdvertisements => 'Search by advertisements...';
@@ -1997,8 +1956,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newPost => 'New post';
 
   @override
-  String get postAnAnnouncementForClasses =>
-      'Post an announcement for classes...';
+  String get postAnAnnouncementForClasses => 'Post an announcement for classes...';
 
   @override
   String get attachAnImage => 'Attach an image';
@@ -2016,8 +1974,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get classes => 'Classes';
 
   @override
-  String get noClassesTeacherDesc =>
-      'You haven\'t created any classes yet. Create a class in the Classes tab before scheduling.';
+  String get noClassesTeacherDesc => 'You haven\'t created any classes yet. Create a class in the Classes tab before scheduling.';
 
   @override
   String errorLoadingClasses(String error) {
@@ -2070,8 +2027,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get version => 'Version';
 
   @override
-  String get youWillBeRedirectedTo =>
-      'You will be redirected to the login screen';
+  String get youWillBeRedirectedTo => 'You will be redirected to the login screen';
 
   @override
   String get notLoggedIn => 'Not logged in';
@@ -2098,8 +2054,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inviteToClass => 'Invite to class';
 
   @override
-  String get showThisQrCodeTo =>
-      'Show this QR code to your students or send them a direct link.';
+  String get showThisQrCodeTo => 'Show this QR code to your students or send them a direct link.';
 
   @override
   String get linkCopied => 'Link copied!';
@@ -2204,8 +2159,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get thisEmailIsAlreadyRegistered => 'This email is already registered';
 
   @override
-  String get passwordIsTooWeakMinimum =>
-      'Password is too weak (minimum 6 characters)';
+  String get passwordIsTooWeakMinimum => 'Password is too weak (minimum 6 characters)';
 
   @override
   String get unknownKey15 => 'Нет подключения к сети';
@@ -2214,8 +2168,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get somethingWentWrongTryAgain => 'Something went wrong. Try again.';
 
   @override
-  String get singleClassForChatnfeedAnd =>
-      'Single class for chat,\\nfeed and homework.';
+  String get singleClassForChatnfeedAnd => 'Single class for chat,\\nfeed and homework.';
 
   @override
   String get realtimeClassChat => 'Real-time class chat';
@@ -2260,8 +2213,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get joinTheClassToAccess => 'Join the class to access this section.';
 
   @override
-  String get enterTheTeacherInvitationCode =>
-      'Enter the teacher invitation code to open the chat, feed, and assignments.';
+  String get enterTheTeacherInvitationCode => 'Enter the teacher invitation code to open the chat, feed, and assignments.';
 
   @override
   String get joinTheClass => 'Join the class';
@@ -2270,8 +2222,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get or => '- OR -';
 
   @override
-  String get theCameraWillBeAvailable =>
-      'The camera will be available in the next update';
+  String get theCameraWillBeAvailable => 'The camera will be available in the next update';
 
   @override
   String get scanQrCode => 'Scan QR code';
@@ -2283,8 +2234,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidCode => 'Invalid code';
 
   @override
-  String get previewNotAvailableOnThis =>
-      'Preview not available on this platform';
+  String get previewNotAvailableOnThis => 'Preview not available on this platform';
 
   @override
   String get teacher1 => 'TEACHER';
@@ -2299,16 +2249,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loadingCloudStorageStats => 'Loading cloud storage statistics...';
 
   @override
-  String get googleDriveSubtitle =>
-      'Stores library resources and large lessons';
+  String get googleDriveSubtitle => 'Stores library resources and large lessons';
 
   @override
-  String get cloudinarySubtitle =>
-      'Stores images, short videos, and feed posts';
+  String get cloudinarySubtitle => 'Stores images, short videos, and feed posts';
 
   @override
-  String get firebaseStorageSubtitle =>
-      'Stores auxiliary files, avatars, and configuration images';
+  String get firebaseStorageSubtitle => 'Stores auxiliary files, avatars, and configuration images';
 
   @override
   String get cleaningUpStorage => 'Cleaning up storage...';
@@ -2320,8 +2267,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmCleanup => 'Confirm Cleanup';
 
   @override
-  String get confirmCleanupDesc =>
-      'The system will scan and clean up orphan files (garbage files) that have been deleted in the app but still exist on cloud services (Google Drive, Cloudinary, Firebase). This process may take 1-2 minutes.';
+  String get confirmCleanupDesc => 'The system will scan and clean up orphan files (garbage files) that have been deleted in the app but still exist on cloud services (Google Drive, Cloudinary, Firebase). This process may take 1-2 minutes.';
 
   @override
   String get startCleanup => 'Start Cleanup';
@@ -2340,8 +2286,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchTasks => 'Search tasks';
 
   @override
-  String get personalizationAndAccountManagement =>
-      'Personalization and account management';
+  String get personalizationAndAccountManagement => 'Personalization and account management';
 
   @override
   String cabinetWithNumber(String number) {
@@ -2352,8 +2297,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importList => 'Import list';
 
   @override
-  String get pasteClassNamesSeparated =>
-      'Paste class names separated by new lines';
+  String get pasteClassNamesSeparated => 'Paste class names separated by new lines';
 
   @override
   String get import => 'Import';
@@ -2374,8 +2318,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linkingCode => 'Linking Code';
 
   @override
-  String get showThisCodeToYourParent =>
-      'Show this code to your parent to link accounts';
+  String get showThisCodeToYourParent => 'Show this code to your parent to link accounts';
 
   @override
   String get familyTimeline => 'FAMILY TIMELINE';
@@ -2414,8 +2357,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get compressPdfTitle => 'Compress PDF (only for files > 50MB)';
 
   @override
-  String get compressPdfSubtitle =>
-      'Reduces file size but may slightly reduce image quality';
+  String get compressPdfSubtitle => 'Reduces file size but may slightly reduce image quality';
 
   @override
   String get effectiveFrom => 'Effective from';
@@ -2430,8 +2372,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetSystem => 'Reset System';
 
   @override
-  String get resetSystemDesc =>
-      'This will permanently delete all classes, assignments, messages, and reset user associations. Admin accounts will be preserved.';
+  String get resetSystemDesc => 'This will permanently delete all classes, assignments, messages, and reset user associations. Admin accounts will be preserved.';
 
   @override
   String get confirmReset => 'Confirm Reset';

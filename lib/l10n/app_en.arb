@@ -377,6 +377,8 @@
   "coolMagazine": "Cool magazine",
   "myGradesAndSubjects": "My grades and subjects",
   "academicPerformanceAndSubjects": "Academic performance and subjects",
+  "highPerformanceMode": "High Performance Mode",
+  "disableBlurEffects": "Disable blur effects for low-end devices",
   "addALesson": "Add a lesson",
   "ratings": "Ratings",
   "items": "Items",
