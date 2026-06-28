@@ -356,9 +356,8 @@ class _WebinarTile extends StatelessWidget {
     final embedUrl = _getEmbedUrl(videoUrl);
     final isMobileWidth = MediaQuery.sizeOf(context).width < 700;
 
-    // Use iframe dialog on desktop web. On mobile web or native platforms, 
-    // launching the URL natively provides a much better fullscreen UX and avoids iframe clipping bugs.
-    if (embedUrl != null && kIsWeb && !isMobileWidth) {
+    // Show dialog for video preview on all platforms/widths
+    if (embedUrl != null && kIsWeb) {
       showDialog(
         context: context,
         builder: (context) {
@@ -394,12 +393,13 @@ class _WebinarTile extends StatelessWidget {
                         tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                       ),
                     ),
-                    // Video player with a minimum height to guarantee controls are not clipped
+                    // Video player with a generous minimum height to guarantee controls are not clipped
                     LayoutBuilder(
                       builder: (context, constraints) {
                         double calculatedHeight = constraints.maxWidth / (16 / 9);
-                        // Some players (like Google Drive) need a minimum height to show bottom controls
-                        double finalHeight = calculatedHeight < 300 ? 300 : calculatedHeight;
+                        // Google Drive and other players often require a significant minimum height 
+                        // (~360-400px) on mobile before they start clipping their own controls.
+                        double finalHeight = calculatedHeight < 400 ? 400 : calculatedHeight;
                         return SizedBox(
                           height: finalHeight,
                           child: IframePlayer(embedUrl: embedUrl),
