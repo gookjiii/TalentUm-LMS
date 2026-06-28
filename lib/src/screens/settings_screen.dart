@@ -29,7 +29,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _nameController = TextEditingController();
+
   bool _uploadingAvatar = false;
 
   Future<void> _pickAndUploadAvatar(BuildContext context) async {
@@ -92,13 +92,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController.text =
-        widget.repository.auth.currentUser?.displayName ?? '';
+
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+
     super.dispose();
   }
 
@@ -293,90 +292,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       widget.repository.auth.currentUser?.displayName ??
                       '';
 
-                  if (_nameController.text.isEmpty && currentName.isNotEmpty) {
-                    _nameController.text = currentName;
-                  }
 
-                  final profileCard = SchoolCard(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Center(
-                          child: GestureDetector(
-                            onTap: _uploadingAvatar
-                                ? null
-                                : () => _pickAndUploadAvatar(context),
-                            child: Stack(
-                              children: [
-                                Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.outlineVariant,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: ClipOval(
-                                    child: _uploadingAvatar
-                                        ? const Padding(
-                                            padding: EdgeInsets.all(24.0),
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2.5,
-                                            ),
-                                          )
-                                        : SchoolAvatar(
-                                            name: currentName,
-                                            avatarUrl: avatarUrl,
-                                            radius: 40,
-                                          ),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: widget.appState.accentColor,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Icons.camera_alt_rounded,
-                                      color: Colors.white,
-                                      size: 14,
-                                    ),
-                                  ),
-                                ),
-                              ],
+
+                  final profileCard = ProfileCard(
+                    name: currentName,
+                    sub: data['role'] == 'student' ? l10n.student : l10n.parent,
+                    isTeacher: false,
+                    avatarUrl: avatarUrl,
+                    onEditAvatar: _uploadingAvatar ? null : () => _pickAndUploadAvatar(context),
+                  );
+
+                  final personalInfoGroup = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SectionLabel(label: l10n.studentAccount.split(' ')[1]),
+                      SchoolCard(
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ModernSettingTile(
+                              icon: Icons.person_outline_rounded,
+                              iconColor: SchoolColors.primary,
+                              iconBgColor: SchoolColors.primary.withOpacity(0.12),
+                              title: l10n.personalInformation,
+                              subtitle: currentName,
+                              trailing: Icon(
+                                Icons.chevron_right_rounded,
+                                color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                              ),
+                              onTap: () => _editName(context, currentName, l10n),
                             ),
-                          ),
+                            Divider(
+                              height: 1,
+                              color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                              indent: 68,
+                            ),
+                            ModernSettingTile(
+                              icon: Icons.email_outlined,
+                              iconColor: SchoolColors.yellow,
+                              iconBgColor: SchoolColors.yellow.withOpacity(0.12),
+                              title: l10n.email,
+                              subtitle: widget.repository.auth.currentUser?.email ?? '',
+                              trailing: Icon(
+                                Icons.chevron_right_rounded,
+                                color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                              ),
+                              onTap: () => _editEmail(context, l10n),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 20),
-                        TextField(
-                          controller: _nameController,
-                          decoration: InputDecoration(
-                            labelText: l10n.name,
-                            prefixIcon: const Icon(
-                              Icons.person_outline_rounded,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.save_outlined),
-                              tooltip: l10n.saveChanges,
-                              onPressed: () => _saveName(context, l10n),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   );
 
                   return Column(
@@ -384,6 +352,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       profileCard,
+                      const SizedBox(height: 28),
+                      personalInfoGroup,
                       if (data['role'] == 'student') ...[
                         const SizedBox(height: 28),
                         SectionLabel(
@@ -692,21 +662,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _saveName(BuildContext context, AppLocalizations l10n) async {
-    try {
-      await widget.repository.updateProfileName(_nameController.text.trim());
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.profileUpdated)));
-      }
-    } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
+  Future<void> _editName(BuildContext context, String current, AppLocalizations l10n) async {
+    final controller = TextEditingController(text: current);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.editProfile),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(labelText: l10n.name),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.save),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && controller.text.trim().isNotEmpty) {
+      if (!context.mounted) return;
+      try {
+        await widget.repository.updateProfileName(controller.text.trim());
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.profileUpdated)));
+        }
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
+        }
       }
     }
+  }
+
+  Future<void> _editEmail(BuildContext context, AppLocalizations l10n) async {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(l10n.contactSupportForEmail)));
   }
 
   Future<void> _signOut(BuildContext context, AppLocalizations l10n) async {

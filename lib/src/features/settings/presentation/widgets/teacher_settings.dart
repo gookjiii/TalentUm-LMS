@@ -185,7 +185,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                 ),
 
                 // Profile Card
-                _ProfileCard(
+                ProfileCard(
                   name: name,
                   avatarUrl: avatarUrl,
                   sub:
@@ -201,7 +201,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                 Row(
                   children: [
                     Expanded(
-                      child: _StatMiniCard(
+                      child: StatMiniCard(
                         label: l10n
                             .studentsCount(_studentsCount)
                             .split(':')[0]
@@ -212,7 +212,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _StatMiniCard(
+                      child: StatMiniCard(
                         label: l10n.createClass.split(' ')[1].toUpperCase(),
                         value: _classesCount.toString(),
                         color: SchoolColors.green,
@@ -220,7 +220,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _StatMiniCard(
+                      child: StatMiniCard(
                         label: AppLocalizations.of(context)!.experience,
                         value: _userData['experience']?.toString() ?? '—',
                         color: SchoolColors.yellow,
@@ -902,179 +902,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
   }
 }
 
-class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({
-    required this.name,
-    required this.sub,
-    required this.isTeacher,
-    required this.classesCount,
-    this.avatarUrl,
-    this.onEditAvatar,
-  });
-  final String name, sub;
-  final bool isTeacher;
-  final int classesCount;
-  final String? avatarUrl;
-  final VoidCallback? onEditAvatar;
 
-  @override
-  Widget build(BuildContext context) {
-    return SchoolCard(
-      padding: const EdgeInsets.all(18),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            top: -60,
-            right: -60,
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    (isTeacher ? SchoolColors.red : SchoolColors.primary)
-                        .withOpacity(0.12),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Row(
-            children: [
-              Stack(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: avatarUrl == null
-                          ? LinearGradient(
-                              colors: isTeacher
-                                  ? [SchoolColors.red, SchoolColors.yellow]
-                                  : [SchoolColors.green, SchoolColors.primary],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            )
-                          : null,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    alignment: Alignment.center,
-                    child: SchoolAvatar(
-                      name: name,
-                      avatarUrl: avatarUrl,
-                      radius: 32,
-                      color: avatarUrl != null ? null : Colors.transparent,
-                      onEditAvatar: onEditAvatar,
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: SchoolColors.green,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    Text(
-                      sub,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: SchoolColors.muted,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        StatusChip(
-                          label: '$classesCount классов',
-                          color: SchoolColors.primary.withOpacity(0.1),
-                          textColor: SchoolColors.primary,
-                        ),
-                        const SizedBox(width: 6),
-                        StatusChip(
-                          label: AppLocalizations.of(context)!.verified,
-                          color: SchoolColors.green,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatMiniCard extends StatelessWidget {
-  const _StatMiniCard({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-  final String label, value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return SchoolCard(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              color: SchoolColors.muted,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _SettingsGroup extends StatelessWidget {
   const _SettingsGroup({required this.label, required this.children});
