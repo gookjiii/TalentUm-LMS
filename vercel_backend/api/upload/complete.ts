@@ -22,7 +22,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
   });
-  await dbClient.connect();
+
+  try {
+    await dbClient.connect();
+  } catch (dbError: any) {
+    console.error('Database connection failed:', dbError);
+    return res.status(500).json({ 
+      error: 'Database connection failed. Is the database paused?', 
+      details: dbError.message 
+    });
+  }
 
   try {
     const driveRes = await driveClient.files.get({
