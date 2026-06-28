@@ -337,7 +337,10 @@ class _ChatHeaderState extends State<ChatHeader> {
           ),
           child: ClipRRect(
             child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              filter: ui.ImageFilter.blur(
+                sigmaX: AppScope.of(context).appState.performanceMode ? 0 : 16,
+                sigmaY: AppScope.of(context).appState.performanceMode ? 0 : 16,
+              ),
               child: SafeArea(
                 bottom: false,
                 child: Builder(

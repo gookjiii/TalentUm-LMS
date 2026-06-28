@@ -11,6 +11,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:audioplayers/audioplayers.dart' as audioplayers;
 import 'package:school_world/src/features/chat/presentation/widgets/chat_bubble/chat_bubble.dart';
+import '../../../../providers/app_providers.dart';
+import '../chat_bubble/chat_message_type.dart';
 import 'package:school_world/src/features/chat/domain/models/chat_attachment.dart';
 import 'package:school_world/src/features/chat/presentation/widgets/chat_input/chat_input_previews.dart';
 
@@ -296,7 +298,10 @@ class _ChatInputState extends State<ChatInput> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(isMobile ? 24 : 32),
           child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            filter: ui.ImageFilter.blur(
+              sigmaX: AppScope.of(context).appState.performanceMode ? 0 : 24,
+              sigmaY: AppScope.of(context).appState.performanceMode ? 0 : 24,
+            ),
             child: Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: isMobile ? 6 : 8,

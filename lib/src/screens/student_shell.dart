@@ -637,6 +637,7 @@ class _MoreSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final perfMode = AppScope.of(context).appState.performanceMode;
 
     final items = [
       (
@@ -675,116 +676,224 @@ class _MoreSheet extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? SchoolColors.darkSurface.withValues(alpha: 0.75)
-                    : Colors.white.withValues(alpha: 0.85),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: isDark
-                      ? SchoolColors.darkBorder.withValues(alpha: 0.5)
-                      : SchoolColors.border.withValues(alpha: 0.5),
-                  width: 1.0,
-                ),
-              ),
-              child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 36,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-              alignment: Alignment.center,
-            ),
-            Text(
-              l10n.more,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                letterSpacing: -0.3,
-              ),
-            ),
-            const SizedBox(height: 16),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 2.6,
-              children: items
-                  .map(
-                    (item) => _MoreItem(
-                      icon: item.icon,
-                      label: item.label,
-                      color: item.color,
-                      isDark: isDark,
-                      onTap: () => onSelect(item.index),
+          child: perfMode
+              ? Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? SchoolColors.darkSurface.withValues(alpha: 0.95)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(
+                      color: isDark
+                          ? SchoolColors.darkBorder.withValues(alpha: 0.5)
+                          : SchoolColors.border.withValues(alpha: 0.5),
+                      width: 1.0,
                     ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 12),
-            Material(
-              color: SchoolColors.green.withValues(alpha: isDark ? 0.12 : 0.08),
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                onTap: onJoinClass,
-                borderRadius: BorderRadius.circular(14),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.group_add_rounded,
-                        color: SchoolColors.green,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          l10n.joinAClass,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 20),
+                          decoration: BoxDecoration(
+                            color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                          alignment: Alignment.center,
+                        ),
+                        Text(
+                          l10n.more,
                           style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? SchoolColors.darkText
-                                : SchoolColors.text,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                            letterSpacing: -0.3,
                           ),
                         ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 14,
+                        const SizedBox(height: 16),
+                        GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                          childAspectRatio: 2.6,
+                          children: items
+                              .map(
+                                (item) => _MoreItem(
+                                  icon: item.icon,
+                                  label: item.label,
+                                  color: item.color,
+                                  isDark: isDark,
+                                  onTap: () => onSelect(item.index),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                        const SizedBox(height: 12),
+                        Material(
+                          color: SchoolColors.green.withValues(alpha: isDark ? 0.12 : 0.08),
+                          borderRadius: BorderRadius.circular(14),
+                          child: InkWell(
+                            onTap: onJoinClass,
+                            borderRadius: BorderRadius.circular(14),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.group_add_rounded,
+                                    color: SchoolColors.green,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      l10n.joinAClass,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark
+                                            ? SchoolColors.darkText
+                                            : SchoolColors.text,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    size: 14,
+                                    color: isDark
+                                        ? SchoolColors.darkMuted
+                                        : SchoolColors.muted,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  ),
+                )
+              : BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? SchoolColors.darkSurface.withValues(alpha: 0.75)
+                          : Colors.white.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
                         color: isDark
-                            ? SchoolColors.darkMuted
-                            : SchoolColors.muted,
+                            ? SchoolColors.darkBorder.withValues(alpha: 0.5)
+                            : SchoolColors.border.withValues(alpha: 0.5),
+                        width: 1.0,
                       ),
-                    ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 4,
+                            margin: const EdgeInsets.only(bottom: 20),
+                            decoration: BoxDecoration(
+                              color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            alignment: Alignment.center,
+                          ),
+                          Text(
+                            l10n.more,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          GridView.count(
+                            crossAxisCount: 2,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                            childAspectRatio: 2.6,
+                            children: items
+                                .map(
+                                  (item) => _MoreItem(
+                                    icon: item.icon,
+                                    label: item.label,
+                                    color: item.color,
+                                    isDark: isDark,
+                                    onTap: () => onSelect(item.index),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                          const SizedBox(height: 12),
+                          Material(
+                            color: SchoolColors.green.withValues(alpha: isDark ? 0.12 : 0.08),
+                            borderRadius: BorderRadius.circular(14),
+                            child: InkWell(
+                              onTap: onJoinClass,
+                              borderRadius: BorderRadius.circular(14),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.group_add_rounded,
+                                      color: SchoolColors.green,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        l10n.joinAClass,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark
+                                              ? SchoolColors.darkText
+                                              : SchoolColors.text,
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.arrow_forward_ios_rounded,
+                                      size: 14,
+                                      color: isDark
+                                          ? SchoolColors.darkMuted
+                                          : SchoolColors.muted,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -1044,9 +1153,12 @@ class _MobileTabBar extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Row(
+          child: performanceMode
+              ? Container(
+                  color: isDark
+                      ? SchoolColors.darkSurface.withValues(alpha: 0.95)
+                      : Colors.white,
+                  child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ...List.generate(items.length, (index) {

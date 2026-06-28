@@ -231,7 +231,10 @@ class _ChatResourceSidebarState extends State<ChatResourceSidebar>
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
-          filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          filter: ui.ImageFilter.blur(
+            sigmaX: isPerformance ? 0 : 18,
+            sigmaY: isPerformance ? 0 : 18,
+          ),
           child: Material(
             color: isDark
                 ? Colors.black.withOpacity(0.4)

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/utils/string_extensions.dart';
 
@@ -177,7 +178,10 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
                       ),
                       child: ClipOval(
                         child: BackdropFilter(
-                          filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                          filter: ui.ImageFilter.blur(
+                            sigmaX: AppScope.of(context).appState.performanceMode ? 0 : 8,
+                            sigmaY: AppScope.of(context).appState.performanceMode ? 0 : 8,
+                          ),
                           child: Icon(
                             Icons.play_arrow_rounded,
                             color: Colors.white,
