@@ -49,9 +49,19 @@ class StudentSidebar extends StatelessWidget {
           border: Border.all(color: SchoolColors.sidebarBorder),
           boxShadow: [
             BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.16),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+            BoxShadow(
               color: Colors.black.withValues(alpha: 0.24),
-              blurRadius: 36,
-              offset: const Offset(0, 16),
+              blurRadius: 48,
+              offset: const Offset(0, 24),
             ),
           ],
         ),
@@ -301,6 +311,7 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
         message: widget.extended ? '' : widget.label,
         preferBelow: false,
         child: MouseRegion(
+          cursor: SystemMouseCursors.click,
           onEnter: (_) => setState(() => _hovered = true),
           onExit: (_) => setState(() => _hovered = false),
           child: GestureDetector(
@@ -413,6 +424,7 @@ class _SidebarClassItemState extends State<_SidebarClassItem> {
         : Colors.transparent;
 
     return MouseRegion(
+      cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: Padding(
@@ -506,10 +518,12 @@ class _UserCard extends StatelessWidget {
             horizontal: extended ? 12 : 4,
             vertical: 12,
           ),
-          child: GestureDetector(
-            onTap: onTap,
-            behavior: HitTestBehavior.opaque,
-            child: AnimatedContainer(
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: onTap,
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: EdgeInsets.all(extended ? 12 : 4),
               decoration: BoxDecoration(
@@ -575,6 +589,7 @@ class _UserCard extends StatelessWidget {
                 ],
               ),
             ),
+          ),
           ),
         );
       },

@@ -85,7 +85,7 @@ class StudentToday extends ConsumerWidget {
             ),
             child: PageHeader(
               padding: EdgeInsets.zero,
-              title: '$greeting, $name!',
+              title: '$greeting!',
               subtitle: date,
               trailing: SchoolAvatar(
                 name: name,

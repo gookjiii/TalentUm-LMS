@@ -1834,14 +1834,6 @@ class PageHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (classContext != null) ...[
-            _ContextBadge(
-              label: classContext!,
-              onTap: onClassContextTap,
-              isDark: isDark,
-            ),
-            const SizedBox(height: 12),
-          ],
           SizedBox(
             width: double.infinity,
             child: Wrap(
@@ -1869,17 +1861,30 @@ class PageHeader extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                     ],
-                    Text(
-                      title,
-                      style:
-                          titleStyle ??
-                          GoogleFonts.plusJakartaSans(
-                            fontSize: isMobile ? 28 : 34,
-                            fontWeight: FontWeight.w800,
-                            height: 1.1,
-                            letterSpacing: 0,
-                            color: Theme.of(context).colorScheme.onSurface,
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 12,
+                      runSpacing: 8,
+                      children: [
+                        Text(
+                          title,
+                          style:
+                              titleStyle ??
+                              GoogleFonts.plusJakartaSans(
+                                fontSize: isMobile ? 28 : 34,
+                                fontWeight: FontWeight.w800,
+                                height: 1.1,
+                                letterSpacing: 0,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                        ),
+                        if (classContext != null)
+                          _ContextBadge(
+                            label: classContext!,
+                            onTap: onClassContextTap,
+                            isDark: isDark,
                           ),
+                      ],
                     ),
                   ],
                 ),

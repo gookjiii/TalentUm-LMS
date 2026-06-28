@@ -1250,7 +1250,7 @@ class _TeacherEmptyState extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: PageHeader(
-                title: '$greeting, $name',
+                title: greeting,
                 subtitle: date,
                 trailing: SchoolAvatar(
                   name: name,

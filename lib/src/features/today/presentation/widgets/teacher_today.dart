@@ -80,7 +80,7 @@ class _TeacherTodayState extends State<TeacherToday> {
           slivers: [
             SliverToBoxAdapter(
               child: PageHeader(
-                title: '$greeting, $firstName!',
+                title: '$greeting!',
                 subtitle: date,
                 trailing: SchoolAvatar(
                   name: name,

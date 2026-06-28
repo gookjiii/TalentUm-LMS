@@ -12,6 +12,7 @@ import '../theme.dart';
 import '../widgets/school_widgets.dart';
 import '../utils/reload_app.dart';
 import '../../main.dart';
+import '../features/settings/presentation/widgets/settings_components.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
@@ -281,7 +282,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             children: [
               // ── Profile section ─────────────────────────────────
-              _SectionLabel(label: l10n.profile),
+              SectionLabel(label: l10n.profile),
               StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 stream: widget.repository.userDocStream(),
                 builder: (context, snapshot) {
@@ -385,7 +386,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       profileCard,
                       if (data['role'] == 'student') ...[
                         const SizedBox(height: 28),
-                        _SectionLabel(
+                        SectionLabel(
                           label: isRu
                               ? AppLocalizations.of(
                                   context,
@@ -410,13 +411,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 28),
 
               // ── Notifications section ───────────────────────────
-              _SectionLabel(label: notificationsLabel),
+              SectionLabel(label: notificationsLabel),
               SchoolCard(
                 padding: EdgeInsets.zero,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _ModernSettingTile(
+                    ModernSettingTile(
                       icon: Icons.notifications_active_rounded,
                       iconColor: const Color(0xFFEF4444),
                       iconBgColor: const Color(0xFFFEE2E2),
@@ -439,7 +440,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           : SchoolColors.border,
                       indent: 68,
                     ),
-                    _ModernSettingTile(
+                    ModernSettingTile(
                       icon: Icons.chat_bubble_outline_rounded,
                       iconColor: const Color(0xFF8B5CF6),
                       iconBgColor: const Color(0xFFF5F3FF),
@@ -462,7 +463,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           : SchoolColors.border,
                       indent: 68,
                     ),
-                    _ModernSettingTile(
+                    ModernSettingTile(
                       icon: Icons.push_pin_outlined,
                       iconColor: const Color(0xFFF59E0B),
                       iconBgColor: const Color(0xFFFFEDD5),
@@ -485,13 +486,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 28),
 
               // ── Appearance section ──────────────────────────────
-              _SectionLabel(label: appearanceLabel),
+              SectionLabel(label: appearanceLabel),
               SchoolCard(
                 padding: EdgeInsets.zero,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _ModernSettingTile(
+                    ModernSettingTile(
                       icon: Icons.dark_mode_outlined,
                       iconColor: const Color(0xFF059669),
                       iconBgColor: const Color(0xFFD1FAE5),
@@ -511,7 +512,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           : SchoolColors.border,
                       indent: 68,
                     ),
-                    _ModernSettingTile(
+                    ModernSettingTile(
                       icon: Icons.palette_outlined,
                       iconColor: const Color(0xFF6366F1),
                       iconBgColor: const Color(0xFFEDE9FE),
@@ -540,7 +541,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           : SchoolColors.border,
                       indent: 68,
                     ),
-                    _ModernSettingTile(
+                    ModernSettingTile(
                       icon: Icons.language_rounded,
                       iconColor: const Color(0xFF0E7490),
                       iconBgColor: const Color(0xFFE0F2FE),
@@ -561,7 +562,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           : SchoolColors.border,
                       indent: 68,
                     ),
-                    _ModernSettingTile(
+                    ModernSettingTile(
                       icon: Icons.speed_rounded,
                       iconColor: const Color(0xFFF59E0B),
                       iconBgColor: const Color(0xFFFFEDD5),
@@ -584,7 +585,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 28),
 
               // ── About section ───────────────────────────────────
-              _SectionLabel(
+              SectionLabel(
                 label: isRu
                     ? AppLocalizations.of(context)!.aboutTheApplication
                     : 'About',
@@ -737,107 +738,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     }
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────
-// SECTION LABEL
-// ─────────────────────────────────────────────────────────────────
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.label, this.color});
-  final String label;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 10),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 1.1,
-          color:
-              color ?? (isDark ? SchoolColors.darkMuted : SchoolColors.muted),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────
-// MODERN SETTING TILE
-// ─────────────────────────────────────────────────────────────────
-class _ModernSettingTile extends StatelessWidget {
-  const _ModernSettingTile({
-    required this.icon,
-    required this.iconColor,
-    required this.iconBgColor,
-    required this.title,
-    required this.subtitle,
-    required this.trailing,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final Color iconBgColor;
-  final String title;
-  final String subtitle;
-  final Widget trailing;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: iconBgColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: iconColor, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            trailing,
-          ],
-        ),
-      ),
-    );
   }
 }
 

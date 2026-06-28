@@ -516,7 +516,7 @@ class JoinClassEmptyState extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: PageHeader(
-            title: '$greeting, $name',
+            title: greeting,
             subtitle: date,
             trailing: SchoolAvatar(
               name: name,
@@ -665,18 +665,32 @@ class _MoreSheet extends StatelessWidget {
       ),
     ];
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      decoration: BoxDecoration(
-        color: isDark ? SchoolColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
-          width: 1.0,
+    return SafeArea(
+      bottom: true,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        decoration: BoxDecoration(
+          boxShadow: [SchoolColors.elevatedShadow],
+          borderRadius: BorderRadius.circular(28),
         ),
-        boxShadow: [SchoolColors.elevatedShadow],
-      ),
-      child: Padding(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark
+                    ? SchoolColors.darkSurface.withValues(alpha: 0.75)
+                    : Colors.white.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: isDark
+                      ? SchoolColors.darkBorder.withValues(alpha: 0.5)
+                      : SchoolColors.border.withValues(alpha: 0.5),
+                  width: 1.0,
+                ),
+              ),
+              child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -768,6 +782,10 @@ class _MoreSheet extends StatelessWidget {
             const SizedBox(height: 8),
           ],
         ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -796,7 +814,7 @@ class _MoreItem extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               Icon(icon, color: color, size: 20),

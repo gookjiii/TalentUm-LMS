@@ -3,11 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 
 class SchoolColors {
   // ── Core Brand / Platform Blues ───────────────────────────────
-  static const primary = Color(0xFF2563EB);
-  static const primaryLight = Color(0xFF60A5FA);
-  static const primaryDark = Color(0xFF1D4ED8);
-  static const primaryContainer = Color(0xFFEFF6FF);
-  static const onPrimaryContainer = Color(0xFF1E3A8A);
+  static const primary = Color(0xFF7C3AED); // Vibrant Amethyst
+  static const primaryLight = Color(0xFFA78BFA);
+  static const primaryDark = Color(0xFF5B21B6);
+  static const primaryContainer = Color(0xFFF3E8FF);
+  static const onPrimaryContainer = Color(0xFF3B0764);
 
   // ── Secondary / Teal ──────────────────────────────────────────
   static const secondary = Color(0xFF0F766E);
@@ -31,13 +31,13 @@ class SchoolColors {
   static const purpleContainer = Color(0xFFF1F5F9);
 
   // ── Light-mode Neutrals ───────────────────────────────────────
-  static const bg = Color(0xFFF4F7FB);
+  static const bg = Color(0xFFF9FAFC);
   static const surface = Color(0xFFFFFFFF);
   static const surfaceElevated = Color(0xFFF8FAFC);
   static const text = Color(0xFF0F172A);
-  static const textSecondary = Color(0xFF334155);
+  static const textSecondary = Color(0xFF475569);
   static const muted = Color(0xFF64748B);
-  static const border = Color(0xFFE2E8F0);
+  static const border = Color(0xFFECEBF3);
   static const borderFocus = Color(0xFF93C5FD);
 
   // ── Dark-mode Palette ─────────────────────────────────────────
@@ -175,21 +175,21 @@ class AppTextStyle {
     height: 1.5,
   );
 
-  static final titleSm = GoogleFonts.plusJakartaSans(
+  static final titleSm = GoogleFonts.inter(
     fontSize: 18,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.2,
   );
 
-  static final titleLg = GoogleFonts.plusJakartaSans(
+  static final titleLg = GoogleFonts.inter(
     fontSize: 24,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.4,
   );
 
-  static TextStyle display(BuildContext context) => GoogleFonts.plusJakartaSans(
+  static TextStyle display(BuildContext context) => GoogleFonts.inter(
     fontSize: 32,
-    fontWeight: FontWeight.w800,
+    fontWeight: FontWeight.w900,
     letterSpacing: -0.8,
     height: 1.1,
     color: Theme.of(context).colorScheme.onSurface,
@@ -256,11 +256,11 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       shadowColor: SchoolColors.border,
       surfaceTintColor: Colors.transparent,
       centerTitle: false,
-      titleTextStyle: GoogleFonts.plusJakartaSans(
+      titleTextStyle: GoogleFonts.inter(
         color: SchoolColors.text,
         fontSize: 22,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.4,
+        fontWeight: FontWeight.w900,
+        letterSpacing: -0.3,
       ).copyWith(fontFamilyFallback: fallbackFonts),
     ),
 

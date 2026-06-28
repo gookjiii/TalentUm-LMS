@@ -151,7 +151,6 @@ class _TeacherFeedState extends State<TeacherFeed> {
                 children: [
                   const SizedBox(height: 8),
                   SchoolCard(
-                    key: _composerKey,
                     padding: EdgeInsets.all(context.isMobile ? 16 : 20),
                     borderRadius: 22,
                     child: Column(
@@ -169,7 +168,7 @@ class _TeacherFeedState extends State<TeacherFeed> {
                             _FeedOverviewPill(
                               icon: Icons.edit_note_rounded,
                               label: AppLocalizations.of(context)!.newPost,
-                              value: 'Live',
+                              value: '',
                             ),
                           ],
                         ),
@@ -197,13 +196,14 @@ class _TeacherFeedState extends State<TeacherFeed> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 18),
-                        _InlineComposer(
-                          classes: widget.classes,
-                          initialClassId: widget.classId,
-                        ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  _InlineComposer(
+                    key: _composerKey,
+                    classes: widget.classes,
+                    initialClassId: widget.classId,
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -320,12 +320,14 @@ class _InlineComposerState extends State<_InlineComposer> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: SchoolColors.surfaceElevated,
+        color: isDark ? SchoolColors.darkSurfaceElevated : SchoolColors.surfaceElevated,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: SchoolColors.border),
+        border: Border.all(color: isDark ? SchoolColors.darkBorder : SchoolColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,9 +347,9 @@ class _InlineComposerState extends State<_InlineComposer> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? SchoolColors.darkSurface : Colors.white,
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: SchoolColors.border),
+                    border: Border.all(color: isDark ? SchoolColors.darkBorder : SchoolColors.border),
                   ),
                   child: DropdownButton<String>(
                     value: widget.classes.any((c) => c['id'] == selectedClassId)
@@ -388,9 +390,9 @@ class _InlineComposerState extends State<_InlineComposer> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? SchoolColors.darkSurface : Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: SchoolColors.border),
+                    border: Border.all(color: isDark ? SchoolColors.darkBorder : SchoolColors.border),
                   ),
                   child: TextField(
                     controller: controller,
@@ -549,9 +551,8 @@ class _InlineComposerState extends State<_InlineComposer> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context)!.uploadError(e.toString()))));
       }
     } finally {
       setState(() => isUploading = false);
@@ -572,12 +573,15 @@ class _FeedOverviewPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (value.isEmpty) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: SchoolColors.surfaceElevated,
+        color: isDark ? SchoolColors.darkSurfaceElevated : SchoolColors.surfaceElevated,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: SchoolColors.border),
+        border: Border.all(color: isDark ? SchoolColors.darkBorder : SchoolColors.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -595,10 +599,10 @@ class _FeedOverviewPill extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w800,
-              color: SchoolColors.text,
+              color: isDark ? SchoolColors.darkText : SchoolColors.text,
             ),
           ),
         ],

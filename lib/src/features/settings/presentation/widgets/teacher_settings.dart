@@ -10,6 +10,7 @@ import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/utils/reload_app.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
+import 'settings_components.dart';
 
 class TeacherSettingsTab extends StatefulWidget {
   const TeacherSettingsTab({super.key});
@@ -1084,23 +1085,17 @@ class _SettingsGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-          child: Text(
-            label.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
-              color: SchoolColors.muted,
-              letterSpacing: 1,
-            ),
-          ),
-        ),
+        SectionLabel(label: label),
         SchoolCard(
           padding: EdgeInsets.zero,
-          child: Column(children: children),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: children,
+          ),
         ),
+        const SizedBox(height: 28),
       ],
     );
   }
@@ -1126,61 +1121,29 @@ class _SettingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          border: last
-              ? null
-              : Border(
-                  bottom: BorderSide(
-                    color: SchoolColors.border.withOpacity(0.5),
-                  ),
-                ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ModernSettingTile(
+          icon: icon,
+          iconColor: color,
+          iconBgColor: color.withOpacity(0.12),
+          title: label,
+          subtitle: sub,
+          trailing: right ?? Icon(
+            Icons.chevron_right_rounded,
+            color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+          ),
+          onTap: onTap,
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, size: 18, color: color),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    sub,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: SchoolColors.muted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            right ??
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 20,
-                  color: SchoolColors.muted,
-                ),
-          ],
-        ),
-      ),
+        if (!last)
+          Divider(
+            height: 1,
+            color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+            indent: 68,
+          ),
+      ],
     );
   }
 }
@@ -1192,14 +1155,10 @@ class _CustomToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Switch(
+    return Switch.adaptive(
       value: on,
       onChanged: onChanged,
-      activeColor: Colors.white,
-      activeTrackColor: SchoolColors.primary,
-      inactiveThumbColor: Colors.white,
-      inactiveTrackColor: SchoolColors.border,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      activeColor: AppScope.of(context).appState.accentColor,
     );
   }
 }
