@@ -20,7 +20,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const dbClient = new Client({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 3000
   });
   
   try {
