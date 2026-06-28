@@ -363,7 +363,47 @@ class _WebinarTile extends StatelessWidget {
         builder: (context) {
           final isDark = Theme.of(context).brightness == Brightness.dark;
           final isMobile = MediaQuery.sizeOf(context).width < 700;
-          
+
+          final dialogContent = SizedBox(
+            width: isMobile ? MediaQuery.sizeOf(context).width : 700,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top bar with close button
+                Container(
+                  color: Colors.black,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).closeButtonTooltip,
+                  ),
+                ),
+                // Video player with a generous minimum height to guarantee controls are not clipped
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    double calculatedHeight = constraints.maxWidth / (16 / 9);
+                    // Google Drive and other players often require a significant minimum height
+                    // (~360-400px) on mobile before they start clipping their own controls.
+                    double finalHeight = calculatedHeight < 400
+                        ? 400
+                        : calculatedHeight;
+                    return SizedBox(
+                      height: finalHeight,
+                      child: IframePlayer(embedUrl: embedUrl),
+                    );
+                  },
+                ),
+              ],
+            ),
+          );
+
           return Dialog(
             backgroundColor: Colors.black,
             shape: RoundedRectangleBorder(
@@ -371,45 +411,13 @@ class _WebinarTile extends StatelessWidget {
             ),
             insetPadding: isMobile
                 ? EdgeInsets.zero
-                : const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 40,
+                : const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            child: isMobile
+                ? dialogContent
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: dialogContent,
                   ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(isMobile ? 0 : 16),
-              child: SizedBox(
-                width: isMobile ? MediaQuery.sizeOf(context).width : 700,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Top bar with close button
-                    Container(
-                      color: Colors.black,
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: IconButton(
-                        icon: const Icon(Icons.close_rounded, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
-                        tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-                      ),
-                    ),
-                    // Video player with a generous minimum height to guarantee controls are not clipped
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        double calculatedHeight = constraints.maxWidth / (16 / 9);
-                        // Google Drive and other players often require a significant minimum height 
-                        // (~360-400px) on mobile before they start clipping their own controls.
-                        double finalHeight = calculatedHeight < 400 ? 400 : calculatedHeight;
-                        return SizedBox(
-                          height: finalHeight,
-                          child: IframePlayer(embedUrl: embedUrl),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
           );
         },
       );
