@@ -390,10 +390,17 @@ class _WebinarTile extends StatelessWidget {
                         tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                       ),
                     ),
-                    // Video player with slightly taller aspect ratio to fit controls
-                    AspectRatio(
-                      aspectRatio: 16 / 10, // 1.6 instead of 1.777 to give extra room for bottom controls
-                      child: IframePlayer(embedUrl: embedUrl),
+                    // Video player with a minimum height to guarantee controls are not clipped
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        double calculatedHeight = constraints.maxWidth / (16 / 9);
+                        // Some players (like Google Drive) need a minimum height to show bottom controls
+                        double finalHeight = calculatedHeight < 300 ? 300 : calculatedHeight;
+                        return SizedBox(
+                          height: finalHeight,
+                          child: IframePlayer(embedUrl: embedUrl),
+                        );
+                      },
                     ),
                   ],
                 ),
