@@ -23,7 +23,7 @@ import '../features/homework/presentation/widgets/teacher_homework.dart';
 import '../features/shared/presentation/widgets/teacher_sidebar.dart';
 import 'teacher_schedule_screen.dart';
 
-import '../features/shared/presentation/widgets/teacher_right_sidebar.dart';
+
 import '../features/roster/presentation/screens/roster_screen.dart';
 import '../features/settings/presentation/widgets/teacher_settings.dart';
 import '../features/settings/presentation/tabs/admin_dashboard_tab.dart';

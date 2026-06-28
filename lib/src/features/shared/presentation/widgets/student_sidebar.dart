@@ -183,11 +183,9 @@ class _SidebarHeader extends StatelessWidget {
   const _SidebarHeader({
     required this.extended,
     required this.subtitle,
-    this.title = 'School World',
   });
 
   final bool extended;
-  final String title;
   final String subtitle;
 
   @override

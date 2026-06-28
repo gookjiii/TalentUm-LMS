@@ -758,7 +758,6 @@ class _StudentNameCell extends ConsumerWidget {
 
 class _MarkCell extends ConsumerWidget {
   const _MarkCell({
-    super.key,
     required this.initialValue,
     required this.isDark,
     required this.onChanged,

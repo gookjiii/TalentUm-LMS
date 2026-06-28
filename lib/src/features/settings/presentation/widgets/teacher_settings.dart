@@ -172,12 +172,9 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
     return AnimatedBuilder(
       animation: appState,
       builder: (context, _) {
-        return Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-              children: [
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+          children: [
                 PageHeader(
                   title: l10n.settings,
                   subtitle: l10n.personalizationAndAccountManagement,
@@ -515,8 +512,6 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                   style: TextStyle(color: SchoolColors.muted, fontSize: 11),
                 ),
               ],
-            ),
-          ),
         );
       },
     );

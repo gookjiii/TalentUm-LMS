@@ -1213,7 +1213,7 @@ class _SubmissionsListState extends State<_SubmissionsList> {
 }
 
 class _SubmissionRow extends StatefulWidget {
-  const _SubmissionRow({super.key, required this.doc, required this.isLast});
+  const _SubmissionRow({required this.doc, required this.isLast});
   final QueryDocumentSnapshot<Map<String, dynamic>> doc;
   final bool isLast;
 

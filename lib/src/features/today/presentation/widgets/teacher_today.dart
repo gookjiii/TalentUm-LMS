@@ -394,7 +394,7 @@ class _KpiCard extends StatelessWidget {
 }
 
 class _NeedsAttentionCard extends StatefulWidget {
-  const _NeedsAttentionCard({super.key});
+  const _NeedsAttentionCard();
 
   @override
   State<_NeedsAttentionCard> createState() => _NeedsAttentionCardState();

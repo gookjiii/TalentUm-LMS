@@ -408,7 +408,6 @@ class _TeacherClassItem extends StatefulWidget {
     required this.onCopyLink,
     this.avatarUrl,
     required this.isLead,
-    this.isVirtual = false,
   });
 
   final String name, subject;
@@ -417,7 +416,6 @@ class _TeacherClassItem extends StatefulWidget {
   final VoidCallback onTap, onDeleteChat, onDeleteClass, onCopyLink;
   final String? avatarUrl;
   final bool isLead;
-  final bool isVirtual;
 
   @override
   State<_TeacherClassItem> createState() => _TeacherClassItemState();
@@ -458,27 +456,12 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
             ),
             child: Row(
               children: [
-                if (widget.isVirtual)
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: widget.color.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.person_outline_rounded,
-                      size: 18,
-                      color: widget.color,
-                    ),
-                  )
-                else
-                  ClassBadge(
-                    name: widget.name,
-                    color: widget.color,
-                    size: 32,
-                    avatarUrl: widget.avatarUrl,
-                  ),
+                ClassBadge(
+                  name: widget.name,
+                  color: widget.color,
+                  size: 32,
+                  avatarUrl: widget.avatarUrl,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -511,7 +494,7 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
                     ],
                   ),
                 ),
-                if (!widget.isVirtual && (widget.selected || _hovered))
+                if (widget.selected || _hovered)
                   PopupMenuButton<String>(
                     icon: Icon(
                       Icons.more_vert_rounded,
