@@ -139,27 +139,7 @@ class _StudentFeedState extends State<StudentFeed> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
-                                children: [
-                                  _FeedStatPill(
-                                    icon: Icons.campaign_outlined,
-                                    label: AppLocalizations.of(
-                                      context,
-                                    )!.allClasses,
-                                    value: widget.classId == 'all'
-                                        ? '${widget.classes.length}'
-                                        : '1',
-                                  ),
-                                  _FeedStatPill(
-                                    icon: Icons.view_stream_outlined,
-                                    label: AppLocalizations.of(context)!.ribbon,
-                                    value: 'Live',
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
+
                               TextField(
                                 onChanged: (v) => setState(
                                   () => _searchQuery = v.trim().toLowerCase(),
@@ -231,16 +211,18 @@ class _StudentFeedState extends State<StudentFeed> {
 
                     if (posts.isEmpty &&
                         snapshot.connectionState != ConnectionState.waiting) {
-                      return SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: EmptyState(
-                          icon: Icons.notifications_none_rounded,
-                          title: AppLocalizations.of(
-                            context,
-                          )!.thereAreNoAnnouncementsYet,
-                          subtitle: AppLocalizations.of(
-                            context,
-                          )!.announcementsFromYourTeachers,
+                      return SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 40),
+                          child: EmptyState(
+                            icon: Icons.notifications_none_rounded,
+                            title: AppLocalizations.of(
+                              context,
+                            )!.thereAreNoAnnouncementsYet,
+                            subtitle: AppLocalizations.of(
+                              context,
+                            )!.announcementsFromYourTeachers,
+                          ),
                         ),
                       );
                     }
@@ -334,54 +316,6 @@ class _FeedFilterChip extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _FeedStatPill extends StatelessWidget {
-  const _FeedStatPill({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: SchoolColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: SchoolColors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: SchoolColors.primary),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: SchoolColors.textSecondary,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: SchoolColors.text,
-            ),
-          ),
-        ],
       ),
     );
   }

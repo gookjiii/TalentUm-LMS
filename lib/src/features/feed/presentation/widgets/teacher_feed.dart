@@ -156,23 +156,7 @@ class _TeacherFeedState extends State<TeacherFeed> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [
-                            _FeedOverviewPill(
-                              icon: Icons.groups_2_outlined,
-                              label: AppLocalizations.of(context)!.myClasses,
-                              value: '${widget.classes.length}',
-                            ),
-                            _FeedOverviewPill(
-                              icon: Icons.edit_note_rounded,
-                              label: AppLocalizations.of(context)!.newPost,
-                              value: '',
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
+
                         TextField(
                           onChanged: (v) => setState(
                             () => _searchQuery = v.trim().toLowerCase(),
@@ -225,16 +209,18 @@ class _TeacherFeedState extends State<TeacherFeed> {
 
               if (posts.isEmpty &&
                   snapshot.connectionState != ConnectionState.waiting) {
-                return SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: EmptyState(
-                    icon: Icons.campaign_outlined,
-                    title: AppLocalizations.of(
-                      context,
-                    )!.thereAreNoAnnouncementsYet,
-                    subtitle: AppLocalizations.of(
-                      context,
-                    )!.declarationsForYourClasses,
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: EmptyState(
+                      icon: Icons.campaign_outlined,
+                      title: AppLocalizations.of(
+                        context,
+                      )!.thereAreNoAnnouncementsYet,
+                      subtitle: AppLocalizations.of(
+                        context,
+                      )!.declarationsForYourClasses,
+                    ),
                   ),
                 );
               }
@@ -400,8 +386,8 @@ class _InlineComposerState extends State<_InlineComposer> {
                   ),
                   child: TextField(
                     controller: controller,
-                    minLines: 4,
-                    maxLines: 10,
+                    minLines: 1,
+                    maxLines: 5,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       hintText: AppLocalizations.of(
@@ -564,53 +550,3 @@ class _InlineComposerState extends State<_InlineComposer> {
   }
 }
 
-class _FeedOverviewPill extends StatelessWidget {
-  const _FeedOverviewPill({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    if (value.isEmpty) return const SizedBox.shrink();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: isDark ? SchoolColors.darkSurfaceElevated : SchoolColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? SchoolColors.darkBorder : SchoolColors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: SchoolColors.primary),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: SchoolColors.textSecondary,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: isDark ? SchoolColors.darkText : SchoolColors.text,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
