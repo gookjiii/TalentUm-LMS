@@ -354,7 +354,11 @@ class _WebinarTile extends StatelessWidget {
 
   void _playVideo(BuildContext context) {
     final embedUrl = _getEmbedUrl(videoUrl);
-    if (embedUrl != null && kIsWeb) {
+    final isMobileWidth = MediaQuery.sizeOf(context).width < 700;
+
+    // Use iframe dialog on desktop web. On mobile web or native platforms, 
+    // launching the URL natively provides a much better fullscreen UX and avoids iframe clipping bugs.
+    if (embedUrl != null && kIsWeb && !isMobileWidth) {
       showDialog(
         context: context,
         builder: (context) {
