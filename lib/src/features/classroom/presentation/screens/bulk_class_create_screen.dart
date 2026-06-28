@@ -38,14 +38,6 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
     const Color(0xFF06B6D4), // Cyan
   ];
 
-  @override
-  void dispose() {
-    for (final draft in _drafts) {
-      draft.dispose();
-    }
-    super.dispose();
-  }
-
   void _addMore() => setState(() {
     final lastColor = _drafts.lastOrNull?.color ?? SchoolColors.primary;
     final nextIdx =
