@@ -225,8 +225,9 @@ class _TeacherFeedState extends State<TeacherFeed> {
 
               if (posts.isEmpty &&
                   snapshot.connectionState != ConnectionState.waiting) {
-                return SliverToBoxAdapter(
-                  child: EmptyStateWidget(
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: EmptyState(
                     icon: Icons.campaign_outlined,
                     title: AppLocalizations.of(
                       context,
