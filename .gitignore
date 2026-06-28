@@ -59,3 +59,5 @@ test/goldens/failures/
 
 # Patch conflict leftovers
 *.rej
+talentum-*.json
+vercel_backend/*.mjs

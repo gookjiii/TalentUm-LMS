@@ -1,28 +1,25 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { v2 as cloudinary } from 'cloudinary';
-import { driveClient } from '../../utils/drive';
+import { getDriveClient } from '../../utils/drive';
 import { firebaseAdmin } from '../../utils/firebase';
+import { handleCors, requireApiSecret } from '../../utils/api';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (handleCors(req, res)) return;
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const authHeader = req.headers.authorization;
-  const serverSecret = process.env.APP_API_SECRET;
-  if (serverSecret && authHeader !== `Bearer ${serverSecret}`) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid API Secret' });
+  if (!requireApiSecret(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   // 1. Fetch Google Drive storage stats
   let googleDriveLimit = 15 * 1024 * 1024 * 1024; // Default 15 GB free tier
   let googleDriveUsed = 0;
   try {
+    const driveClient = await getDriveClient();
     const about = await driveClient.about.get({
       fields: 'storageQuota',
     });

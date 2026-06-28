@@ -96,6 +96,23 @@ service cloud.firestore {
       }
     }
 
+    // --- Room Access Helper ---
+    function roomExists(roomId) {
+      return exists(/databases/$(database)/documents/rooms/$(roomId));
+    }
+
+    function roomData(roomId) {
+      return get(/databases/$(database)/documents/rooms/$(roomId)).data;
+    }
+
+    function canAccessRoom(roomId) {
+      return signedIn() && roomExists(roomId) && (
+        isTeacher() ||
+        (request.auth.uid in roomData(roomId).get('userIds', [])) ||
+        belongsToClass(roomData(roomId).get('metadata', {}).get('classId', ''))
+      );
+    }
+
     match /rooms/{roomId} {
       // Query-compatible read rules for rooms
       allow read: if signedIn() && (
@@ -116,39 +133,41 @@ service cloud.firestore {
       allow delete: if isTeacher();
 
       match /topics/{topicId} {
-        // Anyone who can read the room can read topics
-        allow read: if signedIn(); 
-        
-        // ONLY Teachers can create, edit, or delete topics
+        allow read: if signedIn() && canAccessRoom(roomId);
         allow create, update, delete: if isTeacher();
       }
 
       match /messages/{messageId} {
-        // Anyone who can read the room can read messages
-        allow read: if signedIn();
+        allow read: if signedIn() && canAccessRoom(roomId);
         
         allow create: if signedIn() 
+          && canAccessRoom(roomId)
           && request.resource.data.authorId == request.auth.uid;
         
-        allow update: if signedIn() && (
+        allow update: if signedIn() && canAccessRoom(roomId) && (
           request.auth.uid == resource.data.authorId || 
           isTeacher() ||
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['metadata']) &&
            (!('metadata' in resource.data) || request.resource.data.metadata.diff(resource.data.metadata).affectedKeys().hasOnly(['seenBy'])))
         );
           
-        allow delete: if isTeacher();
+        allow delete: if isTeacher() || (signedIn() && canAccessRoom(roomId) && request.auth.uid == resource.data.authorId);
+      }
+
+      match /seenCursors/{userId} {
+        allow read: if signedIn() && canAccessRoom(roomId);
+        allow write: if signedIn() && canAccessRoom(roomId) && request.auth.uid == userId;
       }
 
       match /polls/{pollId} {
-        allow read: if signedIn();
+        allow read: if signedIn() && canAccessRoom(roomId);
         allow create, delete: if isTeacher();
-        allow update: if signedIn(); // students vote via update
+        allow update: if signedIn() && canAccessRoom(roomId);
       }
 
       match /typing/{userId} {
-        allow read: if signedIn();
-        allow write, delete: if signedIn() && request.auth.uid == userId;
+        allow read: if signedIn() && canAccessRoom(roomId);
+        allow write, delete: if signedIn() && canAccessRoom(roomId) && request.auth.uid == userId;
       }
     }
 

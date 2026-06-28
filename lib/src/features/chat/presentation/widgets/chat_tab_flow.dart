@@ -138,6 +138,9 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
           onBack: (widget.appState.isTeacher || widget.classes.length > 1)
               ? () {
                   widget.appState.clearChatContext();
+                  if (!widget.desktopMode) {
+                    widget.appState.setChatRoomMobileOpen(false);
+                  }
                   setState(() => _view = ChatView.classList);
                 }
               : null,

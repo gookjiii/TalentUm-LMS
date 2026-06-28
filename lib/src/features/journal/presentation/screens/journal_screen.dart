@@ -109,28 +109,18 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
                     trailing: isTeacher
                         ? SizedBox(
                             height: 44,
-                            child: FilledButton.icon(
+                            child: IconButton.filled(
                               onPressed: () => _showAddLessonDialog(
                                 context,
                                 ref,
                                 effectiveClassId,
                               ),
-                              icon: const Icon(Icons.add_rounded, size: 20),
-                              label: Text(
-                                AppLocalizations.of(context)!.addALesson,
-                              ),
-                              style: FilledButton.styleFrom(
+                              style: IconButton.styleFrom(
                                 backgroundColor: SchoolColors.primary,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
-                                ),
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                foregroundColor: Colors.white,
                               ),
+                              icon: const Icon(Icons.add_rounded, size: 24),
+                              tooltip: AppLocalizations.of(context)!.addALesson,
                             ),
                           )
                         : null,

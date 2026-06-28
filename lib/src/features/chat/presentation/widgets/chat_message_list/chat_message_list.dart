@@ -9,7 +9,7 @@ import 'package:school_world/src/features/chat/presentation/widgets/chat_bubble/
 import 'package:school_world/src/features/chat/data/firebase_chat_controller.dart';
 import 'package:school_world/main.dart';
 
-class ChatMessageList extends StatelessWidget {
+class ChatMessageList extends StatefulWidget {
   const ChatMessageList({
     super.key,
     required this.currentUserId,
@@ -33,36 +33,37 @@ class ChatMessageList extends StatelessWidget {
     int, {
     required bool isSentByMe,
     MessageGroupStatus? groupStatus,
-  })
-  textMessageBuilder;
+  }) textMessageBuilder;
   final Widget Function(
     BuildContext,
     ImageMessage,
     int, {
     required bool isSentByMe,
     MessageGroupStatus? groupStatus,
-  })
-  imageMessageBuilder;
+  }) imageMessageBuilder;
   final Widget Function(
     BuildContext,
     FileMessage,
     int, {
     required bool isSentByMe,
     MessageGroupStatus? groupStatus,
-  })
-  fileMessageBuilder;
+  }) fileMessageBuilder;
   final Widget Function(
     BuildContext,
     FileMessage,
     int, {
     required bool isSentByMe,
     MessageGroupStatus? groupStatus,
-  })?
-  audioMessageBuilder;
+  })? audioMessageBuilder;
   final void Function(ImageMessage) onImageTap;
   final void Function(Message, {Offset? position}) onMessageLongPress;
   final void Function(Message) onMessageSwipe;
 
+  @override
+  State<ChatMessageList> createState() => _ChatMessageListState();
+}
+
+class _ChatMessageListState extends State<ChatMessageList> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -75,7 +76,7 @@ class ChatMessageList extends StatelessWidget {
 
     final performanceMode = AppScope.of(context).appState.performanceMode;
     return ListenableBuilder(
-      listenable: chatController,
+      listenable: widget.chatController,
       builder: (context, _) {
         return Stack(
           children: [
@@ -90,11 +91,12 @@ class ChatMessageList extends StatelessWidget {
             ),
             Positioned.fill(
               child: Chat(
-                currentUserId: currentUserId,
-                resolveUser: resolveUser,
-                chatController: chatController,
+                currentUserId: widget.currentUserId,
+                resolveUser: widget.resolveUser,
+                chatController: widget.chatController,
                 theme: (isDark ? ChatTheme.dark() : ChatTheme.light()).copyWith(
-                  colors: (isDark ? ChatTheme.dark() : ChatTheme.light()).colors
+                  colors: (isDark ? ChatTheme.dark() : ChatTheme.light())
+                      .colors
                       .copyWith(
                         primary: theme.colorScheme.primary,
                         onPrimary: theme.colorScheme.onPrimary,
@@ -108,139 +110,232 @@ class ChatMessageList extends StatelessWidget {
                 builders: Builders(
                   chatAnimatedListBuilder: (context, itemBuilder) =>
                       ChatAnimatedList(
-                        itemBuilder: itemBuilder,
-                        reversed: true,
-                        bottomPadding: 16,
-                        physics: const BouncingScrollPhysics(
-                          parent: AlwaysScrollableScrollPhysics(),
-                        ),
-                        insertAnimationDuration: const Duration(
-                          milliseconds: 350,
-                        ),
-                        bottomSliver: SliverToBoxAdapter(
-                          child: _TypingIndicatorBuilder(
-                            chatController: chatController,
-                            currentUserId: currentUserId,
-                            theme: theme,
+                    itemBuilder: itemBuilder,
+                    reversed: true,
+                    bottomPadding: 16,
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
+                    insertAnimationDuration: const Duration(
+                      milliseconds: 350,
+                    ),
+                    bottomSliver: SliverToBoxAdapter(
+                      child: _TypingIndicatorBuilder(
+                        chatController: widget.chatController,
+                        currentUserId: widget.currentUserId,
+                        theme: theme,
+                      ),
+                    ),
+                  ),
+                  chatMessageBuilder: (
+                    context,
+                    message,
+                    index,
+                    animation,
+                    originalChild, {
+                    isRemoved,
+                    required isSentByMe,
+                    groupStatus,
+                  }) {
+                    final dateSeparatorLabel = _dateSeparatorLabel(
+                      context,
+                      message,
+                    );
+                    final curvedAnimation = CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    );
+
+                    Widget child = originalChild;
+                    if (message is FileMessage) {
+                      final isAudio = message.metadata?['type'] == 'audio' ||
+                          message.metadata?['attachmentType'] == 'audio';
+                      if (isAudio && widget.audioMessageBuilder != null) {
+                        child = widget.audioMessageBuilder!(
+                          context,
+                          message,
+                          index,
+                          isSentByMe: isSentByMe,
+                          groupStatus: groupStatus,
+                        );
+                      }
+                    }
+
+                    final messageBody = ChatMessage(
+                      message: message,
+                      index: index,
+                      animation: const AlwaysStoppedAnimation(
+                        1.0,
+                      ), // Disable internal animation
+                      isRemoved: isRemoved,
+                      groupStatus: groupStatus,
+                      child: child,
+                    );
+
+                    return FadeTransition(
+                      opacity: curvedAnimation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.05),
+                          end: Offset.zero,
+                        ).animate(curvedAnimation),
+                        child: ScaleTransition(
+                          scale: Tween<double>(
+                            begin: 0.98,
+                            end: 1.0,
+                          ).animate(curvedAnimation),
+                          alignment: isSentByMe
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: VisibilityDetector(
+                            key: Key('msg-visibility-${message.id}'),
+                            onVisibilityChanged: (_) {},
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (dateSeparatorLabel != null)
+                                  _DateSeparator(label: dateSeparatorLabel),
+                                SwipeTo(
+                                  key: ValueKey(message.id),
+                                  onRightSwipe: (details) {
+                                    widget.onMessageSwipe(message);
+                                  },
+                                  child: messageBody,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                  chatMessageBuilder:
-                      (
-                        context,
-                        message,
-                        index,
-                        animation,
-                        originalChild, {
-                        isRemoved,
-                        required isSentByMe,
-                        groupStatus,
-                      }) {
-                        final curvedAnimation = CurvedAnimation(
-                          parent: animation,
-                          curve: Curves.easeOutCubic,
-                        );
-
-                        Widget child = originalChild;
-                        if (message is FileMessage) {
-                          final isAudio =
-                              message.metadata?['type'] == 'audio' ||
-                              message.metadata?['attachmentType'] == 'audio';
-                          if (isAudio && audioMessageBuilder != null) {
-                            child = audioMessageBuilder!(
-                              context,
-                              message,
-                              index,
-                              isSentByMe: isSentByMe,
-                              groupStatus: groupStatus,
-                            );
-                          }
-                        }
-
-                        return FadeTransition(
-                          opacity: curvedAnimation,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 0.05),
-                              end: Offset.zero,
-                            ).animate(curvedAnimation),
-                            child: ScaleTransition(
-                              scale: Tween<double>(
-                                begin: 0.98,
-                                end: 1.0,
-                              ).animate(curvedAnimation),
-                              alignment: isSentByMe
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
-                              child: VisibilityDetector(
-                                key: Key('msg-visibility-${message.id}'),
-                                onVisibilityChanged: (info) {
-                                  if (info.visibleFraction > 0.1 &&
-                                      !isSentByMe) {
-                                    final repo = AppScope.of(
-                                      context,
-                                    ).repository;
-                                    final seenBy = List<String>.from(
-                                      message.metadata?['seenBy'] ?? [],
-                                    );
-                                    if (!seenBy.contains(currentUserId)) {
-                                      repo.markMessageAsSeen(
-                                        chatController.roomId,
-                                        message.id,
-                                      );
-                                    }
-                                  }
-                                },
-                                child: SwipeTo(
-                                  key: ValueKey(message.id),
-                                  onRightSwipe: (details) {
-                                    onMessageSwipe(message);
-                                  },
-                                  child: ChatMessage(
-                                    message: message,
-                                    index: index,
-                                    animation: const AlwaysStoppedAnimation(
-                                      1.0,
-                                    ), // Disable internal animation
-                                    isRemoved: isRemoved,
-                                    groupStatus: groupStatus,
-                                    child: child,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                  textMessageBuilder: textMessageBuilder,
-                  imageMessageBuilder: imageMessageBuilder,
-                  fileMessageBuilder: fileMessageBuilder,
+                    );
+                  },
+                  textMessageBuilder: widget.textMessageBuilder,
+                  imageMessageBuilder: widget.imageMessageBuilder,
+                  fileMessageBuilder: widget.fileMessageBuilder,
                   composerBuilder: (_) => const SizedBox.shrink(),
                 ),
-                onMessageTap:
-                    (
-                      _,
-                      msg, {
-                      required int index,
-                      required TapUpDetails details,
-                    }) {
-                      if (msg is ImageMessage) onImageTap(msg);
-                    },
-                onMessageLongPress:
-                    (
-                      _,
-                      msg, {
-                      required int index,
-                      required LongPressStartDetails details,
-                    }) {
-                      onMessageLongPress(msg, position: details.globalPosition);
-                    },
-                onEndReached: () => chatController.loadOlder(),
+                onMessageTap: (
+                  _,
+                  msg, {
+                  required int index,
+                  required TapUpDetails details,
+                }) {
+                  if (msg is ImageMessage) widget.onImageTap(msg);
+                },
+                onMessageLongPress: (
+                  _,
+                  msg, {
+                  required int index,
+                  required LongPressStartDetails details,
+                }) {
+                  widget.onMessageLongPress(msg,
+                      position: details.globalPosition);
+                },
+                onEndReached: () => widget.chatController.loadOlder(),
               ),
             ),
           ],
         );
       },
+    );
+  }
+
+  String? _dateSeparatorLabel(BuildContext context, Message message) {
+    final currentDate = message.createdAt?.toLocal();
+    if (currentDate == null) return null;
+
+    final messages = widget.chatController.messages;
+    final currentIndex = messages.indexWhere((m) => m.id == message.id);
+    if (currentIndex > 0) {
+      final previousDate = messages[currentIndex - 1].createdAt?.toLocal();
+      if (previousDate != null && _isSameDay(previousDate, currentDate)) {
+        return null;
+      }
+    }
+
+    return _formatSeparatorDate(context, currentDate);
+  }
+
+  String _formatSeparatorDate(BuildContext context, DateTime date) {
+    final l10n = AppLocalizations.of(context)!;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final messageDay = DateTime(date.year, date.month, date.day);
+
+    if (messageDay == today) return l10n.today;
+    if (messageDay == today.subtract(const Duration(days: 1))) {
+      return _yesterdayLabel(Localizations.localeOf(context));
+    }
+
+    final localeName = Localizations.localeOf(context).toLanguageTag();
+    final pattern = date.year == now.year ? 'd MMMM' : 'd MMMM y';
+    return DateFormat(pattern, localeName).format(date);
+  }
+
+  String _yesterdayLabel(Locale locale) {
+    switch (locale.languageCode) {
+      case 'ru':
+        return 'Вчера';
+      case 'vi':
+        return 'Hôm qua';
+      default:
+        return 'Yesterday';
+    }
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+}
+
+class _DateSeparator extends StatelessWidget {
+  const _DateSeparator({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final background = isDark
+        ? Colors.black.withOpacity(0.28)
+        : Colors.white.withOpacity(0.86);
+    final foreground = theme.colorScheme.onSurface.withOpacity(0.72);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Center(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withOpacity(0.45),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.16 : 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: foreground,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -440,45 +535,40 @@ class _DotGridPainter extends CustomPainter {
     if (!performanceMode) {
       // 2. Animated fluid Aurora radial gradients
       final Paint glow1 = Paint()
-        ..shader =
-            RadialGradient(
-              colors: [
-                const Color(0xFF2563EB).withOpacity(0.06), // Primary Blue
-                const Color(0xFF2563EB).withOpacity(0.0),
-              ],
-            ).createShader(
-              Rect.fromCircle(
-                center: Offset(
-                  size.width *
-                      (0.3 + 0.3 * math.sin(animationValue * 2 * math.pi)),
-                  size.height *
-                      (0.2 + 0.2 * math.cos(animationValue * 2 * math.pi)),
-                ),
-                radius: size.width * 0.9,
-              ),
-            );
+        ..shader = RadialGradient(
+          colors: [
+            const Color(0xFF2563EB).withOpacity(0.06), // Primary Blue
+            const Color(0xFF2563EB).withOpacity(0.0),
+          ],
+        ).createShader(
+          Rect.fromCircle(
+            center: Offset(
+              size.width * (0.3 + 0.3 * math.sin(animationValue * 2 * math.pi)),
+              size.height *
+                  (0.2 + 0.2 * math.cos(animationValue * 2 * math.pi)),
+            ),
+            radius: size.width * 0.9,
+          ),
+        );
       canvas.drawRect(Offset.zero & size, glow1);
 
       final Paint glow2 = Paint()
-        ..shader =
-            RadialGradient(
-              colors: [
-                const Color(0xFF6366F1).withOpacity(0.05), // Indigo Purple
-                const Color(0xFF6366F1).withOpacity(0.0),
-              ],
-            ).createShader(
-              Rect.fromCircle(
-                center: Offset(
-                  size.width *
-                      (0.7 +
-                          0.2 * math.cos(animationValue * 2 * math.pi + 1.2)),
-                  size.height *
-                      (0.6 +
-                          0.2 * math.sin(animationValue * 2 * math.pi + 1.2)),
-                ),
-                radius: size.width * 0.8,
-              ),
-            );
+        ..shader = RadialGradient(
+          colors: [
+            const Color(0xFF6366F1).withOpacity(0.05), // Indigo Purple
+            const Color(0xFF6366F1).withOpacity(0.0),
+          ],
+        ).createShader(
+          Rect.fromCircle(
+            center: Offset(
+              size.width *
+                  (0.7 + 0.2 * math.cos(animationValue * 2 * math.pi + 1.2)),
+              size.height *
+                  (0.6 + 0.2 * math.sin(animationValue * 2 * math.pi + 1.2)),
+            ),
+            radius: size.width * 0.8,
+          ),
+        );
       canvas.drawRect(Offset.zero & size, glow2);
     }
 

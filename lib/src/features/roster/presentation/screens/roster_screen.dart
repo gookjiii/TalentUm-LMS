@@ -218,7 +218,7 @@ class _MembersHeader extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (appState.isTeacher)
-                    IconButton.filledTonal(
+                    IconButton.filled(
                       onPressed: () {
                         if (classId != null) {
                           showDialog(
@@ -230,6 +230,10 @@ class _MembersHeader extends StatelessWidget {
                           );
                         }
                       },
+                      style: IconButton.styleFrom(
+                        backgroundColor: SchoolColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
                       icon: const Icon(
                         Icons.person_add_alt_1_rounded,
                         size: 20,
@@ -238,7 +242,7 @@ class _MembersHeader extends StatelessWidget {
                     ),
                   if (appState.isLeadTeacher) ...[
                     const SizedBox(width: 8),
-                    IconButton.filledTonal(
+                    IconButton.filled(
                       onPressed: () {
                         if (classId != null) {
                           Navigator.push(
@@ -250,6 +254,10 @@ class _MembersHeader extends StatelessWidget {
                           );
                         }
                       },
+                      style: IconButton.styleFrom(
+                        backgroundColor: SchoolColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
                       icon: const Icon(
                         Icons.settings_suggest_rounded,
                         size: 20,
@@ -830,8 +838,8 @@ class _AddStudentDialogState extends State<_AddStudentDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(AppLocalizations.of(context)!.addAStudent),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 400),
+      content: SizedBox(
+        width: 400,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

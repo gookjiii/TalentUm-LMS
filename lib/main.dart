@@ -22,6 +22,7 @@ import 'src/theme.dart';
 import 'src/utils/splash_loader.dart';
 import 'package:provider/provider.dart' as provider_pkg;
 import 'src/firebase/push_notification_manager.dart';
+import 'src/widgets/cached_stream_builder.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
@@ -33,9 +34,10 @@ Future<void> main() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     // Hide splash as soon as possible
-    try {
-      hideSplash();
-    } catch (_) {}
+    // (Removed to keep HTML splash visible until Flutter app is fully ready)
+    // try {
+    //   hideSplash();
+    // } catch (_) {}
 
     // Improve image caching for better render performance
     PaintingBinding.instance.imageCache.maximumSize = 2000;
@@ -71,9 +73,11 @@ Future<void> main() async {
     };
 
     await Hive.initFlutter();
-    await Hive.openBox('app_settings');
-    await Hive.openBox('data_cache');
-    await Hive.openBox('chat_cache');
+    await Future.wait([
+      Hive.openBox('app_settings'),
+      Hive.openBox('data_cache'),
+      Hive.openBox('chat_cache'),
+    ]);
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
@@ -83,11 +87,13 @@ Future<void> main() async {
         rethrow;
       }
     }
-    if (!kIsWeb) {
+    try {
       FirebaseFirestore.instance.settings = const Settings(
         persistenceEnabled: true,
         cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
       );
+    } catch (e) {
+      debugPrint('Firestore settings failed: $e');
     }
     await initializeDateFormatting('ru', null);
 
@@ -160,30 +166,7 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
         future: _settingsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Directionality(
-              textDirection: TextDirection.ltr,
-              child: ColoredBox(
-                color: Colors.white,
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 16),
-                      Text(
-                        AppLocalizations.of(context)?.loadingSystemSettings ??
-                            'Загрузка настроек...',
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
+            return const SizedBox.shrink();
           }
 
           if (snapshot.hasError) {
@@ -314,8 +297,6 @@ class _AuthGateState extends State<AuthGate> {
   String? _initializedUid;
 
   late Stream<User?> _authStream;
-  Stream<DocumentSnapshot<Map<String, dynamic>>>? _profileStream;
-  String? _currentProfileUid;
 
   @override
   void initState() {
@@ -371,17 +352,9 @@ class _AuthGateState extends State<AuthGate> {
               debugPrint('Auth stream timeout');
             }
           });
-          return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text(AppLocalizations.of(context)!.authCheck),
-                ],
-              ),
-            ),
+          return const Scaffold(
+            backgroundColor: Colors.transparent,
+            body: SizedBox.shrink(),
           );
         }
 
@@ -389,8 +362,7 @@ class _AuthGateState extends State<AuthGate> {
 
         if (user == null) {
           _initializedUid = null;
-          _profileStream = null;
-          _currentProfileUid = null;
+          WidgetsBinding.instance.addPostFrameCallback((_) => hideSplash());
           if (hasPendingInvite) {
             return GuestJoinScreen(
               classId: guestParams.classId,
@@ -416,14 +388,9 @@ class _AuthGateState extends State<AuthGate> {
           });
         }
 
-        // Cache profile stream based on UID to avoid infinite rebuild loops
-        if (_currentProfileUid != user.uid) {
-          _currentProfileUid = user.uid;
-          _profileStream = widget.repository.userDocStream();
-        }
-
-        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: _profileStream,
+        return CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          streamFactory: () => widget.repository.userDocStream(),
+          keys: [user.uid],
           builder: (context, profileSnap) {
             if (profileSnap.hasError) {
               debugPrint('AuthGate Profile Error: ${profileSnap.error}');
@@ -443,19 +410,13 @@ class _AuthGateState extends State<AuthGate> {
 
             if (!profileSnap.hasData &&
                 profileSnap.connectionState == ConnectionState.waiting) {
-              return Scaffold(
-                body: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 16),
-                      Text(AppLocalizations.of(context)!.loadingProfile),
-                    ],
-                  ),
-                ),
+              return const Scaffold(
+                backgroundColor: Colors.transparent,
+                body: SizedBox.shrink(),
               );
             }
+
+            WidgetsBinding.instance.addPostFrameCallback((_) => hideSplash());
 
             final doc = profileSnap.data;
             final data = doc?.data();

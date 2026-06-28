@@ -239,7 +239,7 @@ jobs:
             --dart-define=APP_API_SECRET=talentum2026secret
 
       - name: Force new deploy hash
-        run: echo "<!-- DEPLOY_TS_$(date +%s) -->" >> build/web/index.html
+        run: date +%s > build/web/deploy_version.txt
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2

@@ -294,6 +294,7 @@ class _BentoStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -316,7 +317,7 @@ class _BentoStats extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'LESSONS TODAY',
+            l10n.lessonsToday,
             style: TextStyle(
               color: Colors.white.withOpacity(0.5),
               fontSize: 10,
@@ -337,7 +338,7 @@ class _BentoStats extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '$activeLessons ACTIVE',
+                l10n.activeBadge(activeLessons),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 11,

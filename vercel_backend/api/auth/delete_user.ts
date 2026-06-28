@@ -1,27 +1,21 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { authAdmin, dbAdmin } from '../../utils/firebase';
+import { handleCors, requireApiSecret } from '../../utils/api';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (handleCors(req, res)) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   const { userId } = req.body;
-  const authHeader = req.headers.authorization;
-
   if (!userId) {
     return res.status(400).json({ error: 'Missing userId' });
   }
 
-  // Basic API Secret check to prevent unauthorized public deletion
-  const serverSecret = process.env.APP_API_SECRET;
-  if (serverSecret && authHeader !== `Bearer ${serverSecret}`) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid API Secret' });
+  if (!requireApiSecret(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {

@@ -115,27 +115,6 @@ class _TeacherFeedState extends State<TeacherFeed> {
                             );
                           }
                         : null,
-                    trailing: FilledButton.icon(
-                      onPressed: () {
-                        if (_composerKey.currentContext != null) {
-                          Scrollable.ensureVisible(
-                            _composerKey.currentContext!,
-                            duration: const Duration(milliseconds: 500),
-                            curve: Curves.easeInOut,
-                          );
-                        }
-                      },
-                      style: FilledButton.styleFrom(
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                      ),
-                      icon: const Icon(Icons.add_rounded, size: 18),
-                      label: Text(AppLocalizations.of(context)!.newPost),
-                    ),
                   ),
                 );
               },
@@ -332,39 +311,6 @@ class _InlineComposerState extends State<_InlineComposer> {
                   color: SchoolColors.textSecondary,
                 ),
               ),
-              const Spacer(),
-              if (widget.classes.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: isDark ? SchoolColors.darkSurface : Colors.white,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: isDark ? SchoolColors.darkBorder : SchoolColors.border),
-                  ),
-                  child: DropdownButton<String>(
-                    value: widget.classes.any((c) => c['id'] == selectedClassId)
-                        ? selectedClassId
-                        : (widget.classes.first['id'] as String),
-                    underline: const SizedBox(),
-                    borderRadius: BorderRadius.circular(12),
-                    items: widget.classes
-                        .map(
-                          (c) => DropdownMenuItem(
-                            value: c['id'] as String,
-                            child: Text(
-                              c['name']?.toString() ?? '',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: SchoolColors.primary,
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (v) => setState(() => selectedClassId = v!),
-                  ),
-                ),
             ],
           ),
           const SizedBox(height: 14),

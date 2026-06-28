@@ -10,7 +10,7 @@ import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/widgets/shimmer_widgets.dart';
 import '../../../../screens/homework_detail_screen.dart';
 import '../../../../firebase/safe_firestore.dart';
-
+import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/src/providers/app_providers.dart';
 import 'package:collection/collection.dart';
@@ -31,6 +31,7 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
   Stream<QuerySnapshot<Map<String, dynamic>>>? _submissionsStream;
   bool _initialized = false;
   int _limit = 20;
+  String? _selectedAssignmentId;
 
   @override
   void didChangeDependencies() {
@@ -92,6 +93,19 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
   @override
   Widget build(BuildContext context) {
     final repo = AppScope.of(context).repository;
+
+    if (_selectedAssignmentId != null) {
+      return HomeworkDetailScreen(
+        repository: repo,
+        appState: AppScope.of(context).appState,
+        assignmentId: _selectedAssignmentId!,
+        onBack: () {
+          setState(() {
+            _selectedAssignmentId = null;
+          });
+        },
+      );
+    }
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: widget.classId.isNotEmpty
@@ -196,18 +210,18 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
                                           );
                                         }
                                       : null,
-                                  padding: const EdgeInsets.fromLTRB(
-                                    24,
+                                  padding: EdgeInsets.fromLTRB(
+                                    context.horizontalPadding,
                                     32,
-                                    24,
+                                    context.horizontalPadding,
                                     16,
                                   ),
                                 );
                               },
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: context.horizontalPadding,
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,7 +261,14 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
                                       )!.focusMode,
                                     ),
                                     const SizedBox(height: 12),
-                                    FocusAssignmentCard(doc: urgentAssignment),
+                                    FocusAssignmentCard(
+                                      doc: urgentAssignment,
+                                      onTap: () {
+                                        setState(() {
+                                          _selectedAssignmentId = urgentAssignment.id;
+                                        });
+                                      },
+                                    ),
                                   ],
                                   const SizedBox(height: 32),
                                   SingleChildScrollView(
@@ -303,6 +324,11 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
                                       (doc) => HomeworkCard(
                                         doc: doc,
                                         submission: submissionMap[doc.id],
+                                        onTap: () {
+                                          setState(() {
+                                            _selectedAssignmentId = doc.id;
+                                          });
+                                        },
                                       ),
                                     ),
                                 ],
@@ -329,7 +355,7 @@ class NoHomeworkEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SchoolCard(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+      padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding, vertical: 48),
       child: Center(
         child: Column(
           children: [
@@ -355,9 +381,10 @@ class NoHomeworkEmptyState extends StatelessWidget {
 }
 
 class HomeworkCard extends StatelessWidget {
-  const HomeworkCard({super.key, required this.doc, this.submission});
+  const HomeworkCard({super.key, required this.doc, this.submission, required this.onTap});
   final QueryDocumentSnapshot<Map<String, dynamic>> doc;
   final Map<String, dynamic>? submission;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -374,18 +401,7 @@ class HomeworkCard extends StatelessWidget {
       child: RepaintBoundary(
         child: SchoolCard(
           padding: const EdgeInsets.all(16),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => HomeworkDetailScreen(
-                  repository: AppScope.of(context).repository,
-                  appState: AppScope.of(context).appState,
-                  assignmentId: doc.id,
-                ),
-              ),
-            );
-          },
+          onTap: onTap,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -531,20 +547,7 @@ class HomeworkCard extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: FilledButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => HomeworkDetailScreen(
-                                      repository: AppScope.of(
-                                        context,
-                                      ).repository,
-                                      appState: AppScope.of(context).appState,
-                                      assignmentId: doc.id,
-                                    ),
-                                  ),
-                                );
-                              },
+                              onPressed: onTap,
                               icon: const Icon(
                                 Icons.arrow_forward_rounded,
                                 size: 18,
@@ -852,8 +855,9 @@ class _QuickSubmitBottomSheetState extends State<_QuickSubmitBottomSheet> {
 }
 
 class FocusAssignmentCard extends StatelessWidget {
-  const FocusAssignmentCard({super.key, required this.doc});
+  const FocusAssignmentCard({super.key, required this.doc, required this.onTap});
   final QueryDocumentSnapshot<Map<String, dynamic>> doc;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -866,18 +870,7 @@ class FocusAssignmentCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       color: SchoolColors.primary.withValues(alpha: 0.05),
       borderColor: SchoolColors.primary.withValues(alpha: 0.2),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => HomeworkDetailScreen(
-              repository: AppScope.of(context).repository,
-              appState: AppScope.of(context).appState,
-              assignmentId: doc.id,
-            ),
-          ),
-        );
-      },
+      onTap: onTap,
       child: Row(
         children: [
           Expanded(

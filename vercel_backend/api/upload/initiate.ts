@@ -1,21 +1,42 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { getWorkingAuthClient, SHARED_FOLDER_ID } from '../../utils/drive';
 import { Client } from 'pg';
+import { handleCors, verifyFirebaseToken, checkRateLimit } from '../../utils/api';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (handleCors(req, res)) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  if (!checkRateLimit(req, 20, 60000)) {
+    return res.status(429).json({ error: 'Too Many Requests' });
+  }
+
+  const authUser = await verifyFirebaseToken(req);
+  if (!authUser) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid or missing Firebase ID token' });
+  }
+
   const { name, mimeType, size } = req.body;
 
-  if (!name || !mimeType || !size) {
+  if (typeof name !== 'string' || name.trim().length === 0 || name.length > 255) {
+    return res.status(400).json({ error: 'Invalid parameter: name must be a non-empty string up to 255 characters' });
+  }
+
+  if (typeof mimeType !== 'string' || mimeType.trim().length === 0 || mimeType.length > 150) {
+    return res.status(400).json({ error: 'Invalid parameter: mimeType must be a non-empty string' });
+  }
+
+  const sizeBytes = typeof size === 'number' ? size : Number(size);
+  if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) {
     return res.status(400).json({ error: 'Missing required parameters: name, mimeType, size' });
+  }
+
+  const maxUploadBytes = parseInt(process.env.MAX_UPLOAD_BYTES || '104857600', 10); // 100MB default
+  if (sizeBytes > maxUploadBytes) {
+    return res.status(413).json({ error: `Payload Too Large: File size exceeds the maximum limit of ${maxUploadBytes} bytes` });
   }
 
   const dbClient = new Client({
@@ -23,14 +44,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 3000
   });
-  
+
   try {
     await dbClient.connect();
   } catch (dbError: any) {
     console.error('Database connection failed:', dbError);
-    return res.status(500).json({ 
-      error: 'Database connection failed. Is the database paused?', 
-      details: dbError.message 
+    return res.status(500).json({
+      error: 'Database connection failed. Is the database paused?',
+      details: dbError.message
     });
   }
 
@@ -48,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
       'X-Upload-Content-Type': mimeType,
-      'X-Upload-Content-Length': size.toString(),
+      'X-Upload-Content-Length': sizeBytes.toString(),
     };
 
     if (originHeader) {
@@ -56,12 +77,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const initiateUrl = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true';
-    
+
     const response = await fetch(initiateUrl, {
       method: 'POST',
       headers: requestHeaders,
       body: JSON.stringify({
-        name: name,
+        name: name.trim(),
         parents: [SHARED_FOLDER_ID],
       }),
     });
@@ -81,7 +102,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       VALUES ($1, $2, $3, 'pending')
       RETURNING id
     `;
-    const dbRes = await dbClient.query(insertQuery, [name, mimeType, size]);
+    const dbRes = await dbClient.query(insertQuery, [name.trim(), mimeType, sizeBytes]);
     const fileRecordId = dbRes.rows[0].id;
 
     return res.status(200).json({

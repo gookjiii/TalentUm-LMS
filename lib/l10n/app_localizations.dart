@@ -4744,6 +4744,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System reset failed: {error}'**
   String resetFailed(Object error);
+
+  /// No description provided for @lessonsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'LESSONS TODAY'**
+  String get lessonsToday;
+
+  /// No description provided for @activeBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} ACTIVE'**
+  String activeBadge(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

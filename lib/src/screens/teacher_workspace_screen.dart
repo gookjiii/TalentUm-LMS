@@ -352,11 +352,12 @@ class _TeacherWorkspaceScreenState
                     ),
                   Expanded(
                     child: WorkspacePanel(
+                      borderRadius: wide ? 28 : 0,
                       margin: EdgeInsets.fromLTRB(
-                        wide ? 8 : 16,
-                        16,
-                        wide ? 8 : 16,
-                        wide ? 16 : 16,
+                        wide ? 8 : 0,
+                        wide ? 16 : 0,
+                        wide ? 8 : 0,
+                        0,
                       ),
                       child: content,
                     ),
@@ -568,8 +569,8 @@ class _TeacherWorkspaceScreenState
             horizontal: 24,
             vertical: 24,
           ),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
+          child: SizedBox(
+            width: 400,
             child: GlassCard(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -801,8 +802,8 @@ class _TeacherWorkspaceScreenState
             horizontal: 24,
             vertical: 24,
           ),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
+          child: SizedBox(
+            width: 400,
             child: GlassCard(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -972,64 +973,8 @@ class _TeacherWorkspaceScreenState
     AppLocalizations l10n,
     List<Map<String, dynamic>> classes,
   ) {
-    const mobileIndices = [0, 2, 4, 8];
-
-    if (!wide && !mobileIndices.contains(index)) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (ctx) => Consumer(
-            builder: (ctx, ref, _) {
-              final currentId =
-                  ref.watch(
-                    schoolAppStateProvider.select((s) => s.selectedClassId),
-                  ) ??
-                  activeId;
-
-              return Scaffold(
-                appBar: AppBar(
-                  title: Text(_getTabTitle(index, l10n)),
-                  centerTitle: true,
-                  actions: [
-                    if (classes.length > 1)
-                      IconButton(
-                        icon: const Icon(Icons.swap_horiz_rounded),
-                        onPressed: () {
-                          showClassSwitcher(
-                            context: ctx,
-                            classes: classes,
-                            currentClassId: currentId ?? '',
-                            onSelect: (id) {
-                              ref.read(schoolAppStateProvider).selectClass(id);
-                              setState(() {
-                                // optional update to parent state if needed
-                              });
-                            },
-                          );
-                        },
-                      ),
-                  ],
-                ),
-                body: Container(
-                  color: Theme.of(ctx).colorScheme.surface,
-                  child: _getTabWidget(
-                    index,
-                    currentId,
-                    repo,
-                    appState,
-                    classes,
-                    wide,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      );
-    } else {
-      setState(() => _tabIndex = index);
-      ref.read(schoolAppStateProvider).setTeacherTabIndex(index);
-    }
+    setState(() => _tabIndex = index);
+    ref.read(schoolAppStateProvider).setTeacherTabIndex(index);
   }
 
   void _showTeacherMoreSheet(BuildContext context, SchoolAppState appState) {
@@ -1307,9 +1252,16 @@ class _MobileBottomBar extends StatelessWidget {
             border: Border.all(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.12)
-                  : SchoolColors.border.withValues(alpha: 0.8),
+                  : SchoolColors.border,
               width: 1.0,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
+                blurRadius: 32,
+                offset: const Offset(0, 12),
+              ),
+            ],
           ),
           child: _buildIcons(isDark, context),
         ),
@@ -1329,14 +1281,14 @@ class _MobileBottomBar extends StatelessWidget {
           border: Border.all(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.08)
-                : SchoolColors.border.withValues(alpha: 0.5),
+                : SchoolColors.border,
             width: 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
+              blurRadius: 32,
+              offset: const Offset(0, 12),
             ),
           ],
         ),
@@ -1388,10 +1340,10 @@ class _MobileBottomBar extends StatelessWidget {
                             ? SchoolColors.primary
                             : (isDark
                                   ? SchoolColors.darkTextSecondary.withValues(
-                                      alpha: 0.5,
+                                      alpha: 0.7,
                                     )
                                   : SchoolColors.textSecondary.withValues(
-                                      alpha: 0.5,
+                                      alpha: 0.7,
                                     )),
                         size: 28,
                       ),

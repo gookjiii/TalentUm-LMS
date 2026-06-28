@@ -254,7 +254,7 @@ class _WebinarTile extends StatelessWidget {
       if (match != null && match.groupCount >= 2) {
         final videoId = match.group(2);
         if (videoId != null && videoId.length == 11) {
-          return 'https://www.youtube.com/embed/$videoId';
+          return 'https://www.youtube.com/embed/$videoId?playsinline=1&rel=0';
         }
       }
     }
@@ -359,18 +359,24 @@ class _WebinarTile extends StatelessWidget {
         context: context,
         builder: (context) {
           final isDark = Theme.of(context).brightness == Brightness.dark;
+          final isMobile = MediaQuery.sizeOf(context).width < 700;
+          
           return Dialog(
             backgroundColor: isDark ? SchoolColors.darkSurface : Colors.white,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(isMobile ? 0 : 24),
             ),
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 40,
-            ),
+            insetPadding: isMobile
+                ? EdgeInsets.zero
+                : const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 40,
+                  ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: AspectRatio(
+              borderRadius: BorderRadius.circular(isMobile ? 0 : 24),
+              child: SizedBox(
+                width: isMobile ? MediaQuery.sizeOf(context).width : 600,
+                child: AspectRatio(
                 aspectRatio: 16 / 9,
                 child: Stack(
                   children: [
@@ -396,8 +402,9 @@ class _WebinarTile extends StatelessWidget {
                 ),
               ),
             ),
-          );
-        },
+          ),
+        );
+      },
       );
     } else {
       launchUrl(Uri.parse(videoUrl));

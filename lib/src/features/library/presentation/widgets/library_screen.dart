@@ -14,6 +14,7 @@ import 'package:flutter/foundation.dart';
 import 'package:school_world/src/widgets/image_viewer.dart';
 import 'package:pdf_manipulator/pdf_manipulator.dart';
 import 'package:school_world/src/services/ilovepdf_service.dart';
+import 'package:school_world/src/utils/responsive_utils.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key, required this.classId});
@@ -123,11 +124,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               }
                             : null,
                         trailing: isTeacher
-                            ? IconButton.filledTonal(
+                            ? IconButton.filled(
                                 onPressed: () => _showUploadDialog(
                                   context,
                                   ref,
                                   effectiveClassId,
+                                ),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: SchoolColors.primary,
+                                  foregroundColor: Colors.white,
                                 ),
                                 icon: const Icon(Icons.add_rounded),
                                 tooltip: AppLocalizations.of(context)!.add,
@@ -155,7 +160,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     }
 
                     return SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final data = docs[index].data();

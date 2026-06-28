@@ -7,7 +7,7 @@ import '../app_state.dart';
 import '../firebase/school_repository.dart';
 import 'homework_detail_screen.dart';
 
-class HomeworkScreen extends StatelessWidget {
+class HomeworkScreen extends StatefulWidget {
   const HomeworkScreen({
     super.key,
     required this.repository,
@@ -20,7 +20,23 @@ class HomeworkScreen extends StatelessWidget {
   final String classId;
 
   @override
+  State<HomeworkScreen> createState() => _HomeworkScreenState();
+}
+
+class _HomeworkScreenState extends State<HomeworkScreen> {
+  String? _selectedAssignmentId;
+
+  @override
   Widget build(BuildContext context) {
+    if (_selectedAssignmentId != null) {
+      return HomeworkDetailScreen(
+        repository: widget.repository,
+        appState: widget.appState,
+        assignmentId: _selectedAssignmentId!,
+        onBack: () => setState(() => _selectedAssignmentId = null),
+      );
+    }
+
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: context.isMobile
@@ -28,7 +44,7 @@ class HomeworkScreen extends StatelessWidget {
           : AppBar(
               title: Text(l10n.homework),
               actions: [
-                if (appState.isTeacher)
+                if (widget.appState.isTeacher)
                   Container(
                     margin: const EdgeInsets.only(right: 12),
                     decoration: BoxDecoration(
@@ -55,8 +71,12 @@ class HomeworkScreen extends StatelessWidget {
               ],
             ),
       body: CachedStreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        streamFactory: () => repository.assignmentsForClass(classId),
-        keys: [classId],
+        streamFactory: () => widget.repository.firestore
+            .collection('assignments')
+            .where('classId', isEqualTo: widget.classId)
+            .orderBy('dueDate', descending: true)
+            .snapshots(),
+        keys: [widget.classId],
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -128,16 +148,7 @@ class HomeworkScreen extends StatelessWidget {
                         )
                       : null,
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => HomeworkDetailScreen(
-                        repository: repository,
-                        appState: appState,
-                        assignmentId: docs[i].id,
-                      ),
-                    ),
-                  ),
+                  onTap: () => setState(() => _selectedAssignmentId = docs[i].id),
                 ),
               );
             },
@@ -223,8 +234,8 @@ class HomeworkScreen extends StatelessWidget {
             FilledButton(
               onPressed: () async {
                 if (titleCtrl.text.isEmpty || dueDate == null) return;
-                await repository.createAssignment(
-                  classId: classId,
+                await widget.repository.createAssignment(
+                  classId: widget.classId,
                   title: titleCtrl.text,
                   description: descCtrl.text,
                   dueDate: dueDate!,

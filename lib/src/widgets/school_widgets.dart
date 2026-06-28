@@ -1279,9 +1279,6 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? SchoolColors.primary;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 400),
@@ -1291,43 +1288,24 @@ class EmptyState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start, // Asymmetric
             children: [
-              Stack(
-                children: [
-                  Positioned(
-                    left: 12,
-                    top: 12,
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: c.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                    ),
+              Container(
+                margin: const EdgeInsets.only(bottom: 24),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: (color ?? SchoolColors.primary).withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: (color ?? SchoolColors.primary).withValues(alpha: 0.15),
+                    width: 1,
                   ),
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: isDark ? SchoolColors.darkSurface : Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: c.withValues(alpha: 0.2),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: c.withValues(alpha: 0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Icon(icon, size: 32, color: c),
-                  ),
-                ],
+                ),
+                child: Icon(
+                  icon,
+                  size: 32,
+                  color: color ?? SchoolColors.primary,
+                ),
               ),
-              const SizedBox(height: 32),
+
               Text(
                 title,
                 style: TextStyle(
@@ -1805,6 +1783,7 @@ class PageHeader extends StatelessWidget {
     this.padding,
     this.titleStyle,
     this.subtitleStyle,
+    this.onBack,
   });
 
   final String title;
@@ -1815,6 +1794,7 @@ class PageHeader extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final TextStyle? titleStyle;
   final TextStyle? subtitleStyle;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -1834,33 +1814,36 @@ class PageHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: double.infinity,
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              runSpacing: 16,
-              spacing: 16,
-              children: [
-                Column(
+          if (subtitle != null) ...[
+            Text(
+              subtitle!,
+              style: subtitleStyle ??
+                  GoogleFonts.inter(
+                    color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 4),
+          ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (onBack != null) ...[
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  onPressed: onBack,
+                  splashRadius: 24,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (subtitle != null) ...[
-                      Text(
-                        subtitle!,
-                        style:
-                            subtitleStyle ??
-                            GoogleFonts.inter(
-                              color: isDark
-                                  ? SchoolColors.darkMuted
-                                  : SchoolColors.muted,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
                     Wrap(
                       crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 12,
@@ -1871,7 +1854,7 @@ class PageHeader extends StatelessWidget {
                           style:
                               titleStyle ??
                               GoogleFonts.plusJakartaSans(
-                                fontSize: isMobile ? 28 : 34,
+                                fontSize: isMobile ? 24 : 34,
                                 fontWeight: FontWeight.w800,
                                 height: 1.1,
                                 letterSpacing: 0,
@@ -1888,9 +1871,12 @@ class PageHeader extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (trailing != null) trailing!,
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 16),
+                trailing!,
               ],
-            ),
+            ],
           ),
         ],
       ),

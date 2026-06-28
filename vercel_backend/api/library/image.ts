@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { driveClient } from '../../utils/drive';
+import { getDriveClient } from '../../utils/drive';
+import { google } from 'googleapis';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS Preflight
@@ -16,25 +17,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { id } = req.query;
 
   if (!id || typeof id !== 'string') {
-    return res.status(400).json({ error: 'Missing image id' });
+    return res.status(400).json({ error: 'Missing or invalid file ID' });
   }
 
   try {
-    // We proxy the thumbnail endpoint because it reliably returns images
-    // and avoids the "too large to scan for viruses" HTML redirect issue of the uc endpoint.
-    const url = `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
-    const response = await fetch(url);
+    // Attempt 1: Fetch thumbnail directly using public unauthenticated Drive API
+    // This works if the file is shared as "Anyone with the link can view"
+    const publicUrl = `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
     
-    if (!response.ok) {
-      return res.status(response.status).json({ error: 'Failed to fetch image from Google Drive' });
+    // Check if public url works
+    const testResponse = await fetch(publicUrl);
+    if (testResponse.ok) {
+      const contentType = testResponse.headers.get('content-type');
+      if (contentType && contentType.startsWith('image/')) {
+        const buffer = await testResponse.arrayBuffer();
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        return res.status(200).send(Buffer.from(buffer));
+      }
     }
 
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
-
-    // If the file is private, Google Drive redirects to a login page, returning an HTML document.
-    // Instead of crashing the Flutter app with an ImageCodecException, we fallback to the authenticated Drive client.
-    if (contentType.includes('text/html')) {
+    // Attempt 2: If public URL doesn't return an image (likely returns HTML login page)
+    // we use the authenticated Service Account/OAuth
+    try {
       console.log(`Thumbnail for ${id} returned HTML (likely private). Falling back to authenticated driveClient...`);
+      const driveClient = await getDriveClient();
       const driveRes = await driveClient.files.get(
         { fileId: id, alt: 'media' },
         { responseType: 'stream' }
@@ -42,26 +50,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-      res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
-      res.setHeader('Content-Type', (driveRes.headers['content-type'] as string) || 'image/jpeg');
-
+      res.setHeader('Content-Type', driveRes.headers['content-type'] || 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
       return new Promise((resolve, reject) => {
         (driveRes.data as any)
           .on('end', () => resolve(res.end()))
           .on('error', (err: any) => reject(err))
           .pipe(res);
       });
+    } catch (authError: any) {
+      console.error(`Authenticated fetch failed for ${id}:`, authError.message);
+      return res.redirect(publicUrl); // Fallback to redirect
     }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
-    res.setHeader('Content-Type', contentType);
-
-    return res.send(buffer);
   } catch (error: any) {
     console.error('Error proxying image:', error);
     if (error.code === 404 || (error.response && error.response.status === 404)) {

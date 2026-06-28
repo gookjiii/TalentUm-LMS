@@ -1,27 +1,22 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { v2 as cloudinary } from 'cloudinary';
+import { handleCors, requireApiSecret } from '../../utils/api';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (handleCors(req, res)) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   const { publicId, resourceType } = req.body;
-  const authHeader = req.headers.authorization;
-  
+
   if (!publicId) {
     return res.status(400).json({ error: 'Missing publicId' });
   }
 
-  // Basic API Secret check to prevent unauthorized public deletion
-  const serverSecret = process.env.APP_API_SECRET;
-  if (serverSecret && authHeader !== `Bearer ${serverSecret}`) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid API Secret' });
+  if (!requireApiSecret(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
@@ -42,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const result = await cloudinary.uploader.destroy(publicId, {
       resource_type: resourceType || 'image',
     });
-    
+
     return res.status(200).json({ success: true, result });
   } catch (error: any) {
     console.error('Error deleting Cloudinary file:', error);

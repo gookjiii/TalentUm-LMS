@@ -2384,4 +2384,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String resetFailed(Object error) {
     return 'Ошибка сброса системы: $error';
   }
+
+  @override
+  String get lessonsToday => 'УРОКОВ СЕГОДНЯ';
+
+  @override
+  String activeBadge(int count) {
+    return '$count АКТИВНО';
+  }
 }

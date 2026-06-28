@@ -931,5 +931,14 @@
   "resetSystemDesc": "Это навсегда удалит все классы, задания, сообщения и сбросит связи пользователей. Учетные записи администраторов будут сохранены.",
   "confirmReset": "Подтвердить сброс",
   "resetSuccess": "Система успешно сброшена!",
-  "resetFailed": "Ошибка сброса системы: {error}"
+  "resetFailed": "Ошибка сброса системы: {error}",
+  "lessonsToday": "УРОКОВ СЕГОДНЯ",
+  "activeBadge": "{count} АКТИВНО",
+  "@activeBadge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -205,10 +205,20 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
         roomName = AppLocalizations.of(context)!.teachersRoom;
         color = SchoolColors.primary;
 
-        final roomDoc = await widget.repository.firestore
-            .collection('rooms')
-            .doc(roomId)
-            .get();
+        DocumentSnapshot<Map<String, dynamic>>? roomDoc;
+        try {
+          roomDoc = await widget.repository.firestore
+              .collection('rooms')
+              .doc(roomId)
+              .get(const GetOptions(source: Source.cache));
+        } catch (_) {}
+        if (roomDoc == null || !roomDoc.exists) {
+          roomDoc = await widget.repository.firestore
+              .collection('rooms')
+              .doc(roomId)
+              .get();
+        }
+
         if (!roomDoc.exists) {
           await widget.repository.firestore.collection('rooms').doc(roomId).set(
             {
@@ -228,10 +238,19 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
           );
         }
       } else {
-        final classDoc = await widget.repository.firestore
-            .collection('classes')
-            .doc(widget.classId)
-            .get();
+        DocumentSnapshot<Map<String, dynamic>>? classDoc;
+        try {
+          classDoc = await widget.repository.firestore
+              .collection('classes')
+              .doc(widget.classId)
+              .get(const GetOptions(source: Source.cache));
+        } catch (_) {}
+        if (classDoc == null || !classDoc.exists) {
+          classDoc = await widget.repository.firestore
+              .collection('classes')
+              .doc(widget.classId)
+              .get();
+        }
 
         if (!mounted || widget.classId != capturedClassId) return;
 
@@ -239,8 +258,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
 
         teacherId = classDoc.data()?['teacherId'] as String?;
         roomId = classDoc.data()?['chatRoomId'] as String?;
-        roomName =
-            classDoc.data()?['name']?.toString() ??
+        roomName = classDoc.data()?['name']?.toString() ??
             AppLocalizations.of(context)!.unknownKey8;
         color = parseHexColor(classDoc.data()?['coverColor']);
       }
@@ -279,8 +297,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
 
       if (!mounted || widget.classId != capturedClassId) return;
 
-      final controller =
-          widget.preloadedController ??
+      final controller = widget.preloadedController ??
           FirebaseChatController(
             firestore: widget.repository.firestore,
             roomId: roomId,
@@ -337,13 +354,17 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
     final myUid = widget.repository.uid;
     if (myUid == null) return;
 
+    // Since we use a cursor model now, we only need to mark the latest unseen message.
+    // Assuming msgs is sorted with the newest at the beginning (or we just find the first unseen).
     for (final msg in msgs) {
       if (msg.authorId == myUid) continue;
       if (_seenMarkQueued.contains(msg.id)) continue;
+
       final seenBy = List<String>.from(msg.metadata?['seenBy'] ?? []);
       if (!seenBy.contains(myUid)) {
         _seenMarkQueued.add(msg.id);
         widget.repository.markMessageAsSeen(_roomId!, msg.id);
+        break; // Only update cursor for the latest unseen message
       }
     }
   }
@@ -497,9 +518,8 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
       if (attachment != null) {
         final path =
             'classes/${widget.classId}/messages/${DateTime.now().millisecondsSinceEpoch}_${attachment.name}';
-        final uploadPath = attachment.type == AttachmentType.image
-            ? _asJpegPath(path)
-            : path;
+        final uploadPath =
+            attachment.type == AttachmentType.image ? _asJpegPath(path) : path;
 
         Map<String, dynamic>? resultData;
         if (attachment.type == AttachmentType.image) {
@@ -604,8 +624,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
     final theme = Theme.of(context);
     final emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '👏'];
     final isMe = msg.authorId == widget.repository.uid;
-    final isLeadOfClass =
-        widget.appState.isTeacher ||
+    final isLeadOfClass = widget.appState.isTeacher ||
         (_classTeacherId != null && _classTeacherId == widget.repository.uid);
 
     if (position == null) {
@@ -1107,7 +1126,6 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
             }
           },
           onCamera: kIsWeb ? null : _onCamera,
-
           replyingTo: _replyingTo,
           onCancelReply: () => setState(() => _replyingTo = null),
           editingMessage: _editingMessage,
@@ -1253,9 +1271,8 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
                       chatController: _chatController!,
                       onClose: () =>
                           setState(() => _showResourceSidebar = false),
-                      initialTab: _sidebarInitialTab == 3
-                          ? 0
-                          : _sidebarInitialTab,
+                      initialTab:
+                          _sidebarInitialTab == 3 ? 0 : _sidebarInitialTab,
                       showMembersOnly: _sidebarInitialTab == 3,
                     ),
                   ),

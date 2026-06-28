@@ -263,11 +263,12 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                         ),
                       Expanded(
                         child: WorkspacePanel(
+                          borderRadius: wide ? 28 : 0,
                           margin: EdgeInsets.fromLTRB(
-                            wide ? 8 : 16,
-                            16,
-                            wide ? 8 : 16,
-                            wide ? 16 : 16,
+                            wide ? 8 : 0,
+                            wide ? 16 : 0,
+                            wide ? 8 : 0,
+                            0,
                           ),
                           child: content,
                         ),
@@ -380,59 +381,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
     AppLocalizations l10n,
     List<Map<String, dynamic>> classes,
   ) {
-    const mobileIndices = [0, 1, 2, 3, 7];
-
-    if (!wide && !mobileIndices.contains(index)) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (ctx) => Consumer(
-            builder: (ctx, ref, _) {
-              final currentId =
-                  ref.watch(
-                    schoolAppStateProvider.select((s) => s.selectedClassId),
-                  ) ??
-                  selectedId;
-
-              return Scaffold(
-                appBar: AppBar(
-                  title: Text(_getStudentTabTitle(index, l10n)),
-                  centerTitle: true,
-                  actions: [
-                    if (classes.length > 1)
-                      IconButton(
-                        icon: const Icon(Icons.swap_horiz_rounded),
-                        onPressed: () {
-                          showClassSwitcher(
-                            context: ctx,
-                            classes: classes,
-                            currentClassId: currentId ?? '',
-                            onSelect: (id) {
-                              ref.read(schoolAppStateProvider).selectClass(id);
-                            },
-                          );
-                        },
-                      ),
-                  ],
-                ),
-                body: Container(
-                  color: Theme.of(ctx).colorScheme.surface,
-                  child: _getStudentTabWidget(
-                    index,
-                    currentId,
-                    repo,
-                    appState,
-                    classes,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      );
-    } else {
-      setState(() => _tabIndex = index);
-    }
+    setState(() => _tabIndex = index);
   }
 
   String _getStudentTabTitle(int index, AppLocalizations l10n) {
@@ -604,9 +553,11 @@ class _NavTabItem extends StatelessWidget {
                     ? SchoolColors.primary
                     : (isDark
                           ? SchoolColors.darkTextSecondary.withValues(
-                              alpha: 0.5,
+                              alpha: 0.7,
                             )
-                          : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                          : SchoolColors.textSecondary.withValues(
+                              alpha: 0.7,
+                            )),
                 size: 28,
               ),
             ),
@@ -1097,9 +1048,16 @@ class _MobileTabBar extends StatelessWidget {
             border: Border.all(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.12)
-                  : SchoolColors.border.withValues(alpha: 0.8),
+                  : SchoolColors.border,
               width: 1.0,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
+                blurRadius: 32,
+                offset: const Offset(0, 12),
+              ),
+            ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1145,14 +1103,14 @@ class _MobileTabBar extends StatelessWidget {
           border: Border.all(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.08)
-                : SchoolColors.border.withValues(alpha: 0.5),
+                : SchoolColors.border,
             width: 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
+              blurRadius: 32,
+              offset: const Offset(0, 12),
             ),
           ],
         ),

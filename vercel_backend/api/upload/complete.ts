@@ -1,20 +1,31 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { getDriveClient } from '../../utils/drive';
 import { Client } from 'pg';
+import { handleCors, verifyFirebaseToken, checkRateLimit } from '../../utils/api';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (handleCors(req, res)) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  if (!checkRateLimit(req, 20, 60000)) {
+    return res.status(429).json({ error: 'Too Many Requests' });
+  }
+
+  const authUser = await verifyFirebaseToken(req);
+  if (!authUser) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid or missing Firebase ID token' });
+  }
+
   const { id, driveFileId } = req.body;
 
-  if (!id || !driveFileId) {
+  if (typeof id !== 'string' && typeof id !== 'number') {
+    return res.status(400).json({ error: 'Invalid parameter: id' });
+  }
+
+  if (typeof driveFileId !== 'string' || driveFileId.trim().length === 0) {
     return res.status(400).json({ error: 'Missing parameters: id, driveFileId' });
   }
 
@@ -28,9 +39,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await dbClient.connect();
   } catch (dbError: any) {
     console.error('Database connection failed:', dbError);
-    return res.status(500).json({ 
-      error: 'Database connection failed. Is the database paused?', 
-      details: dbError.message 
+    return res.status(500).json({
+      error: 'Database connection failed. Is the database paused?',
+      details: dbError.message
     });
   }
 
@@ -58,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       file.webViewLink,
       file.webContentLink,
       file.thumbnailLink,
-      id,
+      id.toString(),
     ]);
 
     return res.status(200).json({ success: true, file });

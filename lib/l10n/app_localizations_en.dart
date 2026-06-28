@@ -2384,4 +2384,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String resetFailed(Object error) {
     return 'System reset failed: $error';
   }
+
+  @override
+  String get lessonsToday => 'LESSONS TODAY';
+
+  @override
+  String activeBadge(int count) {
+    return '$count ACTIVE';
+  }
 }

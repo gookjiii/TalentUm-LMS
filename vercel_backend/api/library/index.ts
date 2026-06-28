@@ -1,11 +1,9 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { Client } from 'pg';
+import { handleCors } from '../../utils/api';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (handleCors(req, res)) return;
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method Not Allowed' });

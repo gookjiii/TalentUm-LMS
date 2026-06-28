@@ -940,5 +940,14 @@
   "resetSystemDesc": "This will permanently delete all classes, assignments, messages, and reset user associations. Admin accounts will be preserved.",
   "confirmReset": "Confirm Reset",
   "resetSuccess": "System reset successfully!",
-  "resetFailed": "System reset failed: {error}"
+  "resetFailed": "System reset failed: {error}",
+  "lessonsToday": "LESSONS TODAY",
+  "activeBadge": "{count} ACTIVE",
+  "@activeBadge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

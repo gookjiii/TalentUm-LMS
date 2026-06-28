@@ -18,11 +18,13 @@ class HomeworkDetailScreen extends StatefulWidget {
     required this.repository,
     required this.appState,
     required this.assignmentId,
+    this.onBack,
   });
 
   final SchoolRepository repository;
   final SchoolAppState appState;
   final String assignmentId;
+  final VoidCallback? onBack;
 
   @override
   State<HomeworkDetailScreen> createState() => _HomeworkDetailScreenState();
@@ -54,10 +56,8 @@ class _HomeworkDetailScreenState extends State<HomeworkDetailScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: MediaQuery.sizeOf(context).width < 720
-          ? null
-          : AppBar(title: Text(l10n.assignment)),
-      body: CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      body: SafeArea(
+        child: CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         streamFactory: () => widget.repository.firestore
             .collection('assignments')
             .doc(widget.assignmentId)
@@ -93,6 +93,11 @@ class _HomeworkDetailScreenState extends State<HomeworkDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        PageHeader(
+                          title: l10n.assignment,
+                          onBack: widget.onBack,
+                          padding: const EdgeInsets.only(bottom: 24),
+                        ),
                         _AssignmentSummary(data: data),
                         const SizedBox(height: 18),
                         if (widget.appState.role == 'student')
@@ -118,6 +123,7 @@ class _HomeworkDetailScreenState extends State<HomeworkDetailScreen> {
             },
           );
         },
+      ),
       ),
     );
   }
@@ -157,7 +163,13 @@ class _HomeworkDetailScreenState extends State<HomeworkDetailScreen> {
           attachments: attachments,
         );
       }
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        if (widget.onBack != null) {
+          widget.onBack!();
+        } else {
+          Navigator.pop(context);
+        }
+      }
     } catch (e) {
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;

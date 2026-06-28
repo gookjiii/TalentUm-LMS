@@ -17,14 +17,17 @@ mixin SchoolRepositoryChat {
     // Defer execution to next tick to avoid synchronous Firestore JS SDK stream conflicts during render/visibility callbacks
     Future.delayed(Duration.zero, () async {
       try {
+        // Phase 2: Cursor-based read receipts for scalability
+        // Replaces the heavy message-level arrayUnion updates.
         await firestore
             .collection('rooms')
             .doc(roomId)
-            .collection('messages')
-            .doc(messageId)
-            .update({
-              'metadata.seenBy': FieldValue.arrayUnion([uid]),
-            });
+            .collection('seenCursors')
+            .doc(uid)
+            .set({
+          'lastSeenMessageId': messageId,
+          'lastSeenAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
       } catch (e) {
         debugPrint('Error marking message as seen: $e');
       }
@@ -39,12 +42,9 @@ mixin SchoolRepositoryChat {
     if (['jpg', 'jpeg', 'png'].contains(ext)) {
       try {
         final bytes = await file.readAsBytes();
-        final image = img.decodeImage(bytes);
-        if (image != null && image.width > 1200) {
-          final resized = img.copyResize(image, width: 1200);
-          final compressedBytes = Uint8List.fromList(
-            img.encodeJpg(resized, quality: 85),
-          );
+        final compressedBytes = await compute(_compressImageTask, bytes);
+
+        if (compressedBytes != null) {
           final tempDir = file.parent.path;
           final tempFile = File(
             '$tempDir/temp_compressed_${DateTime.now().millisecondsSinceEpoch}.jpg',
@@ -70,10 +70,9 @@ mixin SchoolRepositoryChat {
 
     // Web compression
     try {
-      final image = img.decodeImage(bytes);
-      if (image != null && image.width > 1200) {
-        final resized = img.copyResize(image, width: 1200);
-        finalBytes = Uint8List.fromList(img.encodeJpg(resized, quality: 85));
+      final compressedBytes = await compute(_compressImageTask, bytes);
+      if (compressedBytes != null) {
+        finalBytes = compressedBytes;
       }
     } catch (e) {
       debugPrint('Web image compression error: $e');
@@ -105,4 +104,16 @@ mixin SchoolRepositoryChat {
         .orderBy('createdAt', descending: true)
         .safeSnapshots();
   }
+}
+
+// Top-level function for isolate computation
+Uint8List? _compressImageTask(Uint8List bytes) {
+  try {
+    final image = img.decodeImage(bytes);
+    if (image != null && image.width > 1200) {
+      final resized = img.copyResize(image, width: 1200);
+      return Uint8List.fromList(img.encodeJpg(resized, quality: 85));
+    }
+  } catch (_) {}
+  return null;
 }

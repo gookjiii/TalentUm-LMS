@@ -10,7 +10,7 @@ import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/widgets/file_preview.dart';
-
+import 'package:school_world/src/utils/responsive_utils.dart';
 class TeacherAssignments extends StatefulWidget {
   const TeacherAssignments({super.key, required this.classId, this.className});
   final String classId;
@@ -238,7 +238,7 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                     ),
                     Expanded(
                       child: ListView(
-                        padding: EdgeInsets.fromLTRB(32, 24, 32, 40),
+                        padding: EdgeInsets.fromLTRB(context.horizontalPadding, 24, context.horizontalPadding, 40),
                         children: [
                           _HomeworkHeader(doc: selectedDoc),
                           SizedBox(height: 24),
@@ -519,26 +519,22 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
                       );
                     }
                   : null,
-              trailing: FilledButton.icon(
+              trailing: IconButton.filled(
                 onPressed: widget.onCreate,
-                style: FilledButton.styleFrom(
-                  minimumSize: Size.zero,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                style: IconButton.styleFrom(
+                  backgroundColor: SchoolColors.primary,
+                  foregroundColor: Colors.white,
                 ),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: Text(AppLocalizations.of(context)!.createATask),
+                icon: const Icon(Icons.add_rounded, size: 24),
+                tooltip: AppLocalizations.of(context)!.createATask,
               ),
-              padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
+              padding: EdgeInsets.fromLTRB(context.horizontalPadding, 32, context.horizontalPadding, 0),
             );
           },
         ),
         const SizedBox(height: 24),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 32),
+          padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
           child: Wrap(
             spacing: 8,
             children: [
@@ -563,7 +559,7 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
         const SizedBox(height: 24),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
+            padding: EdgeInsets.fromLTRB(context.horizontalPadding, 0, context.horizontalPadding, 32),
             children: [
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -763,7 +759,7 @@ class _HomeworkTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: SchoolColors.border)),

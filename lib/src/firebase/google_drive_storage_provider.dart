@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'storage_provider.dart';
 
@@ -25,11 +26,13 @@ class GoogleDriveStorageProvider implements StorageProvider {
     final fileName = path.split('/').last;
     final length = await file.length();
     final mimeType = _getMimeType(fileName);
+    final authOptions = await _authOptions();
 
     // Step 1: Initiate resumable session via backend proxy
     final initiateResponse = await _dio.post(
       '$backendBaseUrl/api/upload/initiate',
       data: {'name': fileName, 'mimeType': mimeType, 'size': length},
+      options: authOptions,
     );
 
     if (initiateResponse.statusCode != 200) {
@@ -71,6 +74,7 @@ class GoogleDriveStorageProvider implements StorageProvider {
     final completeResponse = await _dio.post(
       '$backendBaseUrl/api/upload/complete',
       data: {'id': recordId, 'driveFileId': driveFileId},
+      options: authOptions,
     );
 
     if (completeResponse.statusCode != 200) {
@@ -101,11 +105,13 @@ class GoogleDriveStorageProvider implements StorageProvider {
     final fileName = path.split('/').last;
     final length = bytes.length;
     final mimeType = _getMimeType(fileName);
+    final authOptions = await _authOptions();
 
     // Step 1: Initiate session via backend proxy
     final initiateResponse = await _dio.post(
       '$backendBaseUrl/api/upload/initiate',
       data: {'name': fileName, 'mimeType': mimeType, 'size': length},
+      options: authOptions,
     );
 
     if (initiateResponse.statusCode != 200) {
@@ -145,6 +151,7 @@ class GoogleDriveStorageProvider implements StorageProvider {
     final completeResponse = await _dio.post(
       '$backendBaseUrl/api/upload/complete',
       data: {'id': recordId, 'driveFileId': driveFileId},
+      options: authOptions,
     );
 
     if (completeResponse.statusCode != 200) {
@@ -204,5 +211,13 @@ class GoogleDriveStorageProvider implements StorageProvider {
     if (ext == 'zip') return 'application/zip';
     if (ext == 'rar') return 'application/x-rar-compressed';
     return 'application/octet-stream';
+  }
+
+  Future<Options> _authOptions() async {
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (idToken == null) {
+      throw Exception('User must be signed in to upload files');
+    }
+    return Options(headers: {'Authorization': 'Bearer $idToken'});
   }
 }

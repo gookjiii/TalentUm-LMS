@@ -1,22 +1,18 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { v2 as cloudinary } from 'cloudinary';
-import { driveClient } from '../../utils/drive';
+import { getDriveClient } from '../../utils/drive';
 import { firebaseAdmin, dbAdmin } from '../../utils/firebase';
+import { handleCors, requireApiSecret } from '../../utils/api';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (handleCors(req, res)) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const authHeader = req.headers.authorization;
-  const serverSecret = process.env.APP_API_SECRET;
-  if (serverSecret && authHeader !== `Bearer ${serverSecret}`) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid API Secret' });
+  if (!requireApiSecret(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const dryRun = req.body.dryRun === true;
@@ -64,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const bucketName = process.env.FIREBASE_STORAGE_BUCKET || 'school-wolrd.firebasestorage.app';
       const bucket = firebaseAdmin.storage().bucket(bucketName);
       const [files] = await bucket.getFiles();
-      
+
       for (const file of files) {
         const fileName = file.name;
         // Skip system folders
@@ -119,7 +115,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const isReferenced = Array.from(activeRefs).some(
             (ref) => ref.includes(publicId) || ref === secureUrl || ref === url
           );
-          
+
           if (!isReferenced) {
             publicIdsToDelete.push(publicId);
             cloudinaryDeletedBytes += asset.bytes || 0;
@@ -143,7 +139,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
       if (driveFolderId) {
-        const driveResponse = await driveClient.files.list({
+        const drive = await getDriveClient();
+        const driveResponse = await drive.files.list({
           q: `'${driveFolderId}' in parents and trashed = false`,
           fields: 'files(id, name, size)',
         });
@@ -158,7 +155,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const isReferenced = Array.from(activeRefs).some((ref) => ref.includes(fileId));
             if (!isReferenced) {
               if (!dryRun) {
-                await driveClient.files.delete({
+                await drive.files.delete({
                   fileId: fileId,
                   supportsAllDrives: true,
                 });
