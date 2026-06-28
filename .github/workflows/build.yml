@@ -242,12 +242,15 @@ jobs:
         run: echo "<!-- DEPLOY_TS_$(date +%s) -->" >> build/web/index.html
 
       - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          channelId: live
-          projectId: school-wolrd
+        env:
+          FIREBASE_SERVICE_ACCOUNT_SCHOOL_WOLRD: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT_SCHOOL_WOLRD" > "$RUNNER_TEMP/firebase-service-account.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-service-account.json"
+          npx --yes firebase-tools@12.9.1 deploy \
+            --only hosting \
+            --project school-wolrd \
+            --non-interactive
 
   # ─────────────────────────────────────────
   # 📦 Create GitHub Release (on tag)
