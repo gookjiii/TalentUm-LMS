@@ -15,7 +15,7 @@ import 'package:school_world/src/utils/responsive_utils.dart';
 
 import 'package:school_world/src/screens/settings_screen.dart';
 import 'package:school_world/src/screens/student_shell.dart';
-import 'package:school_world/src/features/today/presentation/widgets/learning_streak_widget.dart';
+
 
 class StudentToday extends ConsumerWidget {
   const StudentToday({
@@ -24,12 +24,14 @@ class StudentToday extends ConsumerWidget {
     required this.selectedClassId,
     required this.onTabSelect,
     required this.onHomeworkTap,
+    this.onProfileTap,
     this.showSidebar = false,
   });
   final List<Map<String, dynamic>> classes;
   final String? selectedClassId;
   final ValueChanged<int> onTabSelect;
   final VoidCallback onHomeworkTap;
+  final VoidCallback? onProfileTap;
   final bool showSidebar;
 
   @override
@@ -91,15 +93,16 @@ class StudentToday extends ConsumerWidget {
                 name: name,
                 avatarUrl: avatarUrl,
                 radius: 23,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (ctx) => SettingsScreen(
-                      repository: AppScope.of(ctx).repository,
-                      appState: AppScope.of(ctx).appState,
+                onTap: onProfileTap ??
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (ctx) => SettingsScreen(
+                          repository: AppScope.of(ctx).repository,
+                          appState: AppScope.of(ctx).appState,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
                 showBorder: true,
               ),
             ),
@@ -146,7 +149,6 @@ class StudentToday extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                 ],
-                const LearningStreakWidget(),
               ],
             ),
           ),

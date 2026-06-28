@@ -20,7 +20,6 @@ import '../features/today/presentation/widgets/student_today.dart';
 import '../features/homework/presentation/widgets/student_homework.dart';
 import '../features/feed/presentation/widgets/student_feed.dart';
 import '../features/shared/presentation/widgets/student_sidebar.dart';
-import '../features/shared/presentation/widgets/student_right_sidebar.dart';
 import '../features/library/presentation/widgets/library_screen.dart';
 import '../features/webinars/presentation/widgets/webinars_screen.dart';
 
@@ -105,11 +104,27 @@ class _StudentShellState extends ConsumerState<StudentShell> {
               ),
             ];
 
+            void onProfileTap() {
+              if (wide) {
+                setState(() => _tabIndex = 8);
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (ctx) => SettingsScreen(
+                      repository: repo,
+                      appState: appState,
+                    ),
+                  ),
+                );
+              }
+            }
+
             final content = FadeIndexedStack(
               index: _tabIndex,
               children: [
                 if (!hasClasses)
-                  const JoinClassEmptyState()
+                  JoinClassEmptyState(onProfileTap: onProfileTap)
                 else
                   StudentToday(
                     classes: classes,
@@ -134,6 +149,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                             classes,
                           )
                         : () {},
+                    onProfileTap: onProfileTap,
                   ),
 
                 if (hasClasses && selectedId != null)
@@ -141,6 +157,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                     classId: selectedId,
                     classes: classes,
                     onClassSelect: (id) => appState.selectClass(id),
+                    onProfileTap: onProfileTap,
                   )
                 else
                   _FeatureLockedEmptyState(
@@ -209,6 +226,8 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                     title: AppLocalizations.of(context)!.magazine,
                     icon: Icons.book_outlined,
                   ),
+
+                SettingsScreen(repository: repo, appState: appState),
               ],
             );
 
@@ -240,15 +259,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                           classes: classes,
                           activeClassId: selectedId,
                           onSelectClass: (id) => appState.selectClass(id),
-                          onProfileTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (ctx) => SettingsScreen(
-                                repository: AppScope.of(ctx).repository,
-                                appState: AppScope.of(ctx).appState,
-                              ),
-                            ),
-                          ),
+                          onProfileTap: onProfileTap,
                         ),
                       Expanded(
                         child: WorkspacePanel(
@@ -480,7 +491,8 @@ class _FeatureLockedEmptyState extends StatelessWidget {
 }
 
 class JoinClassEmptyState extends ConsumerWidget {
-  const JoinClassEmptyState({super.key});
+  const JoinClassEmptyState({super.key, this.onProfileTap});
+  final VoidCallback? onProfileTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -515,7 +527,7 @@ class JoinClassEmptyState extends ConsumerWidget {
               name: name,
               avatarUrl: avatarUrl,
               radius: 23,
-              onTap: () => Navigator.push(
+              onTap: onProfileTap ?? () => Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (ctx) => SettingsScreen(

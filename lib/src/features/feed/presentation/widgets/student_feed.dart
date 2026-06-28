@@ -16,10 +16,12 @@ class StudentFeed extends StatefulWidget {
     required this.classId,
     required this.classes,
     required this.onClassSelect,
+    this.onProfileTap,
   });
   final String classId;
   final List<Map<String, dynamic>> classes;
   final ValueChanged<String> onClassSelect;
+  final VoidCallback? onProfileTap;
 
   @override
   State<StudentFeed> createState() => _StudentFeedState();
@@ -118,15 +120,16 @@ class _StudentFeedState extends State<StudentFeed> {
                             name: name,
                             userId: user?.uid,
                             radius: 22,
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (ctx) => SettingsScreen(
-                                  repository: AppScope.of(ctx).repository,
-                                  appState: AppScope.of(ctx).appState,
+                            onTap: widget.onProfileTap ??
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (ctx) => SettingsScreen(
+                                      repository: AppScope.of(ctx).repository,
+                                      appState: AppScope.of(ctx).appState,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
