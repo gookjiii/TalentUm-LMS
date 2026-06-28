@@ -248,10 +248,22 @@ jobs:
 
       - name: Deploy to Firebase Hosting
         run: |
+          set +e
           npx --yes firebase-tools@latest deploy \
             --only hosting \
             --project school-wolrd \
-            --non-interactive
+            --non-interactive > deploy_output.log 2>&1
+          EXIT_CODE=$?
+          cat deploy_output.log
+          if [ $EXIT_CODE -ne 0 ]; then
+            if grep -q "is the current active version" deploy_output.log; then
+              echo "✅ Deployment is already up to date. Ignoring the active version error."
+              exit 0
+            else
+              echo "❌ Firebase deploy failed."
+              exit $EXIT_CODE
+            fi
+          fi
 
   # ─────────────────────────────────────────
   # 📦 Create GitHub Release (on tag)
