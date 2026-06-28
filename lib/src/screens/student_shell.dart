@@ -61,7 +61,6 @@ class _StudentShellState extends ConsumerState<StudentShell> {
         return LayoutBuilder(
           builder: (context, constraints) {
             final wide = constraints.maxWidth >= 900;
-            const showRightSidebar = false;
 
             final navItems = [
               NavDest(
@@ -124,7 +123,6 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                       l10n,
                       classes,
                     ),
-                    showSidebar: showRightSidebar,
                     onHomeworkTap: selectedId != null
                         ? () => _handleTabSelection(
                             3,
@@ -263,11 +261,6 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                           child: content,
                         ),
                       ),
-                      if (showRightSidebar && hasClasses)
-                        SizedBox(
-                          width: 320,
-                          child: StudentRightSidebar(classes: classes),
-                        ),
                     ],
                   ),
                 ),

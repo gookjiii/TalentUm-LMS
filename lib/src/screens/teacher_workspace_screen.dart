@@ -99,8 +99,6 @@ class _TeacherWorkspaceScreenState
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 900;
         final extraWide = constraints.maxWidth >= 1200;
-        const showRightSidebar = false;
-
         final navItems = [
           TeacherNavDest(
             l10n.today,
@@ -219,7 +217,6 @@ class _TeacherWorkspaceScreenState
                       onCopyGuestLink: _copyGuestInviteLink,
                       onCreateClass: _createClass,
                       onProfileTap: onProfileTap,
-                      showSidebar: showRightSidebar,
                     ),
 
                   hasClasses && activeId != null
@@ -364,8 +361,6 @@ class _TeacherWorkspaceScreenState
                       child: content,
                     ),
                   ),
-                  if (showRightSidebar && hasClasses)
-                    TeacherRightSidebar(classes: classes),
                 ],
               ),
             ),

@@ -46,14 +46,6 @@ class _ChatHeaderState extends State<ChatHeader> {
   bool _isMobileSearching = false;
   final FocusNode _searchFocusNode = FocusNode();
 
-  Future<Map<String, dynamic>?> _getUserData(String uid) async {
-    final doc = await widget.repository.firestore
-        .collection('users')
-        .doc(uid)
-        .get();
-    return doc.data();
-  }
-
   @override
   void initState() {
     super.initState();
@@ -876,9 +868,5 @@ class _ChatHeaderState extends State<ChatHeader> {
         );
       },
     );
-  }
-
-  void _showMobileSearch(BuildContext context) {
-    // Deprecated in favor of inline SearchBar
   }
 }
