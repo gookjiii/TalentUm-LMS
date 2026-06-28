@@ -238,8 +238,11 @@ class _TeacherFeedState extends State<TeacherFeed> {
                 );
               }
               return SliverPadding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: context.horizontalPadding,
+                padding: EdgeInsets.fromLTRB(
+                  context.horizontalPadding,
+                  0,
+                  context.horizontalPadding,
+                  MediaQuery.paddingOf(context).bottom,
                 ),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
@@ -274,7 +277,7 @@ class _TeacherFeedState extends State<TeacherFeed> {
 }
 
 class _InlineComposer extends StatefulWidget {
-  const _InlineComposer({required this.classes, required this.initialClassId});
+  const _InlineComposer({super.key, required this.classes, required this.initialClassId});
   final List<Map<String, dynamic>> classes;
   final String initialClassId;
 

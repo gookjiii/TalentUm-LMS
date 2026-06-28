@@ -278,7 +278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return Scaffold(
           appBar: AppBar(title: Text(l10n.settings), centerTitle: false),
           body: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            padding: context.screenPadding,
             children: [
               // ── Profile section ─────────────────────────────────
               SectionLabel(label: l10n.profile),
@@ -591,7 +591,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 28),
 
               // ── Danger zone ─────────────────────────────────────
-              _SectionLabel(
+              SectionLabel(
                 label: isRu
                     ? AppLocalizations.of(context)!.dangerZone
                     : 'Danger Zone',

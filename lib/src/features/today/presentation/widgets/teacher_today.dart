@@ -70,7 +70,6 @@ class _TeacherTodayState extends State<TeacherToday> {
             ? profile['name'].toString().trim()
             : (user?.displayName ?? AppLocalizations.of(context)!.teacher);
         final avatarUrl = profile['avatarUrl']?.toString();
-        final firstName = name.split(RegExp(r'\s+')).first;
 
         final now = DateTime.now();
         final greeting = l10n.welcomeToTalentum;

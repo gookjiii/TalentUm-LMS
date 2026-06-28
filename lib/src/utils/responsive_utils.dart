@@ -25,14 +25,15 @@ class AppResponsive {
     return MediaQuery.sizeOf(context).width >= tabletBreakpoint;
   }
 
-  /// Returns a responsive padding based on screen size.
+  /// Returns a responsive padding based on screen size, accounting for bottom safe area.
   static EdgeInsets screenPadding(BuildContext context) {
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
     if (isMobile(context)) {
-      return const EdgeInsets.all(16.0);
+      return EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0 + bottomPadding);
     } else if (isTablet(context)) {
-      return const EdgeInsets.all(24.0);
+      return EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 24.0 + bottomPadding);
     } else {
-      return const EdgeInsets.all(32.0);
+      return EdgeInsets.fromLTRB(32.0, 32.0, 32.0, 32.0 + bottomPadding);
     }
   }
 

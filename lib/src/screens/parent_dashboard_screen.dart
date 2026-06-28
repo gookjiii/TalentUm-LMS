@@ -6,6 +6,7 @@ import '../firebase/school_repository.dart';
 import '../widgets/school_widgets.dart';
 import '../theme.dart';
 import 'settings_screen.dart';
+import '../utils/responsive_utils.dart';
 
 class ParentDashboardScreen extends StatefulWidget {
   const ParentDashboardScreen({
@@ -192,7 +193,7 @@ class _ParentClassDetailScreen extends StatelessWidget {
                 return Center(child: Text(l10n.noAssignmentsYet));
               }
               return ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: context.screenPadding,
                 itemCount: assignments.length,
                 itemBuilder: (context, index) {
                   final assignment = assignments[index].data();

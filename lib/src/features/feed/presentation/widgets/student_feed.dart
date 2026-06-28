@@ -245,7 +245,7 @@ class _StudentFeedState extends State<StudentFeed> {
                         context.horizontalPadding,
                         8,
                         context.horizontalPadding,
-                        40,
+                        40 + MediaQuery.paddingOf(context).bottom,
                       ),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate((context, index) {
