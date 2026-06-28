@@ -10,12 +10,7 @@ let authClient: any = null;
 let driveClientInstance: any = null;
 
 try {
-  if (clientId && clientSecret && refreshToken) {
-    // Use OAuth2 Refresh Token (Best for Personal @gmail.com accounts with 5TB quota)
-    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
-    oauth2Client.setCredentials({ refresh_token: refreshToken });
-    authClient = oauth2Client;
-  } else if (serviceAccountJson) {
+  if (serviceAccountJson) {
     // Use Service Account (Best for Workspace accounts with Shared Drives)
     const credentials = JSON.parse(serviceAccountJson);
     if (credentials.private_key) {
@@ -26,6 +21,11 @@ try {
       key: credentials.private_key,
       scopes: ['https://www.googleapis.com/auth/drive'],
     });
+  } else if (clientId && clientSecret && refreshToken) {
+    // Use OAuth2 Refresh Token (Best for Personal @gmail.com accounts with 5TB quota)
+    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
+    authClient = oauth2Client;
   } else {
     console.warn('Missing Google authentication configuration.');
   }
