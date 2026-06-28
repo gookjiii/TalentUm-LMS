@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { auth, SHARED_FOLDER_ID } from '../../utils/drive';
+import { getWorkingAuthClient, SHARED_FOLDER_ID } from '../../utils/drive';
 import { Client } from 'pg';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -35,6 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const auth = await getWorkingAuthClient();
     const tokenResponse = await auth.getAccessToken();
     const accessToken = tokenResponse.token;
 

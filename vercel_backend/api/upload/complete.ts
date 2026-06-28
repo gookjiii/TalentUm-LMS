@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { driveClient } from '../../utils/drive';
+import { getDriveClient } from '../../utils/drive';
 import { Client } from 'pg';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -35,6 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const driveClient = await getDriveClient();
     const driveRes = await driveClient.files.get({
       fileId: driveFileId,
       fields: 'id, name, mimeType, webViewLink, webContentLink, thumbnailLink',
