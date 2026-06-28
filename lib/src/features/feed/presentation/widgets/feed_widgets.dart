@@ -7,7 +7,6 @@ import 'package:school_world/main.dart';
 import 'package:school_world/src/firebase/school_repository.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
-import 'package:school_world/src/utils/open_external_url.dart';
 import 'package:school_world/src/utils/string_extensions.dart';
 
 class PostCard extends StatefulWidget {

@@ -1360,7 +1360,6 @@ class ChatBubbleBuilders {
 
 class _ReactionsArea extends ConsumerWidget {
   const _ReactionsArea({
-    super.key,
     required this.roomId,
     required this.messageId,
     required this.myUid,

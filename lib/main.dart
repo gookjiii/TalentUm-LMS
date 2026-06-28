@@ -19,7 +19,6 @@ import 'src/screens/student_shell.dart';
 import 'src/screens/teacher_workspace_screen.dart';
 import 'src/features/parent_dashboard/presentation/screens/parent_home_screen.dart';
 import 'src/theme.dart';
-import 'src/utils/reload_app.dart';
 import 'src/utils/splash_loader.dart';
 import 'package:provider/provider.dart' as provider_pkg;
 import 'src/firebase/push_notification_manager.dart';
