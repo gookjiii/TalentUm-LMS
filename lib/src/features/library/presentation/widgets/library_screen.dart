@@ -141,6 +141,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   data: (docs) {
                     if (docs.isEmpty) {
                       return SliverFillRemaining(
+                        hasScrollBody: false,
                         child: EmptyState(
                           icon: Icons.library_books_outlined,
                           title: AppLocalizations.of(
@@ -175,9 +176,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     );
                   },
                   loading: () => const SliverFillRemaining(
+                    hasScrollBody: false,
                     child: Center(child: CircularProgressIndicator()),
                   ),
                   error: (err, stack) => SliverFillRemaining(
+                    hasScrollBody: false,
                     child: Center(child: Text('Ошибка: $err')),
                   ),
                 ),

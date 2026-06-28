@@ -138,6 +138,7 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                   data: (docs) {
                     if (docs.isEmpty) {
                       return SliverFillRemaining(
+                        hasScrollBody: false,
                         child: EmptyState(
                           icon: Icons.ondemand_video_outlined,
                           title: AppLocalizations.of(context)!.noWebinars,
@@ -169,9 +170,11 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                     );
                   },
                   loading: () => const SliverFillRemaining(
+                    hasScrollBody: false,
                     child: Center(child: CircularProgressIndicator()),
                   ),
                   error: (err, stack) => SliverFillRemaining(
+                    hasScrollBody: false,
                     child: Center(child: Text('Ошибка: $err')),
                   ),
                 ),

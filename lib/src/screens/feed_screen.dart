@@ -95,6 +95,7 @@ class _FeedScreenState extends State<FeedScreen> {
               ),
               if (posts.isEmpty)
                 SliverFillRemaining(
+                  hasScrollBody: false,
                   child: Center(
                     child: Text(AppLocalizations.of(context)!.empty),
                   ),
