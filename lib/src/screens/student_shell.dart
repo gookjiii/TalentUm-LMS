@@ -383,46 +383,6 @@ class _StudentShellState extends ConsumerState<StudentShell> {
   ) {
     setState(() => _tabIndex = index);
   }
-
-  String _getStudentTabTitle(int index, AppLocalizations l10n) {
-    switch (index) {
-      case 4:
-        return l10n.schedule;
-      case 5:
-        return l10n.library;
-      case 6:
-        return l10n.webinars;
-      case 7:
-        return l10n.magazine;
-      default:
-        return '';
-    }
-  }
-
-  Widget _getStudentTabWidget(
-    int index,
-    String? selectedId,
-    SchoolRepository repo,
-    SchoolAppState appState,
-    List<Map<String, dynamic>> classes,
-  ) {
-    switch (index) {
-      case 4:
-        return TeacherScheduleScreen(
-          readOnly: true,
-          studentClassIds: classes.map((c) => c['id'] as String).toList(),
-          studentClasses: classes,
-        );
-      case 5:
-        return LibraryScreen(classId: '');
-      case 6:
-        return WebinarsScreen(classId: '');
-      case 7:
-        return JournalScreen(classId: selectedId ?? '', studentId: repo.uid);
-      default:
-        return const SizedBox.shrink();
-    }
-  }
 }
 
 class _FeatureLockedEmptyState extends StatelessWidget {
