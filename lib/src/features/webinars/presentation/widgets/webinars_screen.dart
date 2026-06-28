@@ -362,9 +362,9 @@ class _WebinarTile extends StatelessWidget {
           final isMobile = MediaQuery.sizeOf(context).width < 700;
           
           return Dialog(
-            backgroundColor: isDark ? SchoolColors.darkSurface : Colors.white,
+            backgroundColor: Colors.black,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(isMobile ? 0 : 24),
+              borderRadius: BorderRadius.circular(isMobile ? 0 : 16),
             ),
             insetPadding: isMobile
                 ? EdgeInsets.zero
@@ -373,38 +373,34 @@ class _WebinarTile extends StatelessWidget {
                     vertical: 40,
                   ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(isMobile ? 0 : 24),
+              borderRadius: BorderRadius.circular(isMobile ? 0 : 16),
               child: SizedBox(
-                width: isMobile ? MediaQuery.sizeOf(context).width : 600,
-                child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Stack(
+                width: isMobile ? MediaQuery.sizeOf(context).width : 700,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    IframePlayer(embedUrl: embedUrl),
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.black54,
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.close_rounded,
-                            color: Colors.white,
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
+                    // Top bar with close button
+                    Container(
+                      color: Colors.black,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                        tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                       ),
+                    ),
+                    // Video player with slightly taller aspect ratio to fit controls
+                    AspectRatio(
+                      aspectRatio: 16 / 10, // 1.6 instead of 1.777 to give extra room for bottom controls
+                      child: IframePlayer(embedUrl: embedUrl),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
       );
     } else {
       launchUrl(Uri.parse(videoUrl));

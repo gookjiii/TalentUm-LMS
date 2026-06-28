@@ -591,39 +591,48 @@ class _AdminModeToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            SchoolColors.accentContainer.withValues(alpha: 0.8),
-            const Color(0x00FFFFFF),
-          ],
-        ),
+        color: SchoolColors.accent, // Solid background for high contrast
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: SchoolColors.accent.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: SchoolColors.accent.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           const Icon(
             Icons.shield_rounded,
-            color: SchoolColors.accent,
-            size: 18,
+            color: Colors.white,
+            size: 20,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.adminMode,
               style: const TextStyle(
-                color: SchoolColors.accent,
-                fontSize: 10,
+                color: Colors.white,
+                fontSize: 11,
+                letterSpacing: 0.5,
                 fontWeight: FontWeight.w900,
               ),
             ),
           ),
-          const Icon(
-            Icons.check_circle_rounded,
-            color: SchoolColors.green,
-            size: 14,
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_rounded,
+              color: SchoolColors.accent,
+              size: 14,
+            ),
           ),
         ],
       ),
