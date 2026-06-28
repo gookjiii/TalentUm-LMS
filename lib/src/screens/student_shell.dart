@@ -1185,6 +1185,35 @@ class _MobileTabBar extends StatelessWidget {
                 ),
               ],
             ),
+          ) : BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ...List.generate(items.length, (index) {
+                  final item = items[index];
+                  final selected = selectedIndex == index;
+                  return Expanded(
+                    child: _NavTabItem(
+                      icon: item.icon,
+                      selectedIcon: item.selectedIcon,
+                      selected: selected,
+                      isDark: isDark,
+                      onTap: () => onSelect(index),
+                    ),
+                  );
+                }),
+                Expanded(
+                  child: _NavTabItem(
+                    icon: Icons.grid_view_outlined,
+                    selectedIcon: Icons.grid_view_rounded,
+                    selected: moreSelected,
+                    isDark: isDark,
+                    onTap: onMoreTap,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

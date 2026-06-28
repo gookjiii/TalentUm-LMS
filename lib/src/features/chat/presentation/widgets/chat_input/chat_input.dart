@@ -11,8 +11,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:audioplayers/audioplayers.dart' as audioplayers;
 import 'package:school_world/src/features/chat/presentation/widgets/chat_bubble/chat_bubble.dart';
-import '../../../../providers/app_providers.dart';
-import '../chat_bubble/chat_message_type.dart';
+import 'package:school_world/main.dart';
+import 'package:school_world/src/providers/app_providers.dart';
+import 'package:school_world/src/features/chat/presentation/widgets/chat_bubble/chat_message_type.dart';
 import 'package:school_world/src/features/chat/domain/models/chat_attachment.dart';
 import 'package:school_world/src/features/chat/presentation/widgets/chat_input/chat_input_previews.dart';
 
