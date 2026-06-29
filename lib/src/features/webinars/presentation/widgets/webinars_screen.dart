@@ -356,71 +356,100 @@ class _WebinarTile extends StatelessWidget {
     final embedUrl = _getEmbedUrl(videoUrl);
     final isMobileWidth = MediaQuery.sizeOf(context).width < 700;
 
-    // Show dialog for video preview on all platforms/widths
     if (embedUrl != null && kIsWeb) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          final isMobile = MediaQuery.sizeOf(context).width < 700;
-
-          final dialogContent = SizedBox(
-            width: isMobile ? MediaQuery.sizeOf(context).width : 700,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top bar with close button
-                Container(
-                  color: Colors.black,
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
-                    tooltip: MaterialLocalizations.of(
-                      context,
-                    ).closeButtonTooltip,
-                  ),
-                ),
-                // Video player with a generous minimum height to guarantee controls are not clipped
-                LayoutBuilder(
+      if (isMobileWidth) {
+        // Use full screen Scaffold for mobile to avoid Dialog pointer interception bugs on Flutter Web
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Scaffold(
+              backgroundColor: Colors.black,
+              appBar: AppBar(
+                backgroundColor: Colors.black,
+                iconTheme: const IconThemeData(color: Colors.white),
+                elevation: 0,
+              ),
+              body: Center(
+                child: LayoutBuilder(
                   builder: (context, constraints) {
                     double calculatedHeight = constraints.maxWidth / (16 / 9);
-                    // Google Drive and other players often require a significant minimum height
-                    // (~360-400px) on mobile before they start clipping their own controls.
                     double finalHeight = calculatedHeight < 400
                         ? 400
                         : calculatedHeight;
                     return SizedBox(
+                      width: constraints.maxWidth,
                       height: finalHeight,
                       child: IframePlayer(embedUrl: embedUrl),
                     );
                   },
                 ),
-              ],
+              ),
             ),
-          );
-
-          return Dialog(
-            backgroundColor: Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(isMobile ? 0 : 16),
-            ),
-            insetPadding: isMobile
-                ? EdgeInsets.zero
-                : const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-            child: isMobile
-                ? dialogContent
-                : ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: dialogContent,
+          ),
+        );
+      } else {
+        // Show dialog for video preview on desktop
+        showDialog(
+          context: context,
+          builder: (context) {
+            final dialogContent = SizedBox(
+              width: 700,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Top bar with close button
+                  Container(
+                    color: Colors.black,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      tooltip: MaterialLocalizations.of(
+                        context,
+                      ).closeButtonTooltip,
+                    ),
                   ),
-          );
-        },
-      );
+                  // Video player with a generous minimum height to guarantee controls are not clipped
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      double calculatedHeight = constraints.maxWidth / (16 / 9);
+                      double finalHeight = calculatedHeight < 400
+                          ? 400
+                          : calculatedHeight;
+                      return SizedBox(
+                        height: finalHeight,
+                        child: IframePlayer(embedUrl: embedUrl),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            );
+
+            return Dialog(
+              backgroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 40,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: dialogContent,
+              ),
+            );
+          },
+        );
+      }
     } else {
       launchUrl(Uri.parse(videoUrl));
     }
