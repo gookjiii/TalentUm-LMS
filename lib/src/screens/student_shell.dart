@@ -1001,7 +1001,7 @@ class _MobileTabBar extends StatelessWidget {
         top: false,
         child: Container(
           height: 72,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 28),
           decoration: BoxDecoration(
             color: isDark ? SchoolColors.darkSurface : Colors.white,
             borderRadius: BorderRadius.circular(28),
@@ -1054,7 +1054,7 @@ class _MobileTabBar extends StatelessWidget {
       top: false,
       child: Container(
         height: 72,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 28),
         decoration: BoxDecoration(
           color: isDark
               ? SchoolColors.darkSurface.withValues(alpha: 0.85)

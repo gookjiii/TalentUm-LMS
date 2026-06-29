@@ -205,7 +205,7 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
                 child: MediaQuery(
                   data: mediaQueryData.copyWith(
                     textScaler: isMobile
-                        ? const TextScaler.linear(1.15)
+                        ? const TextScaler.linear(1.25)
                         : mediaQueryData.textScaler,
                   ),
                   child: child ?? const SizedBox.shrink(),
