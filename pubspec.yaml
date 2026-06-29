@@ -104,6 +104,7 @@ dependencies:
   shimmer: ^3.0.0
   open_filex: ^4.7.0
   pdf_manipulator: ^0.5.9
+  pointer_interceptor: ^0.10.1+2
 
 dependency_overrides:
   flutter_chat_core:

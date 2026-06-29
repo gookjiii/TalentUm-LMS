@@ -7,6 +7,7 @@ import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'iframe_player.dart';
 import '../webinars_providers.dart';
 import 'package:file_picker/file_picker.dart';
@@ -371,17 +372,22 @@ class _WebinarTile extends StatelessWidget {
             reverseTransitionDuration: Duration.zero,
             pageBuilder: (context, animation, secondaryAnimation) => Scaffold(
               backgroundColor: Colors.black,
-              appBar: AppBar(
-                backgroundColor: Colors.black,
-                iconTheme: const IconThemeData(color: Colors.white),
-                elevation: 0,
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.open_in_new_rounded),
-                    onPressed: () => launchUrl(Uri.parse(videoUrl), mode: LaunchMode.externalApplication),
-                    tooltip: AppLocalizations.of(context)!.open,
+              appBar: PreferredSize(
+                preferredSize: const Size.fromHeight(kToolbarHeight),
+                child: PointerInterceptor(
+                  child: AppBar(
+                    backgroundColor: Colors.black,
+                    iconTheme: const IconThemeData(color: Colors.white),
+                    elevation: 0,
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.open_in_new_rounded),
+                        onPressed: () => launchUrl(Uri.parse(videoUrl), mode: LaunchMode.externalApplication),
+                        tooltip: AppLocalizations.of(context)!.open,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
               body: Center(
                 child: LayoutBuilder(
@@ -409,32 +415,34 @@ class _WebinarTile extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Top bar with close button
-                  Container(
-                    color: Colors.black,
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.open_in_new_rounded, color: Colors.white),
-                          onPressed: () => launchUrl(Uri.parse(videoUrl), mode: LaunchMode.externalApplication),
-                          tooltip: AppLocalizations.of(context)!.open,
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.close_rounded,
-                            color: Colors.white,
+                  PointerInterceptor(
+                    child: Container(
+                      color: Colors.black,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.open_in_new_rounded, color: Colors.white),
+                            onPressed: () => launchUrl(Uri.parse(videoUrl), mode: LaunchMode.externalApplication),
+                            tooltip: AppLocalizations.of(context)!.open,
                           ),
-                          onPressed: () => Navigator.pop(context),
-                          tooltip: MaterialLocalizations.of(
-                            context,
-                          ).closeButtonTooltip,
-                        ),
-                      ],
+                          IconButton(
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                            tooltip: MaterialLocalizations.of(
+                              context,
+                            ).closeButtonTooltip,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   // Video player with a generous minimum height to guarantee controls are not clipped
