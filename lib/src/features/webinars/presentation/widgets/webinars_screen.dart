@@ -259,7 +259,7 @@ class _WebinarTile extends StatelessWidget {
       if (match != null && match.groupCount >= 2) {
         final videoId = match.group(2);
         if (videoId != null && videoId.length == 11) {
-          return 'https://www.youtube.com/embed/$videoId?playsinline=1&rel=0';
+          return 'https://www.youtube.com/embed/$videoId?playsinline=1&rel=0&autoplay=0';
         }
       }
     }
@@ -332,9 +332,9 @@ class _WebinarTile extends StatelessWidget {
           final uri = Uri.parse(cleanUrl);
           final hash = uri.queryParameters['hash'];
           if (hash != null) {
-            return 'https://vk.com/video_ext.php?oid=$oid&id=$id&hash=$hash';
+            return 'https://vk.com/video_ext.php?oid=$oid&id=$id&hash=$hash&hd=2&autoplay=0';
           }
-          return 'https://vk.com/video_ext.php?oid=$oid&id=$id';
+          return 'https://vk.com/video_ext.php?oid=$oid&id=$id&hd=2&autoplay=0';
         }
       }
     }
@@ -363,11 +363,13 @@ class _WebinarTile extends StatelessWidget {
 
     if (embedUrl != null && kIsWeb) {
       if (isMobileWidth) {
-        // Use full screen Scaffold for mobile to avoid Dialog pointer interception bugs on Flutter Web
+        // Use full screen Scaffold with no transition for mobile to avoid Dialog pointer interception bugs on Flutter Web
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => Scaffold(
+          PageRouteBuilder(
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+            pageBuilder: (context, animation, secondaryAnimation) => Scaffold(
               backgroundColor: Colors.black,
               appBar: AppBar(
                 backgroundColor: Colors.black,

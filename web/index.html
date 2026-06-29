@@ -142,6 +142,10 @@
     setTimeout(window._hideFlutterLoading, 8000);
   </script>
 
+  <script>
+    // Wake up iOS Safari touch events for embedded iframes
+    document.addEventListener('touchstart', {}, {passive: false});
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
