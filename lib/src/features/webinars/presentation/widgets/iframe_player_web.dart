@@ -29,6 +29,7 @@ class _IframePlayerWebState extends State<IframePlayer> {
         ..style.height = '100%'
         ..style.display = 'block'
         ..style.pointerEvents = 'auto'
+        ..style.touchAction = 'auto'
         ..allowFullscreen = true
         ..allow = 'autoplay; encrypted-media; picture-in-picture';
       return iframe;
