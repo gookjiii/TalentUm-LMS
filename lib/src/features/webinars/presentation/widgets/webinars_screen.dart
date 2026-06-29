@@ -387,12 +387,9 @@ class _WebinarTile extends StatelessWidget {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     double calculatedHeight = constraints.maxWidth / (16 / 9);
-                    double finalHeight = calculatedHeight < 400
-                        ? 400
-                        : calculatedHeight;
                     return SizedBox(
                       width: constraints.maxWidth,
-                      height: finalHeight,
+                      height: calculatedHeight,
                       child: IframePlayer(embedUrl: embedUrl),
                     );
                   },
@@ -444,11 +441,8 @@ class _WebinarTile extends StatelessWidget {
                   LayoutBuilder(
                     builder: (context, constraints) {
                       double calculatedHeight = constraints.maxWidth / (16 / 9);
-                      double finalHeight = calculatedHeight < 400
-                          ? 400
-                          : calculatedHeight;
                       return SizedBox(
-                        height: finalHeight,
+                        height: calculatedHeight,
                         child: IframePlayer(embedUrl: embedUrl),
                       );
                     },
