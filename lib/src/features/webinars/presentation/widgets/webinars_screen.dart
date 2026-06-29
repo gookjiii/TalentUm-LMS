@@ -376,7 +376,7 @@ class _WebinarTile extends StatelessWidget {
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.open_in_new_rounded),
-                    onPressed: () => launchUrlString(videoUrl, mode: LaunchMode.externalApplication),
+                    onPressed: () => launchUrl(Uri.parse(videoUrl), mode: LaunchMode.externalApplication),
                     tooltip: AppLocalizations.of(context)!.open,
                   ),
                 ],
@@ -422,7 +422,7 @@ class _WebinarTile extends StatelessWidget {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.open_in_new_rounded, color: Colors.white),
-                          onPressed: () => launchUrlString(videoUrl, mode: LaunchMode.externalApplication),
+                          onPressed: () => launchUrl(Uri.parse(videoUrl), mode: LaunchMode.externalApplication),
                           tooltip: AppLocalizations.of(context)!.open,
                         ),
                         IconButton(

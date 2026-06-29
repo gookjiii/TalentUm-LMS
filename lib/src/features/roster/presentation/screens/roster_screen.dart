@@ -199,7 +199,7 @@ class _MembersHeader extends StatelessWidget {
             final allVisibleClasses = allClassAsync.value ?? [];
                       final resolvedClassName = className ?? 
                           allVisibleClasses
-                              .where((c) => c['id'] == effectiveClassId)
+                              .where((c) => c['id'] == classId)
                               .firstOrNull?['name']
                               ?.toString();
 

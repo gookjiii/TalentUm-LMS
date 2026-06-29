@@ -78,11 +78,7 @@ class _TeacherFeedState extends State<TeacherFeed> {
               builder: (context, ref, _) {
                 final allClassAsync = ref.watch(teacherClassesStreamProvider);
                 final allVisibleClasses = allClassAsync.value ?? [];
-                      final resolvedClassName = className ?? 
-                          allVisibleClasses
-                              .where((c) => c['id'] == effectiveClassId)
-                              .firstOrNull?['name']
-                              ?.toString();
+
                 final effectiveClassId =
                     ref.watch(
                       schoolAppStateProvider.select((s) => s.selectedClassId),
