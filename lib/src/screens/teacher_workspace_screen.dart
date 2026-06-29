@@ -569,8 +569,8 @@ class _TeacherWorkspaceScreenState
             horizontal: 24,
             vertical: 24,
           ),
-          child: SizedBox(
-            width: 400,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
             child: GlassCard(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -802,8 +802,8 @@ class _TeacherWorkspaceScreenState
             horizontal: 24,
             vertical: 24,
           ),
-          child: SizedBox(
-            width: 400,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
             child: GlassCard(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1466,7 +1466,7 @@ class _TeacherMoreSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 600,
+            width: double.infinity,
             constraints: const BoxConstraints(maxWidth: 600),
             decoration: BoxDecoration(
               color: isDark ? SchoolColors.darkSurface : Colors.white,

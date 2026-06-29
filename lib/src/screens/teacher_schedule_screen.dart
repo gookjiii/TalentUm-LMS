@@ -505,8 +505,8 @@ Future<void> showScheduleEditor(
       builder: (_) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         clipBehavior: Clip.antiAlias,
-        child: SizedBox(
-          width: 400,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
           child: _ScheduleEditorSheet(
             prefillDate: prefillDate ?? DateTime.now(),
             prefillStartMinute: prefillStartMinute,

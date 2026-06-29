@@ -615,8 +615,8 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
       builder: (ctx) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          child: SizedBox(
-            width: 400,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
             child: GlassCard(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -689,8 +689,8 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
       builder: (ctx) {
         return Dialog(
           backgroundColor: Colors.transparent,
-          child: SizedBox(
-            width: 400,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
             child: GlassCard(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -780,8 +780,8 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
           backgroundColor: Colors.transparent,
           child: StatefulBuilder(
             builder: (ctx, setS) {
-              return SizedBox(
-                width: 400,
+              return ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
                 child: GlassCard(
                   child: exporting
                       ? Column(
