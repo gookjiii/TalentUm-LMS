@@ -203,12 +203,6 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final docs = snapshot.data?.docs ?? [];
-                if (docs.isEmpty) {
-                  return _NoAssignmentsState(
-                    onCreate: () => _createAssignment(context),
-                  );
-                }
-
                 if (_selectedId == null) {
                   return _AssignmentSummaryView(
                     classId: widget.classId,
@@ -489,6 +483,11 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
           builder: (context, ref, _) {
             final allClassAsync = ref.watch(teacherClassesStreamProvider);
             final allVisibleClasses = allClassAsync.value ?? [];
+                      final resolvedClassName = className ?? 
+                          allVisibleClasses
+                              .where((c) => c['id'] == effectiveClassId)
+                              .firstOrNull?['name']
+                              ?.toString();
             final effectiveClassId =
                 ref.watch(
                   schoolAppStateProvider.select((s) => s.selectedClassId),
@@ -507,7 +506,7 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
                 context,
               )!.totalAssignmentsCount(widget.docs.length),
               classContext: currentClassName,
-              onClassContextTap: allVisibleClasses.length > 1
+              onClassContextTap: allVisibleClasses.isNotEmpty
                   ? () {
                       showClassSwitcher(
                         context: context,
@@ -532,57 +531,72 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
             );
           },
         ),
-        const SizedBox(height: 24),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-          child: Wrap(
-            spacing: 8,
-            children: [
-              _FilterChip(
-                label: AppLocalizations.of(context)!.all,
-                selected: _filter == 'all',
-                onSelected: (v) => setState(() => _filter = 'all'),
-              ),
-              _FilterChip(
-                label: AppLocalizations.of(context)!.active1,
-                selected: _filter == 'active',
-                onSelected: (v) => setState(() => _filter = 'active'),
-              ),
-              _FilterChip(
-                label: AppLocalizations.of(context)!.overdue,
-                selected: _filter == 'overdue',
-                onSelected: (v) => setState(() => _filter = 'overdue'),
-              ),
-            ],
+        if (widget.docs.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+            child: Wrap(
+              spacing: 8,
+              children: [
+                _FilterChip(
+                  label: AppLocalizations.of(context)!.all,
+                  selected: _filter == 'all',
+                  onSelected: (v) => setState(() => _filter = 'all'),
+                ),
+                _FilterChip(
+                  label: AppLocalizations.of(context)!.active1,
+                  selected: _filter == 'active',
+                  onSelected: (v) => setState(() => _filter = 'active'),
+                ),
+                _FilterChip(
+                  label: AppLocalizations.of(context)!.overdue,
+                  selected: _filter == 'overdue',
+                  onSelected: (v) => setState(() => _filter = 'overdue'),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
         const SizedBox(height: 24),
         Expanded(
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(context.horizontalPadding, 0, context.horizontalPadding, 32),
-            children: [
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final cols = constraints.maxWidth > 600 ? 2 : 1;
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: cols,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      mainAxisExtent: 210,
+          child: widget.docs.isEmpty
+              ? _NoAssignmentsState(onCreate: widget.onCreate)
+              : ListView(
+                  padding: EdgeInsets.fromLTRB(context.horizontalPadding, 0, context.horizontalPadding, 32),
+                  children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (filtered.isEmpty) {
+                          return Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 64),
+                              child: Text(
+                                AppLocalizations.of(context)!.noTasks,
+                                style: TextStyle(color: SchoolColors.muted),
+                              ),
+                            ),
+                          );
+                        }
+                        final cols = constraints.maxWidth > 600 ? 2 : 1;
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: cols,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            mainAxisExtent: 210,
+                          ),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) => _AssignmentCard(
+                            doc: filtered[index],
+                            onTap: () => widget.onSelect(filtered[index].id),
+                          ),
+                        );
+                      },
                     ),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) => _AssignmentCard(
-                      doc: filtered[index],
-                      onTap: () => widget.onSelect(filtered[index].id),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+                  ],
+                ),
         ),
       ],
     );

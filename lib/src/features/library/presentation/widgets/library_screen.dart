@@ -102,14 +102,19 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             : studentClassesStreamProvider,
                       );
                       final allVisibleClasses = allClassAsync.value ?? [];
+                      final resolvedClassName = className ?? 
+                          allVisibleClasses
+                              .where((c) => c['id'] == effectiveClassId)
+                              .firstOrNull?['name']
+                              ?.toString();
 
                       return PageHeader(
                         title: AppLocalizations.of(context)!.library,
                         subtitle: AppLocalizations.of(
                           context,
                         )!.studyMaterialsAndLecturesWill,
-                        classContext: className,
-                        onClassContextTap: allVisibleClasses.length > 1
+                        classContext: resolvedClassName,
+                        onClassContextTap: allVisibleClasses.isNotEmpty
                             ? () {
                                 showClassSwitcher(
                                   context: context,

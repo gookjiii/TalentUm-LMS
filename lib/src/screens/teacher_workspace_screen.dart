@@ -1451,6 +1451,12 @@ class _TeacherMoreSheet extends StatelessWidget {
           color: Colors.redAccent,
           index: 10,
         ),
+      (
+        icon: Icons.settings_rounded,
+        label: l10n.settings,
+        color: Colors.blueGrey,
+        index: isLeadTeacher ? 11 : 10,
+      ),
     ];
 
     return Container(

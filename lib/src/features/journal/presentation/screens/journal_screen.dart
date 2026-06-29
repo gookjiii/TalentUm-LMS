@@ -83,6 +83,11 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
                         : studentClassesStreamProvider,
                   );
                   final allVisibleClasses = allClassAsync.value ?? [];
+                      final resolvedClassName = className ?? 
+                          allVisibleClasses
+                              .where((c) => c['id'] == effectiveClassId)
+                              .firstOrNull?['name']
+                              ?.toString();
 
                   return PageHeader(
                     title: AppLocalizations.of(context)!.coolMagazine,
@@ -91,8 +96,8 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
                         : AppLocalizations.of(
                             context,
                           )!.academicPerformanceAndSubjects,
-                    classContext: className,
-                    onClassContextTap: allVisibleClasses.length > 1
+                    classContext: resolvedClassName,
+                    onClassContextTap: allVisibleClasses.isNotEmpty
                         ? () {
                             showClassSwitcher(
                               context: context,

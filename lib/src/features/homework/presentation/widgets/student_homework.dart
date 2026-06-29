@@ -189,14 +189,19 @@ class _StudentHomeworkState extends ConsumerState<StudentHomework> {
                               builder: (context, allClassSnap) {
                                 final allVisibleClasses =
                                     allClassSnap.data ?? [];
+                                final resolvedClassName = className ?? 
+                                    allVisibleClasses
+                                        .where((c) => c['id'] == widget.classId)
+                                        .firstOrNull?['name']
+                                        ?.toString();
                                 return PageHeader(
                                   title: AppLocalizations.of(context)!.myTasks,
                                   subtitle: AppLocalizations.of(
                                     context,
                                   )!.studyHomework,
-                                  classContext: className,
+                                  classContext: resolvedClassName,
                                   onClassContextTap:
-                                      allVisibleClasses.length > 1
+                                      allVisibleClasses.isNotEmpty
                                       ? () {
                                           showClassSwitcher(
                                             context: context,

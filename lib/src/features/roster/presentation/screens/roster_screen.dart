@@ -197,12 +197,17 @@ class _MembersHeader extends StatelessWidget {
                   : studentClassesStreamProvider,
             );
             final allVisibleClasses = allClassAsync.value ?? [];
+                      final resolvedClassName = className ?? 
+                          allVisibleClasses
+                              .where((c) => c['id'] == effectiveClassId)
+                              .firstOrNull?['name']
+                              ?.toString();
 
             return PageHeader(
               title: l10n.classRoster,
               subtitle: l10n.totalParticipants(count),
-              classContext: className,
-              onClassContextTap: allVisibleClasses.length > 1
+              classContext: resolvedClassName,
+              onClassContextTap: allVisibleClasses.isNotEmpty
                   ? () {
                       showClassSwitcher(
                         context: context,

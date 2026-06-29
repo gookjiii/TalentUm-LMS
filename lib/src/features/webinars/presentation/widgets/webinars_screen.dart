@@ -98,14 +98,19 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                             : studentClassesStreamProvider,
                       );
                       final allVisibleClasses = allClassAsync.value ?? [];
+                      final resolvedClassName = className ?? 
+                          allVisibleClasses
+                              .where((c) => c['id'] == effectiveClassId)
+                              .firstOrNull?['name']
+                              ?.toString();
 
                       return PageHeader(
                         title: AppLocalizations.of(context)!.webinars,
                         subtitle: AppLocalizations.of(
                           context,
                         )!.lessonRecordingsAndVideosWill,
-                        classContext: className,
-                        onClassContextTap: allVisibleClasses.length > 1
+                        classContext: resolvedClassName,
+                        onClassContextTap: allVisibleClasses.isNotEmpty
                             ? () {
                                 showClassSwitcher(
                                   context: context,
@@ -368,6 +373,13 @@ class _WebinarTile extends StatelessWidget {
                 backgroundColor: Colors.black,
                 iconTheme: const IconThemeData(color: Colors.white),
                 elevation: 0,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.open_in_new_rounded),
+                    onPressed: () => launchUrlString(videoUrl, mode: LaunchMode.externalApplication),
+                    tooltip: AppLocalizations.of(context)!.open,
+                  ),
+                ],
               ),
               body: Center(
                 child: LayoutBuilder(
@@ -405,15 +417,25 @@ class _WebinarTile extends StatelessWidget {
                       horizontal: 8,
                       vertical: 4,
                     ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.close_rounded,
-                        color: Colors.white,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                      tooltip: MaterialLocalizations.of(
-                        context,
-                      ).closeButtonTooltip,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.open_in_new_rounded, color: Colors.white),
+                          onPressed: () => launchUrlString(videoUrl, mode: LaunchMode.externalApplication),
+                          tooltip: AppLocalizations.of(context)!.open,
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          tooltip: MaterialLocalizations.of(
+                            context,
+                          ).closeButtonTooltip,
+                        ),
+                      ],
                     ),
                   ),
                   // Video player with a generous minimum height to guarantee controls are not clipped
