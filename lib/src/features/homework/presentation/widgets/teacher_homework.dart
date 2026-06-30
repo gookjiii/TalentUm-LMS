@@ -1016,22 +1016,28 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
             ],
           );
 
-          final statsWidget = Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _StatBlock(
-                label: AppLocalizations.of(context)!.term,
-                big: dateStr,
-                sub: timeStr,
-                color: SchoolColors.red,
-              ),
-              _StatBlock(
-                label: AppLocalizations.of(context)!.points,
-                big: "10",
-                sub: AppLocalizations.of(context)!.max,
-                color: SchoolColors.primary,
-              ),
+          final statsWidget = IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _StatBlock(
+                    label: AppLocalizations.of(context)!.term,
+                    big: dateStr,
+                    sub: timeStr,
+                    color: SchoolColors.red,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _StatBlock(
+                    label: AppLocalizations.of(context)!.points,
+                    big: "10",
+                    sub: AppLocalizations.of(context)!.max,
+                    color: SchoolColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
               StreamBuilder<QuerySnapshot>(
                 stream: _submissionsStream,
                 builder: (context, snap) {
@@ -1041,11 +1047,13 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
                           .where((d) => d.get('status') == 'graded')
                           .length ??
                       0;
-                  return _StatBlock(
-                    label: AppLocalizations.of(context)!.status,
-                    big: "$graded / $total",
-                    sub: AppLocalizations.of(context)!.verified1,
-                    color: SchoolColors.green,
+                  return Expanded(
+                    child: _StatBlock(
+                      label: AppLocalizations.of(context)!.status,
+                      big: "$graded / $total",
+                      sub: AppLocalizations.of(context)!.verified1,
+                      color: SchoolColors.green,
+                    ),
                   );
                 },
               ),
@@ -1099,8 +1107,7 @@ class _StatBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 100,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
@@ -1121,7 +1128,7 @@ class _StatBlock extends StatelessWidget {
           Text(
             big,
             style: const TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.w900,
               height: 1,
             ),
