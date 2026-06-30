@@ -1058,7 +1058,8 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
                 },
               ),
             ],
-          );
+          ),
+        );
 
           if (isMobile) {
             return Column(
