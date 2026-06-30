@@ -56,27 +56,17 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
     final repo = ref.watch(repositoryProvider);
     final isTeacher = appState.isTeacher;
 
-    // Guard: no valid class selected yet — show locked empty state
-    if (effectiveClassId == null) {
-      return EmptyState(
-        icon: Icons.ondemand_video_outlined,
-        title: AppLocalizations.of(context)!.webinars,
-        subtitle: AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
-      );
-    }
-
-    final webinarsAsync = ref.watch(
-      webinarsProvider((effectiveClassId, _limit)),
-    );
+    final webinarsAsync = effectiveClassId != null
+        ? ref.watch(webinarsProvider((effectiveClassId, _limit)))
+        : null;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: repo.firestore
-          .collection('classes')
-          .doc(effectiveClassId)
-          .snapshots(),
+      stream: effectiveClassId != null
+          ? repo.firestore.collection('classes').doc(effectiveClassId).snapshots()
+          : const Stream.empty(),
       builder: (context, classSnap) {
         final isLeadOfClass = appState.isLeadTeacher;
-        final className = classSnap.data?.data()?['name']?.toString();
+        final className = classSnap.data != null ? classSnap.data?.data()?['name']?.toString() : null;
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -140,22 +130,32 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                     },
                   ),
                 ),
-                webinarsAsync.when(
-                  data: (docs) {
-                    if (docs.isEmpty) {
-                      return SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: EmptyState(
-                          icon: Icons.ondemand_video_outlined,
-                          title: AppLocalizations.of(context)!.noWebinars,
-                          subtitle: AppLocalizations.of(
-                            context,
-                          )!.lessonRecordingsAndVideosWill,
-                        ),
-                      );
-                    }
+                if (effectiveClassId == null)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: EmptyState(
+                      icon: Icons.ondemand_video_outlined,
+                      title: AppLocalizations.of(context)!.webinars,
+                      subtitle: AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
+                    ),
+                  )
+                else
+                  webinarsAsync!.when(
+                    data: (docs) {
+                      if (docs.isEmpty) {
+                        return SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: EmptyState(
+                            icon: Icons.ondemand_video_outlined,
+                            title: AppLocalizations.of(context)!.noWebinars,
+                            subtitle: AppLocalizations.of(
+                              context,
+                            )!.lessonRecordingsAndVideosWill,
+                          ),
+                        );
+                      }
 
-                    return SliverPadding(
+                      return SliverPadding(
                       padding: EdgeInsets.symmetric(horizontal: 24),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate((context, index) {
