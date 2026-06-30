@@ -49,7 +49,7 @@ class _PostCardState extends State<PostCard> {
   void _initFuture() {
     final repo = AppScope.of(context).repository;
     final authorId = widget.doc.data()['authorId']?.toString() ?? '';
-    _authorFuture = repo.firestore.collection('users').doc(authorId).get();
+    _authorFuture = repo.getCachedUser(authorId);
   }
 
   @override

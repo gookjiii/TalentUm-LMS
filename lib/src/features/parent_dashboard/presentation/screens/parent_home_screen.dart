@@ -100,7 +100,7 @@ class _ChildProgressCard extends StatelessWidget {
     final repo = AppScope.of(context).repository;
 
     return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      future: repo.firestore.collection('users').doc(childId).get(),
+      future: repo.getCachedUser(childId),
       builder: (context, snap) {
         if (!snap.hasData) return SizedBox(height: 100);
         final data = snap.data!.data();

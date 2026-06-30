@@ -364,46 +364,8 @@ class _WebinarTile extends StatelessWidget {
 
     if (embedUrl != null && kIsWeb) {
       if (isMobileWidth) {
-        // Use full screen Scaffold with no transition for mobile to avoid Dialog pointer interception bugs on Flutter Web
-        Navigator.push(
-          context,
-          PageRouteBuilder(
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
-            pageBuilder: (context, animation, secondaryAnimation) => Scaffold(
-              backgroundColor: Colors.black,
-              appBar: PreferredSize(
-                preferredSize: const Size.fromHeight(kToolbarHeight),
-                child: PointerInterceptor(
-                  child: AppBar(
-                    backgroundColor: Colors.black,
-                    iconTheme: const IconThemeData(color: Colors.white),
-                    elevation: 0,
-                    actions: [
-                      IconButton(
-                        icon: const Icon(Icons.open_in_new_rounded),
-                        onPressed: () => launchUrl(Uri.parse(videoUrl), mode: LaunchMode.externalApplication),
-                        tooltip: AppLocalizations.of(context)!.open,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              body: Center(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    double calculatedHeight = constraints.maxWidth / (16 / 9);
-                    return SizedBox(
-                      width: constraints.maxWidth,
-                      height: calculatedHeight,
-                      child: IframePlayer(embedUrl: embedUrl),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-        );
+        // Open directly in an external tab on mobile to avoid Flutter Web iframe touch bugs
+        launchUrl(Uri.parse(videoUrl), mode: LaunchMode.externalApplication);
       } else {
         // Show dialog for video preview on desktop
         showDialog(

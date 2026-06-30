@@ -88,6 +88,33 @@ class SchoolRepository
   @override
   String? get uid => auth.currentUser?.uid;
 
+  final Map<String, Future<DocumentSnapshot<Map<String, dynamic>>>> _userCache = {};
+
+  Future<DocumentSnapshot<Map<String, dynamic>>> getCachedUser(String id) {
+    if (_userCache.containsKey(id)) {
+      return _userCache[id]!;
+    }
+    final future = firestore.collection('users').doc(id).get();
+    _userCache[id] = future;
+    return future;
+  }
+
+  final Map<String, Future<DocumentSnapshot<Map<String, dynamic>>>> _classCache = {};
+
+  Future<DocumentSnapshot<Map<String, dynamic>>> getCachedClass(String id) {
+    if (_classCache.containsKey(id)) {
+      return _classCache[id]!;
+    }
+    final future = firestore.collection('classes').doc(id).get();
+    _classCache[id] = future;
+    return future;
+  }
+
+  void clearCaches() {
+    _userCache.clear();
+    _classCache.clear();
+  }
+
   @override
   Stream<DocumentSnapshot<Map<String, dynamic>>> userDocStream() {
     final id = uid;

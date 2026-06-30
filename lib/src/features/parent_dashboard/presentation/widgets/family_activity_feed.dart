@@ -79,9 +79,9 @@ class _ActivityItem extends StatelessWidget {
     return FutureBuilder<List<DocumentSnapshot>>(
       future: Future.wait(
         [
-          repo.firestore.collection('users').doc(studentId).get(),
+          repo.getCachedUser(studentId),
           if (classId != null)
-            repo.firestore.collection('classes').doc(classId).get()
+            repo.getCachedClass(classId)
           else
             Future.value(null as DocumentSnapshot?),
         ].whereType<Future<DocumentSnapshot>>().toList(),
