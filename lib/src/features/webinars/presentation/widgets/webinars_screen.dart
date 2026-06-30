@@ -66,7 +66,7 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
           : const Stream.empty(),
       builder: (context, classSnap) {
         final isLeadOfClass = appState.isLeadTeacher;
-        final className = classSnap.data != null ? classSnap.data?.data()?['name']?.toString() : null;
+        final className = classSnap.hasData ? classSnap.data?.data()?['name']?.toString() : null;
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -106,7 +106,7 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                                 showClassSwitcher(
                                   context: context,
                                   classes: allVisibleClasses,
-                                  currentClassId: effectiveClassId,
+                                  currentClassId: effectiveClassId ?? '',
                                   onSelect: (id) {
                                     ref
                                         .read(schoolAppStateProvider)
@@ -120,7 +120,7 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                                 onPressed: () => _showAddDialog(
                                   context,
                                   ref,
-                                  effectiveClassId,
+                                  effectiveClassId ?? '',
                                 ),
                                 icon: const Icon(Icons.add_rounded),
                                 tooltip: AppLocalizations.of(context)!.add,
