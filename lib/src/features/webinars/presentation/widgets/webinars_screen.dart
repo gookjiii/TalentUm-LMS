@@ -66,7 +66,10 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
           : const Stream.empty(),
       builder: (context, classSnap) {
         final isLeadOfClass = appState.isLeadTeacher;
-        final className = classSnap.hasData ? classSnap.data?.data()?['name']?.toString() : null;
+        String? className;
+        if (classSnap.hasData && classSnap.data?.data() != null) {
+          className = classSnap.data!.data()!['name']?.toString();
+        }
 
         return Scaffold(
           backgroundColor: Colors.transparent,
