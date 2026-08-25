@@ -7,22 +7,91 @@ on:
       - 'v*'
   pull_request:
     branches: [main, master]
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  FLUTTER_CHANNEL: 'stable'
+  FLUTTER_CHANNEL: stable
+  GOOGLE_DRIVE_PROXY_URL: https://vercel-talentum-backend.vercel.app
+  GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB: '0'
 
 jobs:
+  # A release tag (for example v1.2.3) is the source of truth for the
+  # user-facing version. Branch/manual builds use pubspec.yaml instead.
+  prepare:
+    name: 🏷️ Resolve app version
+    runs-on: ubuntu-latest
+    outputs:
+      app_version: ${{ steps.version.outputs.app_version }}
+      build_number: ${{ steps.version.outputs.build_number }}
+      package_version: ${{ steps.version.outputs.package_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Resolve version and build number
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pubspec_version="$(sed -nE 's/^version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' pubspec.yaml | head -n 1)"
+          pubspec_build_number="$(sed -nE 's/^version:[[:space:]]*[0-9]+\.[0-9]+\.[0-9]+\+([0-9]+).*/\1/p' pubspec.yaml | head -n 1)"
+
+          if [[ -z "$pubspec_version" ]]; then
+            echo "Could not read a semantic version from pubspec.yaml" >&2
+            exit 1
+          fi
+
+          app_version="$pubspec_version"
+          build_number="${pubspec_build_number:-1}"
+
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            tag_version="${GITHUB_REF_NAME#v}"
+
+            # Support both v1.2.3 and v1.2.3+42. The +42 suffix is an
+            # optional explicit build number for stores that require it.
+            if [[ "$tag_version" == *+* ]]; then
+              app_version="${tag_version%%+*}"
+              build_number="${tag_version##*+}"
+            else
+              app_version="$tag_version"
+              build_number="$GITHUB_RUN_NUMBER"
+            fi
+
+            if [[ ! "$app_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+              echo "Tag must use v<major>.<minor>.<patch>[+<build>], got: $GITHUB_REF_NAME" >&2
+              exit 1
+            fi
+          fi
+
+          if [[ ! "$build_number" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Build number must be a positive integer, got: $build_number" >&2
+            exit 1
+          fi
+
+          package_version="${app_version}+${build_number}"
+          echo "app_version=$app_version" >> "$GITHUB_OUTPUT"
+          echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
+          echo "package_version=$package_version" >> "$GITHUB_OUTPUT"
+          echo "Packaging TalentUm $package_version"
+
   # ─────────────────────────────────────────
-  # 🤖 Android APK
+  # 🤖 Android APK + AAB
   # ─────────────────────────────────────────
   build-android:
-    name: 🤖 Android APK
+    name: 🤖 Android APK + AAB
+    needs: prepare
     runs-on: ubuntu-latest
+    env:
+      APP_VERSION: ${{ needs.prepare.outputs.app_version }}
+      BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,7 +99,7 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
       - name: Setup Flutter
@@ -45,22 +114,49 @@ jobs:
       - name: Generate localizations
         run: flutter gen-l10n
 
-      - name: Build APK (release)
-        run: flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
+      - name: Build split APKs
+        run: |
+          flutter build apk --release --split-per-abi \
+            --android-skip-build-dependency-validation \
+            --build-name "$APP_VERSION" \
+            --build-number "$BUILD_NUMBER" \
+            --dart-define=GOOGLE_DRIVE_PROXY_URL="$GOOGLE_DRIVE_PROXY_URL" \
+            --dart-define=GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB="$GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB"
 
-      - name: Upload APK artifacts
+      - name: Build Android App Bundle
+        run: |
+          flutter build appbundle --release \
+            --android-skip-build-dependency-validation \
+            --build-name "$APP_VERSION" \
+            --build-number "$BUILD_NUMBER" \
+            --dart-define=GOOGLE_DRIVE_PROXY_URL="$GOOGLE_DRIVE_PROXY_URL" \
+            --dart-define=GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB="$GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB"
+
+      - name: Collect Android packages
+        run: |
+          mkdir -p dist/android
+          cp build/app/outputs/flutter-apk/*.apk dist/android/
+          cp build/app/outputs/bundle/release/app-release.aab \
+            "dist/android/TalentUm-${APP_VERSION}+${BUILD_NUMBER}-android.aab"
+
+      - name: Upload Android packages
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk
-          path: build/app/outputs/flutter-apk/*.apk
+          name: android-package
+          path: dist/android/*
+          if-no-files-found: error
           retention-days: 30
 
   # ─────────────────────────────────────────
-  # 🪟 Windows EXE
+  # 🪟 Windows ZIP
   # ─────────────────────────────────────────
   build-windows:
-    name: 🪟 Windows EXE
+    name: 🪟 Windows ZIP
+    needs: prepare
     runs-on: windows-latest
+    env:
+      APP_VERSION: ${{ needs.prepare.outputs.app_version }}
+      BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -80,22 +176,96 @@ jobs:
       - name: Generate localizations
         run: flutter gen-l10n
 
-      - name: Build Windows (release)
-        run: flutter build windows --release
+      - name: Build Windows
+        run: >-
+          flutter build windows --release
+          --build-name "$env:APP_VERSION"
+          --build-number "$env:BUILD_NUMBER"
+          --dart-define=GOOGLE_DRIVE_PROXY_URL="$env:GOOGLE_DRIVE_PROXY_URL"
+          --dart-define=GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB="$env:GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB"
 
-      - name: Upload Windows artifacts
+      - name: Package Windows
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          $packageName = "TalentUm-$($env:APP_VERSION)+$($env:BUILD_NUMBER)-windows-x64.zip"
+          Compress-Archive -Path "build/windows/x64/runner/Release/*" `
+            -DestinationPath "dist/$packageName" -Force
+
+      - name: Upload Windows package
         uses: actions/upload-artifact@v4
         with:
-          name: windows-release
-          path: build/windows/x64/runner/Release/
+          name: windows-package
+          path: dist/*.zip
+          if-no-files-found: error
           retention-days: 30
 
   # ─────────────────────────────────────────
-  # 🍎 macOS App
+  # 🐧 Linux TAR.GZ
+  # ─────────────────────────────────────────
+  build-linux:
+    name: 🐧 Linux TAR.GZ
+    needs: prepare
+    runs-on: ubuntu-latest
+    env:
+      APP_VERSION: ${{ needs.prepare.outputs.app_version }}
+      BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - name: Enable Linux desktop
+        run: flutter config --enable-linux-desktop
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Build Linux
+        run: |
+          flutter build linux --release \
+            --build-name "$APP_VERSION" \
+            --build-number "$BUILD_NUMBER" \
+            --dart-define=GOOGLE_DRIVE_PROXY_URL="$GOOGLE_DRIVE_PROXY_URL" \
+            --dart-define=GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB="$GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB"
+
+      - name: Package Linux
+        run: |
+          mkdir -p dist
+          tar -czf "dist/TalentUm-${APP_VERSION}+${BUILD_NUMBER}-linux-x64.tar.gz" \
+            -C build/linux/x64/release/bundle .
+
+      - name: Upload Linux package
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-package
+          path: dist/*.tar.gz
+          if-no-files-found: error
+          retention-days: 30
+
+  # ─────────────────────────────────────────
+  # 🍎 macOS DMG + APP ZIP
   # ─────────────────────────────────────────
   build-macos:
-    name: 🍎 macOS App
+    name: 🍎 macOS DMG + ZIP
+    needs: prepare
     runs-on: macos-latest
+    env:
+      APP_VERSION: ${{ needs.prepare.outputs.app_version }}
+      BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -106,7 +276,7 @@ jobs:
           channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
 
-      - name: Enable macOS desktop & disable SPM auto-migration
+      - name: Enable macOS desktop and disable SPM auto-migration
         run: |
           flutter config --enable-macos-desktop
           flutter config --no-enable-swift-package-manager
@@ -128,45 +298,47 @@ jobs:
       - name: Install CocoaPods dependencies
         run: |
           cd macos
-          pod repo update --silent
           pod install --repo-update
-        
-      - name: Build macOS (release)
+
+      - name: Build macOS
         run: |
           flutter build macos --release \
-            --dart-define=GOOGLE_DRIVE_PROXY_URL="https://vercel-talentum-backend.vercel.app" \
+            --build-name "$APP_VERSION" \
+            --build-number "$BUILD_NUMBER" \
+            --dart-define=GOOGLE_DRIVE_PROXY_URL="$GOOGLE_DRIVE_PROXY_URL" \
+            --dart-define=GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB="$GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB" \
             --dart-define=CLOUDINARY_CLOUD_NAME=dp50nlimq \
-            --dart-define=CLOUDINARY_UPLOAD_PRESET=schoolWorld \
-            --dart-define=APP_API_SECRET=talentum2026secret
+            --dart-define=CLOUDINARY_UPLOAD_PRESET=schoolWorld
 
-      - name: Package as DMG (optional)
+      - name: Package macOS
         run: |
-          brew install create-dmg
-          create-dmg \
-            --volname "TalentUm" \
-            --window-pos 200 120 \
-            --window-size 600 300 \
-            --icon-size 100 \
-            --app-drop-link 425 120 \
-            "TalentUm.dmg" \
-            "build/macos/Build/Products/Release/school_world.app"
-        continue-on-error: true # DMG packaging is optional
+          APP_PATH="build/macos/Build/Products/Release/school_world.app"
+          test -d "$APP_PATH"
+          mkdir -p dist
 
-      - name: Upload macOS artifacts
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" \
+            "dist/TalentUm-${APP_VERSION}+${BUILD_NUMBER}-macos.app.zip"
+          hdiutil create -volname "TalentUm" -srcfolder "$APP_PATH" \
+            -ov -format UDZO "dist/TalentUm-${APP_VERSION}+${BUILD_NUMBER}-macos.dmg"
+
+      - name: Upload macOS packages
         uses: actions/upload-artifact@v4
         with:
-          name: macos-release
-          path: |
-            build/macos/Build/Products/Release/school_world.app
-            TalentUm.dmg
+          name: macos-package
+          path: dist/*
+          if-no-files-found: error
           retention-days: 30
 
   # ─────────────────────────────────────────
-  # 📱 iOS Build (No Codesign)
+  # 📱 iOS unsigned IPA
   # ─────────────────────────────────────────
   build-ios:
-    name: 📱 iOS IPA
+    name: 📱 iOS unsigned IPA
+    needs: prepare
     runs-on: macos-latest
+    env:
+      APP_VERSION: ${{ needs.prepare.outputs.app_version }}
+      BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -195,25 +367,44 @@ jobs:
         run: |
           cd ios
           pod install --repo-update
-        
-      - name: Build iOS (release)
-        run: flutter build ios --release --no-codesign
 
-      - name: Upload iOS artifacts
+      - name: Build iOS without code signing
+        run: |
+          flutter build ios --release --no-codesign \
+            --build-name "$APP_VERSION" \
+            --build-number "$BUILD_NUMBER" \
+            --dart-define=GOOGLE_DRIVE_PROXY_URL="$GOOGLE_DRIVE_PROXY_URL" \
+            --dart-define=GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB="$GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB"
+
+      - name: Package unsigned IPA
+        run: |
+          IOS_APP_PATH="$(find build/ios/iphoneos -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$IOS_APP_PATH"
+          mkdir -p dist/ios/Payload
+          cp -R "$IOS_APP_PATH" dist/ios/Payload/TalentUm.app
+          (
+            cd dist/ios
+            zip -qry "../TalentUm-${APP_VERSION}+${BUILD_NUMBER}-ios-unsigned.ipa" Payload
+          )
+
+      - name: Upload iOS package
         uses: actions/upload-artifact@v4
         with:
-          name: ios-release
-          path: build/ios/iphoneos/*.app
+          name: ios-package
+          path: dist/*.ipa
+          if-no-files-found: error
           retention-days: 30
 
   # ─────────────────────────────────────────
-  # 🌐 Web → Firebase Hosting
+  # 🌐 Web ZIP + Firebase Hosting
   # ─────────────────────────────────────────
-  build-and-deploy-web:
-    name: 🌐 Web → Firebase
+  build-web:
+    name: 🌐 Web package + Firebase
+    needs: prepare
     runs-on: ubuntu-latest
-    # Only deploy on push to main/master (not PRs)
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    env:
+      APP_VERSION: ${{ needs.prepare.outputs.app_version }}
+      BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -230,61 +421,82 @@ jobs:
       - name: Generate localizations
         run: flutter gen-l10n
 
-      - name: Build Web (release)
+      - name: Build Web
         run: |
           flutter build web --release \
-            --dart-define=GOOGLE_DRIVE_PROXY_URL="https://vercel-talentum-backend.vercel.app" \
+            --build-name "$APP_VERSION" \
+            --build-number "$BUILD_NUMBER" \
+            --dart-define=GOOGLE_DRIVE_PROXY_URL="$GOOGLE_DRIVE_PROXY_URL" \
+            --dart-define=GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB="$GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB" \
             --dart-define=CLOUDINARY_CLOUD_NAME=dp50nlimq \
-            --dart-define=CLOUDINARY_UPLOAD_PRESET=schoolWorld \
-            --dart-define=APP_API_SECRET=talentum2026secret
+            --dart-define=CLOUDINARY_UPLOAD_PRESET=schoolWorld
 
-      - name: Force new deploy hash
-        run: date +%s > build/web/deploy_version.txt
+      - name: Package Web
+        run: |
+          mkdir -p dist
+          (
+            cd build
+            zip -qry "../dist/TalentUm-${APP_VERSION}+${BUILD_NUMBER}-web.zip" web
+          )
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Upload Web package
+        uses: actions/upload-artifact@v4
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          name: web-package
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Deploy to Firebase Hosting
-        run: |
-          set +e
-          npx --yes firebase-tools@latest deploy \
-            --only hosting \
-            --project school-wolrd \
-            --non-interactive > deploy_output.log 2>&1
-          EXIT_CODE=$?
-          cat deploy_output.log
-          if [ $EXIT_CODE -ne 0 ]; then
-            if grep -q "is the current active version" deploy_output.log; then
-              echo "✅ Deployment is already up to date. Ignoring the active version error."
-              exit 0
-            else
-              echo "❌ Firebase deploy failed."
-              exit $EXIT_CODE
-            fi
-          fi
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: school-wolrd
+          target: talentum
 
   # ─────────────────────────────────────────
-  # 📦 Create GitHub Release (on tag)
+  # 📦 GitHub Release (on v* tags)
   # ─────────────────────────────────────────
   create-release:
     name: 📦 GitHub Release
-    runs-on: ubuntu-latest
-    needs: [build-android, build-windows, build-macos, build-ios]
+    needs:
+      - prepare
+      - build-android
+      - build-windows
+      - build-linux
+      - build-macos
+      - build-ios
+      - build-web
     if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
     steps:
-      - name: Download all artifacts
+      - name: Download all packages
         uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: List release packages
+        run: find release-artifacts -maxdepth 3 -type f -print
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: TalentUm ${{ needs.prepare.outputs.package_version }}
+          tag_name: ${{ github.ref_name }}
           files: |
-            android-apk/*.apk
-            windows-release/**
+            release-artifacts/android-package/*.apk
+            release-artifacts/android-package/*.aab
+            release-artifacts/windows-package/*.zip
+            release-artifacts/linux-package/*.tar.gz
+            release-artifacts/macos-package/*.dmg
+            release-artifacts/macos-package/*.app.zip
+            release-artifacts/ios-package/*.ipa
+            release-artifacts/web-package/*.zip
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
