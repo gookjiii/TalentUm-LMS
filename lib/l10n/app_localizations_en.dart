@@ -56,10 +56,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inviteCode => 'Invite code';
 
   @override
-  String get previewClass => 'Preview class';
+  String get previewClass => 'Preview';
 
   @override
-  String get joinClass => 'Join class';
+  String get joinClass => 'Join';
 
   @override
   String get cancel => 'Cancel';
@@ -72,6 +72,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get today => 'Today';
+
+  @override
+  String get yesterday => 'Yesterday';
 
   @override
   String get chat => 'Chat';
@@ -101,7 +104,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signIn => 'Sign in';
 
   @override
-  String get createAccount => 'Create an account';
+  String get createAccount => 'Sign up';
 
   @override
   String get otp => 'OTP';
@@ -116,10 +119,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get enterOtpError => 'Enter the 6-digit code.';
 
   @override
-  String get teacherWorkspace => 'Teacher workspace';
+  String get teacherWorkspace => 'Workspace';
 
   @override
-  String get createClass => 'Create class';
+  String get createClass => 'Create';
 
   @override
   String get settings => 'Settings';
@@ -134,7 +137,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get russian => 'Russian';
 
   @override
-  String get joinAClass => 'Join a class';
+  String get joinAClass => 'Join';
 
   @override
   String get inviteCodeNotFound => 'Invite code not found.';
@@ -151,10 +154,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quickLinks => 'Quick links';
 
   @override
-  String get homeworkPortal => 'Homework Portal';
+  String get homeworkPortal => 'Homework';
 
   @override
-  String get myGrades => 'My Grades';
+  String get myGrades => 'Grades';
 
   @override
   String get notifications => 'Notifications';
@@ -182,7 +185,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noMessagesYet => 'No messages yet.';
 
   @override
-  String get messageYourClass => 'Message your class';
+  String get messageYourClass => 'Message';
 
   @override
   String get send => 'Send';
@@ -250,7 +253,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get joiningWait => 'Joining...';
 
   @override
-  String get enterClassroom => 'Enter classroom';
+  String get enterClassroom => 'Enter';
 
   @override
   String totalAssignmentsCount(int count) {
@@ -2180,10 +2183,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeBack => 'Welcome back 👋';
 
   @override
+  String get welcomeToTalentUm => 'Welcome to TalentUm';
+
+  @override
   String get fullName => 'Full name';
 
   @override
   String get emailMail => 'Email mail';
+
+  @override
+  String get completeYourProfile => 'Complete your profile';
+
+  @override
+  String get completeYourProfileDescription => 'Add your name to finish setting up your account.';
+
+  @override
+  String get contactEmailOptional => 'Contact email (optional)';
+
+  @override
+  String get phoneAccountEmailHint => 'This email helps a parent or teacher find your profile. You will still sign in with your phone number.';
+
+  @override
+  String get profileEmailAlreadyInUse => 'This email is already linked to another account. Use a different email or leave this field blank.';
+
+  @override
+  String get enterValidEmailOrLeaveBlank => 'Enter a valid email address or leave this field blank.';
+
+  @override
+  String get enterYourName => 'Enter your name to continue.';
+
+  @override
+  String get saveAndContinue => 'Save and continue';
 
   @override
   String get forgotYourPassword => 'Forgot your password?';
@@ -2358,4 +2388,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get colorOverride => 'Color override:';
+
+  @override
+  String get youHaveSeenAllAnnouncements => 'You have seen all announcements!';
+
+  @override
+  String get youHaveNoClassesToday => 'You have no classes today 🎉';
 }

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 
@@ -5,7 +6,11 @@ import '../../main.dart';
 import '../theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({this.initialInviteCode, super.key});
+
+  /// Supplied for authenticated users opening a class invite link. The user
+  /// still sees the class preview and explicitly confirms joining.
+  final String? initialInviteCode;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -25,6 +30,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   void initState() {
     super.initState();
+    final initialInviteCode = widget.initialInviteCode?.trim();
+    if (initialInviteCode?.isNotEmpty == true) {
+      _codeController.text = initialInviteCode!;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _previewClass());
+    }
     _previewAnimCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 420),
@@ -216,9 +226,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           boxShadow: [
                             BoxShadow(
                               color: SchoolColors.primary.withValues(
-                                alpha: (_previewData != null && !_loading) ? 0.3 : 0.0,
+                                alpha: (_previewData != null && !_loading)
+                                    ? 0.3
+                                    : 0.0,
                               ),
-                              blurRadius: (_previewData != null && !_loading) ? 20 : 0,
+                              blurRadius: (_previewData != null && !_loading)
+                                  ? 20
+                                  : 0,
                               offset: (_previewData != null && !_loading)
                                   ? const Offset(0, 6)
                                   : Offset.zero,
@@ -258,9 +272,15 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                   : SchoolColors.textSecondary,
                             ),
                             children: [
-                              TextSpan(text: AppLocalizations.of(context)!.areYouATeacher),
                               TextSpan(
-                                text: AppLocalizations.of(context)!.loginAsTeacher,
+                                text: AppLocalizations.of(
+                                  context,
+                                )!.areYouATeacher,
+                              ),
+                              TextSpan(
+                                text: AppLocalizations.of(
+                                  context,
+                                )!.loginAsTeacher,
                                 style: TextStyle(
                                   color: SchoolColors.primary,
                                   fontWeight: FontWeight.w700,
@@ -285,7 +305,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   Future<void> _previewClass() async {
     final code = _codeController.text.trim();
     if (code.isEmpty) {
-      setState(() => _codeError = AppLocalizations.of(context)!.enterInvitationCode);
+      setState(
+        () => _codeError = AppLocalizations.of(context)!.enterInvitationCode,
+      );
       return;
     }
     setState(() {
@@ -319,7 +341,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       }
       await repo.createProfile(
         role: 'student',
-        name: user.displayName ?? user.email?.split('@').first ?? AppLocalizations.of(context)!.student,
+        name:
+            user.displayName ??
+            user.email?.split('@').first ??
+            AppLocalizations.of(context)!.student,
       );
       final result = await repo.joinClass(_previewData!['classId'].toString());
       if (mounted) {
@@ -342,10 +367,20 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         _showMessage(AppLocalizations.of(context)!.pleaseLoginFirst);
         return;
       }
-      await repo.createProfile(
-        role: 'teacher',
-        name: user.displayName ?? user.email?.split('@').first ?? AppLocalizations.of(context)!.teacher,
-      );
+      final name =
+          user.displayName ??
+          user.email?.split('@').first ??
+          AppLocalizations.of(context)!.teacher;
+      await repo.createProfile(role: 'student', name: name, email: user.email);
+      await repo.firestore.collection('teacher_requests').doc(user.uid).set({
+        'userId': user.uid,
+        'name': name,
+        'email': user.email ?? '',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      if (mounted) {
+        _showMessage(AppLocalizations.of(context)!.requestSent);
+      }
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }

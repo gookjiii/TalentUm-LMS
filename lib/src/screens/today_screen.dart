@@ -74,41 +74,60 @@ class TodayScreen extends StatelessWidget {
                 );
               }
 
+              // Sort assignments: overdue first, then by date
+              final sortedAssignments = List.of(assignments)..sort((a, b) {
+                final aDate = (a.data()['dueDate'] as Timestamp?)?.toDate();
+                final bDate = (b.data()['dueDate'] as Timestamp?)?.toDate();
+                if (aDate == null && bDate == null) return 0;
+                if (aDate == null) return 1;
+                if (bDate == null) return -1;
+                final aOverdue = aDate.isBefore(DateTime.now());
+                final bOverdue = bDate.isBefore(DateTime.now());
+                if (aOverdue && !bOverdue) return -1;
+                if (!aOverdue && bOverdue) return 1;
+                return aDate.compareTo(bDate);
+              });
+
               return ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                itemCount: assignments.length,
+                itemCount: sortedAssignments.length,
                 itemBuilder: (context, index) {
-                  final assignment = assignments[index].data();
+                  final assignment = sortedAssignments[index].data();
                   final dueDateRaw = assignment['dueDate'];
                   final DateTime? dueDate = dueDateRaw is Timestamp
                       ? dueDateRaw.toDate()
                       : null;
                   final isOverdue =
                       dueDate != null && dueDate.isBefore(DateTime.now());
+                      
+                  final isFeatured = index == 0; // Structured asymmetry
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: SchoolCard(
+                      padding: isFeatured ? const EdgeInsets.all(20) : const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      color: isFeatured && isOverdue ? SchoolColors.redContainer.withValues(alpha: 0.3) : null,
                       child: Row(
+                        crossAxisAlignment: isFeatured ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                         children: [
                           Container(
-                            width: 44,
-                            height: 44,
+                            width: isFeatured ? 48 : 40,
+                            height: isFeatured ? 48 : 40,
                             decoration: BoxDecoration(
                               color: isOverdue
                                   ? SchoolColors.redContainer
                                   : SchoolColors.primaryContainer,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(isFeatured ? 14 : 10),
                             ),
                             child: Icon(
                               Icons.assignment_rounded,
                               color: isOverdue
                                   ? SchoolColors.red
                                   : SchoolColors.primary,
-                              size: 22,
+                              size: isFeatured ? 24 : 20,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,25 +136,25 @@ class TodayScreen extends StatelessWidget {
                                   assignment['title']?.toString() ??
                                       l10n.assignment,
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
+                                    fontWeight: isFeatured ? FontWeight.w900 : FontWeight.w700,
+                                    fontSize: isFeatured ? 17 : 15,
                                     color: isOverdue
                                         ? SchoolColors.red
                                         : SchoolColors.text,
                                   ),
                                 ),
                                 if (dueDate != null) ...[
-                                  const SizedBox(height: 4),
+                                  SizedBox(height: isFeatured ? 6 : 4),
                                   Row(
                                     children: [
                                       Icon(
                                         Icons.schedule_rounded,
-                                        size: 12,
+                                        size: 14,
                                         color: isOverdue
                                             ? SchoolColors.red
                                             : SchoolColors.muted,
                                       ),
-                                      const SizedBox(width: 4),
+                                      const SizedBox(width: 6),
                                       Text(
                                         DateFormat.yMMMd(
                                           Localizations.localeOf(
@@ -143,7 +162,7 @@ class TodayScreen extends StatelessWidget {
                                           ).languageCode,
                                         ).add_Hm().format(dueDate),
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 13,
                                           fontWeight: FontWeight.w600,
                                           color: isOverdue
                                               ? SchoolColors.red

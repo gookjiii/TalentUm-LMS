@@ -144,7 +144,15 @@ class _ChatInputState extends State<ChatInput> {
         path = '${dir.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
       }
 
-      await _audioRecorder.start(const RecordConfig(), path: path ?? '');
+      if (kIsWeb) {
+        try {
+          await _audioRecorder.start(const RecordConfig(encoder: AudioEncoder.opus), path: '');
+        } catch (_) {
+          await _audioRecorder.start(const RecordConfig(), path: '');
+        }
+      } else {
+        await _audioRecorder.start(const RecordConfig(), path: path ?? '');
+      }
 
       if (!mounted) return;
       setState(() {
@@ -253,13 +261,16 @@ class _ChatInputState extends State<ChatInput> {
       return _buildRecordedAudioPreviewUI(theme);
     }
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        isMobile ? 4 : 16,
-        isMobile ? 4 : 12,
-        isMobile ? 4 : 16,
-        (isMobile ? 6 : 16) + MediaQuery.paddingOf(context).bottom,
-      ),
+    return SafeArea(
+      bottom: true,
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          isMobile ? 4 : 16,
+          isMobile ? 4 : 12,
+          isMobile ? 4 : 16,
+          isMobile ? 6 : 16,
+        ),
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFFFF),
@@ -334,6 +345,7 @@ class _ChatInputState extends State<ChatInput> {
                         attachment: widget.pendingAttachment!,
                         onCancel: widget.onCancelAttachment,
                         onEdit: widget.onEditAttachment,
+                        isUploading: widget.isUploading,
                       ),
                     ),
             ),
@@ -507,6 +519,7 @@ class _ChatInputState extends State<ChatInput> {
               ],
             ),
           ],
+        ),
         ),
       ),
     );

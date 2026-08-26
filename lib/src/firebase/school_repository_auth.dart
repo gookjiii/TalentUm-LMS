@@ -102,7 +102,10 @@ mixin SchoolRepositoryAuth {
     if (user != null) {
       await Future.wait([
         user.updateDisplayName(name),
-        createProfile(uid: user.uid, name: name, role: 'student', email: email),
+        // New accounts remain pending until the user joins a class or submits
+        // a teacher request in onboarding. This matches phone registration
+        // and prevents a blank class dashboard on first launch.
+        createProfile(uid: user.uid, name: name, role: 'pending', email: email),
       ]);
     }
     return cred;
@@ -124,15 +127,41 @@ mixin SchoolRepositoryAuth {
     required String name,
     required String role,
     String? email,
+    String? phone,
   }) async {
     final effectiveUid = uid ?? this.uid;
     if (effectiveUid == null) return;
-    await firestore.collection('users').doc(effectiveUid).set({
-      'name': name,
-      'role': role,
-      'email': email,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    final ref = firestore.collection('users').doc(effectiveUid);
+    final existing = await ref.get();
+    final existingRole = existing.data()?['role']?.toString() ?? '';
+    final shouldSetInitialRole = !existing.exists || existingRole.isEmpty;
+    final shouldPromotePendingProfile =
+        existingRole == 'pending' && role == 'student';
+    await ref.set({
+      'name': name.trim(),
+      if (!existing.exists && email != null)
+        'email': email.trim().toLowerCase(),
+      if (!existing.exists && phone != null) 'phone': phone.trim(),
+      if (shouldSetInitialRole || shouldPromotePendingProfile) 'role': role,
+      if (!existing.exists) 'createdAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  /// Checks the contact-email lookup used by parent/teacher linking before a
+  /// phone-authenticated user stores it on their profile.
+  Future<bool> isProfileEmailAvailable(
+    String email, {
+    String? excludeUserId,
+  }) async {
+    final normalized = email.trim().toLowerCase();
+    if (normalized.isEmpty) return true;
+
+    final matches = await firestore
+        .collection('users')
+        .where('email', isEqualTo: normalized)
+        .limit(2)
+        .get();
+    return matches.docs.every((doc) => doc.id == excludeUserId);
   }
 
   Future<void> updateProfileName(String name) async {
@@ -145,28 +174,28 @@ mixin SchoolRepositoryAuth {
   }
 
   Future<void> deleteUserAccount(String userId) async {
-    const apiSecret = String.fromEnvironment('APP_API_SECRET');
-    const proxyUrl = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
-    if (proxyUrl.isEmpty) {
-      throw Exception('Backend GOOGLE_DRIVE_PROXY_URL is not configured. Please run with --dart-define=GOOGLE_DRIVE_PROXY_URL=...');
-    }
-    if (apiSecret.isEmpty) {
-      throw Exception('Backend APP_API_SECRET is not configured. Please run with --dart-define=APP_API_SECRET=...');
-    }
+    // 1. Delete user document from Firestore directly
+    await firestore.collection('users').doc(userId).delete();
 
-    final dio = Dio();
-    final res = await dio.post(
-      '$proxyUrl/api/auth/delete_user',
-      data: {'userId': userId},
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $apiSecret',
-        },
-      ),
-    );
-
-    if (res.statusCode != 200) {
-      throw Exception('Failed to delete user: ${res.data}');
+    // 2. Try calling backend service to clean up Auth account if available
+    try {
+      const proxyUrl = String.fromEnvironment(
+        'GOOGLE_DRIVE_PROXY_URL',
+        defaultValue: 'https://vercel-talentum-backend.vercel.app',
+      );
+      if (proxyUrl.isNotEmpty) {
+        final idToken = await auth.currentUser?.getIdToken();
+        if (idToken != null && idToken.isNotEmpty) {
+          final dio = Dio();
+          await dio.post(
+            '$proxyUrl/api/auth/delete_user',
+            data: {'userId': userId},
+            options: Options(headers: {'Authorization': 'Bearer $idToken'}),
+          );
+        }
+      }
+    } catch (_) {
+      // Backend proxy API optional; Firestore user doc is already deleted.
     }
   }
 
@@ -194,5 +223,15 @@ mixin SchoolRepositoryAuth {
       smsCode: smsCode,
     );
     return auth.signInWithCredential(credential);
+  }
+
+  Future<ConfirmationResult> signInWithPhoneNumberWeb(
+    String phoneNumber, {
+    RecaptchaVerifier? verifier,
+  }) {
+    if (verifier != null) {
+      return auth.signInWithPhoneNumber(phoneNumber, verifier);
+    }
+    return auth.signInWithPhoneNumber(phoneNumber);
   }
 }

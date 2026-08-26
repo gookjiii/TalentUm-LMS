@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/main.dart';
+import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 
@@ -114,7 +116,9 @@ class TeacherSidebar extends StatelessWidget {
                               padding: EdgeInsets.zero,
                               tooltip: l10n.createClass,
                               style: IconButton.styleFrom(
-                                backgroundColor: Colors.white.withValues(alpha: 0.08),
+                                backgroundColor: Colors.white.withValues(
+                                  alpha: 0.08,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(6),
                                 ),
@@ -126,6 +130,8 @@ class TeacherSidebar extends StatelessWidget {
                   ),
                   for (final c in classes)
                     _TeacherClassItem(
+                      classId: c['id'] as String? ?? '',
+                      chatRoomId: c['chatRoomId'] as String?,
                       name: c['name'] ?? '',
                       subject: c['subject'] ?? '',
                       avatarUrl: c['avatarUrl'] as String?,
@@ -143,6 +149,16 @@ class TeacherSidebar extends StatelessWidget {
                       onCopyLink: () => onCopyGuestLink(
                         c['id'] as String,
                         c['inviteCode'] ?? '',
+                      ),
+                      onChangeAvatar: () => pickAndUpdateClassAvatar(
+                        context,
+                        classId: c['id'] as String,
+                        className: c['name'] ?? '',
+                      ),
+                      onEditName: () => showEditClassNameDialog(
+                        context,
+                        classId: c['id'] as String,
+                        currentName: c['name'] ?? '',
                       ),
                     ),
                 ],
@@ -360,8 +376,10 @@ class _TeacherNavItemState extends State<_TeacherNavItem> {
   }
 }
 
-class _TeacherClassItem extends StatefulWidget {
+class _TeacherClassItem extends ConsumerStatefulWidget {
   const _TeacherClassItem({
+    this.classId = '',
+    this.chatRoomId,
     required this.name,
     required this.subject,
     required this.color,
@@ -370,24 +388,29 @@ class _TeacherClassItem extends StatefulWidget {
     required this.onDeleteChat,
     required this.onDeleteClass,
     required this.onCopyLink,
+    this.onChangeAvatar,
+    this.onEditName,
     this.avatarUrl,
     required this.isLead,
     this.isVirtual = false,
   });
 
+  final String classId;
+  final String? chatRoomId;
   final String name, subject;
   final Color color;
   final bool selected;
   final VoidCallback onTap, onDeleteChat, onDeleteClass, onCopyLink;
+  final VoidCallback? onChangeAvatar, onEditName;
   final String? avatarUrl;
   final bool isLead;
   final bool isVirtual;
 
   @override
-  State<_TeacherClassItem> createState() => _TeacherClassItemState();
+  ConsumerState<_TeacherClassItem> createState() => _TeacherClassItemState();
 }
 
-class _TeacherClassItemState extends State<_TeacherClassItem> {
+class _TeacherClassItemState extends ConsumerState<_TeacherClassItem> {
   bool _hovered = false;
 
   @override
@@ -398,6 +421,14 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
         : _hovered
         ? Colors.white.withValues(alpha: 0.04)
         : Colors.transparent;
+
+    final targetRoomId =
+        (widget.chatRoomId != null && widget.chatRoomId!.isNotEmpty)
+        ? widget.chatRoomId!
+        : widget.classId;
+    final hasUnread = targetRoomId.isNotEmpty
+        ? (ref.watch(roomUnreadProvider(targetRoomId)).value ?? false)
+        : false;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -422,27 +453,56 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
             ),
             child: Row(
               children: [
-                if (widget.isVirtual)
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: widget.color.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.person_outline_rounded,
-                      size: 18,
-                      color: widget.color,
-                    ),
-                  )
-                else
-                  ClassBadge(
-                    name: widget.name,
-                    color: widget.color,
-                    size: 32,
-                    avatarUrl: widget.avatarUrl,
-                  ),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    if (widget.isVirtual)
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: widget.color.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person_outline_rounded,
+                          size: 18,
+                          color: widget.color,
+                        ),
+                      )
+                    else
+                      ClassBadge(
+                        name: widget.name,
+                        color: widget.color,
+                        size: 32,
+                        avatarUrl: widget.avatarUrl,
+                      ),
+                    if (hasUnread)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          width: 11,
+                          height: 11,
+                          decoration: BoxDecoration(
+                            color: SchoolColors.red,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFF0F172A),
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: SchoolColors.red.withValues(alpha: 0.9),
+                                blurRadius: 6,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -475,12 +535,14 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
                     ],
                   ),
                 ),
-                if (!widget.isVirtual && (widget.selected || _hovered))
+                if (!widget.isVirtual)
                   PopupMenuButton<String>(
                     icon: Icon(
                       Icons.more_vert_rounded,
                       size: 16,
-                      color: inactiveColor,
+                      color: (widget.selected || _hovered)
+                          ? inactiveColor
+                          : inactiveColor.withValues(alpha: 0.35),
                     ),
                     color: const Color(0xFF1E293B),
                     shape: RoundedRectangleBorder(
@@ -509,27 +571,67 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
                             ],
                           ),
                         ),
-                        if (widget.isLead) ...[
-                          PopupMenuItem(
-                            value: 'clear',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.chat_bubble_outline_rounded,
-                                  size: 16,
+                        PopupMenuItem(
+                          value: 'edit_name',
+                          child: Row(
+                            children: const [
+                              Icon(
+                                Icons.edit_outlined,
+                                size: 16,
+                                color: Colors.white70,
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'Переименовать класс',
+                                style: TextStyle(
                                   color: Colors.white70,
+                                  fontSize: 13,
                                 ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  l10n.clearChat,
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
+                        ),
+                        PopupMenuItem(
+                          value: 'avatar',
+                          child: Row(
+                            children: const [
+                              Icon(
+                                Icons.photo_camera_outlined,
+                                size: 16,
+                                color: Colors.white70,
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'Аватар класса',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'clear',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.chat_bubble_outline_rounded,
+                                size: 16,
+                                color: Colors.white70,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                l10n.clearChat,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (widget.isLead)
                           PopupMenuItem(
                             value: 'delete',
                             child: Row(
@@ -550,11 +652,12 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
                               ],
                             ),
                           ),
-                        ],
                       ];
                     },
                     onSelected: (val) {
                       if (val == 'copy') widget.onCopyLink();
+                      if (val == 'edit_name') widget.onEditName?.call();
+                      if (val == 'avatar') widget.onChangeAvatar?.call();
                       if (val == 'clear') widget.onDeleteChat();
                       if (val == 'delete') widget.onDeleteClass();
                     },
@@ -631,10 +734,11 @@ class _TeacherUserCard extends StatelessWidget {
       builder: (context, snapshot) {
         final data = snapshot.data?.data() ?? {};
         final fallbackName = repo.auth.currentUser?.displayName ?? l10n.teacher;
-        final name = (data['name'] as String?)?.isNotEmpty == true
-            ? data['name'] as String
+        final storedName = data['name']?.toString().trim();
+        final name = storedName?.isNotEmpty == true
+            ? storedName ?? fallbackName
             : fallbackName;
-        final avatarUrl = data['avatarUrl'] as String?;
+        final avatarUrl = data['avatarUrl']?.toString();
 
         return Padding(
           padding: EdgeInsets.symmetric(
@@ -696,7 +800,10 @@ class _TeacherUserCard extends StatelessWidget {
                   IconButton(
                     onPressed: onSignOut,
                     tooltip: l10n.signOut,
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
                     icon: const Icon(
                       Icons.logout_rounded,
                       size: 18,

@@ -12,16 +12,7 @@ final repositoryProvider = Provider<SchoolRepository>((ref) {
   return SchoolRepository();
 });
 
-final storageProvider = Provider<StorageProvider>((ref) {
-  return CloudinaryStorageProvider.fromEnvironmentOrFirebase();
-});
-
-/// Cloudinary-backed provider for chat (images, videos, audio).
-final chatStorageProvider = Provider<StorageProvider>((ref) {
-  return CloudinaryStorageProvider.chatProvider();
-});
-
-/// Google Drive-backed provider for library materials.
+/// Firebase for small materials; Google Drive for large files when configured.
 final libraryStorageProvider = Provider<StorageProvider>((ref) {
   return CloudinaryStorageProvider.libraryProvider();
 });
@@ -39,8 +30,6 @@ final uidProvider = Provider<String?>((ref) {
 final schoolAppStateProvider = ChangeNotifierProvider<SchoolAppState>((ref) {
   return SchoolAppState();
 });
-
-const String appApiSecret = String.fromEnvironment('APP_API_SECRET');
 
 final preloadedChatControllerProvider =
     ChangeNotifierProvider.family<FirebaseChatController, String>((
@@ -146,3 +135,58 @@ final userDataProvider = StreamProvider.autoDispose
           .snapshots()
           .map((doc) => doc.data());
     });
+
+final roomUnreadProvider = StreamProvider.family<bool, String>((ref, classOrRoomId) {
+  final uid = ref.watch(uidProvider);
+  if (uid == null || classOrRoomId.isEmpty) return Stream.value(false);
+  final repo = ref.watch(repositoryProvider);
+
+  return repo.firestore
+      .collection('rooms')
+      .doc(classOrRoomId)
+      .collection('messages')
+      .orderBy('createdAt', descending: true)
+      .limit(1)
+      .snapshots()
+      .asyncMap((snap) async {
+    if (snap.docs.isNotEmpty) {
+      final msg = snap.docs.first.data();
+      final authorId = msg['authorId']?.toString();
+      if (authorId == uid) return false;
+
+      final metadata = msg['metadata'] as Map<String, dynamic>?;
+      final seenBy = List<String>.from(metadata?['seenBy'] ?? []);
+      return !seenBy.contains(uid);
+    }
+
+    try {
+      final roomQuery = await repo.firestore
+          .collection('rooms')
+          .where('metadata.classId', isEqualTo: classOrRoomId)
+          .limit(1)
+          .get();
+
+      if (roomQuery.docs.isNotEmpty) {
+        final actualRoomId = roomQuery.docs.first.id;
+        final roomMsgSnap = await repo.firestore
+            .collection('rooms')
+            .doc(actualRoomId)
+            .collection('messages')
+            .orderBy('createdAt', descending: true)
+            .limit(1)
+            .get();
+
+        if (roomMsgSnap.docs.isNotEmpty) {
+          final msg = roomMsgSnap.docs.first.data();
+          final authorId = msg['authorId']?.toString();
+          if (authorId == uid) return false;
+
+          final metadata = msg['metadata'] as Map<String, dynamic>?;
+          final seenBy = List<String>.from(metadata?['seenBy'] ?? []);
+          return !seenBy.contains(uid);
+        }
+      }
+    } catch (_) {}
+    return false;
+  });
+});

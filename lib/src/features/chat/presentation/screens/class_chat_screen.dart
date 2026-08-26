@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
@@ -18,6 +19,7 @@ import 'package:school_world/src/features/chat/domain/models/chat_attachment.dar
 import 'package:school_world/src/firebase/school_repository.dart';
 import 'package:school_world/src/features/chat/data/reactions_notifier.dart';
 import 'package:school_world/src/utils/open_external_url.dart';
+import 'package:school_world/src/utils/blob_bytes_helper.dart';
 import 'package:school_world/src/widgets/image_viewer.dart';
 import 'package:school_world/src/features/chat/presentation/screens/photo_editor_screen.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
@@ -80,6 +82,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
   bool _showResourceSidebar = false;
   bool _showTopicsSidebar = false;
   bool _topicsInitialized = false;
+  double? _lastWidth;
   int _sidebarInitialTab = 0;
   bool _isTeacher = false;
   PickedChatAttachment? _pendingAttachment;
@@ -103,11 +106,21 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final width = MediaQuery.sizeOf(context).width;
+    final wide = width >= 700;
+
     if (!_topicsInitialized) {
       _topicsInitialized = true;
-      final wide = MediaQuery.sizeOf(context).width >= 700;
       _showTopicsSidebar = widget.initialShowTopicsSidebar || wide;
+    } else if (_lastWidth != null) {
+      final wasWide = _lastWidth! >= 700;
+      if (wide && !wasWide) {
+        _showTopicsSidebar = true;
+      } else if (!wide && wasWide) {
+        _showTopicsSidebar = false;
+      }
     }
+    _lastWidth = width;
   }
 
   @override
@@ -343,7 +356,9 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
       final seenBy = List<String>.from(msg.metadata?['seenBy'] ?? []);
       if (!seenBy.contains(myUid)) {
         _seenMarkQueued.add(msg.id);
-        widget.repository.markMessageAsSeen(_roomId!, msg.id);
+        widget.repository.markMessageAsSeen(_roomId!, msg.id).catchError((_) {
+          _seenMarkQueued.remove(msg.id);
+        });
       }
     }
   }
@@ -370,8 +385,6 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
 
   String _resolveUserName(String authorId) =>
       _userCache[authorId]?.name ?? AppLocalizations.of(context)!.participant;
-
-
 
   Future<void> _onCamera() async {
     try {
@@ -476,13 +489,13 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
       return;
     }
 
+    if (_uploading) return;
+
     final attachment = _pendingAttachment;
     final confirmedText = text;
 
     setState(() {
       _uploading = true;
-      _pendingAttachment = null;
-      _textController.clear();
     });
 
     try {
@@ -516,6 +529,14 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
             uploadPath,
             attachment.file.bytes!,
           );
+        } else if (attachment.file.readStream != null) {
+          final bytes = Uint8List.fromList(
+            await attachment.file.readStream!.fold<List<int>>(
+              [],
+              (a, b) => a..addAll(b),
+            ),
+          );
+          resultData = await widget.repository.uploadFileWeb(uploadPath, bytes);
         } else if (attachment.file.path != null) {
           resultData = await widget.repository.uploadFile(
             uploadPath,
@@ -529,6 +550,10 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
             'attachmentType': attachment.type.name,
             'fileName': attachment.name,
             'fileSize': attachment.size,
+            if (resultData['provider'] != null)
+              'storageProvider': resultData['provider'],
+            if (resultData['driveFileId'] != null)
+              'driveFileId': resultData['driveFileId'],
             if (confirmedText.isNotEmpty) 'text': confirmedText,
           };
           await _chatController!.sendFile(
@@ -556,7 +581,13 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
           metadata: textMeta.isEmpty ? null : textMeta,
         );
       }
-      if (mounted) setState(() => _replyingTo = null);
+      if (mounted) {
+        setState(() {
+          _replyingTo = null;
+          _pendingAttachment = null;
+          _textController.clear();
+        });
+      }
     } catch (e) {
       debugPrint('Send error: $e');
       if (mounted) {
@@ -924,8 +955,19 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
     try {
       final decoded = img.decodeImage(bytes);
       if (decoded == null) return bytes;
-      final resized = img.copyResize(decoded, width: 1600);
-      return Uint8List.fromList(img.encodeJpg(resized, quality: 82));
+      const maxDimension = 2560;
+      final longestSide = decoded.width > decoded.height
+          ? decoded.width
+          : decoded.height;
+      final resized = longestSide > maxDimension
+          ? img.copyResize(
+              decoded,
+              width: decoded.width >= decoded.height ? maxDimension : null,
+              height: decoded.height > decoded.width ? maxDimension : null,
+              interpolation: img.Interpolation.cubic,
+            )
+          : decoded;
+      return Uint8List.fromList(img.encodeJpg(resized, quality: 92));
     } catch (_) {
       return bytes;
     }
@@ -937,16 +979,27 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
 
     setState(() => _uploading = true);
     try {
+      const ext = kIsWeb ? 'webm' : 'm4a';
       final uploadPath =
-          'classes/${widget.classId}/messages/${DateTime.now().millisecondsSinceEpoch}_voice.m4a';
+          'classes/${widget.classId}/messages/${DateTime.now().millisecondsSinceEpoch}_voice.$ext';
 
       Map<String, dynamic>? result;
       if (kIsWeb) {
-        final response = await Dio().get<List<int>>(
-          path,
-          options: Options(responseType: ResponseType.bytes),
-        );
-        final bytes = Uint8List.fromList(response.data!);
+        Uint8List bytes;
+        if (path.startsWith('blob:')) {
+          bytes = await getBlobBytes(path);
+        } else {
+          try {
+            final res = await http.get(Uri.parse(path));
+            bytes = res.bodyBytes;
+          } catch (_) {
+            final response = await Dio().get<List<int>>(
+              path,
+              options: Options(responseType: ResponseType.bytes),
+            );
+            bytes = Uint8List.fromList(response.data!);
+          }
+        }
         result = await widget.repository.uploadFileWeb(uploadPath, bytes);
       } else {
         result = await widget.repository.uploadFile(uploadPath, File(path));
@@ -996,11 +1049,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
                 ),
                 child: Row(
                   children: const [
-                    SkeletalLoader(
-                      width: 44,
-                      height: 44,
-                      borderRadius: 12,
-                    ),
+                    SkeletalLoader(width: 44, height: 44, borderRadius: 12),
                     SizedBox(width: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1133,7 +1182,9 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight + 10),
+        preferredSize: Size.fromHeight(
+          isMobile ? kToolbarHeight + 8 : kToolbarHeight + 10,
+        ),
         child: Builder(
           builder: (context) {
             return ChatHeader(

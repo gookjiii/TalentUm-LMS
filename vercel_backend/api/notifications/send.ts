@@ -1,20 +1,17 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { firebaseAdmin } from '../../utils/firebase';
+import { handleCors, verifyFirebaseToken, checkRateLimit } from '../../utils/api';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (handleCors(req, res)) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  // Very basic authorization (could be improved with Bearer token matching a Firebase user token)
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized: Missing or invalid Authorization header' });
+  if (!checkRateLimit(req)) return res.status(429).json({ error: 'Too Many Requests' });
+  if (!await verifyFirebaseToken(req)) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid or missing Firebase ID token' });
   }
 
   try {
@@ -53,7 +50,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, message: 'No valid tokens found to send.' });
     }
 
-    if (!title || !body) {
+    if (typeof title !== 'string' || title.trim().length === 0 || title.length > 120 ||
+        typeof body !== 'string' || body.trim().length === 0 || body.length > 500) {
       return res.status(400).json({ error: 'Bad Request: Missing title or body' });
     }
 
@@ -65,12 +63,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     for (let i = 0; i < targetTokens.length; i += MAX_BATCH_SIZE) {
       const batchTokens = targetTokens.slice(i, i + MAX_BATCH_SIZE);
+      // FCM data values must be strings. Normalizing them here prevents a
+      // malformed optional field from causing the entire chat notification to
+      // be dropped by Firebase Admin.
+      const notificationData: Record<string, string> = {};
+      if (data && typeof data === 'object') {
+        for (const [key, value] of Object.entries(data)) {
+          if (value !== undefined && value !== null) {
+            notificationData[key] = String(value);
+          }
+        }
+      }
+
       const message = {
         notification: {
           title,
           body,
         },
-        data: data || {},
+        data: notificationData,
         tokens: batchTokens,
       };
 

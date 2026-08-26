@@ -35,7 +35,8 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
     _verticalBodyController.addListener(() {
       if (_verticalHeaderController.hasClients &&
           _verticalBodyController.hasClients) {
-        if (_verticalHeaderController.offset != _verticalBodyController.offset) {
+        if (_verticalHeaderController.offset !=
+            _verticalBodyController.offset) {
           _verticalHeaderController.jumpTo(_verticalBodyController.offset);
         }
       }
@@ -50,7 +51,8 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
     }
   }
 
-  void _loadMoreStudents() {
+  void _loadMoreStudents(int currentCount) {
+    if (currentCount < _visibleStudentsCount) return;
     setState(() {
       _visibleStudentsCount += 20;
     });
@@ -67,78 +69,96 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
   @override
   Widget build(BuildContext context) {
     final columnsAsync = ref.watch(journalColumnsProvider(widget.classId));
+    final studentIdsAsync = ref.watch(
+      journalStudentIdsProvider(widget.classId),
+    );
     final marksAsync = widget.studentIdFilter != null
         ? ref.watch(
-            journalStudentMarksProvider(
-              (widget.classId, widget.studentIdFilter!),
-            ),
+            journalStudentMarksProvider((
+              widget.classId,
+              widget.studentIdFilter!,
+            )),
           )
         : ref.watch(journalMarksProvider(widget.classId));
 
     final repo = ref.watch(repositoryProvider);
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream:
-          repo.firestore.collection('classes').doc(widget.classId).snapshots(),
+      stream: repo.firestore
+          .collection('classes')
+          .doc(widget.classId)
+          .snapshots(),
       builder: (context, classSnap) {
         if (!classSnap.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final classData = classSnap.data?.data() ?? {};
-        final allStudentIds = List<String>.from(classData['studentIds'] ?? []);
-
-        final studentIds = widget.studentIdFilter != null
-            ? allStudentIds.where((id) => id == widget.studentIdFilter).toList()
-            : allStudentIds;
-
-        final paginatedStudentIds = widget.studentIdFilter != null
-            ? studentIds
-            : studentIds.take(_visibleStudentsCount).toList();
-
-        return columnsAsync.when(
+        return studentIdsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, st) => Center(child: Text('Ошибка: $e')),
-          data: (columns) {
-            return marksAsync.when(
+          data: (allStudentIds) {
+            final studentIds = widget.studentIdFilter != null
+                ? allStudentIds
+                      .where((id) => id == widget.studentIdFilter)
+                      .toList()
+                : allStudentIds;
+
+            final paginatedStudentIds = widget.studentIdFilter != null
+                ? studentIds
+                : studentIds.take(_visibleStudentsCount).toList();
+
+            return columnsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, st) => Center(child: Text('Ошибка: $e')),
-              data: (marksDocs) {
-                if (columns.isEmpty) {
-                  return Center(
-                    child: Text(
-                      widget.studentIdFilter != null
-                          ? AppLocalizations.of(context)!.youDontHaveRatingsYet
-                          : AppLocalizations.of(context)!.theMagazineIsEmptyAdd,
-                      style: const TextStyle(
-                        color: SchoolColors.muted,
-                        fontSize: 16,
-                      ),
-                    ),
-                  );
-                }
+              data: (columns) {
+                return marksAsync.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, st) => Center(child: Text('Ошибка: $e')),
+                  data: (marksDocs) {
+                    if (columns.isEmpty) {
+                      return Center(
+                        child: Text(
+                          widget.studentIdFilter != null
+                              ? AppLocalizations.of(
+                                  context,
+                                )!.youDontHaveRatingsYet
+                              : AppLocalizations.of(
+                                  context,
+                                )!.theMagazineIsEmptyAdd,
+                          style: const TextStyle(
+                            color: SchoolColors.muted,
+                            fontSize: 16,
+                          ),
+                        ),
+                      );
+                    }
 
-                final marksMap = <String, Map<String, String>>{};
-                for (final doc in marksDocs) {
-                  final data = doc.data()!;
-                  final m = data['marks'] as Map<String, dynamic>? ?? {};
-                  marksMap[doc.id] = m.map((k, v) => MapEntry(k, v.toString()));
-                }
+                    final marksMap = <String, Map<String, String>>{};
+                    for (final doc in marksDocs) {
+                      final data = doc.data()!;
+                      final m = data['marks'] as Map<String, dynamic>? ?? {};
+                      marksMap[doc.id] = m.map(
+                        (k, v) => MapEntry(k, v.toString()),
+                      );
+                    }
 
-                if (widget.studentIdFilter != null) {
-                  return _buildStudentGradesList(
-                    context,
-                    columns,
-                    widget.studentIdFilter!,
-                    marksMap,
-                  );
-                }
+                    if (widget.studentIdFilter != null) {
+                      return _buildStudentGradesList(
+                        context,
+                        columns,
+                        widget.studentIdFilter!,
+                        marksMap,
+                      );
+                    }
 
-                return _buildCustomGrid(
-                  context,
-                  columns,
-                  paginatedStudentIds,
-                  marksMap,
+                    return _buildCustomGrid(
+                      context,
+                      columns,
+                      paginatedStudentIds,
+                      marksMap,
+                    );
+                  },
                 );
               },
             );
@@ -285,7 +305,7 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                     if (scrollInfo.metrics.axis == Axis.vertical &&
                         scrollInfo.metrics.pixels >=
                             scrollInfo.metrics.maxScrollExtent - 200) {
-                      _loadMoreStudents();
+                      _loadMoreStudents(studentIds.length);
                     }
                     return false;
                   },
@@ -357,8 +377,9 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                                             colData['topic']?.toString() ?? '';
 
                                         final isTeacher = ref.watch(
-                                          schoolAppStateProvider
-                                              .select((s) => s.isTeacher),
+                                          schoolAppStateProvider.select(
+                                            (s) => s.isTeacher,
+                                          ),
                                         );
                                         return SizedBox(
                                           width: cellWidth,
@@ -371,8 +392,11 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                                             child: _MarkCell(
                                               initialValue: mark,
                                               isDark: isDark,
-                                              onChanged: (val) =>
-                                                  _updateMark(studentId, colId, val),
+                                              onChanged: (val) => _updateMark(
+                                                studentId,
+                                                colId,
+                                                val,
+                                              ),
                                               enabled: isTeacher,
                                               studentId: studentId,
                                               date: date,
@@ -438,12 +462,15 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
     final studentMarks = marksMap[studentId] ?? {};
 
     // Sort columns by date descending (newest first)
-    final sortedColumns = List<DocumentSnapshot<Map<String, dynamic>>>.from(columns)
-      ..sort((a, b) {
-        final dateA = (a.data()?['date'] as Timestamp?)?.toDate() ?? DateTime.now();
-        final dateB = (b.data()?['date'] as Timestamp?)?.toDate() ?? DateTime.now();
-        return dateB.compareTo(dateA);
-      });
+    final sortedColumns =
+        List<DocumentSnapshot<Map<String, dynamic>>>.from(columns)
+          ..sort((a, b) {
+            final dateA =
+                (a.data()?['date'] as Timestamp?)?.toDate() ?? DateTime.now();
+            final dateB =
+                (b.data()?['date'] as Timestamp?)?.toDate() ?? DateTime.now();
+            return dateB.compareTo(dateA);
+          });
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -457,7 +484,14 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
         final homework = data['homework']?.toString() ?? '';
         final mark = studentMarks[colId]?.toString() ?? '';
 
-        return _buildStudentGradeCard(context, date, topic, homework, mark, isDark);
+        return _buildStudentGradeCard(
+          context,
+          date,
+          topic,
+          homework,
+          mark,
+          isDark,
+        );
       },
     );
   }
@@ -482,11 +516,14 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
       gradeDesc = AppLocalizations.of(context)!.unknownKey3; // Хорошо
     } else if (cleanMark == '3') {
       gradeColor = SchoolColors.orange;
-      gradeDesc = AppLocalizations.of(context)!.unknownKey4; // Удовлетворительно
+      gradeDesc = AppLocalizations.of(
+        context,
+      )!.unknownKey4; // Удовлетворительно
     } else if (cleanMark == '2') {
       gradeColor = SchoolColors.red;
       gradeDesc = AppLocalizations.of(context)!.unknownKey5; // Плохо
-    } else if (cleanMark.toLowerCase() == AppLocalizations.of(context)!.n1.toLowerCase()) {
+    } else if (cleanMark.toLowerCase() ==
+        AppLocalizations.of(context)!.n1.toLowerCase()) {
       gradeColor = SchoolColors.red;
       gradeDesc = AppLocalizations.of(context)!.absent; // Отсутствовал
     } else {
@@ -503,7 +540,9 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
           color: isDark ? SchoolColors.darkSurface : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+            color: isDark
+                ? Colors.white10
+                : Colors.black.withValues(alpha: 0.05),
           ),
           boxShadow: [
             if (!isDark)
@@ -543,7 +582,9 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                     ),
                   ),
                   Text(
-                    monthStr.length > 4 ? monthStr.substring(0, 3).toUpperCase() : monthStr.toUpperCase(),
+                    monthStr.length > 4
+                        ? monthStr.substring(0, 3).toUpperCase()
+                        : monthStr.toUpperCase(),
                     style: TextStyle(
                       fontSize: 10,
                       color: SchoolColors.primary.withValues(alpha: 0.8),
@@ -562,7 +603,9 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    topic.isNotEmpty ? topic : AppLocalizations.of(context)!.noTheme,
+                    topic.isNotEmpty
+                        ? topic
+                        : AppLocalizations.of(context)!.noTheme,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
@@ -587,7 +630,9 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                             homework,
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark ? Colors.white60 : SchoolColors.textSecondary,
+                              color: isDark
+                                  ? Colors.white60
+                                  : SchoolColors.textSecondary,
                               height: 1.3,
                             ),
                             maxLines: 1,
@@ -613,10 +658,16 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: cleanMark.isNotEmpty ? gradeColor.withValues(alpha: 0.12) : Colors.transparent,
+                      color: cleanMark.isNotEmpty
+                          ? gradeColor.withValues(alpha: 0.12)
+                          : Colors.transparent,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: cleanMark.isNotEmpty ? gradeColor.withValues(alpha: 0.3) : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.08)),
+                        color: cleanMark.isNotEmpty
+                            ? gradeColor.withValues(alpha: 0.3)
+                            : (isDark
+                                  ? Colors.white10
+                                  : Colors.black.withValues(alpha: 0.08)),
                         width: 2,
                       ),
                     ),
@@ -626,7 +677,9 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                       style: AppTextStyle.mono(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
-                        color: cleanMark.isNotEmpty ? gradeColor : (isDark ? Colors.white30 : Colors.black26),
+                        color: cleanMark.isNotEmpty
+                            ? gradeColor
+                            : (isDark ? Colors.white30 : Colors.black26),
                       ),
                     ),
                   ),
@@ -674,8 +727,9 @@ class _StudentNameCell extends ConsumerWidget {
       decoration: BoxDecoration(
         border: Border(
           right: BorderSide(
-            color:
-                isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+            color: isDark
+                ? Colors.white10
+                : Colors.black.withValues(alpha: 0.05),
           ),
           bottom: isLast
               ? BorderSide.none
@@ -691,11 +745,7 @@ class _StudentNameCell extends ConsumerWidget {
           final name = user?['name']?.toString() ?? '...';
           return Row(
             children: [
-              SchoolAvatar(
-                userId: studentId,
-                name: name,
-                radius: 12,
-              ),
+              SchoolAvatar(userId: studentId, name: name, radius: 12),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -724,7 +774,6 @@ class _StudentNameCell extends ConsumerWidget {
 
 class _MarkCell extends ConsumerWidget {
   const _MarkCell({
-    super.key,
     required this.initialValue,
     required this.isDark,
     required this.onChanged,
@@ -791,15 +840,16 @@ class _MarkCell extends ConsumerWidget {
       preferBelow: false,
       child: Container(
         decoration: BoxDecoration(
-          color:
-              mark.isNotEmpty ? color.withValues(alpha: 0.1) : Colors.transparent,
+          color: mark.isNotEmpty
+              ? color.withValues(alpha: 0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: mark.isNotEmpty
                 ? color.withValues(alpha: 0.2)
                 : (isDark
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : Colors.black.withValues(alpha: 0.05)),
+                      ? Colors.white.withValues(alpha: 0.05)
+                      : Colors.black.withValues(alpha: 0.05)),
             width: 1,
           ),
         ),
@@ -870,7 +920,9 @@ class _MarkCell extends ConsumerWidget {
                       "$formattedDate: ${topic.isNotEmpty ? topic : AppLocalizations.of(context)!.noTheme}",
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark ? Colors.white60 : SchoolColors.textSecondary,
+                        color: isDark
+                            ? Colors.white60
+                            : SchoolColors.textSecondary,
                         fontStyle: FontStyle.italic,
                       ),
                       maxLines: 2,
@@ -978,10 +1030,7 @@ class _MarkCell extends ConsumerWidget {
           const SizedBox(width: 12),
           Text(
             description,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
           ),
         ],
       ),

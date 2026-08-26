@@ -188,13 +188,13 @@ abstract class AppLocalizations {
   /// No description provided for @previewClass.
   ///
   /// In en, this message translates to:
-  /// **'Preview class'**
+  /// **'Preview'**
   String get previewClass;
 
   /// No description provided for @joinClass.
   ///
   /// In en, this message translates to:
-  /// **'Join class'**
+  /// **'Join'**
   String get joinClass;
 
   /// No description provided for @cancel.
@@ -220,6 +220,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today'**
   String get today;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
 
   /// No description provided for @chat.
   ///
@@ -278,7 +284,7 @@ abstract class AppLocalizations {
   /// No description provided for @createAccount.
   ///
   /// In en, this message translates to:
-  /// **'Create an account'**
+  /// **'Sign up'**
   String get createAccount;
 
   /// No description provided for @otp.
@@ -308,13 +314,13 @@ abstract class AppLocalizations {
   /// No description provided for @teacherWorkspace.
   ///
   /// In en, this message translates to:
-  /// **'Teacher workspace'**
+  /// **'Workspace'**
   String get teacherWorkspace;
 
   /// No description provided for @createClass.
   ///
   /// In en, this message translates to:
-  /// **'Create class'**
+  /// **'Create'**
   String get createClass;
 
   /// No description provided for @settings.
@@ -344,7 +350,7 @@ abstract class AppLocalizations {
   /// No description provided for @joinAClass.
   ///
   /// In en, this message translates to:
-  /// **'Join a class'**
+  /// **'Join'**
   String get joinAClass;
 
   /// No description provided for @inviteCodeNotFound.
@@ -374,13 +380,13 @@ abstract class AppLocalizations {
   /// No description provided for @homeworkPortal.
   ///
   /// In en, this message translates to:
-  /// **'Homework Portal'**
+  /// **'Homework'**
   String get homeworkPortal;
 
   /// No description provided for @myGrades.
   ///
   /// In en, this message translates to:
-  /// **'My Grades'**
+  /// **'Grades'**
   String get myGrades;
 
   /// No description provided for @notifications.
@@ -428,7 +434,7 @@ abstract class AppLocalizations {
   /// No description provided for @messageYourClass.
   ///
   /// In en, this message translates to:
-  /// **'Message your class'**
+  /// **'Message'**
   String get messageYourClass;
 
   /// No description provided for @send.
@@ -560,7 +566,7 @@ abstract class AppLocalizations {
   /// No description provided for @enterClassroom.
   ///
   /// In en, this message translates to:
-  /// **'Enter classroom'**
+  /// **'Enter'**
   String get enterClassroom;
 
   /// No description provided for @totalAssignmentsCount.
@@ -4349,6 +4355,12 @@ abstract class AppLocalizations {
   /// **'Welcome back 👋'**
   String get welcomeBack;
 
+  /// No description provided for @welcomeToTalentUm.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to TalentUm'**
+  String get welcomeToTalentUm;
+
   /// No description provided for @fullName.
   ///
   /// In en, this message translates to:
@@ -4360,6 +4372,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Email mail'**
   String get emailMail;
+
+  /// No description provided for @completeYourProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your profile'**
+  String get completeYourProfile;
+
+  /// No description provided for @completeYourProfileDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your name to finish setting up your account.'**
+  String get completeYourProfileDescription;
+
+  /// No description provided for @contactEmailOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact email (optional)'**
+  String get contactEmailOptional;
+
+  /// No description provided for @phoneAccountEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This email helps a parent or teacher find your profile. You will still sign in with your phone number.'**
+  String get phoneAccountEmailHint;
+
+  /// No description provided for @profileEmailAlreadyInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already linked to another account. Use a different email or leave this field blank.'**
+  String get profileEmailAlreadyInUse;
+
+  /// No description provided for @enterValidEmailOrLeaveBlank.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address or leave this field blank.'**
+  String get enterValidEmailOrLeaveBlank;
+
+  /// No description provided for @enterYourName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your name to continue.'**
+  String get enterYourName;
+
+  /// No description provided for @saveAndContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and continue'**
+  String get saveAndContinue;
 
   /// No description provided for @forgotYourPassword.
   ///
@@ -4696,6 +4756,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Color override:'**
   String get colorOverride;
+
+  /// No description provided for @youHaveSeenAllAnnouncements.
+  ///
+  /// In en, this message translates to:
+  /// **'You have seen all announcements!'**
+  String get youHaveSeenAllAnnouncements;
+
+  /// No description provided for @youHaveNoClassesToday.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no classes today 🎉'**
+  String get youHaveNoClassesToday;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

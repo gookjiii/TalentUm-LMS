@@ -11,6 +11,10 @@ mixin SchoolRepositoryWebinars {
     String? description,
     required String videoUrl,
     String? lessonId,
+    String? storageProvider,
+    String? storagePath,
+    String? driveFileId,
+    int? fileSize,
   }) async {
     await firestore.collection('webinars').add({
       'classId': classId,
@@ -18,6 +22,10 @@ mixin SchoolRepositoryWebinars {
       'description': description,
       'videoUrl': videoUrl,
       'lessonId': lessonId,
+      'storageProvider': storageProvider,
+      'storagePath': storagePath,
+      'driveFileId': driveFileId,
+      'fileSize': fileSize,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }

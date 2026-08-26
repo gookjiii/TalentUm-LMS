@@ -56,10 +56,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get inviteCode => 'Код приглашения';
 
   @override
-  String get previewClass => 'Просмотр класса';
+  String get previewClass => 'Просмотр';
 
   @override
-  String get joinClass => 'Вступить в класс';
+  String get joinClass => 'Вступить';
 
   @override
   String get cancel => 'Отмена';
@@ -72,6 +72,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get today => 'Сегодня';
+
+  @override
+  String get yesterday => 'Вчера';
 
   @override
   String get chat => 'Чат';
@@ -101,7 +104,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get signIn => 'Войти';
 
   @override
-  String get createAccount => 'Создать аккаунт';
+  String get createAccount => 'Создать';
 
   @override
   String get otp => 'Код из СМС';
@@ -116,10 +119,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get enterOtpError => 'Введите 6-значный код.';
 
   @override
-  String get teacherWorkspace => 'Рабочая область учителя';
+  String get teacherWorkspace => 'Кабинет';
 
   @override
-  String get createClass => 'Создать класс';
+  String get createClass => 'Создать';
 
   @override
   String get settings => 'Настройки';
@@ -134,7 +137,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get russian => 'Русский';
 
   @override
-  String get joinAClass => 'Вступить в класс';
+  String get joinAClass => 'Вступить';
 
   @override
   String get inviteCodeNotFound => 'Код приглашения не найден.';
@@ -151,10 +154,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get quickLinks => 'Быстрые ссылки';
 
   @override
-  String get homeworkPortal => 'Портал заданий';
+  String get homeworkPortal => 'Задания';
 
   @override
-  String get myGrades => 'Мои оценки';
+  String get myGrades => 'Оценки';
 
   @override
   String get notifications => 'Уведомления';
@@ -182,7 +185,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noMessagesYet => 'Сообщений пока нет.';
 
   @override
-  String get messageYourClass => 'Напишите классу';
+  String get messageYourClass => 'Написать';
 
   @override
   String get send => 'Отправить';
@@ -250,7 +253,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get joiningWait => 'Вступление...';
 
   @override
-  String get enterClassroom => 'Войти в класс';
+  String get enterClassroom => 'Войти';
 
   @override
   String totalAssignmentsCount(int count) {
@@ -2180,10 +2183,37 @@ class AppLocalizationsRu extends AppLocalizations {
   String get welcomeBack => 'С возвращением 👋';
 
   @override
+  String get welcomeToTalentUm => 'Добро пожаловать в TalentUm';
+
+  @override
   String get fullName => 'Полное имя';
 
   @override
   String get emailMail => 'Эл. почта';
+
+  @override
+  String get completeYourProfile => 'Заполните профиль';
+
+  @override
+  String get completeYourProfileDescription => 'Добавьте имя, чтобы завершить настройку аккаунта.';
+
+  @override
+  String get contactEmailOptional => 'Контактный email (необязательно)';
+
+  @override
+  String get phoneAccountEmailHint => 'Этот email поможет родителю или учителю найти ваш профиль. Вход останется по номеру телефона.';
+
+  @override
+  String get profileEmailAlreadyInUse => 'Этот email уже связан с другим аккаунтом. Укажите другой email или оставьте поле пустым.';
+
+  @override
+  String get enterValidEmailOrLeaveBlank => 'Введите корректный email или оставьте поле пустым.';
+
+  @override
+  String get enterYourName => 'Введите имя, чтобы продолжить.';
+
+  @override
+  String get saveAndContinue => 'Сохранить и продолжить';
 
   @override
   String get forgotYourPassword => 'Забыли пароль?';
@@ -2294,10 +2324,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get import => 'Импорт';
 
   @override
-  String get quickSubmit => 'Быстрая сдача';
+  String get quickSubmit => 'Сдать';
 
   @override
-  String get viewMore => 'Подробнее';
+  String get viewMore => 'Открыть';
 
   @override
   String get writeYourAnswerHere => 'Напишите ваш ответ здесь...';
@@ -2358,4 +2388,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get colorOverride => 'Цвет:';
+
+  @override
+  String get youHaveSeenAllAnnouncements => 'Вы просмотрели все объявления!';
+
+  @override
+  String get youHaveNoClassesToday => 'У вас нет занятий сегодня 🎉';
 }

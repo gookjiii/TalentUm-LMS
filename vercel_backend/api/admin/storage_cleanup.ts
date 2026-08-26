@@ -1,22 +1,18 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { v2 as cloudinary } from 'cloudinary';
-import { driveClient } from '../../utils/drive';
+import { getDriveClient } from '../../utils/drive';
 import { firebaseAdmin, dbAdmin } from '../../utils/firebase';
+import { handleCors, requireAdminToken } from '../../utils/api';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (handleCors(req, res)) return;
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const authHeader = req.headers.authorization;
-  const serverSecret = process.env.APP_API_SECRET;
-  if (serverSecret && authHeader !== `Bearer ${serverSecret}`) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid API Secret' });
+  if (!await requireAdminToken(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const dryRun = req.body.dryRun === true;
@@ -31,30 +27,105 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const data = doc.data();
       if (data.source) activeRefs.add(data.source.toString());
       if (data.uri) activeRefs.add(data.uri.toString());
-      // Check reply texts or logo URLs if any
+      if (data.url) activeRefs.add(data.url.toString());
+      if (data.metadata?.fileUrl) activeRefs.add(data.metadata.fileUrl.toString());
       const text = data.metadata?.text || data.text;
       if (text) activeRefs.add(text.toString());
     });
 
-    // 1b. Library Materials
-    const librarySnapshot = await dbAdmin.collection('library_materials').get();
-    librarySnapshot.forEach((doc) => {
+    // 1b. Library Materials and legacy library collection
+    for (const col of ['library_materials', 'library']) {
+      try {
+        const librarySnapshot = await dbAdmin.collection(col).get();
+        librarySnapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.fileUrl) activeRefs.add(data.fileUrl.toString());
+          if (data.url) activeRefs.add(data.url.toString());
+        });
+      } catch (_) {}
+    }
+
+    // 1c. Drive uploads
+    const driveUploadsSnapshot = await dbAdmin.collection('drive_uploads').get();
+    driveUploadsSnapshot.forEach((doc) => {
       const data = doc.data();
-      if (data.fileUrl) activeRefs.add(data.fileUrl.toString());
+      if (data.status === 'active' && data.driveFileId) {
+        activeRefs.add(data.driveFileId.toString());
+      }
+      if (data.webViewLink) activeRefs.add(data.webViewLink.toString());
+      if (data.webContentLink) activeRefs.add(data.webContentLink.toString());
+      if (data.url) activeRefs.add(data.url.toString());
     });
 
-    // 1c. Posts (school feed)
+    // 1d. Posts (school feed)
     const postsSnapshot = await dbAdmin.collection('posts').get();
     postsSnapshot.forEach((doc) => {
       const data = doc.data();
       if (data.url) activeRefs.add(data.url.toString());
+      const attachments = Array.isArray(data.attachments) ? data.attachments : [];
+      attachments.forEach((att: any) => {
+        if (att?.url) activeRefs.add(att.url.toString());
+        if (att?.uri) activeRefs.add(att.uri.toString());
+      });
     });
 
-    // 1d. System Branding settings
-    const systemSettings = await dbAdmin.collection('system_settings').doc('branding').get();
-    if (systemSettings.exists) {
-      const logo = systemSettings.data()?.logoUrl;
-      if (logo) activeRefs.add(logo.toString());
+    // 1e. Assignments (teacher homework)
+    const assignmentsSnapshot = await dbAdmin.collection('assignments').get();
+    assignmentsSnapshot.forEach((doc) => {
+      const data = doc.data();
+      const attachments = Array.isArray(data.attachments) ? data.attachments : [];
+      attachments.forEach((att: any) => {
+        if (att?.url) activeRefs.add(att.url.toString());
+        if (att?.uri) activeRefs.add(att.uri.toString());
+      });
+    });
+
+    // 1f. Submissions (student homework submissions)
+    const submissionsSnapshot = await dbAdmin.collection('submissions').get();
+    submissionsSnapshot.forEach((doc) => {
+      const data = doc.data();
+      const attachments = Array.isArray(data.attachments) ? data.attachments : [];
+      attachments.forEach((att: any) => {
+        if (att?.url) activeRefs.add(att.url.toString());
+        if (att?.uri) activeRefs.add(att.uri.toString());
+      });
+    });
+
+    // 1g. Webinars
+    const webinarsSnapshot = await dbAdmin.collection('webinars').get();
+    webinarsSnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.videoUrl) activeRefs.add(data.videoUrl.toString());
+      if (data.url) activeRefs.add(data.url.toString());
+    });
+
+    // 1h. Users avatars
+    const usersSnapshot = await dbAdmin.collection('users').get();
+    usersSnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.avatarUrl) activeRefs.add(data.avatarUrl.toString());
+      if (data.photoURL) activeRefs.add(data.photoURL.toString());
+      if (data.avatar) activeRefs.add(data.avatar.toString());
+    });
+
+    // 1i. Classes avatars
+    const classesSnapshot = await dbAdmin.collection('classes').get();
+    classesSnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.avatarUrl) activeRefs.add(data.avatarUrl.toString());
+      if (data.avatar) activeRefs.add(data.avatar.toString());
+    });
+
+    // 1j. System Branding & settings
+    for (const [col, docId] of [['system_settings', 'branding'], ['settings', 'system']]) {
+      try {
+        const sysDoc = await dbAdmin.collection(col).doc(docId).get();
+        if (sysDoc.exists) {
+          const d = sysDoc.data();
+          if (d?.logoUrl) activeRefs.add(d.logoUrl.toString());
+          if (d?.logo) activeRefs.add(d.logo.toString());
+        }
+      } catch (_) {}
     }
 
     // 2. Firebase Storage Cleanup
@@ -143,6 +214,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
       if (driveFolderId) {
+        const driveClient = await getDriveClient();
         const driveResponse = await driveClient.files.list({
           q: `'${driveFolderId}' in parents and trashed = false`,
           fields: 'files(id, name, size)',

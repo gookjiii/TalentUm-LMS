@@ -1,8 +1,9 @@
-import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:school_world/l10n/app_localizations.dart';
 import 'package:swipe_to/swipe_to.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:school_world/src/features/chat/presentation/widgets/chat_bubble/chat_bubble.dart';
@@ -106,22 +107,25 @@ class ChatMessageList extends StatelessWidget {
                       ),
                 ),
                 builders: Builders(
-                  chatAnimatedListBuilder: (context, itemBuilder) => ChatAnimatedList(
-                    itemBuilder: itemBuilder,
-                    reversed: true,
-                    bottomPadding: 16,
-                    physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics(),
-                    ),
-                    insertAnimationDuration: const Duration(milliseconds: 350),
-                    bottomSliver: SliverToBoxAdapter(
-                      child: _TypingIndicatorBuilder(
-                        chatController: chatController,
-                        currentUserId: currentUserId,
-                        theme: theme,
+                  chatAnimatedListBuilder: (context, itemBuilder) =>
+                      ChatAnimatedList(
+                        itemBuilder: itemBuilder,
+                        reversed: true,
+                        bottomPadding: 16,
+                        physics: const BouncingScrollPhysics(
+                          parent: AlwaysScrollableScrollPhysics(),
+                        ),
+                        insertAnimationDuration: const Duration(
+                          milliseconds: 350,
+                        ),
+                        bottomSliver: SliverToBoxAdapter(
+                          child: _TypingIndicatorBuilder(
+                            chatController: chatController,
+                            currentUserId: currentUserId,
+                            theme: theme,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                   chatMessageBuilder:
                       (
                         context,
@@ -154,6 +158,12 @@ class ChatMessageList extends StatelessWidget {
                           }
                         }
 
+                        final showDateHeader = _shouldShowDateHeader(
+                          message: message,
+                          index: index,
+                          messages: chatController.messages,
+                        );
+
                         return FadeTransition(
                           opacity: curvedAnimation,
                           child: SlideTransition(
@@ -169,38 +179,48 @@ class ChatMessageList extends StatelessWidget {
                               alignment: isSentByMe
                                   ? Alignment.centerRight
                                   : Alignment.centerLeft,
-                              child: VisibilityDetector(
-                                key: Key('msg-visibility-${message.id}'),
-                                onVisibilityChanged: (info) {
-                                  if (info.visibleFraction > 0.1 && !isSentByMe) {
-                                    final repo = AppScope.of(context).repository;
-                                    final seenBy = List<String>.from(
-                                      message.metadata?['seenBy'] ?? [],
-                                    );
-                                    if (!seenBy.contains(currentUserId)) {
-                                      repo.markMessageAsSeen(
-                                        chatController.roomId,
-                                        message.id,
-                                      );
-                                    }
-                                  }
-                                },
-                                child: SwipeTo(
-                                  key: ValueKey(message.id),
-                                  onRightSwipe: (details) {
-                                    onMessageSwipe(message);
-                                  },
-                                  child: ChatMessage(
-                                    message: message,
-                                    index: index,
-                                    animation: const AlwaysStoppedAnimation(
-                                      1.0,
-                                    ), // Disable internal animation
-                                    isRemoved: isRemoved,
-                                    groupStatus: groupStatus,
-                                    child: child,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (showDateHeader)
+                                    _ChatDateHeader(date: message.createdAt!),
+                                  VisibilityDetector(
+                                    key: Key('msg-visibility-${message.id}'),
+                                    onVisibilityChanged: (info) {
+                                      if (info.visibleFraction > 0.1 &&
+                                          !isSentByMe) {
+                                        final repo = AppScope.of(
+                                          context,
+                                        ).repository;
+                                        final seenBy = List<String>.from(
+                                          message.metadata?['seenBy'] ?? [],
+                                        );
+                                        if (!seenBy.contains(currentUserId)) {
+                                          repo.markMessageAsSeen(
+                                            chatController.roomId,
+                                            message.id,
+                                          );
+                                        }
+                                      }
+                                    },
+                                    child: SwipeTo(
+                                      key: ValueKey(message.id),
+                                      onRightSwipe: (details) {
+                                        onMessageSwipe(message);
+                                      },
+                                      child: ChatMessage(
+                                        message: message,
+                                        index: index,
+                                        animation: const AlwaysStoppedAnimation(
+                                          1.0,
+                                        ), // Disable internal animation
+                                        isRemoved: isRemoved,
+                                        groupStatus: groupStatus,
+                                        child: child,
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
                             ),
                           ),
@@ -212,7 +232,12 @@ class ChatMessageList extends StatelessWidget {
                   composerBuilder: (_) => const SizedBox.shrink(),
                 ),
                 onMessageTap:
-                    (_, msg, {required int index, required TapUpDetails details}) {
+                    (
+                      _,
+                      msg, {
+                      required int index,
+                      required TapUpDetails details,
+                    }) {
                       if (msg is ImageMessage) onImageTap(msg);
                     },
                 onMessageLongPress:
@@ -234,6 +259,79 @@ class ChatMessageList extends StatelessWidget {
   }
 }
 
+bool _shouldShowDateHeader({
+  required Message message,
+  required int index,
+  required List<Message> messages,
+}) {
+  final messageDate = message.createdAt;
+  if (messageDate == null) return false;
+  if (index <= 0 || index >= messages.length) return true;
+
+  final previousDate = messages[index - 1].createdAt;
+  return previousDate == null || !_isSameCalendarDay(previousDate, messageDate);
+}
+
+bool _isSameCalendarDay(DateTime first, DateTime second) {
+  final firstLocal = first.toLocal();
+  final secondLocal = second.toLocal();
+  return firstLocal.year == secondLocal.year &&
+      firstLocal.month == secondLocal.month &&
+      firstLocal.day == secondLocal.day;
+}
+
+class _ChatDateHeader extends StatelessWidget {
+  const _ChatDateHeader({required this.date});
+
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    final localDate = date.toLocal();
+    final today = DateTime.now();
+    final todayStart = DateTime(today.year, today.month, today.day);
+    final dateStart = DateTime(localDate.year, localDate.month, localDate.day);
+    final daysAgo = todayStart.difference(dateStart).inDays;
+    final localizations = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+
+    final label = switch (daysAgo) {
+      0 => localizations.today,
+      1 => localizations.yesterday,
+      _ => DateFormat(
+        localDate.year == today.year ? 'd MMMM' : 'd MMMM yyyy',
+        locale,
+      ).format(localDate),
+    };
+
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      child: Center(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface.withOpacity(0.88),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withOpacity(0.7),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            child: Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _TypingIndicatorBuilder extends StatefulWidget {
   const _TypingIndicatorBuilder({
     required this.chatController,
@@ -246,7 +344,8 @@ class _TypingIndicatorBuilder extends StatefulWidget {
   final ThemeData theme;
 
   @override
-  State<_TypingIndicatorBuilder> createState() => _TypingIndicatorBuilderState();
+  State<_TypingIndicatorBuilder> createState() =>
+      _TypingIndicatorBuilderState();
 }
 
 class _TypingIndicatorBuilderState extends State<_TypingIndicatorBuilder> {
@@ -428,37 +527,45 @@ class _DotGridPainter extends CustomPainter {
     if (!performanceMode) {
       // 2. Animated fluid Aurora radial gradients
       final Paint glow1 = Paint()
-        ..shader = RadialGradient(
-          colors: [
-            const Color(0xFF2563EB).withOpacity(0.06), // Primary Blue
-            const Color(0xFF2563EB).withOpacity(0.0),
-          ],
-        ).createShader(
-          Rect.fromCircle(
-            center: Offset(
-              size.width * (0.3 + 0.3 * math.sin(animationValue * 2 * math.pi)),
-              size.height * (0.2 + 0.2 * math.cos(animationValue * 2 * math.pi)),
-            ),
-            radius: size.width * 0.9,
-          ),
-        );
+        ..shader =
+            RadialGradient(
+              colors: [
+                const Color(0xFF2563EB).withOpacity(0.06), // Primary Blue
+                const Color(0xFF2563EB).withOpacity(0.0),
+              ],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(
+                  size.width *
+                      (0.3 + 0.3 * math.sin(animationValue * 2 * math.pi)),
+                  size.height *
+                      (0.2 + 0.2 * math.cos(animationValue * 2 * math.pi)),
+                ),
+                radius: size.width * 0.9,
+              ),
+            );
       canvas.drawRect(Offset.zero & size, glow1);
 
       final Paint glow2 = Paint()
-        ..shader = RadialGradient(
-          colors: [
-            const Color(0xFF6366F1).withOpacity(0.05), // Indigo Purple
-            const Color(0xFF6366F1).withOpacity(0.0),
-          ],
-        ).createShader(
-          Rect.fromCircle(
-            center: Offset(
-              size.width * (0.7 + 0.2 * math.cos(animationValue * 2 * math.pi + 1.2)),
-              size.height * (0.6 + 0.2 * math.sin(animationValue * 2 * math.pi + 1.2)),
-            ),
-            radius: size.width * 0.8,
-          ),
-        );
+        ..shader =
+            RadialGradient(
+              colors: [
+                const Color(0xFF6366F1).withOpacity(0.05), // Indigo Purple
+                const Color(0xFF6366F1).withOpacity(0.0),
+              ],
+            ).createShader(
+              Rect.fromCircle(
+                center: Offset(
+                  size.width *
+                      (0.7 +
+                          0.2 * math.cos(animationValue * 2 * math.pi + 1.2)),
+                  size.height *
+                      (0.6 +
+                          0.2 * math.sin(animationValue * 2 * math.pi + 1.2)),
+                ),
+                radius: size.width * 0.8,
+              ),
+            );
       canvas.drawRect(Offset.zero & size, glow2);
     }
 

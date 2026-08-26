@@ -1203,8 +1203,10 @@ class _MembersTabViewState extends State<_MembersTabView> {
     }
 
     final data = roomSnap.data()!;
-    _classId = data['classId'] as String? ?? '';
-    List<String> userIds = [];
+    final metadata = data['metadata'];
+    final metaClassId = metadata is Map ? metadata['classId'] as String? : null;
+    _classId = data['classId'] as String? ?? metaClassId ?? '';
+    List<String> userIds = List<String>.from(data['userIds'] ?? []);
     List<String> adminIds = [];
 
     if (_classId.isNotEmpty) {
@@ -1213,11 +1215,20 @@ class _MembersTabViewState extends State<_MembersTabView> {
           .doc(_classId)
           .get();
       if (classSnap.exists) {
-        userIds = List<String>.from(classSnap.data()?['studentIds'] ?? []);
-        adminIds = List<String>.from(classSnap.data()?['adminIds'] ?? []);
+        final cData = classSnap.data()!;
+        final tId = cData['teacherId']?.toString();
+        final tIds = List<String>.from(cData['teacherIds'] ?? []);
+        final sIds = List<String>.from(cData['studentIds'] ?? []);
+
+        final combined = <String>{
+          if (tId != null && tId.isNotEmpty) tId,
+          ...tIds,
+          ...sIds,
+          ...userIds,
+        };
+        userIds = combined.toList();
+        adminIds = List<String>.from(cData['adminIds'] ?? []);
       }
-    } else {
-      userIds = List<String>.from(data['userIds'] ?? []);
     }
 
     if (userIds.isEmpty) return [];
@@ -1229,24 +1240,29 @@ class _MembersTabViewState extends State<_MembersTabView> {
 
     final userSnaps = await Future.wait(futures);
 
-    return userSnaps.map((snap) {
-      final userData = snap.data() ?? {};
-      final firstName = userData['firstName'] as String? ?? '';
-      final lastName = userData['lastName'] as String? ?? '';
-      final fullName = userData['name'] as String? ??
-          (firstName.isEmpty && lastName.isEmpty
-              ? (_classId.isEmpty ? teacherLabel : studentLabel)
-              : '$firstName $lastName'.trim());
+    return userSnaps
+        .where((snap) => snap.exists && snap.data() != null)
+        .map((snap) {
+          final userData = snap.data()!;
+          final firstName = userData['firstName'] as String? ?? '';
+          final lastName = userData['lastName'] as String? ?? '';
+          final rawName = userData['name'] as String?;
+          final fullName = (rawName != null && rawName.trim().isNotEmpty)
+              ? rawName
+              : (firstName.isEmpty && lastName.isEmpty
+                  ? (userData['email'] as String? ?? (_classId.isEmpty ? teacherLabel : studentLabel))
+                  : '$firstName $lastName'.trim());
 
-      final role = userData['role'] as String? ?? '';
+          final role = userData['role'] as String? ?? '';
 
-      return {
-        'id': snap.id,
-        'name': fullName,
-        'isAdmin': adminIds.contains(snap.id),
-        'role': role,
-      };
-    }).toList();
+          return {
+            'id': snap.id,
+            'name': fullName,
+            'isAdmin': adminIds.contains(snap.id),
+            'role': role,
+          };
+        })
+        .toList();
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'teldrive_storage_provider.dart';
@@ -27,6 +28,32 @@ class FirebaseStorageProvider implements StorageProvider {
 
   final FirebaseStorage _storage;
 
+  SettableMetadata _buildMetadata(String path) {
+    final ext = path.split('.').last.toLowerCase();
+    String contentType;
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        contentType = 'image/jpeg';
+        break;
+      case 'png':
+        contentType = 'image/png';
+        break;
+      case 'gif':
+        contentType = 'image/gif';
+        break;
+      case 'webp':
+        contentType = 'image/webp';
+        break;
+      case 'pdf':
+        contentType = 'application/pdf';
+        break;
+      default:
+        contentType = 'application/octet-stream';
+    }
+    return SettableMetadata(contentType: contentType);
+  }
+
   @override
   Future<Map<String, dynamic>> uploadFile(
     String path,
@@ -34,7 +61,7 @@ class FirebaseStorageProvider implements StorageProvider {
     StorageProgressCallback? onProgress,
   }) async {
     final ref = _storage.ref().child(path);
-    final task = ref.putFile(file);
+    final task = ref.putFile(file, _buildMetadata(path));
     if (onProgress != null) {
       task.snapshotEvents.listen((event) {
         final progress = event.bytesTransferred / event.totalBytes;
@@ -53,7 +80,7 @@ class FirebaseStorageProvider implements StorageProvider {
     StorageProgressCallback? onProgress,
   }) async {
     final ref = _storage.ref().child(path);
-    final task = ref.putData(bytes);
+    final task = ref.putData(bytes, _buildMetadata(path));
     if (onProgress != null) {
       task.snapshotEvents.listen((event) {
         final progress = event.bytesTransferred / event.totalBytes;
@@ -66,8 +93,91 @@ class FirebaseStorageProvider implements StorageProvider {
   }
 
   @override
-  Future<void> deleteFile(String path) async {
-    await _storage.ref().child(path).delete();
+  Future<void> deleteFile(String pathOrUrl) async {
+    final ref =
+        pathOrUrl.startsWith('gs://') ||
+            pathOrUrl.startsWith('http://') ||
+            pathOrUrl.startsWith('https://')
+        ? _storage.refFromURL(pathOrUrl)
+        : _storage.ref().child(pathOrUrl);
+    await ref.delete();
+  }
+}
+
+/// Stores small files in Firebase Storage and routes large files to Google
+/// Drive. Existing URLs are deleted through the provider that owns them.
+class LargeFileStorageProvider implements StorageProvider {
+  LargeFileStorageProvider({
+    required this.standardProvider,
+    required this.largeFileProvider,
+    required this.thresholdBytes,
+  });
+
+  final StorageProvider standardProvider;
+  final StorageProvider largeFileProvider;
+  final int thresholdBytes;
+
+  @override
+  Future<Map<String, dynamic>> uploadFile(
+    String path,
+    File file, {
+    StorageProgressCallback? onProgress,
+  }) async {
+    final useLarge = await file.length() >= thresholdBytes;
+    if (useLarge) {
+      try {
+        return await largeFileProvider.uploadFile(
+          path,
+          file,
+          onProgress: onProgress,
+        );
+      } catch (e) {
+        debugPrint(
+          'Large file provider error, falling back to standard provider: $e',
+        );
+        return standardProvider.uploadFile(path, file, onProgress: onProgress);
+      }
+    }
+    return standardProvider.uploadFile(path, file, onProgress: onProgress);
+  }
+
+  @override
+  Future<Map<String, dynamic>> uploadFileWeb(
+    String path,
+    Uint8List bytes, {
+    StorageProgressCallback? onProgress,
+  }) async {
+    final useLarge = bytes.length >= thresholdBytes;
+    if (useLarge) {
+      try {
+        return await largeFileProvider.uploadFileWeb(
+          path,
+          bytes,
+          onProgress: onProgress,
+        );
+      } catch (e) {
+        debugPrint(
+          'Large file provider web error, falling back to standard provider: $e',
+        );
+        return standardProvider.uploadFileWeb(
+          path,
+          bytes,
+          onProgress: onProgress,
+        );
+      }
+    }
+    return standardProvider.uploadFileWeb(path, bytes, onProgress: onProgress);
+  }
+
+  @override
+  Future<void> deleteFile(String pathOrUrl) {
+    final isDriveUrl =
+        pathOrUrl.contains('drive.google.com') ||
+        pathOrUrl.contains('docs.google.com') ||
+        pathOrUrl.contains('drive.usercontent.google.com');
+    return (isDriveUrl ? largeFileProvider : standardProvider).deleteFile(
+      pathOrUrl,
+    );
   }
 }
 
@@ -86,9 +196,11 @@ class CloudinaryStorageProvider implements StorageProvider {
 
   static const configuredCloudName = String.fromEnvironment(
     'CLOUDINARY_CLOUD_NAME',
+    defaultValue: 'dp50nlimq',
   );
   static const configuredUploadPreset = String.fromEnvironment(
     'CLOUDINARY_UPLOAD_PRESET',
+    defaultValue: 'schoolWorld',
   );
   static const configuredTeldriveBaseUrl = String.fromEnvironment(
     'TELDRIVE_BASE_URL',
@@ -101,8 +213,13 @@ class CloudinaryStorageProvider implements StorageProvider {
   );
   static const configuredGoogleDriveProxyUrl = String.fromEnvironment(
     'GOOGLE_DRIVE_PROXY_URL',
+    defaultValue: 'https://vercel-talentum-backend.vercel.app',
   );
- 
+  static const configuredLargeFileThresholdMb = int.fromEnvironment(
+    'GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB',
+    defaultValue: 0,
+  );
+
   static bool get isConfigured =>
       configuredCloudName.isNotEmpty && configuredUploadPreset.isNotEmpty;
 
@@ -113,11 +230,12 @@ class CloudinaryStorageProvider implements StorageProvider {
 
   static bool get isGoogleDriveConfigured =>
       configuredGoogleDriveProxyUrl.isNotEmpty;
- 
+
   static StorageProvider fromEnvironmentOrFirebase() {
-    if (isGoogleDriveConfigured) {
-      return GoogleDriveStorageProvider(
-        backendBaseUrl: configuredGoogleDriveProxyUrl,
+    if (isConfigured) {
+      return CloudinaryStorageProvider(
+        cloudName: configuredCloudName,
+        uploadPreset: configuredUploadPreset,
       );
     }
     if (isTeldriveConfigured) {
@@ -128,11 +246,12 @@ class CloudinaryStorageProvider implements StorageProvider {
         channelId: channelId,
       );
     }
-    if (!isConfigured) return FirebaseStorageProvider();
-    return CloudinaryStorageProvider(
-      cloudName: configuredCloudName,
-      uploadPreset: configuredUploadPreset,
-    );
+    if (isGoogleDriveConfigured) {
+      return GoogleDriveStorageProvider(
+        backendBaseUrl: configuredGoogleDriveProxyUrl,
+      );
+    }
+    return FirebaseStorageProvider();
   }
 
   /// Storage provider for chat: always Cloudinary (images/videos).
@@ -147,15 +266,38 @@ class CloudinaryStorageProvider implements StorageProvider {
     return FirebaseStorageProvider();
   }
 
-  /// Storage provider for library: always Google Drive.
-  /// Falls back to the default provider chain if Google Drive is not configured.
+  /// Storage provider for chat attachments.
+  ///
+  /// Chat media keeps using the configured chat provider for normal-sized
+  /// uploads, while files at or above the configured threshold are sent to
+  /// Google Drive. The standard provider remains an error fallback so a
+  /// temporary Drive outage does not block sending a message.
+  static StorageProvider chatAttachmentProvider() {
+    final standardProvider = chatProvider();
+    if (!isGoogleDriveConfigured) return standardProvider;
+
+    return LargeFileStorageProvider(
+      standardProvider: standardProvider,
+      largeFileProvider: GoogleDriveStorageProvider(
+        backendBaseUrl: configuredGoogleDriveProxyUrl,
+      ),
+      thresholdBytes: configuredLargeFileThresholdMb * 1024 * 1024,
+    );
+  }
+
+  /// All document, homework, assignment, and library files use Google Drive directly,
+  /// bypassing Firebase Storage limits, with Firebase Storage as an error fallback.
   static StorageProvider libraryProvider() {
     if (isGoogleDriveConfigured) {
-      return GoogleDriveStorageProvider(
-        backendBaseUrl: configuredGoogleDriveProxyUrl,
+      return LargeFileStorageProvider(
+        standardProvider: FirebaseStorageProvider(),
+        largeFileProvider: GoogleDriveStorageProvider(
+          backendBaseUrl: configuredGoogleDriveProxyUrl,
+        ),
+        thresholdBytes: configuredLargeFileThresholdMb * 1024 * 1024,
       );
     }
-    return fromEnvironmentOrFirebase();
+    return FirebaseStorageProvider();
   }
 
   @override
@@ -211,7 +353,7 @@ class CloudinaryStorageProvider implements StorageProvider {
       '/v1_1/$_cloudName/auto/upload',
     ).toString();
     final folder = path.split('/').take(2).join('/');
-    
+
     // Fallback to simple upload if file is empty
     if (totalSize == 0) {
       return _dio.post(
@@ -226,14 +368,16 @@ class CloudinaryStorageProvider implements StorageProvider {
 
     final uniqueUploadId = DateTime.now().millisecondsSinceEpoch.toString();
     const chunkSize = 10 * 1024 * 1024; // 10 MB per chunk
-    
+
     Response<dynamic>? lastResponse;
     int bytesUploaded = 0;
 
     for (int start = 0; start < totalSize; start += chunkSize) {
-      final end = (start + chunkSize < totalSize) ? start + chunkSize : totalSize;
+      final end = (start + chunkSize < totalSize)
+          ? start + chunkSize
+          : totalSize;
       final chunkLength = end - start;
-      
+
       var multipartFile = await getChunk(start, end);
 
       try {
@@ -255,7 +399,7 @@ class CloudinaryStorageProvider implements StorageProvider {
               ),
               onSendProgress: (sent, total) {
                 if (onProgress != null && chunkLength > 0) {
-                   onProgress((bytesUploaded + sent) / totalSize);
+                  onProgress((bytesUploaded + sent) / totalSize);
                 }
               },
             );
@@ -263,7 +407,9 @@ class CloudinaryStorageProvider implements StorageProvider {
           } on DioException catch (e) {
             // Only retry on network-layer errors (no HTTP response from server)
             if (e.response != null || attempt == maxRetries) {
-              throw Exception('Cloudinary error: ${e.response?.statusCode} - ${e.response?.data}');
+              throw Exception(
+                'Cloudinary error: ${e.response?.statusCode} - ${e.response?.data}',
+              );
             }
             // Exponential backoff: 500ms, 1s, 2s
             await Future.delayed(Duration(milliseconds: 500 * attempt));
@@ -274,10 +420,10 @@ class CloudinaryStorageProvider implements StorageProvider {
       } catch (e) {
         rethrow;
       }
-      
+
       bytesUploaded += chunkLength;
     }
-    
+
     return lastResponse!;
   }
 
@@ -308,27 +454,21 @@ class CloudinaryStorageProvider implements StorageProvider {
       if (uploadIndex != -1 && uploadIndex + 2 < segments.length) {
         // public_id is everything after the version string (v123...), minus the extension
         final publicIdWithExt = segments.sublist(uploadIndex + 2).join('/');
-        final publicId = publicIdWithExt.contains('.') 
+        final publicId = publicIdWithExt.contains('.')
             ? publicIdWithExt.substring(0, publicIdWithExt.lastIndexOf('.'))
             : publicIdWithExt;
 
         final resourceType = pathOrUrl.contains('/video/') ? 'video' : 'image';
-        
-        const apiSecret = String.fromEnvironment('APP_API_SECRET');
+
         const proxyUrl = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
-        
+
         if (proxyUrl.isNotEmpty) {
+          final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+          if (token == null || token.isEmpty) return;
           await _dio.post(
             '$proxyUrl/api/upload/delete_cloudinary',
-            data: {
-              'publicId': publicId,
-              'resourceType': resourceType,
-            },
-            options: Options(
-              headers: {
-                'Authorization': 'Bearer $apiSecret',
-              },
-            ),
+            data: {'publicId': publicId, 'resourceType': resourceType},
+            options: Options(headers: {'Authorization': 'Bearer $token'}),
           );
           debugPrint('Cloudinary file deleted: $publicId');
         }
@@ -336,48 +476,5 @@ class CloudinaryStorageProvider implements StorageProvider {
     } catch (e) {
       debugPrint('Cloudinary delete error: $e');
     }
-  }
-}
-
-class MockStorageProvider implements StorageProvider {
-  @override
-  Future<Map<String, dynamic>> uploadFile(
-    String path,
-    File file, {
-    StorageProgressCallback? onProgress,
-  }) async {
-    for (var i = 1; i <= 10; i++) {
-      await Future.delayed(const Duration(milliseconds: 200));
-      if (onProgress != null) onProgress(i / 10);
-    }
-    return {
-      'url':
-          'https://via.placeholder.com/600x400.png?text=Mock+Teldrive+Upload',
-      'provider': 'mock',
-      'fileId': 'mock-id-${DateTime.now().millisecondsSinceEpoch}',
-    };
-  }
-
-  @override
-  Future<Map<String, dynamic>> uploadFileWeb(
-    String path,
-    Uint8List bytes, {
-    StorageProgressCallback? onProgress,
-  }) async {
-    for (var i = 1; i <= 10; i++) {
-      await Future.delayed(const Duration(milliseconds: 200));
-      if (onProgress != null) onProgress(i / 10);
-    }
-    return {
-      'url':
-          'https://via.placeholder.com/600x400.png?text=Mock+Teldrive+Web+Upload',
-      'provider': 'mock',
-      'fileId': 'mock-id-web-${DateTime.now().millisecondsSinceEpoch}',
-    };
-  }
-
-  @override
-  Future<void> deleteFile(String path) async {
-    debugPrint('Mock delete: $path');
   }
 }

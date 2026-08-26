@@ -74,10 +74,10 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.favorite_outline,
+                    Icon(
+                      Icons.family_restroom_rounded,
                       size: 64,
-                      color: SchoolColors.red,
+                      color: SchoolColors.muted.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -171,9 +171,9 @@ class _ParentClassDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: MediaQuery.sizeOf(context).width < 720
-          ? null
-          : AppBar(title: Text(className)),
+      // This screen is pushed from the parent dashboard. Keep the app bar on
+      // mobile as well so the system/back arrow is always available.
+      appBar: AppBar(title: Text(className)),
       body: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
         future: repository.firestore
             .collection('users')
@@ -198,7 +198,9 @@ class _ParentClassDetailScreen extends StatelessWidget {
                   final assignment = assignments[index].data();
                   final assignmentId = assignments[index].id;
 
-                  return CachedStreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  return CachedStreamBuilder<
+                    QuerySnapshot<Map<String, dynamic>>
+                  >(
                     streamFactory: () => repository.firestore
                         .collection('submissions')
                         .where('assignmentId', isEqualTo: assignmentId)

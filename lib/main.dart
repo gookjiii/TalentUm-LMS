@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,22 +16,35 @@ import 'src/providers/app_providers.dart';
 import 'src/screens/auth_screen.dart';
 import 'src/screens/guest_join_screen.dart';
 import 'src/screens/onboarding_screen.dart';
+import 'src/screens/profile_completion_screen.dart';
 import 'src/screens/student_shell.dart';
 import 'src/screens/teacher_workspace_screen.dart';
 import 'src/features/parent_dashboard/presentation/screens/parent_home_screen.dart';
 import 'src/theme.dart';
-import 'src/utils/reload_app.dart';
 import 'src/utils/splash_loader.dart';
 import 'package:provider/provider.dart' as provider_pkg;
 import 'src/firebase/push_notification_manager.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 Future<void> main() async {
   try {
     provider_pkg.Provider.debugCheckInvalidValueType = null;
     WidgetsFlutterBinding.ensureInitialized();
+
+    // Enable edge-to-edge system UI for Android (fixes navigation bar overlap)
+    if (!kIsWeb) {
+      SystemChrome.setSystemUIOverlayStyle(
+        const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarDividerColor: Colors.transparent,
+        ),
+      );
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
 
     // Hide splash as soon as possible
     try {
@@ -75,7 +89,9 @@ Future<void> main() async {
     await Hive.openBox('data_cache');
     await Hive.openBox('chat_cache');
     try {
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
     } catch (e) {
       if (!e.toString().contains('duplicate-app')) {
         rethrow;
@@ -88,10 +104,10 @@ Future<void> main() async {
       );
     }
     await initializeDateFormatting('ru', null);
-    
+
     // Hide splash early to avoid getting stuck if streams take too long
     hideSplash();
-    
+
     runApp(const ProviderScope(child: SchoolWorldApp()));
   } catch (e, stack) {
     debugPrint('Fatal init error: $e\n$stack');
@@ -129,7 +145,10 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
     super.initState();
     // Cache the future so it doesn't re-fire on every rebuild
     final repository = ref.read(repositoryProvider);
-    _settingsFuture = repository.firestore.collection('settings').doc('system').get();
+    _settingsFuture = repository.firestore
+        .collection('settings')
+        .doc('system')
+        .get();
   }
 
   @override
@@ -166,7 +185,8 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
                       const CircularProgressIndicator(),
                       const SizedBox(height: 16),
                       Text(
-                        AppLocalizations.of(context)?.loadingSystemSettings ?? 'Загрузка настроек...',
+                        AppLocalizations.of(context)?.loadingSystemSettings ??
+                            'Загрузка настроек...',
                         style: const TextStyle(
                           color: Colors.black,
                           fontSize: 14,
@@ -192,8 +212,14 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
             navigatorKey: navigatorKey,
             scaffoldMessengerKey: scaffoldMessengerKey,
             debugShowCheckedModeBanner: false,
-            theme: schoolTheme(primaryColor: appState.accentColor),
-            darkTheme: schoolDarkTheme(primaryColor: appState.accentColor),
+            theme: schoolTheme(
+              primaryColor: appState.accentColor,
+              isPerformance: appState.performanceMode,
+            ),
+            darkTheme: schoolDarkTheme(
+              primaryColor: appState.accentColor,
+              isPerformance: appState.performanceMode,
+            ),
             themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
             locale: activeLocale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -210,13 +236,13 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
             builder: (context, child) {
               final mediaQueryData = MediaQuery.of(context);
               final isMobile = mediaQueryData.size.width < 700;
-              
+
               // Force a directionality and default text style to prevent crashes in sub-widgets
               return Directionality(
                 textDirection: TextDirection.ltr,
                 child: MediaQuery(
                   data: mediaQueryData.copyWith(
-                    textScaler: isMobile 
+                    textScaler: isMobile
                         ? const TextScaler.linear(1.15)
                         : mediaQueryData.textScaler,
                   ),
@@ -269,132 +295,6 @@ class GuestInviteParams {
   final String inviteCode;
 }
 
-class _AppErrorWidget extends StatelessWidget {
-  const _AppErrorWidget({required this.details});
-  final FlutterErrorDetails details;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFF0B1120),
-      child: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      gradient: const RadialGradient(
-                        colors: [Color(0x33DC2626), Color(0x00DC2626)],
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.error_outline_rounded,
-                      size: 44,
-                      color: Color(0xFFDC2626),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Что-то пошло не так',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: -0.4,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Попробуйте перезагрузить приложение. Если проблема повторяется — обратитесь в поддержку.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF94A3B8),
-                      height: 1.55,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(
-                            0xFF2563EB,
-                          ).withValues(alpha: 0.35),
-                          blurRadius: 20,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: FilledButton.icon(
-                      onPressed: reloadApp,
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: Text(AppLocalizations.of(context)?.reload ?? 'Перезагрузить'),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(200, 52),
-                      ),
-                    ),
-                  ),
-                  if (!kReleaseMode) ...[
-                    const SizedBox(height: 28),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDC2626).withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: const Color(
-                            0xFFDC2626,
-                          ).withValues(alpha: 0.15),
-                          width: 1,
-                        ),
-                      ),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Debug Details:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFDC2626),
-                                fontSize: 11,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            SelectableText(
-                              details.exceptionAsString(),
-                              style: const TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 11,
-                                color: Color(0xFFDC2626),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class AppScope extends InheritedWidget {
   const AppScope({
     super.key,
@@ -431,7 +331,7 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   bool _processingInvite = false;
   String? _initializedUid;
-  
+
   late Stream<User?> _authStream;
   Stream<DocumentSnapshot<Map<String, dynamic>>>? _profileStream;
   String? _currentProfileUid;
@@ -484,12 +384,6 @@ class _AuthGateState extends State<AuthGate> {
 
         if (!authSnapshot.hasData &&
             authSnapshot.connectionState == ConnectionState.waiting) {
-          // Timeout to prevent infinite spinner
-          Future.delayed(const Duration(seconds: 5), () {
-            if (mounted && !authSnapshot.hasData) {
-              debugPrint('Auth stream timeout');
-            }
-          });
           return Scaffold(
             body: Center(
               child: Column(
@@ -517,22 +411,6 @@ class _AuthGateState extends State<AuthGate> {
             );
           }
           return const AuthScreen();
-        }
-
-        // Only start presence and update activity ONCE per user login
-        if (_initializedUid != user.uid) {
-          _initializedUid = user.uid;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            widget.repository.startPresenceMonitoring();
-            widget.repository.updateActivity();
-            
-            // Initialize push notifications reactively on login
-            PushNotificationManager.syncTokenSubscription(
-              userId: user.uid,
-              enabled: widget.appState.pushNotifications,
-            );
-            PushNotificationManager.initNotificationListeners();
-          });
         }
 
         // Cache profile stream based on UID to avoid infinite rebuild loops
@@ -580,15 +458,41 @@ class _AuthGateState extends State<AuthGate> {
             final data = doc?.data();
             final role = data?['role'] as String?;
 
-            // If user has no profile or no role, they act like a new guest
+            // Firebase Phone Auth changes auth state immediately after OTP.
+            // Complete identity details here, outside AuthScreen, so the
+            // account cannot be routed to onboarding before its name is saved.
             if (doc == null || !doc.exists || role == null) {
-              if (hasPendingInvite) {
-                return GuestJoinScreen(
-                  classId: guestParams.classId,
-                  inviteCode: guestParams.inviteCode,
+              return ProfileCompletionScreen(
+                user: user,
+                repository: widget.repository,
+              );
+            }
+
+            // Profile data is complete, but the user has not yet selected a
+            // path. Do not enter a dashboard until they join a class or submit
+            // a teacher request.
+            if (role == 'pending') {
+              return OnboardingScreen(
+                initialInviteCode: hasPendingInvite
+                    ? guestParams.inviteCode
+                    : null,
+              );
+            }
+
+            // Only start presence and push services once a real application
+            // role is available. Pending profiles do not yet have permission
+            // to update activity or access class data.
+            if (_initializedUid != user.uid) {
+              _initializedUid = user.uid;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                widget.repository.startPresenceMonitoring();
+                widget.repository.updateActivity();
+                PushNotificationManager.syncTokenSubscription(
+                  userId: user.uid,
+                  enabled: widget.appState.pushNotifications,
                 );
-              }
-              return const OnboardingScreen();
+                PushNotificationManager.initNotificationListeners();
+              });
             }
 
             // We have a user profile and a pending invite: process it automatically
@@ -636,7 +540,7 @@ class _AuthGateState extends State<AuthGate> {
             if (role == 'student') return const StudentShell();
             if (role == 'parent') return const ParentHomeScreen();
 
-            return const OnboardingScreen();
+            return const TeacherWorkspaceScreen();
           },
         );
       },

@@ -1,9 +1,9 @@
 # Deployment Guide
 
-This project consists of a Flutter Web frontend (deployed to Firebase Hosting) and a Node.js backend proxy for Google Drive (deployed to Vercel).
+The canonical app is the Flutter project at the repository root. Web is deployed to Firebase Hosting; Firestore/Realtime Database, Firebase Storage and Firebase Auth are the active backend services. `vercel_backend` is the Google Drive large-file proxy.
 
-## 1. Backend (Google Drive Proxy)
-The backend is located in the `vercel_backend` directory. It handles resumable uploads to Google Drive.
+## 1. Google Drive backend (Vercel)
+The backend is located in `vercel_backend`. It creates Google Drive resumable sessions, validates Firebase staff tokens, stores upload metadata in Firestore, and finalizes/deletes Drive files.
 
 ### Steps to Deploy:
 1.  **Vercel Account**: Ensure you have a Vercel account and the `vercel` CLI installed (`npm install -g vercel`).
@@ -18,30 +18,35 @@ The backend is located in the `vercel_backend` directory. It handles resumable u
 4.  **Set Environment Variables**:
     In the Vercel Dashboard, set the following variables:
     *   `GOOGLE_SERVICE_ACCOUNT_JSON`: Your full service account JSON string.
-    *   `GOOGLE_DRIVE_FOLDER_ID`: The ID of the folder where files will be stored.
-    *   `DATABASE_URL`: A PostgreSQL connection string (required for tracking resumable uploads).
+    *   `FIREBASE_SERVICE_ACCOUNT_JSON`: Service account for Firebase Admin/Firestore.
+    *   `GOOGLE_DRIVE_FOLDER_ID`: Target Drive folder or shared-drive folder.
+    *   `GOOGLE_DRIVE_PUBLIC_READ`: Set to `false` only if clients will use an authenticated download proxy; defaults to public reader links.
+    *   `MAX_DRIVE_UPLOAD_BYTES`: Optional safety limit; defaults to 5 GiB.
     *   *Alternatively*, if using personal OAuth for Google Drive: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`.
 5.  **Get Proxy URL**: Note your Vercel deployment URL (e.g., `https://your-app.vercel.app`).
 
 ## 2. Frontend (Flutter Web)
-The frontend requires Cloudinary and the Vercel Proxy URL to be injected at build time.
+The frontend sends files at or above the configured threshold to Google Drive through the Vercel proxy. This includes library, homework, assignment, webinar and chat attachments. Firebase Storage or Cloudinary remain available as provider-specific fallbacks for smaller files and transient Drive failures.
 
 ### Steps to Deploy:
 1.  **Firebase Account**: Ensure you are logged into Firebase (`firebase login`).
 2.  **Prepare Variables**: You need:
     *   `CLOUDINARY_CLOUD_NAME`
     *   `CLOUDINARY_UPLOAD_PRESET`
-    *   `GOOGLE_DRIVE_PROXY_URL` (from Step 1)
+    *   `GOOGLE_DRIVE_PROXY_URL` (Vercel backend URL; required for large-file Drive uploads)
+    *   `GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB` (optional, default `0`; set a positive value such as `25` to keep smaller files on the standard provider)
 3.  **Run Deployment Script**:
     ```bash
     CLOUDINARY_CLOUD_NAME=your_name \
     CLOUDINARY_UPLOAD_PRESET=your_preset \
-    GOOGLE_DRIVE_PROXY_URL=https://your-app.vercel.app \
+    GOOGLE_DRIVE_PROXY_URL=https://vercel-talentum-backend.vercel.app \
+    GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB=25 \
     ./deploy_web.sh
     ```
 
 ---
 
 ## Technical Details
-- **Cloudinary**: Used for fast image and video hosting (Chat, Profile).
-- **Google Drive**: Used for large library materials, proxied through Vercel to bypass CORS and handle resumable uploads securely.
+- **Cloudinary**: Used for fast image and video hosting (Chat, Profile) when an attachment is below the Drive threshold.
+- **Firebase Storage**: Fallback storage when Google Drive is unavailable, plus any provider-specific small-file flows.
+- **Google Drive/Vercel**: Storage for files at or above the large-file threshold. Firestore tracks upload ownership and metadata; PostgreSQL is not required.

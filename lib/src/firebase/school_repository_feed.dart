@@ -21,28 +21,32 @@ mixin SchoolRepositoryFeed {
       'pinned': pinned,
       'attachments': attachments,
     });
-    
+
     _sendClassNotification(classId, 'Новый пост', content);
   }
 
-  Future<void> _sendClassNotification(String classId, String title, String body) async {
+  Future<void> _sendClassNotification(
+    String classId,
+    String title,
+    String body,
+  ) async {
     try {
       final classDoc = await firestore.collection('classes').doc(classId).get();
       if (!classDoc.exists) return;
       final data = classDoc.data()!;
       final List<dynamic> studentIds = data['studentIds'] ?? [];
       final List<dynamic> parentIds = data['parentIds'] ?? [];
-      
-      final targetUserIds = [...studentIds, ...parentIds]
-          .map((id) => id.toString())
-          .toSet()
-          .toList();
-          
+
+      final targetUserIds = [
+        ...studentIds,
+        ...parentIds,
+      ].map((id) => id.toString()).toSet().toList();
+
       if (targetUserIds.isEmpty) return;
-      
+
       final className = data['name'] ?? '';
       final finalTitle = className.isNotEmpty ? '$className - $title' : title;
-      
+
       await PushNotificationManager.sendPushNotification(
         userIds: targetUserIds,
         title: finalTitle,
@@ -58,6 +62,21 @@ mixin SchoolRepositoryFeed {
     await firestore.collection('posts').doc(postId).update({'pinned': pinned});
   }
 
+  Future<void> updatePost({
+    required String postId,
+    required String content,
+    bool? pinned,
+    List<Map<String, dynamic>>? attachments,
+  }) async {
+    final updates = <String, dynamic>{
+      'content': content,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+    if (pinned != null) updates['pinned'] = pinned;
+    if (attachments != null) updates['attachments'] = attachments;
+    await firestore.collection('posts').doc(postId).update(updates);
+  }
+
   Future<void> deletePost(String postId) async {
     final docRef = firestore.collection('posts').doc(postId);
     final doc = await docRef.get();
@@ -69,7 +88,8 @@ mixin SchoolRepositoryFeed {
             final url = att['url'] as String?;
             if (url != null && url.isNotEmpty) {
               try {
-                await CloudinaryStorageProvider.chatProvider().deleteFile(url);
+                await CloudinaryStorageProvider.chatAttachmentProvider()
+                    .deleteFile(url);
               } catch (e) {
                 // Ignore file deletion errors to allow doc deletion
               }
@@ -104,7 +124,10 @@ mixin SchoolRepositoryFeed {
     });
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> postsForClass(String classId, {int? limit}) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> postsForClass(
+    String classId, {
+    int? limit,
+  }) {
     var query = firestore
         .collection('posts')
         .where('classId', isEqualTo: classId)

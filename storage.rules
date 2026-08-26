@@ -1,0 +1,144 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userExists() {
+      return signedIn() &&
+        firestore.exists(/databases/(default)/documents/users/$(request.auth.uid));
+    }
+
+    function userData() {
+      return firestore.get(
+        /databases/(default)/documents/users/$(request.auth.uid)
+      ).data;
+    }
+
+    function isTeacher() {
+      return signedIn() && (
+        (userExists() && ('role' in userData()) && userData().role in ['teacher', 'leadTeacher', 'admin'])
+      );
+    }
+
+    function isAdmin() {
+      return signedIn() && (
+        (userExists() && ('role' in userData()) && userData().role in ['leadTeacher', 'admin'])
+      );
+    }
+
+    function classExists(classId) {
+      return signedIn() &&
+        firestore.exists(/databases/(default)/documents/classes/$(classId));
+    }
+
+    function classData(classId) {
+      return firestore.get(
+        /databases/(default)/documents/classes/$(classId)
+      ).data;
+    }
+
+    function canAccessClass(classId) {
+      return signedIn() && (
+        isTeacher() ||
+        (classExists(classId) && (
+          ('teacherId' in classData(classId) && classData(classId).teacherId == request.auth.uid) ||
+          ('teacherIds' in classData(classId) && request.auth.uid in classData(classId).teacherIds) ||
+          ('studentIds' in classData(classId) && request.auth.uid in classData(classId).studentIds) ||
+          ('parentIds' in classData(classId) && request.auth.uid in classData(classId).parentIds)
+        ))
+      );
+    }
+
+    function canManageClass(classId) {
+      return signedIn() && (
+        isTeacher() ||
+        (classExists(classId) && (
+          ('teacherId' in classData(classId) && classData(classId).teacherId == request.auth.uid) ||
+          ('teacherIds' in classData(classId) && request.auth.uid in classData(classId).teacherIds)
+        ))
+      );
+    }
+
+    function validUpload(maxBytes) {
+      return request.resource != null && request.resource.size > 0 &&
+        request.resource.size <= maxBytes;
+    }
+
+    match /avatars/{userId}/{filePath=**} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == userId &&
+        validUpload(10 * 1024 * 1024);
+      allow delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /system/{filePath=**} {
+      allow read: if true;
+      allow create, update: if isAdmin() && validUpload(10 * 1024 * 1024);
+      allow delete: if isAdmin();
+    }
+
+    match /classes/{classId}/avatar/{filePath=**} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && validUpload(10 * 1024 * 1024);
+      allow delete: if signedIn();
+    }
+
+    match /classes/{classId}/messages/{filePath=**} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && validUpload(500 * 1024 * 1024);
+      allow delete: if signedIn();
+    }
+
+    match /rooms/{roomId}/messages/{filePath=**} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && validUpload(500 * 1024 * 1024);
+      allow delete: if signedIn();
+    }
+
+    match /classes/{classId}/feed/{filePath=**} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && validUpload(500 * 1024 * 1024);
+      allow delete: if signedIn();
+    }
+
+    match /classes/{classId}/library/{filePath=**} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && validUpload(500 * 1024 * 1024);
+      allow delete: if signedIn();
+    }
+
+    match /classes/{classId}/webinars/{filePath=**} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && validUpload(500 * 1024 * 1024);
+      allow delete: if signedIn();
+    }
+
+    match /assignments/{filePath=**} {
+      allow read: if signedIn();
+      allow create, update: if isTeacher() && validUpload(100 * 1024 * 1024);
+      allow delete: if isTeacher();
+    }
+
+    match /submissions/{submissionId}/{filePath=**} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() &&
+        (
+          !firestore.exists(/databases/(default)/documents/submissions/$(submissionId)) ||
+          firestore.get(/databases/(default)/documents/submissions/$(submissionId)).data.studentId == request.auth.uid ||
+          isTeacher()
+        ) &&
+        validUpload(100 * 1024 * 1024);
+      allow delete: if signedIn() && (
+        !firestore.exists(/databases/(default)/documents/submissions/$(submissionId)) ||
+        firestore.get(/databases/(default)/documents/submissions/$(submissionId)).data.studentId == request.auth.uid ||
+        isTeacher()
+      );
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

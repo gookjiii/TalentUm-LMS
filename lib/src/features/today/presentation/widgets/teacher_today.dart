@@ -20,7 +20,6 @@ class TeacherToday extends StatefulWidget {
     required this.onCopyGuestLink,
     required this.onCreateClass,
     required this.onProfileTap,
-    this.showSidebar = false,
   });
 
   final List<Map<String, dynamic>> classes;
@@ -31,7 +30,6 @@ class TeacherToday extends StatefulWidget {
   final void Function(String classId, String inviteCode) onCopyGuestLink;
   final VoidCallback onCreateClass;
   final VoidCallback onProfileTap;
-  final bool showSidebar;
 
   @override
   State<TeacherToday> createState() => _TeacherTodayState();
@@ -69,22 +67,14 @@ class _TeacherTodayState extends State<TeacherToday> {
             ? profile['name'].toString().trim()
             : (user?.displayName ?? AppLocalizations.of(context)!.teacher);
         final avatarUrl = profile['avatarUrl']?.toString();
-        final firstName = name.split(RegExp(r'\s+')).first;
-
         final now = DateTime.now();
-        final hour = now.hour;
-        final greeting = hour < 12
-            ? l10n.goodMorning
-            : hour < 18
-            ? l10n.goodAfternoon
-            : l10n.goodEvening;
 
         return CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
               child: PageHeader(
-                title: '$greeting, $firstName',
+                title: l10n.welcomeToTalentUm,
                 subtitle: date,
                 trailing: SchoolAvatar(
                   name: name,
@@ -132,7 +122,9 @@ class _TeacherTodayState extends State<TeacherToday> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               sliver: SliverGrid(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: MediaQuery.sizeOf(context).width >= 700 ? 4 : 2,
+                  crossAxisCount: MediaQuery.sizeOf(context).width >= 700
+                      ? 4
+                      : 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
                   childAspectRatio: 1.5,
@@ -369,10 +361,7 @@ class _KpiCard extends StatelessWidget {
             style: AppTextStyle.mono(
               fontSize: 26,
               fontWeight: FontWeight.w800,
-            ).copyWith(
-              height: 1,
-              letterSpacing: -1,
-            ),
+            ).copyWith(height: 1, letterSpacing: -1),
           ),
           const SizedBox(height: 4),
           Text(
@@ -390,7 +379,7 @@ class _KpiCard extends StatelessWidget {
 }
 
 class _NeedsAttentionCard extends StatefulWidget {
-  const _NeedsAttentionCard({super.key});
+  const _NeedsAttentionCard();
 
   @override
   State<_NeedsAttentionCard> createState() => _NeedsAttentionCardState();
@@ -574,11 +563,14 @@ class _AttentionSubmissionRow extends StatelessWidget {
                   ? null
                   : () async {
                       final gradeVal = double.tryParse(gradeCtrl.text.trim());
-                      if (gradeVal == null) {
+                      if (gradeVal == null ||
+                          !isValidSubmissionGrade(gradeVal)) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              AppLocalizations.of(context)!.pleaseEnterAValidRating,
+                              AppLocalizations.of(
+                                context,
+                              )!.pleaseEnterAValidRating,
                             ),
                           ),
                         );
@@ -745,14 +737,45 @@ class _TeacherTodayScheduleState extends State<_TeacherTodaySchedule> {
   Stream<List<ScheduleOverride>>? _overridesStream;
   bool _initialized = false;
 
+  List<String> get _classIds => widget.classes
+      .map((item) => item['id']?.toString())
+      .whereType<String>()
+      .where((id) => id.isNotEmpty)
+      .toList();
+
+  void _refreshScheduleStreams() {
+    final uid = widget.repo.uid ?? '';
+    final classIds = _classIds;
+    _schedulesStream = widget.repo.teacherSchedulesStream(
+      uid,
+      classIds: classIds,
+    );
+    _overridesStream = widget.repo.teacherScheduleOverridesStream(
+      uid,
+      classIds: classIds,
+    );
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
-      final uid = widget.repo.uid ?? '';
-      _schedulesStream = widget.repo.teacherSchedulesStream(uid);
-      _overridesStream = widget.repo.teacherScheduleOverridesStream(uid);
+      _refreshScheduleStreams();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _TeacherTodaySchedule oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldClassIds = oldWidget.classes
+        .map((item) => item['id']?.toString())
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    if (oldClassIds.length != _classIds.length ||
+        !oldClassIds.containsAll(_classIds)) {
+      _refreshScheduleStreams();
     }
   }
 
@@ -783,21 +806,18 @@ class _TeacherTodayScheduleState extends State<_TeacherTodaySchedule> {
             return SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final it = todayItems[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: FadeInUp(
-                        delay: Duration(milliseconds: 50 * index),
-                        child: RepaintBoundary(
-                          child: _buildClassItem(context, it),
-                        ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final it = todayItems[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: FadeInUp(
+                      delay: Duration(milliseconds: 50 * index),
+                      child: RepaintBoundary(
+                        child: _buildClassItem(context, it),
                       ),
-                    );
-                  },
-                  childCount: todayItems.length,
-                ),
+                    ),
+                  );
+                }, childCount: todayItems.length),
               ),
             );
           },
@@ -811,8 +831,15 @@ class _TeacherTodayScheduleState extends State<_TeacherTodaySchedule> {
       (c) => c['id'] == it.classId,
       orElse: () => <String, dynamic>{},
     );
-    final clsName = clsData['name']?.toString() ?? it.classId;
+    final rawClsName = clsData['name']?.toString();
+    final l10n = AppLocalizations.of(context)!;
+    final clsName = (rawClsName != null && rawClsName.isNotEmpty)
+        ? rawClsName
+        : (it.classId.length > 15 ? l10n.classText : it.classId);
     final clsSubject = clsData['subject']?.toString() ?? '—';
+    final lessonSubject = it.subject?.isNotEmpty == true
+        ? it.subject!
+        : clsSubject;
     final studentCount = (clsData['studentIds'] as List?)?.length ?? 0;
 
     final nowMin = widget.now.hour * 60 + widget.now.minute;
@@ -821,7 +848,7 @@ class _TeacherTodayScheduleState extends State<_TeacherTodaySchedule> {
 
     return TeacherTodayClassRow(
       name: clsName,
-      subject: clsSubject,
+      subject: lessonSubject,
       timeLabel: '${_fmt(it.startMinute)} – ${_fmt(it.endMinute)}',
       roomLabel: it.room,
       note: it.note,
@@ -902,7 +929,9 @@ class _TeacherTodayClassRowState extends State<TeacherTodayClassRow> {
     final l10n = AppLocalizations.of(context)!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final primaryTitle = widget.subject.isNotEmpty ? widget.subject : widget.name;
+    final primaryTitle = widget.subject.isNotEmpty
+        ? widget.subject
+        : widget.name;
     final subtitle = widget.subject.isNotEmpty ? widget.name : '';
     final room = widget.roomLabel?.trim();
 
@@ -1090,7 +1119,6 @@ class _NoClassesEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isVietnamese = l10n.localeName == 'vi';
 
     return SchoolCard(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -1103,7 +1131,7 @@ class _NoClassesEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            isVietnamese ? "Bạn không có lịch dạy hôm nay 🎉" : l10n.noClassesScheduled,
+            l10n.noClassesScheduled,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 15,
@@ -1121,4 +1149,3 @@ class _NoClassesEmptyState extends StatelessWidget {
     );
   }
 }
-

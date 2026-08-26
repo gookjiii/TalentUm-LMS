@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,7 +9,6 @@ import 'package:school_world/main.dart';
 import 'package:school_world/src/firebase/school_repository.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
-import 'package:school_world/src/utils/open_external_url.dart';
 import 'package:school_world/src/utils/string_extensions.dart';
 
 class PostCard extends StatefulWidget {
@@ -27,7 +28,7 @@ class PostCard extends StatefulWidget {
 }
 
 class _PostCardState extends State<PostCard> {
-  Future<DocumentSnapshot<Map<String, dynamic>>>? _authorFuture;
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _authorStream;
   bool _initialized = false;
 
   @override
@@ -35,7 +36,7 @@ class _PostCardState extends State<PostCard> {
     super.didChangeDependencies();
     if (!_initialized) {
       _initialized = true;
-      _initFuture();
+      _initStream();
     }
   }
 
@@ -43,14 +44,18 @@ class _PostCardState extends State<PostCard> {
   void didUpdateWidget(covariant PostCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.doc.data()['authorId'] != widget.doc.data()['authorId']) {
-      _initFuture();
+      _initStream();
     }
   }
 
-  void _initFuture() {
+  void _initStream() {
     final repo = AppScope.of(context).repository;
     final authorId = widget.doc.data()['authorId']?.toString() ?? '';
-    _authorFuture = repo.firestore.collection('users').doc(authorId).get();
+    if (authorId.isNotEmpty) {
+      _authorStream = repo.firestore.collection('users').doc(authorId).snapshots();
+    } else {
+      _authorStream = null;
+    }
   }
 
   @override
@@ -58,7 +63,11 @@ class _PostCardState extends State<PostCard> {
     final data = widget.doc.data();
     final repo = AppScope.of(context).repository;
     final uid = repo.uid;
-    final authorId = data['authorId']?.toString() ?? AppLocalizations.of(context)!.teacher;
+    final rawAuthorId = data['authorId']?.toString();
+    final authorId = rawAuthorId ?? '';
+    final isAuthor = uid != null && uid == authorId;
+    final canShowMenu = widget.canManage || isAuthor;
+
     final content = data['content']?.toString() ?? '';
     final pinned = data['pinned'] == true;
     final likes = List<String>.from(data['likes'] ?? []);
@@ -78,16 +87,20 @@ class _PostCardState extends State<PostCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                future: _authorFuture,
+              StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: _authorStream,
                 builder: (context, userSnap) {
                   final authorName =
-                      userSnap.data?.data()?['name']?.toString() ?? authorId;
+                      userSnap.data?.data()?['name']?.toString() ??
+                          (authorId.isNotEmpty
+                              ? authorId
+                              : AppLocalizations.of(context)!.teacher);
                   return Expanded(
                     child: Row(
                       children: [
                         SchoolAvatar(
                           name: authorName,
+                          userId: authorId.isNotEmpty ? authorId : null,
                           color: classColor,
                           radius: 20,
                         ),
@@ -97,7 +110,9 @@ class _PostCardState extends State<PostCard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                authorId == uid ? AppLocalizations.of(context)!.you : authorName,
+                                isAuthor
+                                    ? AppLocalizations.of(context)!.you
+                                    : authorName,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
@@ -123,7 +138,7 @@ class _PostCardState extends State<PostCard> {
               const Spacer(),
               if (pinned)
                 Padding(
-                  padding: EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: 8),
                   child: StatusChip(
                     label: AppLocalizations.of(context)!.pinned,
                     color: SchoolColors.yellow,
@@ -131,7 +146,12 @@ class _PostCardState extends State<PostCard> {
                     iconSize: 10,
                   ),
                 ),
-              if (widget.canManage) _PostMenu(doc: widget.doc),
+              if (canShowMenu)
+                _PostMenu(
+                  doc: widget.doc,
+                  canManage: widget.canManage,
+                  isAuthor: isAuthor,
+                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -154,17 +174,18 @@ class _PostCardState extends State<PostCard> {
                   imageUrl: (attachments.first['url'] as String)
                       .toDirectImageUrl
                       .toOptimizedCloudinary(
-                        performance:
-                            AppScope.of(context).appState.performanceMode,
+                        performance: AppScope.of(
+                          context,
+                        ).appState.performanceMode,
                       ),
                   height: 240,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  memCacheWidth:
-                      AppScope.of(context).appState.performanceMode ? 500 : 900,
-                  placeholder: (c, u) => Container(
-                    color: Colors.grey.withValues(alpha: 0.1),
-                  ),
+                  memCacheWidth: AppScope.of(context).appState.performanceMode
+                      ? 500
+                      : 900,
+                  placeholder: (c, u) =>
+                      Container(color: Colors.grey.withValues(alpha: 0.1)),
                 ),
               ),
             ),
@@ -287,7 +308,9 @@ class _PostReactionRow extends StatelessWidget {
           onPressed: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(AppLocalizations.of(context)!.bookmarksWillAppearInThe),
+                content: Text(
+                  AppLocalizations.of(context)!.bookmarksWillAppearInThe,
+                ),
               ),
             );
           },
@@ -421,6 +444,7 @@ class _CommentSheetState extends State<_CommentSheet> {
                             children: [
                               SchoolAvatar(
                                 name: c['authorId']?.toString() ?? 'U',
+                                userId: c['authorId']?.toString(),
                                 radius: 16,
                               ),
                               const SizedBox(width: 12),
@@ -432,8 +456,12 @@ class _CommentSheetState extends State<_CommentSheet> {
                                       children: [
                                         Text(
                                           c['authorId'] == repo.uid
-                                              ? AppLocalizations.of(context)!.you
-                                              : AppLocalizations.of(context)!.user,
+                                              ? AppLocalizations.of(
+                                                  context,
+                                                )!.you
+                                              : AppLocalizations.of(
+                                                  context,
+                                                )!.user,
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 13,
@@ -527,75 +555,353 @@ class _CommentSheetState extends State<_CommentSheet> {
 }
 
 class _PostMenu extends StatelessWidget {
-  const _PostMenu({required this.doc});
+  const _PostMenu({
+    required this.doc,
+    required this.canManage,
+    required this.isAuthor,
+  });
   final QueryDocumentSnapshot<Map<String, dynamic>> doc;
+  final bool canManage;
+  final bool isAuthor;
 
   @override
   Widget build(BuildContext context) {
     final repo = AppScope.of(context).repository;
     final pinned = doc.data()['pinned'] == true;
+    final l10n = AppLocalizations.of(context)!;
+
+    final canPin = canManage;
+    final canEdit = canManage || isAuthor;
+    final canDelete = canManage || isAuthor;
+
     return PopupMenuButton<String>(
-      tooltip: AppLocalizations.of(context)!.unknownKey6,
+      tooltip: l10n.unknownKey6,
       icon: const Icon(Icons.more_horiz_rounded, color: SchoolColors.muted),
-      onSelected: (val) {
-        if (val == 'pin')
+      onSelected: (val) async {
+        if (val == 'pin') {
           repo.firestore.collection('posts').doc(doc.id).update({
             'pinned': !pinned,
           });
-        if (val == 'delete')
-          repo.firestore.collection('posts').doc(doc.id).delete();
+        } else if (val == 'edit') {
+          showDialog(
+            context: context,
+            builder: (ctx) => Dialog(
+              insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              clipBehavior: Clip.antiAlias,
+              child: _EditPostSheet(
+                doc: doc,
+                canManagePin: canManage,
+              ),
+            ),
+          );
+        } else if (val == 'delete') {
+          final confirm = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text(l10n.delete),
+              content: Text('${l10n.delete}?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(l10n.cancel),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(
+                    l10n.delete,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          );
+          if (confirm == true) {
+            await repo.deletePost(doc.id);
+          }
+        }
       },
       itemBuilder: (_) => [
-        PopupMenuItem(
-          value: 'pin',
-          child: Text(pinned ? AppLocalizations.of(context)!.unpin : AppLocalizations.of(context)!.pin),
-        ),
-        PopupMenuItem(
-          value: 'delete',
-          child: Text(AppLocalizations.of(context)!.delete, style: TextStyle(color: Colors.red)),
-        ),
+        if (canPin)
+          PopupMenuItem(
+            value: 'pin',
+            child: Text(
+              pinned ? l10n.unpin : l10n.pin,
+            ),
+          ),
+        if (canEdit)
+          PopupMenuItem(
+            value: 'edit',
+            child: Text(l10n.edit),
+          ),
+        if (canDelete)
+          PopupMenuItem(
+            value: 'delete',
+            child: Text(
+              l10n.delete,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
       ],
     );
   }
 }
 
-class _AttachmentCarousel extends StatelessWidget {
-  const _AttachmentCarousel({required this.images});
-  final List<String> images;
+class _EditPostSheet extends StatefulWidget {
+  const _EditPostSheet({
+    required this.doc,
+    required this.canManagePin,
+  });
+
+  final QueryDocumentSnapshot<Map<String, dynamic>> doc;
+  final bool canManagePin;
+
+  @override
+  State<_EditPostSheet> createState() => _EditPostSheetState();
+}
+
+class _EditPostSheetState extends State<_EditPostSheet> {
+  late final TextEditingController _controller;
+  late bool _isPinned;
+  List<Map<String, dynamic>> _existingAttachments = [];
+  PlatformFile? _pickedFile;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final data = widget.doc.data();
+    _controller = TextEditingController(text: data['content']?.toString() ?? '');
+    _isPinned = data['pinned'] == true;
+    _existingAttachments = List<Map<String, dynamic>>.from(data['attachments'] ?? []);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 200,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: images.length,
-        itemBuilder: (_, i) => Padding(
-          padding: const EdgeInsets.only(left: 18),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: CachedNetworkImage(
-              imageUrl: images[i].toDirectImageUrl,
-              width: 300,
-              fit: BoxFit.cover,
+    final maxHeight = MediaQuery.of(context).size.height * 0.80;
+    final l10n = AppLocalizations.of(context)!;
+    final canSave = _controller.text.trim().isNotEmpty ||
+        _pickedFile != null ||
+        _existingAttachments.isNotEmpty;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight, maxWidth: 600),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Header: Title + Close ──
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.edit,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
             ),
-          ),
+            const SizedBox(height: 12),
+            // ── Scrollable body ──
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _controller,
+                      minLines: 2,
+                      maxLines: 8,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        hintText: l10n.postAnAnnouncementForClasses,
+                        filled: true,
+                        fillColor: SchoolColors.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    if (_existingAttachments.isNotEmpty && _pickedFile == null) ...[
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Stack(
+                          children: [
+                            CachedNetworkImage(
+                              imageUrl: (_existingAttachments.first['url'] as String)
+                                  .toDirectImageUrl
+                                  .toOptimizedCloudinary(
+                                    performance: AppScope.of(context).appState.performanceMode,
+                                  ),
+                              height: 160,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: IconButton.filled(
+                                onPressed: () => setState(() => _existingAttachments.clear()),
+                                icon: const Icon(Icons.close, size: 18),
+                                style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (_pickedFile != null) ...[
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Stack(
+                          children: [
+                            if (_pickedFile!.bytes != null)
+                              Image.memory(
+                                _pickedFile!.bytes!,
+                                height: 160,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              )
+                            else if (_pickedFile!.path != null)
+                              Image.file(
+                                File(_pickedFile!.path!),
+                                height: 160,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: IconButton.filled(
+                                onPressed: () => setState(() => _pickedFile = null),
+                                icon: const Icon(Icons.close, size: 18),
+                                style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // ── Bottom bar: Attach + Pin + Save ──
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () async {
+                    final result = await FilePicker.pickFiles(
+                      type: FileType.image,
+                      withData: true,
+                    );
+                    if (result != null) {
+                      setState(() {
+                        _pickedFile = result.files.first;
+                        _existingAttachments.clear();
+                      });
+                    }
+                  },
+                  icon: Icon(
+                    Icons.image_outlined,
+                    color: (_pickedFile != null || _existingAttachments.isNotEmpty)
+                        ? SchoolColors.primary
+                        : SchoolColors.muted,
+                  ),
+                ),
+                if (widget.canManagePin)
+                  IconButton(
+                    onPressed: () => setState(() => _isPinned = !_isPinned),
+                    icon: Icon(
+                      _isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                      color: _isPinned ? SchoolColors.orange : SchoolColors.muted,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // ── Save button: full width, always visible ──
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: _isSaving
+                  ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                  : FilledButton.icon(
+                      onPressed: canSave ? _save : null,
+                      icon: const Icon(Icons.check_rounded, size: 20),
+                      label: Text(
+                        l10n.save,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-class _FileTile extends StatelessWidget {
-  const _FileTile({required this.file});
-  final Map<String, dynamic> file;
+  Future<void> _save() async {
+    final repo = AppScope.of(context).repository;
+    setState(() => _isSaving = true);
+    try {
+      List<Map<String, dynamic>> finalAttachments = List.from(_existingAttachments);
+      if (_pickedFile != null) {
+        final classId = widget.doc.data()['classId']?.toString() ?? 'common';
+        final path =
+            'classes/$classId/feed/${DateTime.now().millisecondsSinceEpoch}_${_pickedFile!.name}';
+        Map<String, dynamic>? uploaded;
+        if (_pickedFile!.bytes != null) {
+          uploaded = await repo.uploadFileWeb(path, _pickedFile!.bytes!);
+        } else if (_pickedFile!.path != null) {
+          uploaded = await repo.uploadFile(path, File(_pickedFile!.path!));
+        }
+        if (uploaded != null) {
+          finalAttachments = [
+            {
+              'type': 'image',
+              ...uploaded,
+              'name': _pickedFile!.name,
+              'size': _pickedFile!.size,
+            }
+          ];
+        }
+      }
 
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(Icons.insert_drive_file_outlined),
-      title: Text(file['name'] ?? AppLocalizations.of(context)!.file2),
-      onTap: () => openExternalUrl(file['url']),
-    );
+      await repo.updatePost(
+        postId: widget.doc.id,
+        content: _controller.text.trim(),
+        pinned: _isPinned,
+        attachments: finalAttachments,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 }

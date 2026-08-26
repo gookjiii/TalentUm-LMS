@@ -1,6 +1,0 @@
-@@ -29,3 +29,4 @@
-           }
-           final posts = snapshot.data!.docs;
--          return ListView.builder(
-+          return Center(
-+            child: ConstrainedBox(

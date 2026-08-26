@@ -5,66 +5,63 @@ import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
-import '../../../../screens/settings_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:school_world/src/providers/app_providers.dart';
 
 import './feed_widgets.dart';
 
-class StudentFeed extends StatefulWidget {
+class StudentFeed extends ConsumerStatefulWidget {
   const StudentFeed({
     super.key,
     required this.classId,
     required this.classes,
     required this.onClassSelect,
+    this.onProfileTap,
   });
   final String classId;
   final List<Map<String, dynamic>> classes;
   final ValueChanged<String> onClassSelect;
+  final VoidCallback? onProfileTap;
 
   @override
-  State<StudentFeed> createState() => _StudentFeedState();
+  ConsumerState<StudentFeed> createState() => _StudentFeedState();
 }
 
-class _StudentFeedState extends State<StudentFeed> {
+class _StudentFeedState extends ConsumerState<StudentFeed> {
   String _searchQuery = '';
   Stream<QuerySnapshot<Map<String, dynamic>>>? _postsStream;
-  bool _initialized = false;
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _cachedPosts = [];
+  String? _activeClassId;
   int _limit = 20;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_initialized) {
-      _initialized = true;
-      _initStream();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant StudentFeed oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.classId != widget.classId) {
+  void _updateStreamIfNeeded(String classId) {
+    if (_activeClassId != classId) {
+      _activeClassId = classId;
       _limit = 20;
-      _initStream();
-    }
-  }
-
-  void _initStream() {
-    final repo = AppScope.of(context).repository;
-    setState(() {
-      _postsStream = widget.classId == 'all'
+      _cachedPosts.clear();
+      final repo = AppScope.of(context).repository;
+      _postsStream = classId == 'all'
           ? repo.firestore
                 .collection('posts')
                 .orderBy('createdAt', descending: true)
                 .limit(_limit)
                 .snapshots()
-          : repo.postsForClass(widget.classId, limit: _limit);
-    });
+          : repo.postsForClass(classId, limit: _limit);
+    }
   }
 
-  void _loadMore() {
+  void _loadMore(int currentCount) {
+    if (currentCount < _limit || _activeClassId == null) return;
     setState(() {
       _limit += 20;
-      _initStream();
+      final repo = AppScope.of(context).repository;
+      _postsStream = _activeClassId == 'all'
+          ? repo.firestore
+                .collection('posts')
+                .orderBy('createdAt', descending: true)
+                .limit(_limit)
+                .snapshots()
+          : repo.postsForClass(_activeClassId!, limit: _limit);
     });
   }
 
@@ -72,6 +69,13 @@ class _StudentFeedState extends State<StudentFeed> {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final name = user?.displayName ?? AppLocalizations.of(context)!.student;
+    final selectedId = ref.watch(
+      schoolAppStateProvider.select((s) => s.selectedClassId),
+    );
+    final activeClassId = (selectedId != null && selectedId.isNotEmpty)
+        ? selectedId
+        : widget.classId;
+    _updateStreamIfNeeded(activeClassId);
 
     return Center(
       child: ConstrainedBox(
@@ -79,8 +83,9 @@ class _StudentFeedState extends State<StudentFeed> {
         child: SizedBox.expand(
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
-              if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
-                _loadMore();
+              if (scrollInfo.metrics.pixels >=
+                  scrollInfo.metrics.maxScrollExtent - 200) {
+                _loadMore(_cachedPosts.length);
               }
               return false;
             },
@@ -107,7 +112,9 @@ class _StudentFeedState extends State<StudentFeed> {
                                     ),
                                   ),
                                   Text(
-                                    AppLocalizations.of(context)!.announcementsFromYourTeachers,
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.announcementsFromYourTeachers,
                                     style: TextStyle(
                                       color: SchoolColors.muted.withValues(
                                         alpha: 0.7,
@@ -123,15 +130,7 @@ class _StudentFeedState extends State<StudentFeed> {
                               name: name,
                               userId: user?.uid,
                               radius: 22,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (ctx) => SettingsScreen(
-                                    repository: AppScope.of(ctx).repository,
-                                    appState: AppScope.of(ctx).appState,
-                                  ),
-                                ),
-                              ),
+                              onTap: widget.onProfileTap,
                             ),
                           ],
                         ),
@@ -141,7 +140,9 @@ class _StudentFeedState extends State<StudentFeed> {
                             () => _searchQuery = v.trim().toLowerCase(),
                           ),
                           decoration: InputDecoration(
-                            hintText: AppLocalizations.of(context)!.searchByAdvertisements,
+                            hintText: AppLocalizations.of(
+                              context,
+                            )!.searchByAdvertisements,
                             prefixIcon: const Icon(Icons.search_rounded),
                             filled: true,
                             fillColor:
@@ -164,15 +165,25 @@ class _StudentFeedState extends State<StudentFeed> {
                             children: [
                               _FeedFilterChip(
                                 label: AppLocalizations.of(context)!.allClasses,
-                                active: widget.classId == 'all',
-                                onTap: () => widget.onClassSelect('all'),
+                                active: activeClassId == 'all',
+                                onTap: () {
+                                  ref
+                                      .read(schoolAppStateProvider)
+                                      .selectClass('all');
+                                  widget.onClassSelect('all');
+                                },
                               ),
                               ...widget.classes.map(
                                 (c) => _FeedFilterChip(
                                   label: c['name']?.toString() ?? '',
-                                  active: c['id'] == widget.classId,
-                                  onTap: () =>
-                                      widget.onClassSelect(c['id'] as String),
+                                  active: c['id'] == activeClassId,
+                                  onTap: () {
+                                    final id = c['id'] as String;
+                                    ref
+                                        .read(schoolAppStateProvider)
+                                        .selectClass(id);
+                                    widget.onClassSelect(id);
+                                  },
                                 ),
                               ),
                             ],
@@ -185,23 +196,49 @@ class _StudentFeedState extends State<StudentFeed> {
                 StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                   stream: _postsStream,
                   builder: (context, snapshot) {
-                    var posts = snapshot.data?.docs ?? [];
-  
+                    if (snapshot.hasData) {
+                      _cachedPosts = snapshot.data!.docs;
+                    }
+                    var posts = snapshot.hasData
+                        ? snapshot.data!.docs
+                        : _cachedPosts;
+                    final isInitialLoading =
+                        snapshot.connectionState == ConnectionState.waiting &&
+                        _cachedPosts.isEmpty;
+
                     if (_searchQuery.isNotEmpty) {
                       posts = posts.where((doc) {
                         final content =
-                            doc.data()['content']?.toString().toLowerCase() ?? '';
+                            doc.data()['content']?.toString().toLowerCase() ??
+                            '';
                         return content.contains(_searchQuery);
                       }).toList();
                     }
-  
-                    if (posts.isEmpty &&
-                        snapshot.connectionState != ConnectionState.waiting) {
+
+                    if (isInitialLoading) {
+                      return SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 24,
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ), // Or Shimmer
+                        ),
+                      );
+                    }
+
+                    if (posts.isEmpty) {
                       return SliverToBoxAdapter(
                         child: EmptyStateWidget(
                           icon: Icons.notifications_none_rounded,
-                          title: AppLocalizations.of(context)!.thereAreNoAnnouncementsYet,
-                          subtitle: 'Bạn đã xem hết tất cả thông báo rồi!',
+                          title: AppLocalizations.of(
+                            context,
+                          )!.thereAreNoAnnouncementsYet,
+                          subtitle: AppLocalizations.of(
+                            context,
+                          )!.youHaveSeenAllAnnouncements,
                         ),
                       );
                     }
@@ -218,14 +255,16 @@ class _StudentFeedState extends State<StudentFeed> {
                                 ? widget.classes.first
                                 : {},
                           );
-  
+
                           if (classData.isEmpty) return const SizedBox.shrink();
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 16),
-                            child: PostCard(
-                              doc: doc,
-                              classData: classData,
-                              canManage: false,
+                            child: RepaintBoundary(
+                              child: PostCard(
+                                doc: doc,
+                                classData: classData,
+                                canManage: false,
+                              ),
                             ),
                           );
                         }, childCount: posts.length),

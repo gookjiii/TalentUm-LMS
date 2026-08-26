@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/main.dart';
 import 'dart:math' as math;
@@ -49,8 +51,6 @@ class ChatBubbleBuilders {
     required bool isSentByMe,
     dynamic groupStatus,
   }) {
-
-
     final query = chatController?.searchQuery ?? '';
     final isCurrentMatch =
         chatController?.searchResults.isNotEmpty == true &&
@@ -561,15 +561,11 @@ class ChatBubbleBuilders {
         children: [
           if (isVideo)
             ClipRRect(
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(22),
-                topRight: const Radius.circular(22),
-                bottomLeft: isSentByMe
-                    ? const Radius.circular(22)
-                    : Radius.zero,
-                bottomRight: isSentByMe
-                    ? Radius.zero
-                    : const Radius.circular(22),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(22),
+                topRight: Radius.circular(22),
+                bottomLeft: Radius.zero,
+                bottomRight: Radius.zero,
               ),
               child: SizedBox(
                 width: videoWidth,
@@ -577,208 +573,23 @@ class ChatBubbleBuilders {
               ),
             )
           else
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: isSentByMe ? null : SchoolColors.chatBubbleOther,
-                gradient: isSentByMe
-                    ? const LinearGradient(
-                        colors: [
-                          SchoolColors.chatBubbleStart,
-                          SchoolColors.chatBubbleEnd,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                border: isSentByMe
-                    ? null
-                    : Border.all(
-                        color: SchoolColors.chatBubbleOtherBorder,
-                        width: 1,
-                      ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: (isSentByMe ? Colors.white : SchoolColors.primary)
-                          .withOpacity(0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.insert_drive_file_rounded,
-                      size: 20,
-                      color: isSentByMe ? Colors.white : SchoolColors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        buildHighlightedText(
-                          context,
-                          message.name,
-                          chatController?.searchQuery ?? '',
-                          isSentByMe,
-                          isCurrentMatch:
-                              chatController?.searchResults.isNotEmpty ==
-                                  true &&
-                              chatController?.searchIndex != -1 &&
-                              chatController?.searchResults[chatController!
-                                      .searchIndex] ==
-                                  message.id,
-                        ),
-                        Text(
-                          _formatBytes(message.size ?? 0),
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: isSentByMe
-                                ? Colors.white.withOpacity(0.7)
-                                : SchoolColors.muted.withOpacity(0.6),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () => openAttachment(message.source),
-                    icon: const Icon(Icons.download_rounded, size: 20),
-                    style: IconButton.styleFrom(
-                      backgroundColor:
-                          (isSentByMe ? Colors.white : Colors.black)
-                              .withOpacity(isSentByMe ? 0.18 : 0.05),
-                      foregroundColor: isSentByMe
-                          ? Colors.white
-                          : SchoolColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          if (msgText != null)
-            Container(
-              width: isVideo ? videoWidth : null,
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
-              decoration: BoxDecoration(
-                color: isSentByMe ? null : SchoolColors.chatBubbleOther,
-                gradient: isSentByMe
-                    ? const LinearGradient(
-                        colors: [
-                          SchoolColors.chatBubbleStart,
-                          SchoolColors.chatBubbleEnd,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  buildHighlightedText(
-                    context,
-                    msgText,
-                    chatController?.searchQuery ?? '',
-                    isSentByMe,
-                    isCurrentMatch:
-                        chatController?.searchResults.isNotEmpty == true &&
-                        chatController?.searchIndex != -1 &&
-                        chatController?.searchResults[chatController!
-                                .searchIndex] ==
-                            message.id,
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _formatTime(_toDate(message.createdAt)),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: isSentByMe
-                              ? Colors.white.withOpacity(0.7)
-                              : SchoolColors.muted.withOpacity(0.6),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      if (isSentByMe) ...[
-                        const SizedBox(width: 4),
-                        SeenStatus(
-                          metadata: message.metadata,
-                          myUid: myUid,
-                          mini: true,
-                          status: message.status?.name,
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            )
-          else if (isVideo)
-            SizedBox(
-              width: videoWidth,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      _formatTime(_toDate(message.createdAt)),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isSentByMe
-                            ? Colors.white.withOpacity(0.7)
-                            : SchoolColors.muted.withOpacity(0.6),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    if (isSentByMe) ...[
-                      const SizedBox(width: 4),
-                      SeenStatus(
-                        metadata: message.metadata,
-                        myUid: myUid,
-                        mini: true,
-                        status: message.status?.name,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    _formatTime(_toDate(message.createdAt)),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isSentByMe
-                          ? Colors.white.withOpacity(0.7)
-                          : SchoolColors.muted.withOpacity(0.6),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (isSentByMe) ...[
-                    const SizedBox(width: 4),
-                    SeenStatus(
-                      metadata: message.metadata,
-                      myUid: myUid,
-                      mini: true,
-                      status: message.status?.name,
-                    ),
-                  ],
-                ],
-              ),
+            _FileAttachmentCard(
+              name: message.name,
+              size: message.size ?? 0,
+              url: message.source,
+              isSentByMe: isSentByMe,
+              createdAt: _toDate(message.createdAt) ?? DateTime.now(),
+              metadata: message.metadata,
+              myUid: myUid,
+              openAttachment: openAttachment,
+              msgText: msgText,
+              searchQuery: chatController?.searchQuery ?? '',
+              isCurrentMatch:
+                  chatController?.searchResults.isNotEmpty == true &&
+                  chatController?.searchIndex != -1 &&
+                  chatController?.searchResults[chatController!.searchIndex] ==
+                      message.id,
+              buildHighlightedText: buildHighlightedText,
             ),
         ],
       ),
@@ -1362,7 +1173,6 @@ class ChatBubbleBuilders {
 
 class _ReactionsArea extends ConsumerWidget {
   const _ReactionsArea({
-    super.key,
     required this.roomId,
     required this.messageId,
     required this.myUid,
@@ -1587,10 +1397,62 @@ class _AudioBubbleState extends State<_AudioBubble>
   }
 
   Future<void> _togglePlay() async {
-    if (_playerState == PlayerState.playing) {
-      await _player.pause();
-    } else {
-      await _player.play(UrlSource(widget.url));
+    try {
+      if (_playerState == PlayerState.playing) {
+        await _player.pause();
+      } else if (_playerState == PlayerState.paused) {
+        await _player.resume();
+      } else {
+        String playUrl = widget.url;
+        // Legacy Google Drive audio URLs → direct download proxy
+        if (playUrl.contains('drive.google.com') || playUrl.contains('docs.google.com')) {
+          final uri = Uri.tryParse(playUrl);
+          final fileId = uri?.queryParameters['id'] ??
+              RegExp(r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)').firstMatch(playUrl)?.group(1);
+          if (fileId != null) {
+            playUrl = 'https://docs.google.com/uc?export=download&id=$fileId';
+          }
+        }
+
+        // For Cloudinary audio/video URLs, transcode on-the-fly to MP3 format
+        if (playUrl.contains('cloudinary.com') && playUrl.contains('/upload/')) {
+          playUrl = playUrl.replaceFirst(
+            RegExp(r'/upload/([^/]+/)?'),
+            '/upload/f_mp3,q_auto/',
+          );
+          if (playUrl.contains('.')) {
+            playUrl = playUrl.replaceFirst(RegExp(r'\.[a-zA-Z0-9]+(?=\?|$)'), '.mp3');
+          }
+        }
+
+        // On Web, if url is Firebase Storage or HTTP audio url that might lack CORS headers,
+        // use http.get to load bytes into memory and play via BytesSource for zero CORS restrictions
+        if (kIsWeb && !playUrl.contains('cloudinary.com')) {
+          try {
+            final response = await http.get(Uri.parse(playUrl));
+            if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+              debugPrint('[_AudioBubble] Playing via BytesSource (${response.bodyBytes.length} bytes)');
+              await _player.play(BytesSource(response.bodyBytes));
+              return;
+            }
+          } catch (e) {
+            debugPrint('[_AudioBubble] BytesSource fetch error: $e');
+          }
+        }
+
+        debugPrint('[_AudioBubble] Playing audio URL: $playUrl');
+        await _player.play(UrlSource(playUrl));
+      }
+    } catch (e) {
+      debugPrint('[_AudioBubble] Error playing audio: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Cannot play audio: $e'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -1757,8 +1619,6 @@ String _formatBytes(int bytes, {int decimals = 1}) {
   var i = (math.log(bytes) / math.log(1024)).floor();
   return '${(bytes / math.pow(1024, i)).toStringAsFixed(decimals)} ${suffixes[i]}';
 }
-
-
 
 class _SwipeToReplyWrapper extends StatefulWidget {
   const _SwipeToReplyWrapper({
@@ -1939,4 +1799,287 @@ class _SenderNameState extends State<_SenderName> {
       ),
     );
   }
+}
+
+class _FileAttachmentCard extends StatelessWidget {
+  const _FileAttachmentCard({
+    required this.name,
+    required this.size,
+    required this.url,
+    required this.isSentByMe,
+    required this.createdAt,
+    required this.metadata,
+    required this.myUid,
+    required this.openAttachment,
+    this.msgText,
+    this.searchQuery = '',
+    this.isCurrentMatch = false,
+    required this.buildHighlightedText,
+  });
+
+  final String name;
+  final int size;
+  final String url;
+  final bool isSentByMe;
+  final DateTime createdAt;
+  final Map<String, dynamic>? metadata;
+  final String myUid;
+  final void Function(String) openAttachment;
+  final String? msgText;
+  final String searchQuery;
+  final bool isCurrentMatch;
+  final Widget Function(
+    BuildContext context,
+    String text,
+    String query,
+    bool isSentByMe, {
+    bool isCurrentMatch,
+    bool isDeleted,
+  }) buildHighlightedText;
+
+  @override
+  Widget build(BuildContext context) {
+    final ext = name.split('.').last.toLowerCase();
+    final fileConfig = _getFileTypeConfig(ext);
+
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 320, minWidth: 240),
+      decoration: BoxDecoration(
+        color: isSentByMe ? null : SchoolColors.chatBubbleOther,
+        gradient: isSentByMe
+            ? const LinearGradient(
+                colors: [
+                  SchoolColors.chatBubbleStart,
+                  SchoolColors.chatBubbleEnd,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(20),
+          topRight: const Radius.circular(20),
+          bottomLeft: isSentByMe
+              ? const Radius.circular(20)
+              : const Radius.circular(6),
+          bottomRight: isSentByMe
+              ? const Radius.circular(6)
+              : const Radius.circular(20),
+        ),
+        border: isSentByMe
+            ? null
+            : Border.all(color: SchoolColors.chatBubbleOtherBorder, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isSentByMe
+                ? const Color(0xFF2563EB).withOpacity(0.12)
+                : Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // File info row
+          InkWell(
+            onTap: () => openAttachment(url),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  // File Badge Icon
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: fileConfig.gradient,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: fileConfig.accentColor.withOpacity(0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Icon(
+                        fileConfig.icon,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Name and Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            height: 1.25,
+                            color: isSentByMe
+                                ? Colors.white
+                                : Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${ext.toUpperCase()} · ${_formatBytes(size)}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                            color: isSentByMe
+                                ? Colors.white.withOpacity(0.75)
+                                : SchoolColors.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Action Download Button
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: (isSentByMe ? Colors.white : fileConfig.accentColor)
+                          .withOpacity(isSentByMe ? 0.2 : 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.download_rounded,
+                      size: 18,
+                      color: isSentByMe ? Colors.white : fileConfig.accentColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (msgText != null && msgText!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+              child: buildHighlightedText(
+                context,
+                msgText!,
+                searchQuery,
+                isSentByMe,
+                isCurrentMatch: isCurrentMatch,
+              ),
+            ),
+          // Time & Status bottom right
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Text(
+                  _formatTime(createdAt),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isSentByMe
+                        ? Colors.white.withOpacity(0.75)
+                        : SchoolColors.muted.withOpacity(0.8),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (isSentByMe) ...[
+                  const SizedBox(width: 4),
+                  SeenStatus(
+                    metadata: metadata,
+                    myUid: myUid,
+                    mini: true,
+                    status: metadata?['status'] as String?,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  _FileTypeConfig _getFileTypeConfig(String ext) {
+    return switch (ext) {
+      'pdf' => const _FileTypeConfig(
+          icon: Icons.picture_as_pdf_rounded,
+          gradient: LinearGradient(
+            colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          accentColor: Color(0xFFDC2626),
+        ),
+      'doc' || 'docx' => const _FileTypeConfig(
+          icon: Icons.description_rounded,
+          gradient: LinearGradient(
+            colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          accentColor: Color(0xFF2563EB),
+        ),
+      'xls' || 'xlsx' => const _FileTypeConfig(
+          icon: Icons.table_chart_rounded,
+          gradient: LinearGradient(
+            colors: [Color(0xFF10B981), Color(0xFF047857)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          accentColor: Color(0xFF059669),
+        ),
+      'ppt' || 'pptx' => const _FileTypeConfig(
+          icon: Icons.slideshow_rounded,
+          gradient: LinearGradient(
+            colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          accentColor: Color(0xFFD97706),
+        ),
+      'zip' || 'rar' || '7z' => const _FileTypeConfig(
+          icon: Icons.folder_zip_rounded,
+          gradient: LinearGradient(
+            colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          accentColor: Color(0xFF7C3AED),
+        ),
+      _ => const _FileTypeConfig(
+          icon: Icons.insert_drive_file_rounded,
+          gradient: LinearGradient(
+            colors: [SchoolColors.chatBubbleStart, SchoolColors.chatBubbleEnd],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          accentColor: SchoolColors.primary,
+        ),
+    };
+  }
+}
+
+class _FileTypeConfig {
+  const _FileTypeConfig({
+    required this.icon,
+    required this.gradient,
+    required this.accentColor,
+  });
+  final IconData icon;
+  final LinearGradient gradient;
+  final Color accentColor;
 }

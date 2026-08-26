@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,7 +10,6 @@ import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/app_state.dart';
-import 'package:school_world/src/firebase/school_repository.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 
@@ -23,7 +21,6 @@ import '../features/homework/presentation/widgets/teacher_homework.dart';
 import '../features/shared/presentation/widgets/teacher_sidebar.dart';
 import 'teacher_schedule_screen.dart';
 
-import '../features/shared/presentation/widgets/teacher_right_sidebar.dart';
 import '../features/roster/presentation/screens/roster_screen.dart';
 import '../features/settings/presentation/widgets/teacher_settings.dart';
 import '../features/settings/presentation/tabs/admin_dashboard_tab.dart';
@@ -87,10 +84,7 @@ class _TeacherWorkspaceScreenState
     final isLoading = classesAsync.isLoading;
     final classes = classesAsync.value ?? [];
 
-    final activeId = _selectedClassIdFromMap(
-      selectedClassId ?? selectedIdFromState,
-      classes,
-    );
+    final activeId = _selectedClassIdFromMap(selectedIdFromState, classes);
     final repo = AppScope.of(context).repository;
     final appState = AppScope.of(context).appState;
     final hasClasses = classes.isNotEmpty;
@@ -99,7 +93,6 @@ class _TeacherWorkspaceScreenState
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 900;
         final extraWide = constraints.maxWidth >= 1200;
-        const showRightSidebar = false;
 
         final navItems = [
           TeacherNavDest(
@@ -162,15 +155,7 @@ class _TeacherWorkspaceScreenState
 
         void onProfileTap() {
           final profileIndex = appState.isLeadTeacher ? 11 : 10;
-          _handleTabSelection(
-            profileIndex,
-            wide,
-            activeId,
-            repo,
-            appState,
-            l10n,
-            classes,
-          );
+          _handleTabSelection(profileIndex, wide);
         }
 
         // Only the content area shows loading — sidebar/nav are always visible
@@ -192,7 +177,13 @@ class _TeacherWorkspaceScreenState
               )
             : FadeIndexedStack(
                 index: _tabIndex,
+                // Keep inactive teacher tabs out of the layout. IndexedStack
+                // normally builds every child, so a transient null in an
+                // unrelated tab could replace the whole workspace with the
+                // red Flutter error widget (including while opening Settings).
+                disposeInactive: true,
                 children: [
+                  // 0 — Today
                   if (!hasClasses)
                     _TeacherEmptyState(
                       onCreate: _createClass,
@@ -202,26 +193,17 @@ class _TeacherWorkspaceScreenState
                     TeacherToday(
                       classes: classes,
                       selectedClassId: activeId ?? '',
-                      onTabSelect: (i) => _handleTabSelection(
-                        i,
-                        wide,
-                        activeId,
-                        repo,
-                        appState,
-                        l10n,
-                        classes,
-                      ),
+                      onTabSelect: (i) => _handleTabSelection(i, wide),
                       onSelectClass: (id) {
-                        setState(() => selectedClassId = id);
                         appState.selectClass(id);
                       },
                       onDeleteClass: _deleteClass,
                       onCopyGuestLink: _copyGuestInviteLink,
                       onCreateClass: _createClass,
                       onProfileTap: onProfileTap,
-                      showSidebar: showRightSidebar,
                     ),
 
+                  // 1 — Feed
                   hasClasses && activeId != null
                       ? TeacherFeed(classId: activeId, classes: classes)
                       : _FeatureLockedEmptyState(
@@ -229,21 +211,17 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.campaign_outlined,
                         ),
 
-                  hasClasses && activeId != null
-                      ? ChatTabFlow(
-                          repository: repo,
-                          appState: appState,
-                          classes: classes,
-                          initialClassId: activeId,
-                          desktopMode: wide,
-                          canInitializeRoom: true,
-                        )
-                      : _FeatureLockedEmptyState(
-                          title: AppLocalizations.of(context)!.chat,
-                          icon: Icons.chat_bubble_outline_rounded,
-                        ),
+                  // 2 — Chat
+                  ChatTabFlow(
+                    repository: repo,
+                    appState: appState,
+                    classes: classes,
+                    initialClassId: activeId,
+                    desktopMode: wide,
+                    canInitializeRoom: true,
+                  ),
 
-                  // Учительская — lazily mounted only when tab is active
+                  // 3 — Учительская (always available, no class dependency)
                   _tabIndex == 3
                       ? ClassChatScreen(
                           key: const ValueKey('chat-teachers_lounge'),
@@ -258,6 +236,7 @@ class _TeacherWorkspaceScreenState
                         )
                       : const SizedBox.expand(),
 
+                  // 4 — Homework
                   hasClasses && activeId != null
                       ? TeacherAssignments(
                           classId: activeId,
@@ -273,6 +252,7 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.assignment_outlined,
                         ),
 
+                  // 5 — Library
                   hasClasses && activeId != null
                       ? LibraryScreen(classId: activeId)
                       : _FeatureLockedEmptyState(
@@ -280,6 +260,7 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.library_books_outlined,
                         ),
 
+                  // 6 — Webinars
                   hasClasses && activeId != null
                       ? WebinarsScreen(classId: activeId)
                       : _FeatureLockedEmptyState(
@@ -287,6 +268,7 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.ondemand_video_outlined,
                         ),
 
+                  // 7 — Journal
                   hasClasses && activeId != null
                       ? JournalScreen(classId: activeId)
                       : _FeatureLockedEmptyState(
@@ -294,8 +276,10 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.book_outlined,
                         ),
 
-                  const TeacherScheduleScreen(),
+                  // 8 — Schedule
+                  TeacherScheduleScreen(initialClassId: activeId),
 
+                  // 9 — Roster
                   hasClasses && activeId != null
                       ? RosterScreen(classId: activeId)
                       : _FeatureLockedEmptyState(
@@ -303,16 +287,19 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.people_outline,
                         ),
 
+                  // 10 — Admin / Settings
                   appState.isLeadTeacher
                       ? const AdminDashboardTab()
                       : const TeacherSettingsTab(),
 
+                  // 11 — Settings (profile)
                   const TeacherSettingsTab(),
                 ],
               );
 
         return Scaffold(
-          extendBody: true, // Allow content to scroll under the frosted glass bottom bar
+          extendBody:
+              true, // Allow content to scroll under the frosted glass bottom bar
           backgroundColor: Theme.of(context).colorScheme.surface,
           body: SafeArea(
             bottom: false,
@@ -332,7 +319,6 @@ class _TeacherWorkspaceScreenState
                       onDeleteClass: _deleteClass,
                       onCopyGuestLink: _copyGuestInviteLink,
                       onSelectClass: (id) {
-                        setState(() => selectedClassId = id);
                         appState.selectClass(id);
                       },
                       onCreateClass: _createClass,
@@ -340,8 +326,6 @@ class _TeacherWorkspaceScreenState
                     ),
                   ),
                 Expanded(child: content),
-                if (showRightSidebar && hasClasses)
-                  TeacherRightSidebar(classes: classes),
               ],
             ),
           ),
@@ -943,73 +927,17 @@ class _TeacherWorkspaceScreenState
     }
   }
 
-  void _handleTabSelection(
-    int index,
-    bool wide,
-    String? activeId,
-    SchoolRepository repo,
-    SchoolAppState appState,
-    AppLocalizations l10n,
-    List<Map<String, dynamic>> classes,
-  ) {
+  void _handleTabSelection(int index, bool wide) {
     const mobileIndices = [0, 2, 4, 8];
 
-    if (!wide && !mobileIndices.contains(index)) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (ctx) => Consumer(
-            builder: (ctx, ref, _) {
-              final currentId =
-                  ref.watch(
-                    schoolAppStateProvider.select((s) => s.selectedClassId),
-                  ) ??
-                  activeId;
-
-              return Scaffold(
-                appBar: AppBar(
-                  title: Text(_getTabTitle(index, l10n)),
-                  centerTitle: true,
-                  actions: [
-                    if (classes.length > 1)
-                      IconButton(
-                        icon: const Icon(Icons.swap_horiz_rounded),
-                        onPressed: () {
-                          showClassSwitcher(
-                            context: ctx,
-                            classes: classes,
-                            currentClassId: currentId ?? '',
-                            onSelect: (id) {
-                              ref.read(schoolAppStateProvider).selectClass(id);
-                              setState(() {
-                                // optional update to parent state if needed
-                              });
-                            },
-                          );
-                        },
-                      ),
-                  ],
-                ),
-                body: Container(
-                  color: Theme.of(ctx).colorScheme.surface,
-                  child: _getTabWidget(
-                    index,
-                    currentId,
-                    repo,
-                    appState,
-                    classes,
-                    wide,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      );
-    } else {
-      setState(() => _tabIndex = index);
-      ref.read(schoolAppStateProvider).setTeacherTabIndex(index);
-    }
+    // Keep every teacher page inside the workspace on mobile. This leaves
+    // the bottom navigation visible for pages opened from the More sheet and
+    // avoids stacking a second route/app bar with an inner page header.
+    setState(() {
+      _tabIndex = index;
+      _moreSelected = !wide && !mobileIndices.contains(index);
+    });
+    ref.read(schoolAppStateProvider).setTeacherTabIndex(index);
   }
 
   void _showTeacherMoreSheet(BuildContext context, SchoolAppState appState) {
@@ -1036,85 +964,6 @@ class _TeacherWorkspaceScreenState
         },
       ),
     );
-  }
-
-  String _getTabTitle(int index, AppLocalizations l10n) {
-    switch (index) {
-      case 0:
-        return l10n.today;
-      case 1:
-        return l10n.feed;
-      case 2:
-        return l10n.chat;
-      case 3:
-        return l10n.teachersRoom;
-      case 4:
-        return l10n.homework;
-      case 5:
-        return l10n.library;
-      case 6:
-        return l10n.webinars;
-      case 7:
-        return l10n.magazine;
-      case 8:
-        return l10n.schedule;
-      case 9:
-        return l10n.participants;
-      case 10:
-        return _appState.isLeadTeacher ? l10n.adminPanel : l10n.settings;
-      case 11:
-        return l10n.settings;
-      default:
-        return '';
-    }
-  }
-
-  Widget _getTabWidget(
-    int index,
-    String? activeId,
-    SchoolRepository repo,
-    SchoolAppState appState,
-    List<Map<String, dynamic>> classes,
-    bool wide,
-  ) {
-    switch (index) {
-      case 3:
-        return ClassChatScreen(
-          key: const ValueKey('chat-teachers_lounge'),
-          repository: repo,
-          appState: appState,
-          classId: 'teachers_lounge',
-          canInitializeRoom: true,
-          initialTopicId: appState.lastChatClassId == 'teachers_lounge'
-              ? appState.lastChatTopicId
-              : null,
-        );
-      case 4:
-        return TeacherAssignments(
-          classId: activeId ?? '',
-          className: classes
-              .firstWhere((c) => c['id'] == activeId, orElse: () => {})['name']
-              ?.toString(),
-        );
-      case 5:
-        return LibraryScreen(classId: activeId ?? '');
-      case 6:
-        return WebinarsScreen(classId: activeId ?? '');
-      case 7:
-        return JournalScreen(classId: activeId ?? '');
-      case 8:
-        return const TeacherScheduleScreen();
-      case 9:
-        return RosterScreen(classId: activeId ?? '');
-      case 10:
-        return appState.isLeadTeacher
-            ? const AdminDashboardTab()
-            : const TeacherSettingsTab();
-      case 11:
-        return const TeacherSettingsTab();
-      default:
-        return const SizedBox.shrink();
-    }
   }
 }
 
@@ -1202,12 +1051,6 @@ class _TeacherEmptyState extends StatelessWidget {
     final isLead = AppScope.of(context).appState.isLeadTeacher;
     final now = DateTime.now();
     final date = DateFormat('EEEE, MMMM d', l10n.localeName).format(now);
-    final hour = now.hour;
-    final greeting = hour < 12
-        ? l10n.goodMorning
-        : hour < 17
-        ? l10n.goodAfternoon
-        : l10n.goodEvening;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: repo.userDocStream(),
@@ -1225,7 +1068,7 @@ class _TeacherEmptyState extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: PageHeader(
-                title: '$greeting, $name',
+                title: l10n.welcomeToTalentUm,
                 subtitle: date,
                 trailing: SchoolAvatar(
                   name: name,
@@ -1320,13 +1163,7 @@ class _MobileBottomBar extends StatelessWidget {
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: _buildIcons(isDark, context),
-          ),
-        ),
+        child: _buildIcons(isDark, context),
       ),
     );
   }
@@ -1367,8 +1204,12 @@ class _MobileBottomBar extends StatelessWidget {
                         color: selected
                             ? SchoolColors.primary
                             : (isDark
-                                  ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
-                                  : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                                  ? SchoolColors.darkTextSecondary.withValues(
+                                      alpha: 0.5,
+                                    )
+                                  : SchoolColors.textSecondary.withValues(
+                                      alpha: 0.5,
+                                    )),
                         size: 28,
                       ),
                     ),
@@ -1420,8 +1261,12 @@ class _MobileBottomBar extends StatelessWidget {
                       color: moreSelected
                           ? SchoolColors.primary
                           : (isDark
-                                ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
-                                : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                                ? SchoolColors.darkTextSecondary.withValues(
+                                    alpha: 0.5,
+                                  )
+                                : SchoolColors.textSecondary.withValues(
+                                    alpha: 0.5,
+                                  )),
                       size: 24,
                     ),
                   ),

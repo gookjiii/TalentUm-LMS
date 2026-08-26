@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -5,6 +7,44 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../../main.dart';
+
+/// The chat destination encoded in an FCM data payload.
+///
+/// Older chat notifications did not include `destination`, so a room ID is
+/// also accepted for backwards compatibility.
+class ChatNotificationTarget {
+  const ChatNotificationTarget({
+    this.classId,
+    this.roomId,
+    this.topicId,
+    this.messageId,
+    this.destination,
+  });
+
+  factory ChatNotificationTarget.fromData(Map<String, dynamic> data) {
+    return ChatNotificationTarget(
+      classId: _nonBlankString(data['classId']),
+      roomId: _nonBlankString(data['roomId']),
+      topicId: _nonBlankString(data['topicId']),
+      messageId: _nonBlankString(data['messageId']),
+      destination: _nonBlankString(data['destination'] ?? data['type']),
+    );
+  }
+
+  final String? classId;
+  final String? roomId;
+  final String? topicId;
+  final String? messageId;
+  final String? destination;
+
+  bool get isChat => destination == 'chat' || roomId != null;
+}
+
+String? _nonBlankString(Object? value) {
+  final result = value?.toString().trim();
+  return result == null || result.isEmpty ? null : result;
+}
+
 class PushNotificationManager {
   static bool _listenersInitialized = false;
 
@@ -36,14 +76,18 @@ class PushNotificationManager {
               token = await FirebaseMessaging.instance.getToken();
             }
           } catch (e) {
-            debugPrint('FCM token generation warning (could be running in simulator): $e');
+            debugPrint(
+              'FCM token generation warning (could be running in simulator): $e',
+            );
           }
 
           // 3. Register token persistently in Firestore
           if (token != null && token.isNotEmpty) {
             final platform = kIsWeb
                 ? 'web'
-                : (defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android');
+                : (defaultTargetPlatform == TargetPlatform.iOS
+                      ? 'ios'
+                      : 'android');
 
             await FirebaseFirestore.instance
                 .collection('users')
@@ -51,20 +95,18 @@ class PushNotificationManager {
                 .collection('tokens')
                 .doc(token)
                 .set({
-              'token': token,
-              'platform': platform,
-              'createdAt': FieldValue.serverTimestamp(),
-              'updatedAt': FieldValue.serverTimestamp(),
-              'active': true,
-            });
+                  'token': token,
+                  'platform': platform,
+                  'createdAt': FieldValue.serverTimestamp(),
+                  'updatedAt': FieldValue.serverTimestamp(),
+                  'active': true,
+                });
 
             // Sync with single fcmToken field on the user doc for Cloud Functions compatibility
             await FirebaseFirestore.instance
                 .collection('users')
                 .doc(userId)
-                .update({
-              'fcmToken': token,
-            });
+                .update({'fcmToken': token});
 
             debugPrint('FCM device token registered in Firestore successfully');
           }
@@ -81,9 +123,7 @@ class PushNotificationManager {
   }
 
   /// Remove the active device FCM token from the Firestore profile collection.
-  static Future<void> unregisterToken({
-    required String userId,
-  }) async {
+  static Future<void> unregisterToken({required String userId}) async {
     try {
       String? token;
       try {
@@ -107,9 +147,7 @@ class PushNotificationManager {
           await FirebaseFirestore.instance
               .collection('users')
               .doc(userId)
-              .update({
-            'fcmToken': FieldValue.delete(),
-          });
+              .update({'fcmToken': FieldValue.delete()});
         }
 
         debugPrint('FCM token deleted from Firestore successfully');
@@ -139,18 +177,15 @@ class PushNotificationManager {
             .collection('tokens')
             .doc(newToken)
             .set({
-          'token': newToken,
-          'platform': platform,
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-          'active': true,
-        });
+              'token': newToken,
+              'platform': platform,
+              'createdAt': FieldValue.serverTimestamp(),
+              'updatedAt': FieldValue.serverTimestamp(),
+              'active': true,
+            });
 
         // Sync with single fcmToken field on the user doc for Cloud Functions compatibility
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .update({
+        await FirebaseFirestore.instance.collection('users').doc(uid).update({
           'fcmToken': newToken,
         });
 
@@ -164,46 +199,54 @@ class PushNotificationManager {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       final notification = message.notification;
       if (notification == null) return;
+      final target = ChatNotificationTarget.fromData(message.data);
 
       scaffoldMessengerKey.currentState?.showSnackBar(
         SnackBar(
-          content: Container(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.notifications_active_rounded,
-                  color: Colors.white,
-                  size: 24,
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        notification.title ?? 'Новое уведомление / New notification',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        notification.body ?? '',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.white70,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+          content: InkWell(
+            onTap: target.isChat
+                ? () => unawaited(_handleNotificationTap(message))
+                : null,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.notifications_active_rounded,
+                    color: Colors.white,
+                    size: 24,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          notification.title ??
+                              'Новое уведомление / New notification',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          notification.body ?? '',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.white70,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           behavior: SnackBarBehavior.floating,
@@ -212,33 +255,89 @@ class PushNotificationManager {
             borderRadius: BorderRadius.circular(12),
           ),
           backgroundColor: const Color(0xFF1E293B), // Premium dark theme color
-          action: SnackBarAction(
-            label: 'Открыть / Open',
-            textColor: const Color(0xFF60A5FA), // Light blue link action
-            onPressed: () {
-              _handleNotificationTap(message);
-            },
-          ),
+          action: target.isChat
+              ? SnackBarAction(
+                  label: 'Открыть / Open',
+                  textColor: const Color(0xFF60A5FA),
+                  onPressed: () => unawaited(_handleNotificationTap(message)),
+                )
+              : null,
         ),
       );
     });
 
     // 3. Listen for message tap actions when the app is backgrounded
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      _handleNotificationTap(message);
+      unawaited(_handleNotificationTap(message));
     });
+
+    // 4. Handle a notification that launched a terminated mobile app.
+    unawaited(_handleInitialNotification());
   }
 
-  /// Perform deep-link routing actions upon clicking on active notification alerts.
-  static void _handleNotificationTap(RemoteMessage message) {
+  static Future<void> _handleInitialNotification() async {
     try {
-      final data = message.data;
-      final classId = data['classId'] as String?;
-      final roomId = data['roomId'] as String?;
+      final message = await FirebaseMessaging.instance.getInitialMessage();
+      if (message != null) await _handleNotificationTap(message);
+    } catch (e) {
+      debugPrint('Could not process initial notification: $e');
+    }
+  }
 
-      if (classId != null && navigatorKey.currentState != null) {
-        debugPrint('Deep Link click parsed: classId=$classId, roomId=$roomId');
+  /// Opens the exact class chat encoded by an FCM notification. A room-only
+  /// notification is resolved via its Firestore metadata, which also supports
+  /// old payloads and the teachers' lounge.
+  static Future<void> _handleNotificationTap(RemoteMessage message) async {
+    try {
+      final target = ChatNotificationTarget.fromData(message.data);
+      if (!target.isChat) return;
+
+      final navigationContext = navigatorKey.currentContext;
+      if (navigationContext == null) {
+        debugPrint('Notification navigation deferred: navigator unavailable');
+        return;
       }
+
+      final scope = AppScope.of(navigationContext);
+      if (!scope.appState.isTeacher && !scope.appState.isStudent) {
+        debugPrint('Notification chat route ignored for a non-chat role');
+        return;
+      }
+      var classId = target.classId;
+      if (classId == null && target.roomId == 'global_teachers_lounge') {
+        classId = 'teachers_lounge';
+      }
+
+      if (classId == null && target.roomId != null) {
+        final room = await scope.repository.firestore
+            .collection('rooms')
+            .doc(target.roomId)
+            .get();
+        final metadata = room.data()?['metadata'];
+        if (metadata is Map) {
+          classId = _nonBlankString(metadata['classId']);
+        }
+      }
+
+      if (classId == null) {
+        debugPrint(
+          'Notification ignored: no accessible class for room ${target.roomId}',
+        );
+        return;
+      }
+
+      final isTeachersLounge = classId == 'teachers_lounge';
+      scope.appState.openChat(
+        classId: classId,
+        topicId: target.topicId,
+        selectClass: !isTeachersLounge,
+      );
+      if (scope.appState.isTeacher) {
+        scope.appState.setTeacherTabIndex(isTeachersLounge ? 3 : 2);
+      }
+      debugPrint(
+        'Notification routed to chat: classId=$classId, roomId=${target.roomId}, messageId=${target.messageId}',
+      );
     } catch (e) {
       debugPrint('Error routing on message tap: $e');
     }
@@ -252,9 +351,14 @@ class PushNotificationManager {
     required String body,
     Map<String, dynamic>? data,
   }) async {
-    if ((tokens == null || tokens.isEmpty) && (userIds == null || userIds.isEmpty)) return;
+    if ((tokens == null || tokens.isEmpty) &&
+        (userIds == null || userIds.isEmpty))
+      return;
     try {
-      const proxyUrl = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
+      const proxyUrl = String.fromEnvironment(
+        'GOOGLE_DRIVE_PROXY_URL',
+        defaultValue: 'https://vercel-talentum-backend.vercel.app',
+      );
       if (proxyUrl.isEmpty) return;
 
       final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
@@ -269,9 +373,7 @@ class PushNotificationManager {
           'body': body,
           'data': data,
         },
-        options: Options(
-          headers: {'Authorization': 'Bearer $idToken'},
-        ),
+        options: Options(headers: {'Authorization': 'Bearer $idToken'}),
       );
     } catch (e) {
       debugPrint('Push send error: $e');

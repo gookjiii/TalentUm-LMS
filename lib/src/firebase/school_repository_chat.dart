@@ -34,16 +34,44 @@ mixin SchoolRepositoryChat {
   Future<Map<String, dynamic>?> uploadFile(String path, File file) async {
     File fileToUpload = file;
 
-    // Auto-compress images
-    final ext = file.path.split('.').last.toLowerCase();
+    final ext = path.split('.').last.toLowerCase();
+    final isMedia = [
+      'jpg',
+      'jpeg',
+      'png',
+      'webp',
+      'gif',
+      'mp4',
+      'mov',
+      'webm',
+      'avi',
+      'mkv',
+      'm4a',
+      'mp3',
+      'aac',
+      'wav',
+      'ogg',
+      'opus',
+      'caf',
+      'flac',
+    ].contains(ext);
+
+    // Downscale only genuinely oversized images. Chat images have already been
+    // prepared by the composer, so re-encoding them here would blur text and
+    // handwriting in the full-screen preview.
     if (['jpg', 'jpeg', 'png'].contains(ext)) {
       try {
         final bytes = await file.readAsBytes();
         final image = img.decodeImage(bytes);
-        if (image != null && image.width > 1200) {
-          final resized = img.copyResize(image, width: 1200);
+        if (image != null && (image.width > 2560 || image.height > 2560)) {
+          final resized = img.copyResize(
+            image,
+            width: image.width >= image.height ? 2560 : null,
+            height: image.height > image.width ? 2560 : null,
+            interpolation: img.Interpolation.cubic,
+          );
           final compressedBytes = Uint8List.fromList(
-            img.encodeJpg(resized, quality: 85),
+            img.encodeJpg(resized, quality: 92),
           );
           final tempDir = file.parent.path;
           final tempFile = File(
@@ -57,9 +85,16 @@ mixin SchoolRepositoryChat {
       }
     }
 
-    final provider = CloudinaryStorageProvider.chatProvider();
+    final provider = isMedia
+        ? CloudinaryStorageProvider.chatAttachmentProvider()
+        : CloudinaryStorageProvider.libraryProvider();
     final result = await provider.uploadFile(path, fileToUpload);
-    return {'url': result['url'], 'path': path};
+    return {
+      'url': result['url'],
+      'path': path,
+      if (result['provider'] != null) 'provider': result['provider'],
+      if (result['driveFileId'] != null) 'driveFileId': result['driveFileId'],
+    };
   }
 
   Future<Map<String, dynamic>?> uploadFileWeb(
@@ -68,20 +103,57 @@ mixin SchoolRepositoryChat {
   ) async {
     Uint8List finalBytes = bytes;
 
-    // Web compression
-    try {
-      final image = img.decodeImage(bytes);
-      if (image != null && image.width > 1200) {
-        final resized = img.copyResize(image, width: 1200);
-        finalBytes = Uint8List.fromList(img.encodeJpg(resized, quality: 85));
+    final ext = path.split('.').last.toLowerCase();
+    final isMedia = [
+      'jpg',
+      'jpeg',
+      'png',
+      'webp',
+      'gif',
+      'mp4',
+      'mov',
+      'webm',
+      'avi',
+      'mkv',
+      'm4a',
+      'mp3',
+      'aac',
+      'wav',
+      'ogg',
+      'opus',
+      'caf',
+      'flac',
+    ].contains(ext);
+
+    // Preserve the already-prepared chat image whenever it is within the
+    // maximum dimension. This avoids the former double JPEG compression.
+    if (['jpg', 'jpeg', 'png'].contains(ext)) {
+      try {
+        final image = img.decodeImage(bytes);
+        if (image != null && (image.width > 2560 || image.height > 2560)) {
+          final resized = img.copyResize(
+            image,
+            width: image.width >= image.height ? 2560 : null,
+            height: image.height > image.width ? 2560 : null,
+            interpolation: img.Interpolation.cubic,
+          );
+          finalBytes = Uint8List.fromList(img.encodeJpg(resized, quality: 92));
+        }
+      } catch (e) {
+        debugPrint('Web image compression error: $e');
       }
-    } catch (e) {
-      debugPrint('Web image compression error: $e');
     }
 
-    final provider = CloudinaryStorageProvider.chatProvider();
+    final provider = isMedia
+        ? CloudinaryStorageProvider.chatAttachmentProvider()
+        : CloudinaryStorageProvider.libraryProvider();
     final result = await provider.uploadFileWeb(path, finalBytes);
-    return {'url': result['url'], 'path': path};
+    return {
+      'url': result['url'],
+      'path': path,
+      if (result['provider'] != null) 'provider': result['provider'],
+      if (result['driveFileId'] != null) 'driveFileId': result['driveFileId'],
+    };
   }
 
   String? get uid;

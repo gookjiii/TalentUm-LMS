@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'storage_provider.dart';
 
 class GoogleDriveStorageProvider implements StorageProvider {
-  GoogleDriveStorageProvider({required this.backendBaseUrl}) : _dio = Dio();
+  GoogleDriveStorageProvider({required this.backendBaseUrl, Dio? dio})
+    : _dio = dio ?? Dio();
 
   final String backendBaseUrl;
   final Dio _dio;
@@ -33,7 +36,9 @@ class GoogleDriveStorageProvider implements StorageProvider {
         'name': fileName,
         'mimeType': mimeType,
         'size': length,
+        'path': path,
       },
+      options: await _authorizedOptions(),
     );
 
     if (initiateResponse.statusCode != 200) {
@@ -47,45 +52,25 @@ class GoogleDriveStorageProvider implements StorageProvider {
     final String uploadUrl = data['uploadUrl'] as String;
     final String recordId = data['id'].toString();
 
-    // Step 2: PUT file stream directly to the Google Drive resumable upload URL
-    // (safe on native — no CORS restriction, XHR not used)
-    final googleResponse = await _dio.put(
-      uploadUrl,
-      data: file.openRead(),
-      options: Options(
-        headers: {
-          'Content-Length': length,
-          'Content-Type': mimeType,
-        },
-      ),
-      onSendProgress: (sent, total) {
-        if (onProgress != null && total > 0) {
-          onProgress(sent / total);
-        }
-      },
+    final driveFileId = await _uploadResumable(
+      uploadUrl: uploadUrl,
+      totalSize: length,
+      mimeType: mimeType,
+      chunkData: (start, end) => file.openRead(start, end),
+      includeContentLength: true,
+      onProgress: onProgress,
     );
 
-    if (googleResponse.statusCode != 200 && googleResponse.statusCode != 201) {
-      throw Exception(
-        'Google Drive direct upload failed: ${googleResponse.statusCode}',
-      );
-    }
-
-    final googleData = googleResponse.data as Map<String, dynamic>;
-    final driveFileId = googleData['id'] as String;
-
-    // Step 3: Notify backend to finalize the record in DB
+    // Step 3: verify ownership/metadata and finalize the Firestore record.
     final completeResponse = await _dio.post(
       '$backendBaseUrl/api/upload/complete',
-      data: {
-        'id': recordId,
-        'driveFileId': driveFileId,
-      },
+      data: {'id': recordId, 'driveFileId': driveFileId},
+      options: await _authorizedOptions(),
     );
 
     if (completeResponse.statusCode != 200) {
       throw Exception(
-        'Failed to complete upload metadata in DB: '
+        'Failed to finalize Google Drive upload: '
         '${completeResponse.statusCode}',
       );
     }
@@ -119,109 +104,253 @@ class GoogleDriveStorageProvider implements StorageProvider {
         'name': fileName,
         'mimeType': mimeType,
         'size': length,
+        'path': path,
       },
+      options: await _authorizedOptions(),
     );
 
     if (initiateResponse.statusCode != 200) {
-      throw Exception('Failed to initiate resumable upload session on backend: ${initiateResponse.statusCode}');
+      throw Exception(
+        'Failed to initiate resumable upload session on backend: ${initiateResponse.statusCode}',
+      );
     }
 
     final data = initiateResponse.data as Map<String, dynamic>;
     final String uploadUrl = data['uploadUrl'] as String;
     final String recordId = data['id'].toString();
 
-    // Step 2: PUT bytes directly to Google Drive resumable upload URL
-    // We send raw bytes directly as the request body. The browser automatically
-    // calculates Content-Length. We omit it manually to avoid forbidden header CORS errors.
-    final googleResponse = await _dio.put(
-      uploadUrl,
-      data: bytes,
-      options: Options(
-        headers: {
-          'Content-Type': mimeType,
-        },
-      ),
-      onSendProgress: (sent, total) {
-        if (onProgress != null && total > 0) {
-          onProgress(sent / total);
-        }
-      },
+    final driveFileId = await _uploadResumable(
+      uploadUrl: uploadUrl,
+      totalSize: length,
+      mimeType: mimeType,
+      chunkData: (start, end) => bytes.sublist(start, end),
+      includeContentLength: false,
+      onProgress: onProgress,
     );
 
-    if (googleResponse.statusCode != 200 && googleResponse.statusCode != 201) {
-      throw Exception('Google Drive direct upload failed: ${googleResponse.statusCode}');
-    }
-
-    final googleData = googleResponse.data as Map<String, dynamic>;
-    final driveFileId = googleData['id'] as String;
-
-    // Step 3: Complete upload on backend to save metadata in DB
+    // Step 3: verify ownership/metadata and finalize the Firestore record.
     final completeResponse = await _dio.post(
       '$backendBaseUrl/api/upload/complete',
-      data: {
-        'id': recordId,
-        'driveFileId': driveFileId,
-      },
+      data: {'id': recordId, 'driveFileId': driveFileId},
+      options: await _authorizedOptions(),
     );
 
     if (completeResponse.statusCode != 200) {
-      throw Exception('Failed to complete upload metadata in DB: ${completeResponse.statusCode}');
+      throw Exception(
+        'Failed to finalize Google Drive upload: ${completeResponse.statusCode}',
+      );
     }
 
     final completeData = completeResponse.data as Map<String, dynamic>;
-    final fileObj = completeData['file'] as Map<String, dynamic>;
+    final fileObj = (completeData['file'] as Map<String, dynamic>?) ?? {};
     final webViewLink = fileObj['webViewLink'] as String? ?? '';
+    final webContentLink = fileObj['webContentLink'] as String? ?? '';
+    final fallbackUrl = 'https://drive.google.com/uc?id=$driveFileId&export=download';
+    final finalUrl = webContentLink.isNotEmpty ? webContentLink : (webViewLink.isNotEmpty ? webViewLink : fallbackUrl);
 
     return {
-      'url': webViewLink,
+      'url': finalUrl,
       'provider': 'google_drive',
       'path': path,
       'driveFileId': driveFileId,
     };
   }
 
-  @override
-  Future<void> deleteFile(String pathOrUrl) async {
-    final regExp = RegExp(
-      r'drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)',
-      caseSensitive: false,
-    );
-    final match = regExp.firstMatch(pathOrUrl);
-    
-    if (match != null && match.groupCount >= 1) {
-      final driveFileId = match.group(1);
-      if (driveFileId != null) {
+  Future<String> _uploadResumable({
+    required String uploadUrl,
+    required int totalSize,
+    required String mimeType,
+    required Object Function(int start, int end) chunkData,
+    required bool includeContentLength,
+    StorageProgressCallback? onProgress,
+  }) async {
+    const chunkSize = 2 * 1024 * 1024; // 2 MB (Must be a multiple of 256 KiB and < Vercel 4.5MB limit).
+    var start = 0;
+
+    while (start < totalSize) {
+      final end = (start + chunkSize < totalSize)
+          ? start + chunkSize
+          : totalSize;
+      final rangeValue = 'bytes $start-${end - 1}/$totalSize';
+      final headers = <String, dynamic>{
+        'Content-Type': mimeType,
+        'Content-Range': rangeValue,
+        'x-upload-content-range': rangeValue,
+      };
+      if (includeContentLength) headers['Content-Length'] = end - start;
+
+      final targetUrl =
+          kIsWeb ? '$backendBaseUrl/api/upload/initiate' : uploadUrl;
+      if (kIsWeb) {
+        headers['x-upload-url'] = uploadUrl;
+        final authHeaders = (await _authorizedOptions()).headers;
+        if (authHeaders != null) headers.addAll(authHeaders);
+      }
+
+      Response<dynamic>? response;
+      for (var attempt = 1; attempt <= 3; attempt++) {
         try {
-          const apiSecret = String.fromEnvironment('APP_API_SECRET');
-          await _dio.post(
-            '$backendBaseUrl/api/upload/delete_drive',
-            data: {'driveFileId': driveFileId},
+          response = await _dio.put(
+            targetUrl,
+            data: chunkData(start, end),
             options: Options(
-              headers: {
-                'Authorization': 'Bearer $apiSecret',
-              },
+              headers: headers,
+              validateStatus: (status) =>
+                  status == 200 || status == 201 || status == 308,
             ),
+            onSendProgress: (sent, total) {
+              if (onProgress != null && totalSize > 0) {
+                onProgress((start + sent) / totalSize);
+              }
+            },
           );
-          debugPrint('Google Drive file deleted successfully: $driveFileId');
-        } catch (e) {
-          debugPrint('Failed to delete Google Drive file: $e');
+          break;
+        } on DioException catch (error) {
+          final retryable = error.response == null ||
+              (error.response!.statusCode ?? 0) >= 500;
+          if (!retryable || attempt == 3) rethrow;
+          await Future<void>.delayed(Duration(milliseconds: 500 * attempt));
         }
       }
-    } else {
-      debugPrint('Could not parse Google Drive file ID from: $pathOrUrl');
+
+      final status = response?.statusCode;
+      if (status == 200 || status == 201) {
+        final rawData = response!.data;
+        final Map<String, dynamic> data;
+        if (rawData is Map) {
+          data = Map<String, dynamic>.from(rawData);
+        } else if (rawData is String) {
+          data = Map<String, dynamic>.from(jsonDecode(rawData) as Map);
+        } else {
+          throw Exception('Unexpected response format from Google Drive: $rawData');
+        }
+        final id = data['id']?.toString();
+        if (id == null || id.isEmpty) {
+          throw Exception('Google Drive completed upload without a file ID');
+        }
+        onProgress?.call(1);
+        return id;
+      }
+      if (status != 308) {
+        throw Exception('Google Drive chunk upload failed: $status');
+      }
+
+      final receivedRange = response!.headers.value('range');
+      final receivedEnd = receivedRange == null
+          ? null
+          : int.tryParse(receivedRange.split('-').last);
+      start = receivedEnd == null ? end : receivedEnd + 1;
     }
+
+    throw Exception('Google Drive upload ended without completion metadata');
+  }
+
+  @override
+  Future<void> deleteFile(String pathOrUrl) async {
+    final driveFileId = _extractDriveFileId(pathOrUrl);
+    if (driveFileId == null) {
+      throw ArgumentError('Could not parse Google Drive file ID');
+    }
+    await _dio.post(
+      '$backendBaseUrl/api/upload/delete_drive',
+      data: {'driveFileId': driveFileId},
+      options: await _authorizedOptions(),
+    );
+    debugPrint('Google Drive file deleted successfully: $driveFileId');
+  }
+
+  String? _extractDriveFileId(String value) {
+    final uri = Uri.tryParse(value);
+    final queryId = uri?.queryParameters['id'];
+    if (queryId != null && queryId.isNotEmpty) return queryId;
+
+    final patterns = [
+      RegExp(
+        r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'docs\.google\.com/(?:document|spreadsheets|presentation)/d/([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+    ];
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(value);
+      if (match != null) return match.group(1);
+    }
+    return null;
+  }
+
+  Future<Options> _authorizedOptions() async {
+    final token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (token == null || token.isEmpty) {
+      throw StateError(
+        'A signed-in Firebase user is required for this operation.',
+      );
+    }
+    return Options(headers: {'Authorization': 'Bearer $token'});
   }
 
   String _getMimeType(String fileName) {
     final ext = fileName.split('.').last.toLowerCase();
-    if (ext == 'jpg' || ext == 'jpeg') return 'image/jpeg';
-    if (ext == 'png') return 'image/png';
-    if (ext == 'gif') return 'image/gif';
-    if (ext == 'pdf') return 'application/pdf';
-    if (ext == 'mp4') return 'video/mp4';
-    if (ext == 'mov') return 'video/quicktime';
-    if (ext == 'zip') return 'application/zip';
-    if (ext == 'rar') return 'application/x-rar-compressed';
-    return 'application/octet-stream';
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      case 'pdf':
+        return 'application/pdf';
+      case 'doc':
+        return 'application/msword';
+      case 'docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'xls':
+        return 'application/vnd.ms-excel';
+      case 'xlsx':
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      case 'ppt':
+        return 'application/vnd.ms-powerpoint';
+      case 'pptx':
+        return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      case 'txt':
+        return 'text/plain';
+      case 'csv':
+        return 'text/csv';
+      case 'mp4':
+        return 'video/mp4';
+      case 'mov':
+        return 'video/quicktime';
+      case 'webm':
+        return 'video/webm';
+      case 'avi':
+        return 'video/x-msvideo';
+      case 'mkv':
+        return 'video/x-matroska';
+      case 'mp3':
+        return 'audio/mpeg';
+      case 'wav':
+        return 'audio/wav';
+      case 'm4a':
+        return 'audio/mp4';
+      case 'aac':
+        return 'audio/aac';
+      case 'ogg':
+        return 'audio/ogg';
+      case 'zip':
+        return 'application/zip';
+      case 'rar':
+        return 'application/x-rar-compressed';
+      case '7z':
+        return 'application/x-7z-compressed';
+      case 'epub':
+        return 'application/epub+zip';
+      default:
+        return 'application/octet-stream';
+    }
   }
 }

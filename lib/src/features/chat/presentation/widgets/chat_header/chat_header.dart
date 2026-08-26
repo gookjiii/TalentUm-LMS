@@ -46,14 +46,6 @@ class _ChatHeaderState extends State<ChatHeader> {
   bool _isMobileSearching = false;
   final FocusNode _searchFocusNode = FocusNode();
 
-  Future<Map<String, dynamic>?> _getUserData(String uid) async {
-    final doc = await widget.repository.firestore
-        .collection('users')
-        .doc(uid)
-        .get();
-    return doc.data();
-  }
-
   @override
   void initState() {
     super.initState();
@@ -290,29 +282,25 @@ class _ChatHeaderState extends State<ChatHeader> {
         final Color color;
         final int memberCount;
 
-        if (widget.classId == 'teachers_lounge') {
-          name =
-              data['name']?.toString() ??
-              AppLocalizations.of(context)!.teachersRoom;
-          color = SchoolColors.primary;
-          final userIds = List<String>.from(data['userIds'] ?? []);
-          memberCount = userIds.length;
-        } else {
-          name =
-              data['name']?.toString() ??
-              AppLocalizations.of(context)!.classText;
-          color = parseHexColor(data['coverColor']);
-          final studentIds = List<String>.from(data['studentIds'] ?? []);
-          final teacherId = data['teacherId'] as String?;
-          final allIds = [if (teacherId != null) teacherId, ...studentIds];
-          memberCount = allIds.length;
-        }
+        name =
+            data['name']?.toString() ??
+            (widget.classId == 'teachers_lounge'
+                ? AppLocalizations.of(context)!.teachersRoom
+                : AppLocalizations.of(context)!.classText);
+        color = widget.classId == 'teachers_lounge'
+            ? SchoolColors.primary
+            : parseHexColor(data['coverColor']);
+        final userIds = List<String>.from(data['userIds'] ?? []);
+        memberCount = userIds.isNotEmpty ? userIds.length : 1;
 
         final statusText = '$memberCount участников, онлайн';
 
         return Container(
+          width: double.infinity,
           padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 8 : 16,
+            // Give the compact header a few extra pixels for the room title
+            // without changing the desktop spacing.
+            horizontal: isMobile ? 4 : 16,
             vertical: isMobile ? 6 : 10,
           ),
           decoration: BoxDecoration(
@@ -359,8 +347,8 @@ class _ChatHeaderState extends State<ChatHeader> {
                                 ),
                                 color: theme.colorScheme.primary,
                                 constraints: const BoxConstraints(
-                                  minWidth: 44,
-                                  minHeight: 44,
+                                  minWidth: 40,
+                                  minHeight: 40,
                                 ),
                               ),
                             ),
@@ -375,8 +363,8 @@ class _ChatHeaderState extends State<ChatHeader> {
                                   size: 20,
                                 ),
                                 constraints: const BoxConstraints(
-                                  minWidth: 44,
-                                  minHeight: 44,
+                                  minWidth: 40,
+                                  minHeight: 40,
                                 ),
                                 style: IconButton.styleFrom(
                                   backgroundColor: widget.showTopicsSidebar
@@ -389,7 +377,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                               ),
                             ),
                           ],
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 2),
                           Expanded(
                             child: isSearching
                                 ? SearchBar(
@@ -456,6 +444,8 @@ class _ChatHeaderState extends State<ChatHeader> {
                                             color: color,
                                             size: 18,
                                             radius: 4,
+                                            avatarUrl: data['avatarUrl']
+                                                ?.toString(),
                                           ),
                                           const SizedBox(width: 6),
                                           Flexible(
@@ -714,7 +704,12 @@ class _ChatHeaderState extends State<ChatHeader> {
                         const SizedBox(width: 8),
                         GestureDetector(
                           onTap: widget.onOpenMembers,
-                          child: ClassBadge(name: name, color: color, size: 36),
+                          child: ClassBadge(
+                            name: name,
+                            color: color,
+                            size: 36,
+                            avatarUrl: data['avatarUrl']?.toString(),
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -873,9 +868,5 @@ class _ChatHeaderState extends State<ChatHeader> {
         );
       },
     );
-  }
-
-  void _showMobileSearch(BuildContext context) {
-    // Deprecated in favor of inline SearchBar
   }
 }

@@ -56,7 +56,10 @@ class StudentSidebar extends StatelessWidget {
       child: Column(
         children: [
           // Header
-          _SidebarHeader(extended: extended, subtitle: AppLocalizations.of(context)!.studentPortal),
+          _SidebarHeader(
+            extended: extended,
+            subtitle: AppLocalizations.of(context)!.studentPortal,
+          ),
           _SidebarDivider(),
 
           // Navigation items
@@ -125,11 +128,12 @@ class StudentSidebar extends StatelessWidget {
                   final isActive = id == activeClassId;
                   return _SidebarClassItem(
                     name: c['name']?.toString() ?? '',
+                    avatarUrl: c['avatarUrl']?.toString(),
                     color: parseHexColor(c['coverColor']),
                     selected: isActive,
                     onTap: () {
                       onSelectClass(id);
-                      if (selectedIndex == 0) onSelect(1);
+                      if (selectedIndex == 0) onSelect(2);
                     },
                   );
                 },
@@ -166,14 +170,9 @@ class _SidebarDivider extends StatelessWidget {
 }
 
 class _SidebarHeader extends StatelessWidget {
-  const _SidebarHeader({
-    required this.extended,
-    required this.subtitle,
-    this.title = 'School World',
-  });
+  const _SidebarHeader({required this.extended, required this.subtitle});
 
   final bool extended;
-  final String title;
   final String subtitle;
 
   @override
@@ -348,12 +347,14 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
 class _SidebarClassItem extends StatefulWidget {
   const _SidebarClassItem({
     required this.name,
+    this.avatarUrl,
     required this.color,
     required this.selected,
     required this.onTap,
   });
 
   final String name;
+  final String? avatarUrl;
   final Color color;
   final bool selected;
   final VoidCallback onTap;
@@ -397,7 +398,12 @@ class _SidebarClassItemState extends State<_SidebarClassItem> {
             ),
             child: Row(
               children: [
-                ClassBadge(name: widget.name, color: widget.color, size: 28),
+                ClassBadge(
+                  name: widget.name,
+                  color: widget.color,
+                  size: 28,
+                  avatarUrl: widget.avatarUrl,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -457,12 +463,10 @@ class _UserCard extends StatelessWidget {
       stream: repo.userDocStream(),
       builder: (context, snapshot) {
         final data = snapshot.data?.data() ?? {};
-        final fallbackName =
-            repo.auth.currentUser?.displayName ?? l10n.student;
-        final name =
-            (data['name'] as String?)?.isNotEmpty == true
-                ? data['name'] as String
-                : fallbackName;
+        final fallbackName = repo.auth.currentUser?.displayName ?? l10n.student;
+        final name = (data['name'] as String?)?.isNotEmpty == true
+            ? data['name'] as String
+            : fallbackName;
         final avatarUrl = data['avatarUrl'] as String?;
 
         return Padding(
@@ -485,8 +489,9 @@ class _UserCard extends StatelessWidget {
                 ),
               ),
               child: Row(
-                mainAxisAlignment:
-                    extended ? MainAxisAlignment.start : MainAxisAlignment.center,
+                mainAxisAlignment: extended
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
                 children: [
                   SchoolAvatar(
                     name: name,
@@ -525,7 +530,10 @@ class _UserCard extends StatelessWidget {
                   IconButton(
                     onPressed: onSignOut,
                     tooltip: AppLocalizations.of(context)!.signOut,
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
                     icon: const Icon(
                       Icons.logout_rounded,
                       size: 18,
@@ -541,6 +549,3 @@ class _UserCard extends StatelessWidget {
     );
   }
 }
-
-// Keep SidebarItem and SidebarClassItem exported for any external usage
-typedef SidebarItem = _SidebarNavItem;

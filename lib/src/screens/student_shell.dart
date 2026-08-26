@@ -1,4 +1,4 @@
-import 'dart:ui' as ui;
+import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
@@ -20,9 +20,9 @@ import '../features/today/presentation/widgets/student_today.dart';
 import '../features/homework/presentation/widgets/student_homework.dart';
 import '../features/feed/presentation/widgets/student_feed.dart';
 import '../features/shared/presentation/widgets/student_sidebar.dart';
-import '../features/shared/presentation/widgets/student_right_sidebar.dart';
 import '../features/library/presentation/widgets/library_screen.dart';
 import '../features/webinars/presentation/widgets/webinars_screen.dart';
+
 class StudentShell extends ConsumerStatefulWidget {
   const StudentShell({super.key});
 
@@ -32,13 +32,52 @@ class StudentShell extends ConsumerStatefulWidget {
 
 class _StudentShellState extends ConsumerState<StudentShell> {
   int _tabIndex = 0;
+  bool _showSettings = false;
+  late final SchoolAppState _appState;
+  int _handledChatNavigationRevision = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _appState = ref.read(schoolAppStateProvider);
+    _handledChatNavigationRevision = _appState.chatNavigationRevision;
+    if (_handledChatNavigationRevision > 0) _tabIndex = 2;
+    _appState.addListener(_handleAppStateChange);
+  }
+
+  @override
+  void dispose() {
+    _appState.removeListener(_handleAppStateChange);
+    super.dispose();
+  }
+
+  void _handleAppStateChange() {
+    final revision = _appState.chatNavigationRevision;
+    if (!mounted || revision == _handledChatNavigationRevision) return;
+    _handledChatNavigationRevision = revision;
+    if (_tabIndex != 2 || _showSettings) {
+      setState(() {
+        _showSettings = false;
+        _tabIndex = 2;
+      });
+    }
+  }
+
+  void _openSettings() {
+    if (!mounted) return;
+    setState(() => _showSettings = true);
+  }
+
+  void _closeSettings() {
+    if (!mounted) return;
+    setState(() => _showSettings = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     final selectedClassId = ref.watch(
       schoolAppStateProvider.select((state) => state.selectedClassId),
     );
-
     final classesAsync = ref.watch(studentClassesStreamProvider);
     final l10n = AppLocalizations.of(context)!;
     final repo = AppScope.of(context).repository;
@@ -48,7 +87,9 @@ class _StudentShellState extends ConsumerState<StudentShell> {
           const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (err, stack) => Scaffold(
         body: Center(
-          child: Text(AppLocalizations.of(context)!.errorPrefix(err.toString())),
+          child: Text(
+            AppLocalizations.of(context)!.errorPrefix(err.toString()),
+          ),
         ),
       ),
       data: (classes) {
@@ -58,7 +99,6 @@ class _StudentShellState extends ConsumerState<StudentShell> {
         return LayoutBuilder(
           builder: (context, constraints) {
             final wide = constraints.maxWidth >= 900;
-            const showRightSidebar = false;
 
             final navItems = [
               NavDest(
@@ -103,153 +143,176 @@ class _StudentShellState extends ConsumerState<StudentShell> {
               ),
             ];
 
-            final content = FadeIndexedStack(
-              index: _tabIndex,
-              children: [
-                if (!hasClasses)
-                  const JoinClassEmptyState()
-                else
-                  StudentToday(
-                    classes: classes,
-                    selectedClassId: selectedId,
-                    onTabSelect: (i) => _handleTabSelection(i, wide, selectedId, repo, appState, l10n, classes),
-                    showSidebar: showRightSidebar,
-                    onHomeworkTap: selectedId != null
-                        ? () => _handleTabSelection(3, wide, selectedId, repo, appState, l10n, classes)
-                        : () {},
-                  ),
-
-                if (hasClasses && selectedId != null)
-                  StudentFeed(
-                    classId: selectedId,
-                    classes: classes,
-                    onClassSelect: (id) => appState.selectClass(id),
-                  )
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.ribbon,
-                    icon: Icons.campaign_outlined,
-                  ),
-
-                if (hasClasses)
-                  ChatTabFlow(
+            final content = _showSettings
+                ? SettingsScreen(
                     repository: repo,
                     appState: appState,
-                    classes: classes,
-                    initialClassId: selectedId,
-                    desktopMode: wide,
-                    canInitializeRoom: false,
+                    onBack: _closeSettings,
                   )
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.chat,
-                    icon: Icons.chat_bubble_outline_rounded,
-                  ),
+                : FadeIndexedStack(
+                    index: _tabIndex,
+                    disposeInactive: appState.performanceMode,
+                    children: [
+                      if (!hasClasses)
+                        JoinClassEmptyState(onProfileTap: _openSettings)
+                      else
+                        StudentToday(
+                          classes: classes,
+                          selectedClassId: selectedId,
+                          onProfileTap: _openSettings,
+                          onTabSelect: (i) => _handleTabSelection(
+                            i,
+                            wide,
+                            selectedId,
+                            repo,
+                            appState,
+                            l10n,
+                            classes,
+                          ),
+                          onHomeworkTap: selectedId != null
+                              ? () => _handleTabSelection(
+                                  3,
+                                  wide,
+                                  selectedId,
+                                  repo,
+                                  appState,
+                                  l10n,
+                                  classes,
+                                )
+                              : () {},
+                        ),
 
-                if (hasClasses && (!wide || selectedId != null))
-                  StudentHomework(classId: wide ? (selectedId ?? '') : '')
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.quests,
-                    icon: Icons.assignment_outlined,
-                  ),
+                      if (hasClasses && selectedId != null)
+                        StudentFeed(
+                          classId: selectedId,
+                          classes: classes,
+                          onClassSelect: (id) => appState.selectClass(id),
+                          onProfileTap: _openSettings,
+                        )
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.ribbon,
+                          icon: Icons.campaign_outlined,
+                        ),
 
-                if (hasClasses)
-                  TeacherScheduleScreen(
-                    readOnly: true,
-                    studentClassIds: classes.map((c) => c['id'] as String).toList(),
-                    studentClasses: classes,
-                  )
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.schedule,
-                    icon: Icons.calendar_month_outlined,
-                  ),
+                      if (hasClasses)
+                        ChatTabFlow(
+                          repository: repo,
+                          appState: appState,
+                          classes: classes,
+                          initialClassId: selectedId,
+                          desktopMode: wide,
+                          canInitializeRoom: false,
+                        )
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.chat,
+                          icon: Icons.chat_bubble_outline_rounded,
+                        ),
 
-                if (hasClasses && (!wide || selectedId != null))
-                  LibraryScreen(classId: wide ? (selectedId ?? '') : '')
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.library,
-                    icon: Icons.library_books_outlined,
-                  ),
+                      if (hasClasses && (!wide || selectedId != null))
+                        StudentHomework(classId: wide ? (selectedId ?? '') : '')
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.quests,
+                          icon: Icons.assignment_outlined,
+                        ),
 
-                if (hasClasses && (!wide || selectedId != null))
-                  WebinarsScreen(classId: wide ? (selectedId ?? '') : '')
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.webinars,
-                    icon: Icons.ondemand_video_outlined,
-                  ),
+                      if (hasClasses)
+                        TeacherScheduleScreen(
+                          readOnly: true,
+                          studentClassIds: classes
+                              .map((c) => c['id'] as String)
+                              .toList(),
+                          studentClasses: classes,
+                        )
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.schedule,
+                          icon: Icons.calendar_month_outlined,
+                        ),
 
-                // Journal — read-only, filtered to the current student
-                if (hasClasses && selectedId != null)
-                  JournalScreen(
-                    classId: selectedId,
-                    studentId: repo.uid,
-                  )
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.magazine,
-                    icon: Icons.book_outlined,
-                  ),
-              ],
-            );
+                      if (hasClasses && (!wide || selectedId != null))
+                        LibraryScreen(classId: wide ? (selectedId ?? '') : '')
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.library,
+                          icon: Icons.library_books_outlined,
+                        ),
+
+                      if (hasClasses && (!wide || selectedId != null))
+                        WebinarsScreen(classId: wide ? (selectedId ?? '') : '')
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.webinars,
+                          icon: Icons.ondemand_video_outlined,
+                        ),
+
+                      // Journal — read-only, filtered to the current student
+                      if (hasClasses && selectedId != null)
+                        JournalScreen(classId: selectedId, studentId: repo.uid)
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.magazine,
+                          icon: Icons.book_outlined,
+                        ),
+                    ],
+                  );
 
             return Scaffold(
               backgroundColor: Theme.of(context).colorScheme.surface,
               body: SafeArea(
                 bottom: false,
                 child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (wide)
-                    StudentSidebar(
-                      extended: constraints.maxWidth >= 1200,
-                      selectedIndex: _tabIndex,
-                      onSelect: (i) => setState(() => _tabIndex = i),
-                      navigationItems: navItems,
-                      classes: classes,
-                      activeClassId: selectedId,
-                      onSelectClass: (id) => appState.selectClass(id),
-                      onProfileTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (ctx) => SettingsScreen(
-                            repository: AppScope.of(ctx).repository,
-                            appState: AppScope.of(ctx).appState,
-                          ),
-                        ),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (wide)
+                      StudentSidebar(
+                        extended: constraints.maxWidth >= 1200,
+                        selectedIndex: _tabIndex,
+                        onSelect: (i) {
+                          setState(() {
+                            _showSettings = false;
+                            _tabIndex = i;
+                          });
+                        },
+                        navigationItems: navItems,
+                        classes: classes,
+                        activeClassId: selectedId,
+                        onSelectClass: (id) => appState.selectClass(id),
+                        onProfileTap: _openSettings,
                       ),
-                    ),
-                  Expanded(child: content),
-                  if (showRightSidebar && hasClasses)
-                    SizedBox(
-                      width: 320,
-                      child: StudentRightSidebar(classes: classes),
-                    ),
-                ],
-              ),
+                    Expanded(child: content),
+                  ],
+                ),
               ),
               bottomNavigationBar: wide
                   ? null
-                  : Builder(
-                      builder: (context) {
-                        if (_tabIndex == 2 && appState.isChatRoomMobileOpen) {
+                  : ListenableBuilder(
+                      listenable: AppScope.of(context).appState,
+                      builder: (context, _) {
+                        final isChatRoomOpen = AppScope.of(
+                          context,
+                        ).appState.isChatRoomMobileOpen;
+                        if (_tabIndex == 2 && isChatRoomOpen) {
                           return const SizedBox.shrink();
                         }
+
                         // 0=Today, 2=Chat, 3=Homework, 4=Schedule; More opens sheet
                         const mobileIndices = [0, 2, 3, 4];
-                        final mobileNavItems = mobileIndices.map((i) => navItems[i]).toList();
+                        final mobileNavItems = mobileIndices
+                            .map((i) => navItems[i])
+                            .toList();
                         var mobileSelected = mobileIndices.indexOf(_tabIndex);
-
-                        if (mobileSelected < 0) mobileSelected = -1;
 
                         return _MobileTabBar(
                           selectedIndex: mobileSelected,
                           onSelect: (i) {
                             HapticFeedback.lightImpact();
-                            setState(() => _tabIndex = mobileIndices[i]);
+                            setState(() {
+                              _showSettings = false;
+                              _tabIndex = mobileIndices[i];
+                            });
                           },
                           items: mobileNavItems,
                           onMoreTap: () => _showMoreSheet(
@@ -287,7 +350,15 @@ class _StudentShellState extends ConsumerState<StudentShell> {
       builder: (ctx) => _MoreSheet(
         onSelect: (index) {
           Navigator.pop(ctx);
-          _handleTabSelection(index, false, selectedId, repo, appState, l10n, classes);
+          _handleTabSelection(
+            index,
+            false,
+            selectedId,
+            repo,
+            appState,
+            l10n,
+            classes,
+          );
         },
         l10n: l10n,
         onJoinClass: () {
@@ -325,49 +396,10 @@ class _StudentShellState extends ConsumerState<StudentShell> {
     AppLocalizations l10n,
     List<Map<String, dynamic>> classes,
   ) {
-    const mobileIndices = [0, 1, 2, 3, 7];
-
-    if (!wide && !mobileIndices.contains(index)) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (ctx) => Consumer(
-            builder: (ctx, ref, _) {
-              final currentId = ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId)) ?? selectedId;
-              
-              return Scaffold(
-                appBar: AppBar(
-                  title: Text(_getStudentTabTitle(index, l10n)),
-                  centerTitle: true,
-                  actions: [
-                    if (classes.length > 1)
-                      IconButton(
-                        icon: const Icon(Icons.swap_horiz_rounded),
-                        onPressed: () {
-                          showClassSwitcher(
-                            context: ctx,
-                            classes: classes,
-                            currentClassId: currentId ?? '',
-                            onSelect: (id) {
-                              ref.read(schoolAppStateProvider).selectClass(id);
-                            },
-                          );
-                        },
-                      ),
-                  ],
-                ),
-                body: Container(
-                  color: Theme.of(ctx).colorScheme.surface,
-                  child: _getStudentTabWidget(index, currentId, repo, appState, classes),
-                ),
-              );
-            },
-          ),
-        ),
-      );
-    } else {
-      setState(() => _tabIndex = index);
-    }
+    setState(() {
+      _showSettings = false;
+      _tabIndex = index;
+    });
   }
 
   String _getStudentTabTitle(int index, AppLocalizations l10n) {
@@ -404,10 +436,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
       case 6:
         return WebinarsScreen(classId: '');
       case 7:
-        return JournalScreen(
-          classId: selectedId ?? '',
-          studentId: repo.uid,
-        );
+        return JournalScreen(classId: selectedId ?? '', studentId: repo.uid);
       default:
         return const SizedBox.shrink();
     }
@@ -429,15 +458,18 @@ class _FeatureLockedEmptyState extends StatelessWidget {
 }
 
 class JoinClassEmptyState extends ConsumerWidget {
-  const JoinClassEmptyState({super.key});
-  
+  const JoinClassEmptyState({super.key, this.onProfileTap});
+
+  final VoidCallback? onProfileTap;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final user = FirebaseAuth.instance.currentUser;
     final userAsync = ref.watch(userDocumentProvider);
     final userData = userAsync.value ?? {};
-    final rawName = userData['name']?.toString() ?? user?.displayName ?? l10n.student;
+    final rawName =
+        userData['name']?.toString() ?? user?.displayName ?? l10n.student;
     final name = rawName.trim().isNotEmpty
         ? rawName.split(RegExp(r'\s+')).first
         : l10n.student;
@@ -445,33 +477,19 @@ class JoinClassEmptyState extends ConsumerWidget {
 
     final now = DateTime.now();
     final date = DateFormat('EEEE, MMMM d', l10n.localeName).format(now);
-    final hour = now.hour;
-    final greeting = hour < 12
-        ? l10n.goodMorning
-        : hour < 17
-        ? l10n.goodAfternoon
-        : l10n.goodEvening;
 
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: PageHeader(
-            title: '$greeting, $name',
+            title: l10n.welcomeToTalentUm,
             subtitle: date,
             trailing: SchoolAvatar(
               name: name,
               avatarUrl: avatarUrl,
               radius: 23,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (ctx) => SettingsScreen(
-                    repository: AppScope.of(ctx).repository,
-                    appState: AppScope.of(ctx).appState,
-                  ),
-                ),
-              ),
+              onTap: onProfileTap,
               showBorder: true,
             ),
           ),
@@ -480,8 +498,9 @@ class JoinClassEmptyState extends ConsumerWidget {
           child: EmptyState(
             icon: Icons.school_outlined,
             title: AppLocalizations.of(context)!.joinYourFirstClass,
-            subtitle:
-                AppLocalizations.of(context)!.enterTheTeacherInvitationCode,
+            subtitle: AppLocalizations.of(
+              context,
+            )!.enterTheTeacherInvitationCode,
             actionLabel: AppLocalizations.of(context)!.enterInvitationCode,
             action: () => showDialog(
               context: context,
@@ -528,8 +547,8 @@ class _NavTabItem extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected
                     ? (isDark
-                        ? SchoolColors.primary.withValues(alpha: 0.18)
-                        : SchoolColors.primary.withValues(alpha: 0.1))
+                          ? SchoolColors.primary.withValues(alpha: 0.18)
+                          : SchoolColors.primary.withValues(alpha: 0.1))
                     : Colors.transparent,
                 shape: BoxShape.circle,
               ),
@@ -538,8 +557,10 @@ class _NavTabItem extends StatelessWidget {
                 color: selected
                     ? SchoolColors.primary
                     : (isDark
-                        ? SchoolColors.darkTextSecondary.withValues(alpha: 0.5)
-                        : SchoolColors.textSecondary.withValues(alpha: 0.5)),
+                          ? SchoolColors.darkTextSecondary.withValues(
+                              alpha: 0.5,
+                            )
+                          : SchoolColors.textSecondary.withValues(alpha: 0.5)),
                 size: 28,
               ),
             ),
@@ -563,7 +584,11 @@ class _NavTabItem extends StatelessWidget {
 }
 
 class _MoreSheet extends StatelessWidget {
-  const _MoreSheet({required this.onSelect, required this.l10n, required this.onJoinClass});
+  const _MoreSheet({
+    required this.onSelect,
+    required this.l10n,
+    required this.onJoinClass,
+  });
   final ValueChanged<int> onSelect;
   final AppLocalizations l10n;
   final VoidCallback onJoinClass;
@@ -573,10 +598,30 @@ class _MoreSheet extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final items = [
-      (icon: Icons.campaign_rounded, label: l10n.feed, color: SchoolColors.secondary, index: 1),
-      (icon: Icons.library_books_rounded, label: l10n.library, color: SchoolColors.accent, index: 5),
-      (icon: Icons.ondemand_video_rounded, label: l10n.webinars, color: SchoolColors.primary, index: 6),
-      (icon: Icons.book_rounded, label: l10n.magazine, color: SchoolColors.orange, index: 7),
+      (
+        icon: Icons.campaign_rounded,
+        label: l10n.feed,
+        color: SchoolColors.secondary,
+        index: 1,
+      ),
+      (
+        icon: Icons.library_books_rounded,
+        label: l10n.library,
+        color: SchoolColors.accent,
+        index: 5,
+      ),
+      (
+        icon: Icons.ondemand_video_rounded,
+        label: l10n.webinars,
+        color: SchoolColors.primary,
+        index: 6,
+      ),
+      (
+        icon: Icons.book_rounded,
+        label: l10n.magazine,
+        color: SchoolColors.orange,
+        index: 7,
+      ),
     ];
 
     return Container(
@@ -623,13 +668,17 @@ class _MoreSheet extends StatelessWidget {
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
               childAspectRatio: 2.6,
-              children: items.map((item) => _MoreItem(
-                icon: item.icon,
-                label: item.label,
-                color: item.color,
-                isDark: isDark,
-                onTap: () => onSelect(item.index),
-              )).toList(),
+              children: items
+                  .map(
+                    (item) => _MoreItem(
+                      icon: item.icon,
+                      label: item.label,
+                      color: item.color,
+                      isDark: isDark,
+                      onTap: () => onSelect(item.index),
+                    ),
+                  )
+                  .toList(),
             ),
             const SizedBox(height: 12),
             Material(
@@ -639,10 +688,17 @@ class _MoreSheet extends StatelessWidget {
                 onTap: onJoinClass,
                 borderRadius: BorderRadius.circular(14),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   child: Row(
                     children: [
-                      Icon(Icons.group_add_rounded, color: SchoolColors.green, size: 20),
+                      Icon(
+                        Icons.group_add_rounded,
+                        color: SchoolColors.green,
+                        size: 20,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -650,14 +706,18 @@ class _MoreSheet extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                            color: isDark
+                                ? SchoolColors.darkText
+                                : SchoolColors.text,
                           ),
                         ),
                       ),
                       Icon(
                         Icons.arrow_forward_ios_rounded,
                         size: 14,
-                        color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                        color: isDark
+                            ? SchoolColors.darkMuted
+                            : SchoolColors.muted,
                       ),
                     ],
                   ),
@@ -763,7 +823,9 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(AppLocalizations.of(context)!.theCameraWillBeAvailable),
+                    content: Text(
+                      AppLocalizations.of(context)!.theCameraWillBeAvailable,
+                    ),
                   ),
                 );
               },
@@ -893,32 +955,32 @@ class _MobileTabBar extends StatelessWidget {
 
     return SafeArea(
       top: false,
-      child: Container(
-        height: 72,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        decoration: BoxDecoration(
-          color: isDark
-              ? SchoolColors.darkSurface.withValues(alpha: 0.85)
-              : Colors.white.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : SchoolColors.border.withValues(alpha: 0.5),
-            width: 1.0,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            height: 72,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? SchoolColors.darkSurface.withValues(alpha: 0.65)
+                  : Colors.white.withValues(alpha: 0.75),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : SchoolColors.border.withValues(alpha: 0.4),
+                width: 1.0,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [

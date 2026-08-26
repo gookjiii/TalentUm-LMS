@@ -5,7 +5,6 @@ import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 import '../widgets/journal_grades_grid.dart';
 import '../widgets/journal_topics_list.dart';
 import 'package:school_world/src/providers/app_providers.dart';
@@ -22,8 +21,10 @@ class JournalScreen extends ConsumerStatefulWidget {
   ConsumerState<JournalScreen> createState() => _JournalScreenState();
 }
 
-class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTickerProviderStateMixin {
+class _JournalScreenState extends ConsumerState<JournalScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final _reconciledClassIds = <String>{};
 
   @override
   void initState() {
@@ -40,14 +41,23 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveClassId =
-        (ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))?.isNotEmpty == true
-            ? ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))
-            : null) ??
-        (widget.classId.isNotEmpty ? widget.classId : null);
     final repo = ref.watch(repositoryProvider);
     final appState = ref.watch(schoolAppStateProvider);
     final isTeacher = appState.isTeacher;
+    final visibleClassesAsync = ref.watch(
+      isTeacher ? teacherClassesStreamProvider : studentClassesStreamProvider,
+    );
+    final visibleClasses = visibleClassesAsync.value ?? const [];
+    final visibleIds = visibleClasses.map((c) => c['id']?.toString()).toSet();
+    final storedClassId = appState.selectedClassId;
+    final effectiveClassId =
+        storedClassId != null && visibleIds.contains(storedClassId)
+        ? storedClassId
+        : (widget.classId.isNotEmpty && visibleIds.contains(widget.classId)
+              ? widget.classId
+              : (visibleClasses.isEmpty
+                    ? null
+                    : visibleClasses.first['id']?.toString()));
 
     // Guard: no valid class selected yet
     if (effectiveClassId == null) {
@@ -58,25 +68,45 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
       );
     }
 
+    if (isTeacher && _reconciledClassIds.add(effectiveClassId)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          await repo.reconcileClassMembership(effectiveClassId);
+        } catch (e) {
+          debugPrint('Class membership reconciliation failed: $e');
+          _reconciledClassIds.remove(effectiveClassId);
+        }
+      });
+    }
+
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: repo.firestore.collection('classes').doc(effectiveClassId).snapshots(),
+      stream: repo.firestore
+          .collection('classes')
+          .doc(effectiveClassId)
+          .snapshots(),
       builder: (context, classSnap) {
         final className = classSnap.data?.data()?['name']?.toString();
-        
+
         return Scaffold(
           backgroundColor: Colors.transparent,
           body: Column(
             children: [
               Consumer(
                 builder: (context, ref, _) {
-                  final allClassAsync = ref.watch(isTeacher ? teacherClassesStreamProvider : studentClassesStreamProvider);
+                  final allClassAsync = ref.watch(
+                    isTeacher
+                        ? teacherClassesStreamProvider
+                        : studentClassesStreamProvider,
+                  );
                   final allVisibleClasses = allClassAsync.value ?? [];
-                  
+
                   return PageHeader(
                     title: AppLocalizations.of(context)!.coolMagazine,
                     subtitle: widget.studentId != null
                         ? AppLocalizations.of(context)!.myGradesAndSubjects
-                        : AppLocalizations.of(context)!.academicPerformanceAndSubjects,
+                        : AppLocalizations.of(
+                            context,
+                          )!.academicPerformanceAndSubjects,
                     classContext: className,
                     onClassContextTap: allVisibleClasses.length > 1
                         ? () {
@@ -85,7 +115,9 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                               classes: allVisibleClasses,
                               currentClassId: effectiveClassId,
                               onSelect: (id) {
-                                ref.read(schoolAppStateProvider).selectClass(id);
+                                ref
+                                    .read(schoolAppStateProvider)
+                                    .selectClass(id);
                               },
                             );
                           }
@@ -94,9 +126,15 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                         ? SizedBox(
                             height: 44,
                             child: FilledButton.icon(
-                              onPressed: () => _showAddLessonDialog(context, ref, effectiveClassId),
+                              onPressed: () => _showAddLessonDialog(
+                                context,
+                                ref,
+                                effectiveClassId,
+                              ),
                               icon: const Icon(Icons.add_rounded, size: 20),
-                              label: Text(AppLocalizations.of(context)!.addALesson),
+                              label: Text(
+                                AppLocalizations.of(context)!.addALesson,
+                              ),
                               style: FilledButton.styleFrom(
                                 backgroundColor: SchoolColors.primary,
                                 padding: const EdgeInsets.symmetric(
@@ -115,64 +153,79 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
                   );
                 },
               ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-                borderRadius: BorderRadius.circular(14),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.03),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
+                    indicatorPadding: const EdgeInsets.all(4),
+                    indicator: BoxDecoration(
+                      color: isDark ? SchoolColors.darkSurface : Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        if (!isDark)
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                      ],
+                    ),
+                    labelColor: isDark
+                        ? Colors.white
+                        : SchoolColors.darkSurface,
+                    unselectedLabelColor: isDark
+                        ? Colors.white54
+                        : SchoolColors.muted,
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    tabs: [
+                      Tab(text: AppLocalizations.of(context)!.ratings),
+                      Tab(text: AppLocalizations.of(context)!.items),
+                    ],
+                  ),
+                ),
               ),
-              child: TabBar(
-                controller: _tabController,
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                indicatorPadding: const EdgeInsets.all(4),
-                indicator: BoxDecoration(
-                  color: isDark ? SchoolColors.darkSurface : Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    if (!isDark)
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    JournalGradesGrid(
+                      classId: effectiveClassId,
+                      studentIdFilter: widget.studentId,
+                    ),
+                    JournalTopicsList(classId: effectiveClassId),
                   ],
                 ),
-                labelColor: isDark ? Colors.white : SchoolColors.darkSurface,
-                unselectedLabelColor: isDark ? Colors.white54 : SchoolColors.muted,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                tabs: [
-                  Tab(text: AppLocalizations.of(context)!.ratings),
-                  Tab(text: AppLocalizations.of(context)!.items),
-                ],
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                JournalGradesGrid(
-                  classId: effectiveClassId,
-                  studentIdFilter: widget.studentId,
-                ),
-                JournalTopicsList(classId: effectiveClassId),
-              ],
-            ),
-          ),
-        ],
+            ],
           ),
         );
       },
     );
   }
 
-  Future<void> _showAddLessonDialog(BuildContext context, WidgetRef ref, String classId) async {
-    final dateController = TextEditingController(text: _formatDate(DateTime.now()));
+  Future<void> _showAddLessonDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String classId,
+  ) async {
+    final dateController = TextEditingController(
+      text: _formatDate(DateTime.now()),
+    );
     final topicController = TextEditingController();
     final homeworkController = TextEditingController();
     DateTime selectedDate = DateTime.now();
@@ -265,4 +318,3 @@ class _JournalScreenState extends ConsumerState<JournalScreen> with SingleTicker
     return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   }
 }
-

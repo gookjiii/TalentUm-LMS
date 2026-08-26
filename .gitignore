@@ -49,3 +49,9 @@ app.*.map.json
 *.log
 .firebase/
 
+# Generated caches and vendored dependency output
+**/build/
+**/.dart_tool/
+**/node_modules/
+.tessl/
+test/goldens/failures/

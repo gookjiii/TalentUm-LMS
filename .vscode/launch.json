@@ -8,8 +8,7 @@
             "toolArgs": [
                 "--dart-define=GOOGLE_DRIVE_PROXY_URL=https://vercel-talentum-backend.vercel.app",
                 "--dart-define=CLOUDINARY_CLOUD_NAME=dp50nlimq",
-                "--dart-define=CLOUDINARY_UPLOAD_PRESET=schoolWorld",
-                "--dart-define=APP_API_SECRET=talentum2026secret"
+                "--dart-define=CLOUDINARY_UPLOAD_PRESET=schoolWorld"
             ]
         }
     ]

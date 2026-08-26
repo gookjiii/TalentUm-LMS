@@ -123,7 +123,9 @@ class FirebaseChatController extends InMemoryChatController
     try {
       if (!Hive.isBoxOpen('chat_cache')) return;
       final box = Hive.box('chat_cache');
-      final cacheKey = _topicId == null ? 'msgs_$roomId' : 'msgs_${roomId}_$_topicId';
+      final cacheKey = _topicId == null
+          ? 'msgs_$roomId'
+          : 'msgs_${roomId}_$_topicId';
       final cached = box.get(cacheKey);
       if (cached != null && cached is String) {
         final List<dynamic> list = jsonDecode(cached);
@@ -174,7 +176,9 @@ class FirebaseChatController extends InMemoryChatController
           'createdAt': m.createdAt?.millisecondsSinceEpoch,
         };
       }).toList();
-      final cacheKey = _topicId == null ? 'msgs_$roomId' : 'msgs_${roomId}_$_topicId';
+      final cacheKey = _topicId == null
+          ? 'msgs_$roomId'
+          : 'msgs_${roomId}_$_topicId';
       box.put(cacheKey, jsonEncode(toSave));
     } catch (_) {}
   }
@@ -245,19 +249,23 @@ class FirebaseChatController extends InMemoryChatController
 
     _oldestLoadedDoc = snap.docs.last; // last in descending = oldest
     // Map docs to Message domain objects; reconcile pending reaction overlay.
-    final List<Message> recentMessages = docs.map<Message>((dynamic doc) {
-      final data = _sanitizeFirestoreValue(doc.data()) as Map<String, dynamic>;
-      final pending = _pendingReactions[doc.id];
-      if (pending != null) {
-        final serverReactions = data['reactions'] as Map?;
-        if (_reactionsEqual(serverReactions, pending)) {
-          _pendingReactions.remove(doc.id);
-        } else {
-          data['reactions'] = pending;
-        }
-      }
-      return toMessage(doc.id, data);
-    }).where((m) => !(m is TextMessage && m.text.trim().isEmpty)).toList();
+    final List<Message> recentMessages = docs
+        .map<Message>((dynamic doc) {
+          final data =
+              _sanitizeFirestoreValue(doc.data()) as Map<String, dynamic>;
+          final pending = _pendingReactions[doc.id];
+          if (pending != null) {
+            final serverReactions = data['reactions'] as Map?;
+            if (_reactionsEqual(serverReactions, pending)) {
+              _pendingReactions.remove(doc.id);
+            } else {
+              data['reactions'] = pending;
+            }
+          }
+          return toMessage(doc.id, data);
+        })
+        .where((m) => !(m is TextMessage && m.text.trim().isEmpty))
+        .toList();
 
     // Merge with already-fetched older messages.
     final recentIds = recentMessages.map((m) => m.id).toSet();
@@ -812,14 +820,18 @@ class FirebaseChatController extends InMemoryChatController
         final url = message.source;
         if (url.isNotEmpty) {
           try {
-            await CloudinaryStorageProvider.chatProvider().deleteFile(url);
+            await CloudinaryStorageProvider.chatAttachmentProvider().deleteFile(
+              url,
+            );
           } catch (_) {}
         }
       } else if (message is FileMessage) {
         final url = message.source;
         if (url.isNotEmpty) {
           try {
-            await CloudinaryStorageProvider.chatProvider().deleteFile(url);
+            await CloudinaryStorageProvider.chatAttachmentProvider().deleteFile(
+              url,
+            );
           } catch (_) {}
         }
       }
@@ -1029,6 +1041,7 @@ class FirebaseChatController extends InMemoryChatController
         title: finalTitle,
         body: body,
         data: {
+          'destination': 'chat',
           'roomId': roomId,
           if (data['metadata']?['classId'] != null)
             'classId': data['metadata']['classId'],
