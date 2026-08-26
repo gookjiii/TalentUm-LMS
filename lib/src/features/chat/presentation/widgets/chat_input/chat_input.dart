@@ -1,7 +1,6 @@
 import 'package:school_world/l10n/app_localizations.dart';
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:audioplayers/audioplayers.dart' as audioplayers;
 import 'package:school_world/src/features/chat/presentation/widgets/chat_bubble/chat_bubble.dart';
-import 'package:school_world/main.dart';
 import 'package:school_world/src/features/chat/domain/models/chat_attachment.dart';
 import 'package:school_world/src/features/chat/presentation/widgets/chat_input/chat_input_previews.dart';
 
@@ -146,7 +144,15 @@ class _ChatInputState extends State<ChatInput> {
         path = '${dir.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
       }
 
-      await _audioRecorder.start(const RecordConfig(), path: path ?? '');
+      if (kIsWeb) {
+        try {
+          await _audioRecorder.start(const RecordConfig(encoder: AudioEncoder.opus), path: '');
+        } catch (_) {
+          await _audioRecorder.start(const RecordConfig(), path: '');
+        }
+      } else {
+        await _audioRecorder.start(const RecordConfig(), path: path ?? '');
+      }
 
       if (!mounted) return;
       setState(() {
@@ -255,298 +261,265 @@ class _ChatInputState extends State<ChatInput> {
       return _buildRecordedAudioPreviewUI(theme);
     }
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        isMobile ? 8 : 16,
-        isMobile ? 4 : 12,
-        isMobile ? 8 : 16,
-        (isMobile ? 8 : 16) + MediaQuery.paddingOf(context).bottom,
-      ),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
+    return SafeArea(
+      bottom: true,
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          isMobile ? 4 : 16,
+          isMobile ? 4 : 12,
+          isMobile ? 4 : 16,
+          isMobile ? 6 : 16,
+        ),
+      child: Container(
         decoration: BoxDecoration(
-          color: isDark
-              ? const Color(0xFF09090B).withValues(alpha: 0.65)
-              : const Color(0xFFFFFFFF).withValues(alpha: 0.75),
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(isMobile ? 24 : 32),
           border: Border.all(
             color: isFocused
-                ? SchoolColors.primary.withValues(alpha: 0.4)
-                : (isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7))
-                      .withValues(alpha: 0.5),
+                ? SchoolColors.primary.withValues(alpha: 0.5)
+                : (isDark ? const Color(0xFF334155) : const Color(0xFFE4ECFC)),
             width: isFocused ? 1.5 : 1.0,
           ),
-          boxShadow: [
-            if (isFocused)
-              BoxShadow(
-                color: SchoolColors.primary.withValues(alpha: 0.15),
-                blurRadius: 24,
-                spreadRadius: 2,
-                offset: const Offset(0, 8),
-              )
-            else
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-                blurRadius: 16,
-                spreadRadius: -4,
-                offset: const Offset(0, 4),
-              ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(isMobile ? 24 : 32),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(
-              sigmaX: AppScope.of(context).appState.performanceMode ? 0 : 24,
-              sigmaY: AppScope.of(context).appState.performanceMode ? 0 : 24,
-            ),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 6 : 8,
-                vertical: isMobile ? 6 : 8,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    transitionBuilder: (child, animation) => SizeTransition(
-                      sizeFactor: animation,
-                      axisAlignment: -1,
-                      child: FadeTransition(opacity: animation, child: child),
-                    ),
-                    child: widget.replyingTo == null
-                        ? const SizedBox.shrink()
-                        : Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                            child: ReplyPreview(
-                              message: widget.replyingTo!,
-                              onCancel: widget.onCancelReply,
-                            ),
-                          ),
+          boxShadow: isFocused
+              ? [
+                  BoxShadow(
+                    color: SchoolColors.primary.withValues(alpha: isDark ? 0.25 : 0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
                   ),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
-                    child: !isEditing
-                        ? const SizedBox.shrink()
-                        : Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                            child: EditPreview(
-                              message: widget.editingMessage!,
-                              onCancel: widget.onCancelEditing,
-                            ),
-                          ),
-                  ),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
-                    child: widget.pendingAttachment == null
-                        ? const SizedBox.shrink()
-                        : Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                            child: PendingAttachmentPreview(
-                              attachment: widget.pendingAttachment!,
-                              onCancel: widget.onCancelAttachment,
-                              onEdit: widget.onEditAttachment,
-                            ),
-                          ),
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        onPressed: isEditing ? null : widget.onAttachment,
-                        icon: Icon(
-                          isMobile
-                              ? Icons.attach_file_rounded
-                              : Icons.add_circle_outline_rounded,
-                          color: isEditing
-                              ? theme.colorScheme.onSurfaceVariant.withOpacity(
-                                  0.3,
-                                )
-                              : theme.colorScheme.primary.withOpacity(0.85),
-                          size: isMobile ? 26 : 28,
-                        ),
-                        tooltip: AppLocalizations.of(context)!.attach,
-                        padding: EdgeInsets.all(isMobile ? 8 : 10),
-                        constraints: const BoxConstraints(
-                          minWidth: 44,
-                          minHeight: 44,
-                        ),
-                      ),
-                      Expanded(
-                        child: Focus(
-                          onKeyEvent: isMobile
-                              ? null
-                              : (node, event) {
-                                  if (event is KeyDownEvent &&
-                                      event.logicalKey ==
-                                          LogicalKeyboardKey.enter &&
-                                      !HardwareKeyboard
-                                          .instance
-                                          .isShiftPressed) {
-                                    final canSend =
-                                        (widget.controller.text
-                                                .trim()
-                                                .isNotEmpty ||
-                                            widget.pendingAttachment != null) &&
-                                        !widget.isUploading;
-                                    if (canSend) widget.onSend();
-                                    return KeyEventResult.handled;
-                                  }
-                                  return KeyEventResult.ignored;
-                                },
-                          child: TextField(
-                            controller: widget.controller,
-                            focusNode: _focusNode,
-                            maxLines: 5,
-                            minLines: 1,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              height: 1.4,
-                              fontSize: isMobile ? 16 : 16,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: isMobile
-                                  ? AppLocalizations.of(context)!.message
-                                  : (isEditing
-                                        ? AppLocalizations.of(
-                                            context,
-                                          )!.editMessage
-                                        : 'Написать в ${widget.className}...'),
-                              hintStyle: theme.textTheme.bodyLarge?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant
-                                    .withOpacity(0.6),
-                                fontSize: isMobile ? 16 : 16,
-                              ),
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: isMobile ? 12 : 14,
-                                horizontal: 12,
-                              ),
-                              isDense: true,
-                            ),
-                            textCapitalization: TextCapitalization.sentences,
-                            textInputAction: TextInputAction.newline,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      ValueListenableBuilder<TextEditingValue>(
-                        valueListenable: widget.controller,
-                        builder: (context, value, child) {
-                          final hasText = value.text.trim().isNotEmpty;
-                          final hasAttachment =
-                              widget.pendingAttachment != null;
-                          final canSend =
-                              (hasText || hasAttachment) && !widget.isUploading;
-
-                          return AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 200),
-                            transitionBuilder: (child, animation) {
-                              final isSend =
-                                  child.key == const ValueKey('send') ||
-                                  child.key == const ValueKey('mic');
-                              return ScaleTransition(
-                                scale: CurvedAnimation(
-                                  parent: animation,
-                                  curve: isSend
-                                      ? Curves.elasticOut
-                                      : Curves.easeOut,
-                                ),
-                                child: FadeTransition(
-                                  opacity: animation,
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child: !canSend
-                                ? GestureDetector(
-                                    key: const ValueKey('mic'),
-                                    // Mobile: hold to record, release to preview
-                                    onLongPress: isEditing
-                                        ? null
-                                        : _startRecording,
-                                    onLongPressEnd: isEditing || !isMobile
-                                        ? null
-                                        : (details) => _stopRecording(),
-                                    onLongPressCancel: isEditing || !isMobile
-                                        ? null
-                                        : () => _stopRecording(cancel: true),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(2),
-                                      child: IconButton(
-                                        onPressed: isEditing
-                                            ? null
-                                            : () {
-                                                if (_isRecording) {
-                                                  // Desktop/web tap-to-stop
-                                                  _stopRecording();
-                                                } else if (!isMobile) {
-                                                  // Desktop/web tap-to-start
-                                                  _startRecording();
-                                                } else {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        AppLocalizations.of(
-                                                          context,
-                                                        )!.holdToRecordVoice,
-                                                      ),
-                                                      duration: const Duration(
-                                                        seconds: 1,
-                                                      ),
-                                                    ),
-                                                  );
-                                                }
-                                              },
-                                        icon: AnimatedSwitcher(
-                                          duration: const Duration(
-                                            milliseconds: 180,
-                                          ),
-                                          child: Icon(
-                                            _isRecording
-                                                ? Icons.stop_rounded
-                                                : Icons.mic_rounded,
-                                            key: ValueKey(_isRecording),
-                                            size: 26,
-                                          ),
-                                        ),
-                                        color: _isRecording
-                                            ? Colors.red
-                                            : theme.colorScheme.primary
-                                                  .withOpacity(0.85),
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(
-                                          minWidth: 42,
-                                          minHeight: 42,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : Padding(
-                                    key: const ValueKey('send'),
-                                    padding: const EdgeInsets.all(2),
-                                    child: _GradientSendButton(
-                                      onTap: widget.onSend,
-                                      isUploading: widget.isUploading,
-                                      isEditing: isEditing,
-                                    ),
-                                  ),
-                          );
-                        },
-                      ),
-                    ],
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
+        ),
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 4 : 2,
+          vertical: isMobile ? 2 : 6,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, animation) => SizeTransition(
+                sizeFactor: animation,
+                axisAlignment: -1,
+                child: FadeTransition(opacity: animation, child: child),
               ),
+              child: widget.replyingTo == null
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                      child: ReplyPreview(
+                        message: widget.replyingTo!,
+                        onCancel: widget.onCancelReply,
+                      ),
+                    ),
             ),
-          ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: !isEditing
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                      child: EditPreview(
+                        message: widget.editingMessage!,
+                        onCancel: widget.onCancelEditing,
+                      ),
+                    ),
+            ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: widget.pendingAttachment == null
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                      child: PendingAttachmentPreview(
+                        attachment: widget.pendingAttachment!,
+                        onCancel: widget.onCancelAttachment,
+                        onEdit: widget.onEditAttachment,
+                        isUploading: widget.isUploading,
+                      ),
+                    ),
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                IconButton(
+                  onPressed: isEditing ? null : widget.onAttachment,
+                  icon: Icon(
+                    isMobile
+                        ? Icons.attach_file_rounded
+                        : Icons.add_circle_outline_rounded,
+                    color: isEditing
+                        ? theme.colorScheme.onSurfaceVariant.withOpacity(0.3)
+                        : theme.colorScheme.primary,
+                    size: isMobile ? 28 : 24,
+                  ),
+                  tooltip: AppLocalizations.of(context)!.attach,
+                  padding: EdgeInsets.all(isMobile ? 8 : 10),
+                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                ),
+                Expanded(
+                  child: Focus(
+                    onKeyEvent: isMobile
+                        ? null
+                        : (node, event) {
+                            if (event is KeyDownEvent &&
+                                event.logicalKey == LogicalKeyboardKey.enter &&
+                                !HardwareKeyboard.instance.isShiftPressed) {
+                              final canSend =
+                                  (widget.controller.text.trim().isNotEmpty ||
+                                      widget.pendingAttachment != null) &&
+                                  !widget.isUploading;
+                              if (canSend) widget.onSend();
+                              return KeyEventResult.handled;
+                            }
+                            return KeyEventResult.ignored;
+                          },
+                    child: TextField(
+                      controller: widget.controller,
+                      focusNode: _focusNode,
+                      maxLines: 5,
+                      minLines: 1,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        height: 1.4,
+                        fontSize: isMobile ? 16 : 16,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: isMobile
+                            ? AppLocalizations.of(context)!.message
+                            : (isEditing
+                                  ? AppLocalizations.of(context)!.editMessage
+                                  : 'Написать в ${widget.className}...'),
+                        hintStyle: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant.withOpacity(
+                            0.6,
+                          ),
+                          fontSize: isMobile ? 16 : 16,
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: isMobile ? 10 : 12,
+                          horizontal: 8,
+                        ),
+                        isDense: true,
+                      ),
+                      textCapitalization: TextCapitalization.sentences,
+                      textInputAction: TextInputAction.newline,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: widget.controller,
+                  builder: (context, value, child) {
+                    final hasText = value.text.trim().isNotEmpty;
+                    final hasAttachment = widget.pendingAttachment != null;
+                    final canSend =
+                        (hasText || hasAttachment) && !widget.isUploading;
+
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      transitionBuilder: (child, animation) {
+                        final isSend =
+                            child.key == const ValueKey('send') ||
+                            child.key == const ValueKey('mic');
+                        return ScaleTransition(
+                          scale: CurvedAnimation(
+                            parent: animation,
+                            curve: isSend ? Curves.elasticOut : Curves.easeOut,
+                          ),
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: !canSend
+                          ? GestureDetector(
+                              key: const ValueKey('mic'),
+                              // Mobile: hold to record, release to preview
+                              onLongPress: isEditing ? null : _startRecording,
+                              onLongPressEnd: isEditing || !isMobile
+                                  ? null
+                                  : (details) => _stopRecording(),
+                              onLongPressCancel: isEditing || !isMobile
+                                  ? null
+                                  : () => _stopRecording(cancel: true),
+                              child: IconButton(
+                                onPressed: isEditing
+                                    ? null
+                                    : () {
+                                        if (_isRecording) {
+                                          // Desktop/web tap-to-stop
+                                          _stopRecording();
+                                        } else if (!isMobile) {
+                                          // Desktop/web tap-to-start
+                                          _startRecording();
+                                        } else {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.holdToRecordVoice,
+                                              ),
+                                              duration: const Duration(
+                                                seconds: 1,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                icon: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 180),
+                                  child: Icon(
+                                    _isRecording
+                                        ? Icons.stop_rounded
+                                        : Icons.mic_rounded,
+                                    key: ValueKey(_isRecording),
+                                  ),
+                                ),
+                                color: _isRecording
+                                    ? Colors.red
+                                    : theme.colorScheme.primary,
+                                padding: EdgeInsets.all(isMobile ? 4 : 8),
+                                constraints: isMobile
+                                    ? const BoxConstraints(
+                                        minWidth: 32,
+                                        minHeight: 32,
+                                      )
+                                    : null,
+                              ),
+                            )
+                          : Padding(
+                              key: const ValueKey('send'),
+                              padding: const EdgeInsets.all(2),
+                              child: _GradientSendButton(
+                                onTap: widget.onSend,
+                                isUploading: widget.isUploading,
+                                isEditing: isEditing,
+                              ),
+                            ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
         ),
       ),
     );

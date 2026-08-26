@@ -1,4 +1,4 @@
-import 'dart:ui' as ui;
+import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
@@ -32,13 +32,52 @@ class StudentShell extends ConsumerStatefulWidget {
 
 class _StudentShellState extends ConsumerState<StudentShell> {
   int _tabIndex = 0;
+  bool _showSettings = false;
+  late final SchoolAppState _appState;
+  int _handledChatNavigationRevision = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _appState = ref.read(schoolAppStateProvider);
+    _handledChatNavigationRevision = _appState.chatNavigationRevision;
+    if (_handledChatNavigationRevision > 0) _tabIndex = 2;
+    _appState.addListener(_handleAppStateChange);
+  }
+
+  @override
+  void dispose() {
+    _appState.removeListener(_handleAppStateChange);
+    super.dispose();
+  }
+
+  void _handleAppStateChange() {
+    final revision = _appState.chatNavigationRevision;
+    if (!mounted || revision == _handledChatNavigationRevision) return;
+    _handledChatNavigationRevision = revision;
+    if (_tabIndex != 2 || _showSettings) {
+      setState(() {
+        _showSettings = false;
+        _tabIndex = 2;
+      });
+    }
+  }
+
+  void _openSettings() {
+    if (!mounted) return;
+    setState(() => _showSettings = true);
+  }
+
+  void _closeSettings() {
+    if (!mounted) return;
+    setState(() => _showSettings = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     final selectedClassId = ref.watch(
       schoolAppStateProvider.select((state) => state.selectedClassId),
     );
-
     final classesAsync = ref.watch(studentClassesStreamProvider);
     final l10n = AppLocalizations.of(context)!;
     final repo = AppScope.of(context).repository;
@@ -104,186 +143,161 @@ class _StudentShellState extends ConsumerState<StudentShell> {
               ),
             ];
 
-            void onProfileTap() {
-              if (wide) {
-                setState(() => _tabIndex = 8);
-              } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (ctx) => SettingsScreen(
-                      repository: repo,
-                      appState: appState,
-                    ),
-                  ),
-                );
-              }
-            }
-
-            final content = FadeIndexedStack(
-              index: _tabIndex,
-              children: [
-                if (!hasClasses)
-                  JoinClassEmptyState(onProfileTap: onProfileTap)
-                else
-                  StudentToday(
-                    classes: classes,
-                    selectedClassId: selectedId,
-                    onTabSelect: (i) => _handleTabSelection(
-                      i,
-                      wide,
-                      selectedId,
-                      repo,
-                      appState,
-                      l10n,
-                      classes,
-                    ),
-                    onHomeworkTap: selectedId != null
-                        ? () => _handleTabSelection(
-                            3,
+            final content = _showSettings
+                ? SettingsScreen(
+                    repository: repo,
+                    appState: appState,
+                    onBack: _closeSettings,
+                  )
+                : FadeIndexedStack(
+                    index: _tabIndex,
+                    disposeInactive: appState.performanceMode,
+                    children: [
+                      if (!hasClasses)
+                        JoinClassEmptyState(onProfileTap: _openSettings)
+                      else
+                        StudentToday(
+                          classes: classes,
+                          selectedClassId: selectedId,
+                          onProfileTap: _openSettings,
+                          onTabSelect: (i) => _handleTabSelection(
+                            i,
                             wide,
                             selectedId,
                             repo,
                             appState,
                             l10n,
                             classes,
-                          )
-                        : () {},
-                    onProfileTap: onProfileTap,
-                  ),
+                          ),
+                          onHomeworkTap: selectedId != null
+                              ? () => _handleTabSelection(
+                                  3,
+                                  wide,
+                                  selectedId,
+                                  repo,
+                                  appState,
+                                  l10n,
+                                  classes,
+                                )
+                              : () {},
+                        ),
 
-                if (hasClasses && selectedId != null)
-                  StudentFeed(
-                    classId: selectedId,
-                    classes: classes,
-                    onClassSelect: (id) => appState.selectClass(id),
-                    onProfileTap: onProfileTap,
-                  )
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.ribbon,
-                    icon: Icons.campaign_outlined,
-                  ),
+                      if (hasClasses && selectedId != null)
+                        StudentFeed(
+                          classId: selectedId,
+                          classes: classes,
+                          onClassSelect: (id) => appState.selectClass(id),
+                          onProfileTap: _openSettings,
+                        )
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.ribbon,
+                          icon: Icons.campaign_outlined,
+                        ),
 
-                if (hasClasses)
-                  ChatTabFlow(
-                    repository: repo,
-                    appState: appState,
-                    classes: classes,
-                    initialClassId: selectedId,
-                    desktopMode: wide,
-                    canInitializeRoom: false,
-                  )
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.chat,
-                    icon: Icons.chat_bubble_outline_rounded,
-                  ),
+                      if (hasClasses)
+                        ChatTabFlow(
+                          repository: repo,
+                          appState: appState,
+                          classes: classes,
+                          initialClassId: selectedId,
+                          desktopMode: wide,
+                          canInitializeRoom: false,
+                        )
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.chat,
+                          icon: Icons.chat_bubble_outline_rounded,
+                        ),
 
-                if (hasClasses && (!wide || selectedId != null))
-                  StudentHomework(classId: wide ? (selectedId ?? '') : '')
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.quests,
-                    icon: Icons.assignment_outlined,
-                  ),
+                      if (hasClasses && (!wide || selectedId != null))
+                        StudentHomework(classId: wide ? (selectedId ?? '') : '')
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.quests,
+                          icon: Icons.assignment_outlined,
+                        ),
 
-                if (hasClasses)
-                  TeacherScheduleScreen(
-                    readOnly: true,
-                    studentClassIds: classes
-                        .map((c) => c['id'] as String)
-                        .toList(),
-                    studentClasses: classes,
-                  )
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.schedule,
-                    icon: Icons.calendar_month_outlined,
-                  ),
+                      if (hasClasses)
+                        TeacherScheduleScreen(
+                          readOnly: true,
+                          studentClassIds: classes
+                              .map((c) => c['id'] as String)
+                              .toList(),
+                          studentClasses: classes,
+                        )
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.schedule,
+                          icon: Icons.calendar_month_outlined,
+                        ),
 
-                if (hasClasses && (!wide || selectedId != null))
-                  LibraryScreen(classId: wide ? (selectedId ?? '') : '')
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.library,
-                    icon: Icons.library_books_outlined,
-                  ),
+                      if (hasClasses && (!wide || selectedId != null))
+                        LibraryScreen(classId: wide ? (selectedId ?? '') : '')
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.library,
+                          icon: Icons.library_books_outlined,
+                        ),
 
-                if (hasClasses && (!wide || selectedId != null))
-                  WebinarsScreen(classId: wide ? (selectedId ?? '') : '')
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.webinars,
-                    icon: Icons.ondemand_video_outlined,
-                  ),
+                      if (hasClasses && (!wide || selectedId != null))
+                        WebinarsScreen(classId: wide ? (selectedId ?? '') : '')
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.webinars,
+                          icon: Icons.ondemand_video_outlined,
+                        ),
 
-                // Journal — read-only, filtered to the current student
-                if (hasClasses && selectedId != null)
-                  JournalScreen(classId: selectedId, studentId: repo.uid)
-                else
-                  _FeatureLockedEmptyState(
-                    title: AppLocalizations.of(context)!.magazine,
-                    icon: Icons.book_outlined,
-                  ),
-
-                SettingsScreen(repository: repo, appState: appState),
-              ],
-            );
+                      // Journal — read-only, filtered to the current student
+                      if (hasClasses && selectedId != null)
+                        JournalScreen(classId: selectedId, studentId: repo.uid)
+                      else
+                        _FeatureLockedEmptyState(
+                          title: AppLocalizations.of(context)!.magazine,
+                          icon: Icons.book_outlined,
+                        ),
+                    ],
+                  );
 
             return Scaffold(
-              extendBody: true,
-              backgroundColor: SchoolColors.shellBackground,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               body: SafeArea(
                 bottom: false,
-                child: DecoratedBox(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        SchoolColors.shellBackground,
-                        SchoolColors.shellBackgroundAlt,
-                      ],
-                    ),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (wide)
-                        StudentSidebar(
-                          extended: constraints.maxWidth >= 1200,
-                          selectedIndex: _tabIndex,
-                          onSelect: (i) => setState(() => _tabIndex = i),
-                          navigationItems: navItems,
-                          classes: classes,
-                          activeClassId: selectedId,
-                          onSelectClass: (id) => appState.selectClass(id),
-                          onProfileTap: onProfileTap,
-                        ),
-                      Expanded(
-                        child: WorkspacePanel(
-                          borderRadius: wide ? 28 : 0,
-                          margin: EdgeInsets.fromLTRB(
-                            wide ? 8 : 0,
-                            wide ? 16 : 0,
-                            wide ? 8 : 0,
-                            0,
-                          ),
-                          child: content,
-                        ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (wide)
+                      StudentSidebar(
+                        extended: constraints.maxWidth >= 1200,
+                        selectedIndex: _tabIndex,
+                        onSelect: (i) {
+                          setState(() {
+                            _showSettings = false;
+                            _tabIndex = i;
+                          });
+                        },
+                        navigationItems: navItems,
+                        classes: classes,
+                        activeClassId: selectedId,
+                        onSelectClass: (id) => appState.selectClass(id),
+                        onProfileTap: _openSettings,
                       ),
-                    ],
-                  ),
+                    Expanded(child: content),
+                  ],
                 ),
               ),
               bottomNavigationBar: wide
                   ? null
-                  : Builder(
-                      builder: (context) {
-                        if (_tabIndex == 2 && appState.isChatRoomMobileOpen) {
+                  : ListenableBuilder(
+                      listenable: AppScope.of(context).appState,
+                      builder: (context, _) {
+                        final isChatRoomOpen = AppScope.of(
+                          context,
+                        ).appState.isChatRoomMobileOpen;
+                        if (_tabIndex == 2 && isChatRoomOpen) {
                           return const SizedBox.shrink();
                         }
+
                         // 0=Today, 2=Chat, 3=Homework, 4=Schedule; More opens sheet
                         const mobileIndices = [0, 2, 3, 4];
                         final mobileNavItems = mobileIndices
@@ -291,13 +305,14 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                             .toList();
                         var mobileSelected = mobileIndices.indexOf(_tabIndex);
 
-                        if (mobileSelected < 0) mobileSelected = -1;
-
                         return _MobileTabBar(
                           selectedIndex: mobileSelected,
                           onSelect: (i) {
                             HapticFeedback.lightImpact();
-                            setState(() => _tabIndex = mobileIndices[i]);
+                            setState(() {
+                              _showSettings = false;
+                              _tabIndex = mobileIndices[i];
+                            });
                           },
                           items: mobileNavItems,
                           onMoreTap: () => _showMoreSheet(
@@ -381,7 +396,50 @@ class _StudentShellState extends ConsumerState<StudentShell> {
     AppLocalizations l10n,
     List<Map<String, dynamic>> classes,
   ) {
-    setState(() => _tabIndex = index);
+    setState(() {
+      _showSettings = false;
+      _tabIndex = index;
+    });
+  }
+
+  String _getStudentTabTitle(int index, AppLocalizations l10n) {
+    switch (index) {
+      case 4:
+        return l10n.schedule;
+      case 5:
+        return l10n.library;
+      case 6:
+        return l10n.webinars;
+      case 7:
+        return l10n.magazine;
+      default:
+        return '';
+    }
+  }
+
+  Widget _getStudentTabWidget(
+    int index,
+    String? selectedId,
+    SchoolRepository repo,
+    SchoolAppState appState,
+    List<Map<String, dynamic>> classes,
+  ) {
+    switch (index) {
+      case 4:
+        return TeacherScheduleScreen(
+          readOnly: true,
+          studentClassIds: classes.map((c) => c['id'] as String).toList(),
+          studentClasses: classes,
+        );
+      case 5:
+        return LibraryScreen(classId: '');
+      case 6:
+        return WebinarsScreen(classId: '');
+      case 7:
+        return JournalScreen(classId: selectedId ?? '', studentId: repo.uid);
+      default:
+        return const SizedBox.shrink();
+    }
   }
 }
 
@@ -401,6 +459,7 @@ class _FeatureLockedEmptyState extends StatelessWidget {
 
 class JoinClassEmptyState extends ConsumerWidget {
   const JoinClassEmptyState({super.key, this.onProfileTap});
+
   final VoidCallback? onProfileTap;
 
   @override
@@ -418,33 +477,19 @@ class JoinClassEmptyState extends ConsumerWidget {
 
     final now = DateTime.now();
     final date = DateFormat('EEEE, MMMM d', l10n.localeName).format(now);
-    final hour = now.hour;
-    final greeting = hour < 12
-        ? l10n.goodMorning
-        : hour < 17
-        ? l10n.goodAfternoon
-        : l10n.goodEvening;
 
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: PageHeader(
-            title: greeting,
+            title: l10n.welcomeToTalentUm,
             subtitle: date,
             trailing: SchoolAvatar(
               name: name,
               avatarUrl: avatarUrl,
               radius: 23,
-              onTap: onProfileTap ?? () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (ctx) => SettingsScreen(
-                    repository: AppScope.of(ctx).repository,
-                    appState: AppScope.of(ctx).appState,
-                  ),
-                ),
-              ),
+              onTap: onProfileTap,
               showBorder: true,
             ),
           ),
@@ -513,11 +558,9 @@ class _NavTabItem extends StatelessWidget {
                     ? SchoolColors.primary
                     : (isDark
                           ? SchoolColors.darkTextSecondary.withValues(
-                              alpha: 0.7,
+                              alpha: 0.5,
                             )
-                          : SchoolColors.textSecondary.withValues(
-                              alpha: 0.7,
-                            )),
+                          : SchoolColors.textSecondary.withValues(alpha: 0.5)),
                 size: 28,
               ),
             ),
@@ -553,7 +596,6 @@ class _MoreSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final perfMode = AppScope.of(context).appState.performanceMode;
 
     final items = [
       (
@@ -582,234 +624,108 @@ class _MoreSheet extends StatelessWidget {
       ),
     ];
 
-    return SafeArea(
-      bottom: true,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        decoration: BoxDecoration(
-          boxShadow: [SchoolColors.elevatedShadow],
-          borderRadius: BorderRadius.circular(28),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      decoration: BoxDecoration(
+        color: isDark ? SchoolColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+          width: 1.0,
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: perfMode
-              ? Container(
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? SchoolColors.darkSurface.withValues(alpha: 0.95)
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: isDark
-                          ? SchoolColors.darkBorder.withValues(alpha: 0.5)
-                          : SchoolColors.border.withValues(alpha: 0.5),
-                      width: 1.0,
+        boxShadow: [SchoolColors.elevatedShadow],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+              alignment: Alignment.center,
+            ),
+            Text(
+              l10n.more,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 16),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 2.6,
+              children: items
+                  .map(
+                    (item) => _MoreItem(
+                      icon: item.icon,
+                      label: item.label,
+                      color: item.color,
+                      isDark: isDark,
+                      onTap: () => onSelect(item.index),
                     ),
+                  )
+                  .toList(),
+            ),
+            const SizedBox(height: 12),
+            Material(
+              color: SchoolColors.green.withValues(alpha: isDark ? 0.12 : 0.08),
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                onTap: onJoinClass,
+                borderRadius: BorderRadius.circular(14),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 4,
-                          margin: const EdgeInsets.only(bottom: 20),
-                          decoration: BoxDecoration(
-                            color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          alignment: Alignment.center,
-                        ),
-                        Text(
-                          l10n.more,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.group_add_rounded,
+                        color: SchoolColors.green,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l10n.joinAClass,
                           style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                            letterSpacing: -0.3,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? SchoolColors.darkText
+                                : SchoolColors.text,
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        GridView.count(
-                          crossAxisCount: 2,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                          childAspectRatio: 2.6,
-                          children: items
-                              .map(
-                                (item) => _MoreItem(
-                                  icon: item.icon,
-                                  label: item.label,
-                                  color: item.color,
-                                  isDark: isDark,
-                                  onTap: () => onSelect(item.index),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                        const SizedBox(height: 12),
-                        Material(
-                          color: SchoolColors.green.withValues(alpha: isDark ? 0.12 : 0.08),
-                          borderRadius: BorderRadius.circular(14),
-                          child: InkWell(
-                            onTap: onJoinClass,
-                            borderRadius: BorderRadius.circular(14),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.group_add_rounded,
-                                    color: SchoolColors.green,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      l10n.joinAClass,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: isDark
-                                            ? SchoolColors.darkText
-                                            : SchoolColors.text,
-                                      ),
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    size: 14,
-                                    color: isDark
-                                        ? SchoolColors.darkMuted
-                                        : SchoolColors.muted,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                    ),
-                  ),
-                )
-              : BackdropFilter(
-                  filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? SchoolColors.darkSurface.withValues(alpha: 0.75)
-                          : Colors.white.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 14,
                         color: isDark
-                            ? SchoolColors.darkBorder.withValues(alpha: 0.5)
-                            : SchoolColors.border.withValues(alpha: 0.5),
-                        width: 1.0,
+                            ? SchoolColors.darkMuted
+                            : SchoolColors.muted,
                       ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 36,
-                            height: 4,
-                            margin: const EdgeInsets.only(bottom: 20),
-                            decoration: BoxDecoration(
-                              color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                            alignment: Alignment.center,
-                          ),
-                          Text(
-                            l10n.more,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
-                              color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          GridView.count(
-                            crossAxisCount: 2,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10,
-                            childAspectRatio: 2.6,
-                            children: items
-                                .map(
-                                  (item) => _MoreItem(
-                                    icon: item.icon,
-                                    label: item.label,
-                                    color: item.color,
-                                    isDark: isDark,
-                                    onTap: () => onSelect(item.index),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                          const SizedBox(height: 12),
-                          Material(
-                            color: SchoolColors.green.withValues(alpha: isDark ? 0.12 : 0.08),
-                            borderRadius: BorderRadius.circular(14),
-                            child: InkWell(
-                              onTap: onJoinClass,
-                              borderRadius: BorderRadius.circular(14),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 12,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.group_add_rounded,
-                                      color: SchoolColors.green,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        l10n.joinAClass,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w700,
-                                          color: isDark
-                                              ? SchoolColors.darkText
-                                              : SchoolColors.text,
-                                        ),
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.arrow_forward_ios_rounded,
-                                      size: 14,
-                                      color: isDark
-                                          ? SchoolColors.darkMuted
-                                          : SchoolColors.muted,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
                 ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );
@@ -839,7 +755,7 @@ class _MoreItem extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(
             children: [
               Icon(icon, color: color, size: 20),
@@ -875,12 +791,6 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
   final _controller = TextEditingController();
   bool _loading = false;
   String? _error;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1001,23 +911,16 @@ class _MobileTabBar extends StatelessWidget {
         top: false,
         child: Container(
           height: 72,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           decoration: BoxDecoration(
             color: isDark ? SchoolColors.darkSurface : Colors.white,
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.12)
-                  : SchoolColors.border,
+                  : SchoolColors.border.withValues(alpha: 0.8),
               width: 1.0,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
-                blurRadius: 32,
-                offset: const Offset(0, 12),
-              ),
-            ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1052,64 +955,32 @@ class _MobileTabBar extends StatelessWidget {
 
     return SafeArea(
       top: false,
-      child: Container(
-        height: 72,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 28),
-        decoration: BoxDecoration(
-          color: isDark
-              ? SchoolColors.darkSurface.withValues(alpha: 0.85)
-              : Colors.white.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : SchoolColors.border,
-            width: 1.0,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
-              blurRadius: 32,
-              offset: const Offset(0, 12),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: performanceMode
-              ? Container(
-                  color: isDark
-                      ? SchoolColors.darkSurface.withValues(alpha: 0.95)
-                      : Colors.white,
-                  child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ...List.generate(items.length, (index) {
-                  final item = items[index];
-                  final selected = selectedIndex == index;
-                  return Expanded(
-                    child: _NavTabItem(
-                      icon: item.icon,
-                      selectedIcon: item.selectedIcon,
-                      selected: selected,
-                      isDark: isDark,
-                      onTap: () => onSelect(index),
-                    ),
-                  );
-                }),
-                Expanded(
-                  child: _NavTabItem(
-                    icon: Icons.grid_view_outlined,
-                    selectedIcon: Icons.grid_view_rounded,
-                    selected: moreSelected,
-                    isDark: isDark,
-                    onTap: onMoreTap,
-                  ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            height: 72,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? SchoolColors.darkSurface.withValues(alpha: 0.65)
+                  : Colors.white.withValues(alpha: 0.75),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : SchoolColors.border.withValues(alpha: 0.4),
+                width: 1.0,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
-          ) : BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [

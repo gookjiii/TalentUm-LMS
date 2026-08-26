@@ -51,7 +51,8 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
     }
   }
 
-  void _loadMoreStudents() {
+  void _loadMoreStudents(int currentCount) {
+    if (currentCount < _visibleStudentsCount) return;
     setState(() {
       _visibleStudentsCount += 20;
     });
@@ -68,6 +69,9 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
   @override
   Widget build(BuildContext context) {
     final columnsAsync = ref.watch(journalColumnsProvider(widget.classId));
+    final studentIdsAsync = ref.watch(
+      journalStudentIdsProvider(widget.classId),
+    );
     final marksAsync = widget.studentIdFilter != null
         ? ref.watch(
             journalStudentMarksProvider((
@@ -89,60 +93,72 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final classData = classSnap.data?.data() ?? {};
-        final allStudentIds = List<String>.from(classData['studentIds'] ?? []);
-
-        final studentIds = widget.studentIdFilter != null
-            ? allStudentIds.where((id) => id == widget.studentIdFilter).toList()
-            : allStudentIds;
-
-        final paginatedStudentIds = widget.studentIdFilter != null
-            ? studentIds
-            : studentIds.take(_visibleStudentsCount).toList();
-
-        return columnsAsync.when(
+        return studentIdsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, st) => Center(child: Text('Ошибка: $e')),
-          data: (columns) {
-            return marksAsync.when(
+          data: (allStudentIds) {
+            final studentIds = widget.studentIdFilter != null
+                ? allStudentIds
+                      .where((id) => id == widget.studentIdFilter)
+                      .toList()
+                : allStudentIds;
+
+            final paginatedStudentIds = widget.studentIdFilter != null
+                ? studentIds
+                : studentIds.take(_visibleStudentsCount).toList();
+
+            return columnsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, st) => Center(child: Text('Ошибка: $e')),
-              data: (marksDocs) {
-                if (columns.isEmpty) {
-                  return Center(
-                    child: Text(
-                      widget.studentIdFilter != null
-                          ? AppLocalizations.of(context)!.youDontHaveRatingsYet
-                          : AppLocalizations.of(context)!.theMagazineIsEmptyAdd,
-                      style: const TextStyle(
-                        color: SchoolColors.muted,
-                        fontSize: 16,
-                      ),
-                    ),
-                  );
-                }
+              data: (columns) {
+                return marksAsync.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, st) => Center(child: Text('Ошибка: $e')),
+                  data: (marksDocs) {
+                    if (columns.isEmpty) {
+                      return Center(
+                        child: Text(
+                          widget.studentIdFilter != null
+                              ? AppLocalizations.of(
+                                  context,
+                                )!.youDontHaveRatingsYet
+                              : AppLocalizations.of(
+                                  context,
+                                )!.theMagazineIsEmptyAdd,
+                          style: const TextStyle(
+                            color: SchoolColors.muted,
+                            fontSize: 16,
+                          ),
+                        ),
+                      );
+                    }
 
-                final marksMap = <String, Map<String, String>>{};
-                for (final doc in marksDocs) {
-                  final data = doc.data()!;
-                  final m = data['marks'] as Map<String, dynamic>? ?? {};
-                  marksMap[doc.id] = m.map((k, v) => MapEntry(k, v.toString()));
-                }
+                    final marksMap = <String, Map<String, String>>{};
+                    for (final doc in marksDocs) {
+                      final data = doc.data()!;
+                      final m = data['marks'] as Map<String, dynamic>? ?? {};
+                      marksMap[doc.id] = m.map(
+                        (k, v) => MapEntry(k, v.toString()),
+                      );
+                    }
 
-                if (widget.studentIdFilter != null) {
-                  return _buildStudentGradesList(
-                    context,
-                    columns,
-                    widget.studentIdFilter!,
-                    marksMap,
-                  );
-                }
+                    if (widget.studentIdFilter != null) {
+                      return _buildStudentGradesList(
+                        context,
+                        columns,
+                        widget.studentIdFilter!,
+                        marksMap,
+                      );
+                    }
 
-                return _buildCustomGrid(
-                  context,
-                  columns,
-                  paginatedStudentIds,
-                  marksMap,
+                    return _buildCustomGrid(
+                      context,
+                      columns,
+                      paginatedStudentIds,
+                      marksMap,
+                    );
+                  },
                 );
               },
             );
@@ -289,7 +305,7 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                     if (scrollInfo.metrics.axis == Axis.vertical &&
                         scrollInfo.metrics.pixels >=
                             scrollInfo.metrics.maxScrollExtent - 200) {
-                      _loadMoreStudents();
+                      _loadMoreStudents(studentIds.length);
                     }
                     return false;
                   },

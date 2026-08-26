@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { authAdmin, dbAdmin } from '../../utils/firebase';
-import { handleCors, requireApiSecret } from '../../utils/api';
+import { handleCors, requireUserOrAdmin } from '../../utils/api';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleCors(req, res)) return;
@@ -9,12 +9,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { userId } = req.body;
+  const { userId } = req.body ?? {};
   if (!userId) {
     return res.status(400).json({ error: 'Missing userId' });
   }
 
-  if (!requireApiSecret(req)) {
+  if (!await requireUserOrAdmin(req, String(userId))) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

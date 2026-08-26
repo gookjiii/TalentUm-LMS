@@ -2,6 +2,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/src/providers/app_providers.dart';
 
+final journalStudentIdsProvider = StreamProvider.autoDispose
+    .family<List<String>, String>((ref, classId) {
+      final repo = ref.read(repositoryProvider);
+      return repo.firestore
+          .collection('classes')
+          .doc(classId)
+          .snapshots()
+          .asyncMap((_) => repo.studentIdsForJournal(classId));
+    });
+
 /// Provides a stream of journal columns (lessons) for a given class.
 final journalColumnsProvider = StreamProvider.autoDispose
     .family<List<DocumentSnapshot<Map<String, dynamic>>>, String>((

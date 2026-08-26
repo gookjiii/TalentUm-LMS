@@ -11,6 +11,7 @@ class ScheduleEntry {
     required this.dayOfWeek,
     required this.startMinute,
     required this.endMinute,
+    this.subject,
     this.room,
     this.color,
     this.effectiveFrom,
@@ -26,6 +27,7 @@ class ScheduleEntry {
   final int? dayOfWeek;
   final int startMinute;
   final int endMinute;
+  final String? subject;
   final String? room;
   final String? color;
   final DateTime? effectiveFrom;
@@ -45,6 +47,7 @@ class ScheduleEntry {
       dayOfWeek: (d['dayOfWeek'] as num?)?.toInt(),
       startMinute: (d['startMinute'] as num?)?.toInt() ?? 0,
       endMinute: (d['endMinute'] as num?)?.toInt() ?? 60,
+      subject: d['subject']?.toString(),
       room: d['room']?.toString(),
       color: d['color']?.toString(),
       effectiveFrom: (d['effectiveFrom'] as Timestamp?)?.toDate(),
@@ -58,6 +61,7 @@ class ScheduleEntry {
     if (dayOfWeek != null) 'dayOfWeek': dayOfWeek,
     'startMinute': startMinute,
     'endMinute': endMinute,
+    if (subject != null && subject!.isNotEmpty) 'subject': subject,
     if (room != null && room!.isNotEmpty) 'room': room,
     if (color != null && color!.isNotEmpty) 'color': color,
     if (effectiveFrom != null)
@@ -118,6 +122,7 @@ class ResolvedScheduleItem {
     required this.date,
     required this.startMinute,
     required this.endMinute,
+    this.subject,
     this.room,
     this.note,
     this.color,
@@ -129,6 +134,7 @@ class ResolvedScheduleItem {
   final DateTime date;
   final int startMinute;
   final int endMinute;
+  final String? subject;
   final String? room;
   final String? note;
   final String? color;
@@ -175,10 +181,27 @@ List<ResolvedScheduleItem> resolveDay({
       if (!_sameDay(s.oneOffDate!, dayOnly)) continue;
     } else {
       if (s.dayOfWeek != iso) continue;
-      if (s.effectiveFrom != null && dayOnly.isBefore(s.effectiveFrom!)) {
+      // Effective bounds are calendar dates, not instants. Firestore
+      // timestamps can arrive in UTC, so compare date-only values to avoid
+      // hiding the first lesson when local midnight is before UTC midnight.
+      final effectiveFrom = s.effectiveFrom == null
+          ? null
+          : DateTime(
+              s.effectiveFrom!.year,
+              s.effectiveFrom!.month,
+              s.effectiveFrom!.day,
+            );
+      final effectiveTo = s.effectiveTo == null
+          ? null
+          : DateTime(
+              s.effectiveTo!.year,
+              s.effectiveTo!.month,
+              s.effectiveTo!.day,
+            );
+      if (effectiveFrom != null && dayOnly.isBefore(effectiveFrom)) {
         continue;
       }
-      if (s.effectiveTo != null && dayOnly.isAfter(s.effectiveTo!)) continue;
+      if (effectiveTo != null && dayOnly.isAfter(effectiveTo)) continue;
     }
     final ov = overridesByScheduleId[s.id];
     out.add(
@@ -188,6 +211,7 @@ List<ResolvedScheduleItem> resolveDay({
         date: dayOnly,
         startMinute: ov?.newStartMinute ?? s.startMinute,
         endMinute: ov?.newEndMinute ?? s.endMinute,
+        subject: s.subject,
         room: s.room,
         note: ov?.note,
         color: s.color,

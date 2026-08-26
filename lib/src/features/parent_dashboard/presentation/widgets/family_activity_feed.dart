@@ -12,8 +12,7 @@ class FamilyActivityFeed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (childIds.isEmpty)
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (childIds.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
     final repo = AppScope.of(context).repository;
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -27,8 +26,7 @@ class FamilyActivityFeed extends StatelessWidget {
         final l10n = AppLocalizations.of(context)!;
         final docs = snapshot.data?.docs ?? [];
 
-        if (docs.isEmpty &&
-            snapshot.connectionState != ConnectionState.waiting) {
+        if (docs.isEmpty && snapshot.connectionState != ConnectionState.waiting) {
           return SliverToBoxAdapter(
             child: Center(
               child: Padding(
@@ -45,14 +43,17 @@ class FamilyActivityFeed extends StatelessWidget {
         return SliverPadding(
           padding: const EdgeInsets.only(bottom: 24),
           sliver: SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: RepaintBoundary(
-                  child: _ActivityItem(doc: docs[index], childIds: childIds),
-                ),
-              );
-            }, childCount: docs.length),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: RepaintBoundary(
+                    child: _ActivityItem(doc: docs[index], childIds: childIds),
+                  ),
+                );
+              },
+              childCount: docs.length,
+            ),
           ),
         );
       },
@@ -73,19 +74,16 @@ class _ActivityItem extends StatelessWidget {
     final studentId = data['studentId'] as String;
     final classId = data['classId'] as String?;
     final grade = data['grade'];
-    final timestamp =
-        (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now();
+    final timestamp = (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now();
 
     return FutureBuilder<List<DocumentSnapshot>>(
-      future: Future.wait(
-        [
-          repo.getCachedUser(studentId),
-          if (classId != null)
-            repo.getCachedClass(classId)
-          else
-            Future.value(null as DocumentSnapshot?),
-        ].whereType<Future<DocumentSnapshot>>().toList(),
-      ), // This was the trick!
+      future: Future.wait([
+        repo.firestore.collection('users').doc(studentId).get(),
+        if (classId != null)
+          repo.firestore.collection('classes').doc(classId).get()
+        else
+          Future.value(null as DocumentSnapshot?),
+      ].whereType<Future<DocumentSnapshot>>().toList()), // This was the trick!
       builder: (context, snaps) {
         // Fallback name/class
         String studentName = l10n.student;
@@ -94,10 +92,9 @@ class _ActivityItem extends StatelessWidget {
         if (snaps.hasData && snaps.data != null && snaps.data!.isNotEmpty) {
           final sDoc = snaps.data![0];
           if (sDoc.exists) {
-            studentName =
-                (sDoc.data() as Map?)?['name']?.toString() ?? l10n.student;
+            studentName = (sDoc.data() as Map?)?['name']?.toString() ?? l10n.student;
           }
-
+          
           if (snaps.data!.length > 1) {
             final cDoc = snaps.data![1];
             if (cDoc.exists) {
@@ -105,7 +102,7 @@ class _ActivityItem extends StatelessWidget {
             }
           }
         }
-
+        
         return SchoolCard(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -115,20 +112,12 @@ class _ActivityItem extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color:
-                      (grade != null
-                              ? SchoolColors.green
-                              : SchoolColors.primary)
-                          .withValues(alpha: 0.1),
+                  color: (grade != null ? SchoolColors.green : SchoolColors.primary).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  grade != null
-                      ? Icons.grade_rounded
-                      : Icons.assignment_turned_in_rounded,
-                  color: grade != null
-                      ? SchoolColors.green
-                      : SchoolColors.primary,
+                  grade != null ? Icons.grade_rounded : Icons.assignment_turned_in_rounded,
+                  color: grade != null ? SchoolColors.green : SchoolColors.primary,
                   size: 20,
                 ),
               ),
@@ -149,9 +138,9 @@ class _ActivityItem extends StatelessWidget {
                             style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
                           TextSpan(
-                            text: grade != null
-                                ? " ${l10n.receivedGrade} "
-                                : " ${l10n.submittedAssignment} ",
+                            text: grade != null 
+                              ? " ${l10n.receivedGrade} " 
+                              : " ${l10n.submittedAssignment} ",
                           ),
                           if (grade != null)
                             TextSpan(
@@ -170,21 +159,13 @@ class _ActivityItem extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.7),
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      DateFormat(
-                        'd MMM, HH:mm',
-                        l10n.localeName,
-                      ).format(timestamp),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: SchoolColors.muted,
-                      ),
+                      DateFormat('d MMM, HH:mm', l10n.localeName).format(timestamp),
+                      style: const TextStyle(fontSize: 11, color: SchoolColors.muted),
                     ),
                   ],
                 ),

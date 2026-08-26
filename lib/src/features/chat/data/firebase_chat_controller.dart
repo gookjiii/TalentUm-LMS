@@ -820,14 +820,18 @@ class FirebaseChatController extends InMemoryChatController
         final url = message.source;
         if (url.isNotEmpty) {
           try {
-            await CloudinaryStorageProvider.chatProvider().deleteFile(url);
+            await CloudinaryStorageProvider.chatAttachmentProvider().deleteFile(
+              url,
+            );
           } catch (_) {}
         }
       } else if (message is FileMessage) {
         final url = message.source;
         if (url.isNotEmpty) {
           try {
-            await CloudinaryStorageProvider.chatProvider().deleteFile(url);
+            await CloudinaryStorageProvider.chatAttachmentProvider().deleteFile(
+              url,
+            );
           } catch (_) {}
         }
       }
@@ -1037,6 +1041,7 @@ class FirebaseChatController extends InMemoryChatController
         title: finalTitle,
         body: body,
         data: {
+          'destination': 'chat',
           'roomId': roomId,
           if (data['metadata']?['classId'] != null)
             'classId': data['metadata']['classId'],

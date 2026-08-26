@@ -28,10 +28,7 @@ void main() {
     final mockDoc = querySnapshot.docs.first;
 
     await tester.pumpWidget(createTestableWidget(
-      child: HomeworkCard(
-        doc: mockDoc,
-        onTap: () {},
-      ),
+      child: HomeworkCard(doc: mockDoc),
       repository: mockRepo,
       appState: mockAppState,
     ));

@@ -54,6 +54,7 @@ dependencies:
   intl: ^0.20.2
   google_fonts: ^8.1.0
   dio: ^5.7.0
+  http: ^1.2.2
   image: ^4.3.0
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
@@ -104,7 +105,6 @@ dependencies:
   shimmer: ^3.0.0
   open_filex: ^4.7.0
   pdf_manipulator: ^0.5.9
-  pointer_interceptor: ^0.10.1+2
 
 dependency_overrides:
   flutter_chat_core:

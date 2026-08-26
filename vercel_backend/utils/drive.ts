@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { google, drive_v3 } from 'googleapis';
 import { JWT } from 'google-auth-library';
 
 const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -6,64 +6,97 @@ const clientId = process.env.GOOGLE_CLIENT_ID;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 
-let serviceAuthClient: any = null;
-let oauthAuthClient: any = null;
+let activeAuth: any;
 
-try {
-  if (serviceAccountJson) {
-    const credentials = JSON.parse(serviceAccountJson);
-    if (credentials.private_key) {
-      credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+function parseJwtCandidate(jsonString: string): JWT | null {
+  try {
+    let raw = jsonString.trim();
+    if (!raw.startsWith('{')) {
+      try {
+        raw = Buffer.from(raw, 'base64').toString('utf8');
+      } catch (_) {}
     }
-    serviceAuthClient = new JWT({
-      email: credentials.client_email,
-      key: credentials.private_key,
-      scopes: ['https://www.googleapis.com/auth/drive'],
-    });
+    const credentials = JSON.parse(raw);
+    if (credentials.client_email && credentials.private_key) {
+      let key = credentials.private_key;
+      if (typeof key === 'string') {
+        key = key.replace(/\\n/g, '\n');
+      }
+      return new JWT({
+        email: credentials.client_email,
+        key: key,
+        scopes: ['https://www.googleapis.com/auth/drive'],
+      });
+    }
+  } catch (e: any) {
+    console.warn('Failed to parse service account credentials:', e.message);
   }
-} catch (e) {
-  console.error('Failed to initialize Service Account:', e);
+  return null;
 }
 
-try {
+function authCandidates(): any[] {
+  const candidates: any[] = [];
+
   if (clientId && clientSecret && refreshToken) {
-    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
-    oauth2Client.setCredentials({ refresh_token: refreshToken });
-    oauthAuthClient = oauth2Client;
+    const oauth = new google.auth.OAuth2(clientId, clientSecret);
+    oauth.setCredentials({ refresh_token: refreshToken });
+    candidates.push(oauth);
   }
-} catch (e) {
-  console.error('Failed to initialize OAuth:', e);
+
+  const saJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (saJson) {
+    const jwt = parseJwtCandidate(saJson);
+    if (jwt) candidates.push(jwt);
+  }
+
+  const fbSaJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (fbSaJson) {
+    const jwt = parseJwtCandidate(fbSaJson);
+    if (jwt) candidates.push(jwt);
+  }
+
+  return candidates;
 }
 
-// Export a function to get working auth client by trying both
-export const getWorkingAuthClient = async () => {
-  // We prefer OAuth because it has 15GB storage quota on My Drive.
-  if (oauthAuthClient) {
+async function resolveAuth(): Promise<any> {
+  const candidates = activeAuth ? [activeAuth, ...authCandidates()] : authCandidates();
+  const seen = new Set<any>();
+  let lastError: unknown;
+
+  for (const candidate of candidates) {
+    if (seen.has(candidate)) continue;
+    seen.add(candidate);
     try {
-      const token = await oauthAuthClient.getAccessToken();
-      if (token && token.token) return oauthAuthClient;
-    } catch (e: any) {
-      console.warn('OAuth failed (likely invalid_grant), falling back to Service Account:', e.message);
+      const token = await candidate.getAccessToken();
+      if (token?.token) {
+        activeAuth = candidate;
+        return candidate;
+      }
+    } catch (error) {
+      lastError = error;
+      if (candidate === activeAuth) activeAuth = undefined;
+      console.warn('Google Drive auth candidate failed; trying fallback.');
     }
   }
 
-  // Fallback to Service Account
-  if (serviceAuthClient) {
-    try {
-      const token = await serviceAuthClient.getAccessToken();
-      if (token && token.token) return serviceAuthClient;
-    } catch (e: any) {
-      console.warn('Service account failed:', e.message);
-    }
-  }
+  throw new Error(
+    `Google Drive authentication failed${lastError ? `: ${(lastError as Error).message}` : ''}`,
+  );
+}
 
-  throw new Error('No valid Google Drive authentication method available.');
-};
+export async function getDriveAccessToken(): Promise<string> {
+  const auth = await resolveAuth();
+  const token = await auth.getAccessToken();
+  if (!token?.token) throw new Error('Google Drive returned an empty access token');
+  return token.token;
+}
 
-// Export a dynamic drive client getter
-export const getDriveClient = async () => {
-  const auth = await getWorkingAuthClient();
-  return google.drive({ version: 'v3', auth });
-};
+export async function getDriveClient(): Promise<drive_v3.Drive> {
+  return google.drive({ version: 'v3', auth: await resolveAuth() });
+}
 
-export const SHARED_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID || '';
+export function getDriveFolderId(): string {
+  const folderId = (process.env.GOOGLE_DRIVE_FOLDER_ID || '').trim();
+  if (!folderId) throw new Error('GOOGLE_DRIVE_FOLDER_ID is not configured');
+  return folderId;
+}

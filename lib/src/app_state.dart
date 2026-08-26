@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:io' show Platform;
+
 import 'firebase/push_notification_manager.dart';
 
 class SchoolAppState extends ChangeNotifier {
@@ -12,6 +12,7 @@ class SchoolAppState extends ChangeNotifier {
     currentRole = box.get('role') as String?;
     selectedClassId = box.get('selectedClassId') as String?;
     lastChatClassId = box.get('lastChatClassId') as String?;
+    lastChatTopicId = box.get('lastChatTopicId') as String?;
     _isDarkMode = box.get('isDarkMode', defaultValue: false) as bool;
     _accentColorValue = box.get('accentColor') as int?;
     final localeCode = box.get('locale') as String?;
@@ -21,12 +22,15 @@ class SchoolAppState extends ChangeNotifier {
     _soundAndVibe = box.get('soundAndVibe', defaultValue: true) as bool;
     _quietModeUpdates = box.get('quietModeUpdates', defaultValue: true) as bool;
 
-    if (box.containsKey('performanceMode')) {
-      _performanceMode = box.get('performanceMode') as bool;
-    } else {
-      // Auto-detect on first run
-      _autoDetectLowEndDevice();
+    final storedPerformanceMode = box.get('performanceMode');
+    if (storedPerformanceMode is bool) {
+      _performanceMode = storedPerformanceMode;
     }
+    // Auto-detect unless the user has explicitly chosen a mode. This also
+    // upgrades existing installs that predate the mobile performance default.
+    final performanceModeWasChosen =
+        box.get('performanceModeUserSet', defaultValue: false) as bool;
+    if (!performanceModeWasChosen) _autoDetectLowEndDevice();
 
     // Set initial image cache bounds reactively based on stored performanceMode
     _applyImageCacheLimits();
@@ -36,17 +40,37 @@ class SchoolAppState extends ChangeNotifier {
   String? selectedClassId;
   String? lastChatClassId;
   String? lastChatTopicId;
+  int _chatNavigationRevision = 0;
+
+  /// Increments whenever an external action (such as an FCM notification)
+  /// requests that the active shell switch to a chat.
+  int get chatNavigationRevision => _chatNavigationRevision;
 
   Future<void> _autoDetectLowEndDevice() async {
-    if (kIsWeb) return;
     try {
       final deviceInfo = DeviceInfoPlugin();
       bool isLowEnd = false;
 
-      if (Platform.isAndroid) {
-        // RAM auto-detect removed due to device_info_plus lacking memTotal
-        // A user can manually toggle performance mode if needed
-      } else if (Platform.isIOS) {
+      if (kIsWeb) {
+        final browser = await deviceInfo.webBrowserInfo;
+        final platform = (browser.platform ?? '').toLowerCase();
+        final userAgent = (browser.userAgent ?? '').toLowerCase();
+        final isMobileBrowser =
+            platform.contains('android') ||
+            userAgent.contains('mobile') ||
+            userAgent.contains('iphone') ||
+            userAgent.contains('ipad') ||
+            userAgent.contains('ipod') ||
+            (platform.contains('mac') && (browser.maxTouchPoints ?? 0) > 1);
+        // Mobile web has less predictable memory limits than desktop web;
+        // prefer bounded image caches and no decorative animations there.
+        isLowEnd = isMobileBrowser;
+      } else if (defaultTargetPlatform == TargetPlatform.android) {
+        // Android does not expose reliable RAM information through the
+        // supported plugin API. Treat native Android as mobile-optimized by
+        // default; users can turn this off in Settings.
+        isLowEnd = true;
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
         final iosInfo = await deviceInfo.iosInfo;
         // detect older iPhones (e.g., iPhone 8 and older have < 3GB RAM)
         final machine = iosInfo.utsname.machine;
@@ -139,6 +163,36 @@ class SchoolAppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Opens a class chat from outside a shell, for example after tapping a
+  /// notification. The revision lets locally-owned shell tab state react even
+  /// when the requested class is already selected.
+  void openChat({
+    required String classId,
+    String? topicId,
+    bool selectClass = true,
+  }) {
+    final normalizedClassId = classId.trim();
+    if (normalizedClassId.isEmpty) return;
+
+    if (selectClass) {
+      selectedClassId = normalizedClassId;
+      Hive.box('app_settings').put('selectedClassId', normalizedClassId);
+    }
+    lastChatClassId = normalizedClassId;
+    lastChatTopicId = topicId;
+    _isChatRoomMobileOpen = true;
+    _chatNavigationRevision++;
+
+    final box = Hive.box('app_settings');
+    box.put('lastChatClassId', normalizedClassId);
+    if (topicId == null) {
+      box.delete('lastChatTopicId');
+    } else {
+      box.put('lastChatTopicId', topicId);
+    }
+    notifyListeners();
+  }
+
   void clearChatContext() {
     if (lastChatClassId == null && lastChatTopicId == null) return;
     lastChatClassId = null;
@@ -164,6 +218,10 @@ class SchoolAppState extends ChangeNotifier {
     selectedAssignmentId = null;
     selectedChildId = null;
     joinedClassRecently = false;
+    lastChatClassId = null;
+    lastChatTopicId = null;
+    _chatNavigationRevision = 0;
+    _isChatRoomMobileOpen = false;
     final box = Hive.box('app_settings');
     box.delete('role');
     box.delete('selectedClassId');
@@ -231,9 +289,12 @@ class SchoolAppState extends ChangeNotifier {
   }
 
   void setPerformanceMode(bool value) {
-    if (_performanceMode == value) return;
+    final modeChanged = _performanceMode != value;
     _performanceMode = value;
-    Hive.box('app_settings').put('performanceMode', value);
+    final box = Hive.box('app_settings');
+    box.put('performanceMode', value);
+    box.put('performanceModeUserSet', true);
+    if (!modeChanged) return;
     _applyImageCacheLimits();
     notifyListeners();
   }

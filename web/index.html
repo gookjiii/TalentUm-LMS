@@ -11,26 +11,8 @@
   <meta name="mobile-web-app-capable" content="yes">
 
   <meta name="google-signin-client_id" content="813433082673-4ein9utmin4551tfhp7hd6om6kdosad2.apps.googleusercontent.com">
-
-  <!-- Syncfusion PDF Viewer dependencies loaded lazily to improve First Contentful Paint -->
-  <script src="//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js" defer></script>
-  <script type="text/javascript">
-    document.addEventListener("DOMContentLoaded", function() {
-      if (window.pdfjsLib) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = "//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js";
-      } else {
-        var script = document.querySelector('script[src*="pdf.min.js"]');
-        if (script) {
-          script.addEventListener('load', function() {
-            if (window.pdfjsLib) {
-              pdfjsLib.GlobalWorkerOptions.workerSrc = "//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js";
-            }
-          });
-        }
-      }
-    });
-  </script>
-
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <!-- iOS PWA -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -114,6 +96,7 @@
   </style>
 </head>
 <body>
+  <div id="recaptcha-container"></div>
   <div id="flutter-loading">
     <div class="loading-logo">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -143,11 +126,38 @@
   </script>
 
   <script>
-    // Wake up iOS Safari touch events for embedded iframes
-    document.addEventListener('touchstart', {}, {passive: false});
+    // Flutter's generated worker is optional and unregisters itself on newer
+    // releases. Only perform an update check when a registration really exists
+    // so normal page loads do not wait on navigator.serviceWorker.ready.
+    if ('serviceWorker' in navigator) {
+      let isRefreshing = false;
+
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          window.location.reload();
+        }
+      });
+
+      function checkForUpdates() {
+        navigator.serviceWorker.getRegistration().then(function(registration) {
+          if (!registration) return;
+          registration.update().catch(function() {});
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }).catch(function() {});
+      }
+
+      checkForUpdates();
+      setInterval(checkForUpdates, 5 * 60 * 1000);
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') checkForUpdates();
+      });
+      window.addEventListener('pageshow', checkForUpdates);
+      window.addEventListener('focus', checkForUpdates);
+    }
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
-<!-- Update deployment hash Sun Jun 28 04:12:12 MSK 2026 -->
-<!-- FORCE_DEPLOY_TS_1782649145 -->

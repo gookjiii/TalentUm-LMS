@@ -9,23 +9,23 @@ import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/features/classroom/presentation/screens/class_settings_screen.dart';
 
-class RosterScreen extends StatefulWidget {
+class RosterScreen extends ConsumerStatefulWidget {
   const RosterScreen({super.key, this.classId});
   final String? classId;
 
   @override
-  State<RosterScreen> createState() => _RosterScreenState();
+  ConsumerState<RosterScreen> createState() => _RosterScreenState();
 }
 
-class _RosterScreenState extends State<RosterScreen> {
+class _RosterScreenState extends ConsumerState<RosterScreen> {
   Stream<DocumentSnapshot<Map<String, dynamic>>>? _classStream;
   String? _currentClassId;
   int _visibleCount = 20;
 
-  void _updateStreamIfNeeded() {
-    final appState = AppScope.of(context).appState;
-    final effectiveClassId = widget.classId ?? appState.selectedClassId;
-    if (effectiveClassId != _currentClassId && effectiveClassId != null) {
+  void _updateStreamIfNeeded(String? effectiveClassId) {
+    if (effectiveClassId != _currentClassId &&
+        effectiveClassId != null &&
+        effectiveClassId.isNotEmpty) {
       final repo = AppScope.of(context).repository;
       _classStream = repo.firestore
           .collection('classes')
@@ -37,26 +37,21 @@ class _RosterScreenState extends State<RosterScreen> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _updateStreamIfNeeded();
-  }
-
-  @override
-  void didUpdateWidget(covariant RosterScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _updateStreamIfNeeded();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final appState = AppScope.of(context).appState;
+    final appState = ref.watch(schoolAppStateProvider);
     final l10n = AppLocalizations.of(context)!;
-    final effectiveClassId = widget.classId ?? appState.selectedClassId;
+    final selectedId = appState.selectedClassId;
+    final effectiveClassId = (selectedId != null && selectedId.isNotEmpty)
+        ? selectedId
+        : ((widget.classId != null && widget.classId!.isNotEmpty)
+              ? widget.classId
+              : null);
 
     if (effectiveClassId == null) {
-      return Scaffold(body: Center(child: Text(l10n.selectClassFirst)));
+      return Scaffold(body: _ClassStateEmpty(message: l10n.selectClassFirst));
     }
+
+    _updateStreamIfNeeded(effectiveClassId);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -67,7 +62,9 @@ class _RosterScreenState extends State<RosterScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           final data = snapshot.data?.data();
-          if (data == null) return Center(child: Text(l10n.classNotFound));
+          if (data == null) {
+            return const _ClassStateEmpty();
+          }
 
           final teacherId = data['teacherId']?.toString() ?? '';
           final studentIds = List<String>.from(data['studentIds'] ?? []);
@@ -77,10 +74,7 @@ class _RosterScreenState extends State<RosterScreen> {
 
           return Column(
             children: [
-              _MembersHeader(
-                count: 1 + studentIds.length,
-                classId: effectiveClassId,
-              ),
+              _MembersHeader(count: 1 + studentIds.length),
               Expanded(
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (ScrollNotification scrollInfo) {
@@ -169,25 +163,51 @@ class _RosterScreenState extends State<RosterScreen> {
   }
 }
 
+class _ClassStateEmpty extends StatelessWidget {
+  const _ClassStateEmpty({this.message});
+
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final canGoBack = Navigator.of(context).canPop();
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message ?? l10n.classNotFound),
+          if (canGoBack) ...[
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).maybePop(),
+              icon: const Icon(Icons.arrow_back_rounded),
+              label: Text(l10n.back),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _MembersHeader extends StatelessWidget {
-  const _MembersHeader({required this.count, required this.classId});
+  const _MembersHeader({required this.count});
   final int count;
-  final String? classId;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final appState = AppScope.of(context).appState;
     final repo = AppScope.of(context).repository;
+    final classId = appState.selectedClassId;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: classId != null
           ? repo.firestore.collection('classes').doc(classId).snapshots()
           : const Stream.empty(),
       builder: (context, classSnap) {
-        final classData = classSnap.data?.data();
-        final className = classData?['name']?.toString();
-        final studentIds = List<String>.from(classData?['studentIds'] ?? []);
+        final className = classSnap.data?.data()?['name']?.toString();
 
         return Consumer(
           builder: (context, ref, _) {
@@ -197,17 +217,12 @@ class _MembersHeader extends StatelessWidget {
                   : studentClassesStreamProvider,
             );
             final allVisibleClasses = allClassAsync.value ?? [];
-                      final resolvedClassName = className ?? 
-                          allVisibleClasses
-                              .where((c) => c['id'] == classId)
-                              .firstOrNull?['name']
-                              ?.toString();
 
             return PageHeader(
               title: l10n.classRoster,
               subtitle: l10n.totalParticipants(count),
-              classContext: resolvedClassName,
-              onClassContextTap: allVisibleClasses.isNotEmpty
+              classContext: className,
+              onClassContextTap: allVisibleClasses.length > 1
                   ? () {
                       showClassSwitcher(
                         context: context,
@@ -223,22 +238,15 @@ class _MembersHeader extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (appState.isTeacher)
-                    IconButton.filled(
+                    IconButton.filledTonal(
                       onPressed: () {
                         if (classId != null) {
                           showDialog(
                             context: context,
-                            builder: (_) => _AddStudentDialog(
-                              classId: classId!,
-                              currentStudentIds: studentIds,
-                            ),
+                            builder: (_) => _AddStudentDialog(classId: classId),
                           );
                         }
                       },
-                      style: IconButton.styleFrom(
-                        backgroundColor: SchoolColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
                       icon: const Icon(
                         Icons.person_add_alt_1_rounded,
                         size: 20,
@@ -247,22 +255,18 @@ class _MembersHeader extends StatelessWidget {
                     ),
                   if (appState.isLeadTeacher) ...[
                     const SizedBox(width: 8),
-                    IconButton.filled(
+                    IconButton.filledTonal(
                       onPressed: () {
                         if (classId != null) {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
-                                  ClassSettingsScreen(classId: classId!),
+                                  ClassSettingsScreen(classId: classId),
                             ),
                           );
                         }
                       },
-                      style: IconButton.styleFrom(
-                        backgroundColor: SchoolColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
                       icon: const Icon(
                         Icons.settings_suggest_rounded,
                         size: 20,
@@ -752,80 +756,51 @@ class _InfoRow extends StatelessWidget {
 }
 
 class _AddStudentDialog extends StatefulWidget {
-  const _AddStudentDialog({
-    required this.classId,
-    required this.currentStudentIds,
-  });
+  const _AddStudentDialog({required this.classId});
   final String classId;
-  final List<String> currentStudentIds;
 
   @override
   State<_AddStudentDialog> createState() => _AddStudentDialogState();
 }
 
 class _AddStudentDialogState extends State<_AddStudentDialog> {
-  final _searchController = TextEditingController();
-  List<Map<String, dynamic>> _allAvailableStudents = [];
-  List<Map<String, dynamic>> _displayedStudents = [];
-  bool _loading = true;
+  final _emailController = TextEditingController();
+  List<Map<String, dynamic>> _results = [];
+  bool _searching = false;
+  bool _adding = false;
   String? _error;
 
   @override
-  void initState() {
-    super.initState();
-    _loadStudents();
-  }
-
-  @override
   void dispose() {
-    _searchController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadStudents() async {
+  Future<void> _search() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) return;
+    setState(() {
+      _searching = true;
+      _error = null;
+    });
     try {
       final repo = AppScope.of(context).repository;
-      final allStudents = await repo.getAllStudents();
-      final availableStudents = allStudents.where((student) {
-        final id = student['id'] as String?;
-        return id != null && !widget.currentStudentIds.contains(id);
-      }).toList();
-
-      if (mounted) {
-        setState(() {
-          _allAvailableStudents = availableStudents;
-          _displayedStudents = availableStudents;
-          _loading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = 'Ошибка загрузки: $e';
-          _loading = false;
-        });
-      }
-    }
-  }
-
-  void _filterStudents(String query) {
-    if (query.trim().isEmpty) {
+      final results = await repo.searchUserByEmail(email);
       setState(() {
-        _displayedStudents = _allAvailableStudents;
+        _results = results;
+        if (results.isEmpty) {
+          _error = AppLocalizations.of(context)!.userNotFound;
+        }
       });
-      return;
+    } catch (e) {
+      setState(() => _error = 'Ошибка поиска: $e');
+    } finally {
+      setState(() => _searching = false);
     }
-    final q = query.trim().toLowerCase();
-    setState(() {
-      _displayedStudents = _allAvailableStudents.where((s) {
-        final name = s['name']?.toString().toLowerCase() ?? '';
-        final email = s['email']?.toString().toLowerCase() ?? '';
-        return name.contains(q) || email.contains(q);
-      }).toList();
-    });
   }
 
   Future<void> _addUser(String userId) async {
+    setState(() => _adding = true);
     try {
       final repo = AppScope.of(context).repository;
       await repo.addStudentToClass(classId: widget.classId, userId: userId);
@@ -836,81 +811,188 @@ class _AddStudentDialogState extends State<_AddStudentDialog> {
           context,
         ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
       }
+    } finally {
+      if (mounted) setState(() => _adding = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(AppLocalizations.of(context)!.addAStudent),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 400),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.search,
-                hintText: AppLocalizations.of(context)!.studentName,
-                prefixIcon: const Icon(Icons.search),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context)!;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 440),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.addAStudent,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
               ),
-              onChanged: _filterStudents,
-            ),
-            const SizedBox(height: 16),
-            if (_loading)
-              const Center(child: CircularProgressIndicator())
-            else if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: SchoolColors.red, fontSize: 13),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _emailController,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: l10n.studentEmail,
+                  hintText: 'student@email.com',
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  suffixIcon: _searching
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : IconButton(
+                          icon: const Icon(Icons.search_rounded),
+                          onPressed: _search,
+                        ),
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
-              )
-            else if (_displayedStudents.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Text(AppLocalizations.of(context)!.userNotFound),
-              )
-            else
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _displayedStudents.length,
-                  itemBuilder: (context, index) {
-                    final user = _displayedStudents[index];
-                    return ListTile(
-                      leading: SchoolAvatar(
-                        name: user['name']?.toString() ?? '',
-                        radius: 18,
-                        userId: user['id'] as String?,
+                onSubmitted: (_) => _search(),
+              ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(
+                      color: SchoolColors.red,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              if (_results.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                ..._results.map((user) {
+                  final userName = user['name']?.toString() ?? l10n.unknownKey9;
+                  final userEmail = user['email']?.toString() ?? '';
+                  final uId = user['id'] as String;
+
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? SchoolColors.darkSurface
+                          : SchoolColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark
+                            ? SchoolColors.darkBorder
+                            : SchoolColors.border,
                       ),
-                      title: Text(
-                        user['name']?.toString() ??
-                            AppLocalizations.of(context)!.unknownKey9,
-                      ),
-                      subtitle: Text(
-                        user['email']?.toString() ?? '',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      trailing: FilledButton(
-                        onPressed: () => _addUser(user['id'] as String),
-                        child: Text(AppLocalizations.of(context)!.add),
-                      ),
-                    );
-                  },
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            SchoolAvatar(
+                              name: userName,
+                              radius: 22,
+                              userId: uId,
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    userName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    userEmail,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: SchoolColors.muted.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 44,
+                          child: _adding
+                              ? const Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : FilledButton(
+                                  onPressed: () => _addUser(uId),
+                                  style: FilledButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    l10n.add,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(l10n.cancel),
                 ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context)!.unknownKey),
-        ),
-      ],
     );
   }
 }

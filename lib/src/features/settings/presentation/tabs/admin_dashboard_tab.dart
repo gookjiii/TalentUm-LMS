@@ -1,8 +1,10 @@
 import 'package:school_world/l10n/app_localizations.dart';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:intl/intl.dart';
@@ -26,6 +28,13 @@ class AdminDashboardTab extends ConsumerStatefulWidget {
 }
 
 class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
+  static const String _defaultProxyUrl =
+      'https://vercel-talentum-backend.vercel.app';
+  static const double _defaultGoogleLimit = 15.0 * 1024 * 1024 * 1024; // 15 GB
+  static const double _defaultCloudinaryLimit =
+      25.0 * 1024 * 1024 * 1024; // 25 GB
+  static const double _defaultFirebaseLimit = 5.0 * 1024 * 1024 * 1024; // 5 GB
+
   bool _loadingStorage = false;
   bool _cleaningStorage = false;
   Map<String, dynamic>? _storageStats;
@@ -36,64 +45,330 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
     _fetchStorageStats();
   }
 
+  String _resolveProxyUrl() {
+    const configured = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
+    if (configured.isNotEmpty) return configured;
+    return _defaultProxyUrl;
+  }
+
   Future<void> _fetchStorageStats() async {
     setState(() => _loadingStorage = true);
+    Map<String, dynamic>? resultStats;
+
     try {
-      const apiSecret = String.fromEnvironment('APP_API_SECRET');
-      const proxyUrl = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
-      if (proxyUrl.isNotEmpty && apiSecret.isNotEmpty) {
-        final dio = Dio();
+      final proxyUrl = _resolveProxyUrl();
+      final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+
+      if (idToken != null && idToken.isNotEmpty) {
+        final dio = Dio(
+          BaseOptions(
+            connectTimeout: const Duration(seconds: 10),
+            receiveTimeout: const Duration(seconds: 10),
+          ),
+        );
         final res = await dio.get(
           '$proxyUrl/api/admin/storage_stats',
-          options: Options(headers: {'Authorization': 'Bearer $apiSecret'}),
+          options: Options(headers: {'Authorization': 'Bearer $idToken'}),
         );
-        if (mounted) {
-          setState(() {
-            _storageStats = res.data as Map<String, dynamic>;
-          });
+
+        if (res.data != null) {
+          Map<String, dynamic> parsedData;
+          if (res.data is Map) {
+            parsedData = Map<String, dynamic>.from(res.data as Map);
+          } else if (res.data is String) {
+            parsedData = jsonDecode(res.data as String) as Map<String, dynamic>;
+          } else {
+            parsedData = {};
+          }
+
+          resultStats = parsedData;
         }
       }
     } catch (e) {
-      debugPrint('Error fetching storage stats: $e');
-    } finally {
-      if (mounted) setState(() => _loadingStorage = false);
+      debugPrint('Backend storage_stats failed, using Firestore fallback: $e');
     }
+
+    // If backend was unreachable or returned empty/zero stats, perform client-side Firestore scan
+    try {
+      final firestoreFallback = await _fetchFirestoreStorageStatsFallback();
+      if (resultStats == null) {
+        resultStats = firestoreFallback;
+      } else {
+        final driveMap =
+            resultStats['googleDrive'] is Map
+                ? resultStats['googleDrive'] as Map
+                : null;
+        final cloudMap =
+            resultStats['cloudinary'] is Map
+                ? resultStats['cloudinary'] as Map
+                : null;
+        final fbMap =
+            resultStats['firebase'] is Map
+                ? resultStats['firebase'] as Map
+                : null;
+
+        final rawDriveLimit = _toByteCount(driveMap?['limit']);
+        final rawCloudLimit = _toByteCount(cloudMap?['limit']);
+        final rawFbLimit = _toByteCount(fbMap?['limit']);
+
+        final backendDrive = _toByteCount(driveMap?['used']);
+        final backendCloud = _toByteCount(cloudMap?['used']);
+        final backendFb = _toByteCount(fbMap?['used']);
+
+        final fsDrive = _toByteCount(firestoreFallback['googleDrive']?['used']);
+        final fsCloud = _toByteCount(firestoreFallback['cloudinary']?['used']);
+        final fsFb = _toByteCount(firestoreFallback['firebase']?['used']);
+
+        resultStats = {
+          'googleDrive': {
+            'limit': rawDriveLimit > 0 ? rawDriveLimit : _defaultGoogleLimit,
+            'used': math.max(backendDrive, fsDrive),
+          },
+          'cloudinary': {
+            'limit': rawCloudLimit > 0 ? rawCloudLimit : _defaultCloudinaryLimit,
+            'used': math.max(backendCloud, fsCloud),
+          },
+          'firebase': {
+            'limit': rawFbLimit > 0 ? rawFbLimit : _defaultFirebaseLimit,
+            'used': math.max(backendFb, fsFb),
+          },
+        };
+      }
+    } catch (fsErr) {
+      debugPrint('Firestore storage fallback error: $fsErr');
+    }
+
+    if (mounted) {
+      setState(() {
+        _storageStats =
+            resultStats ??
+            {
+              'googleDrive': {'limit': _defaultGoogleLimit, 'used': 0.0},
+              'cloudinary': {'limit': _defaultCloudinaryLimit, 'used': 0.0},
+              'firebase': {'limit': _defaultFirebaseLimit, 'used': 0.0},
+            };
+        _loadingStorage = false;
+      });
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchFirestoreStorageStatsFallback() async {
+    final firestore = FirebaseFirestore.instance;
+    double driveBytes = 0;
+    double cloudinaryBytes = 0;
+    double firebaseBytes = 0;
+
+    void categorize(String url, double sz) {
+      if (sz <= 0) return;
+      final lower = url.toLowerCase();
+      if (lower.contains('cloudinary.com') ||
+          lower.contains('res.cloudinary.com')) {
+        cloudinaryBytes += sz;
+      } else if (lower.contains('firebasestorage.googleapis.com') ||
+          lower.contains('storage.googleapis.com')) {
+        firebaseBytes += sz;
+      } else if (lower.contains('drive.google.com') ||
+          lower.contains('docs.google.com') ||
+          lower.contains('/api/library/')) {
+        driveBytes += sz;
+      } else {
+        // Default unrecognized large files to drive
+        driveBytes += sz;
+      }
+    }
+
+    // 1. drive_uploads collection
+    try {
+      final snap = await firestore.collection('drive_uploads').get();
+      for (final doc in snap.docs) {
+        final d = doc.data();
+        final sz = _toByteCount(d['size'] ?? d['fileSize']);
+        final url =
+            (d['webContentLink'] ?? d['url'] ?? d['webViewLink'] ?? '')
+                .toString();
+        categorize(url, sz);
+      }
+    } catch (_) {}
+
+    // 2. library_materials and legacy library collections
+    for (final col in ['library_materials', 'library']) {
+      try {
+        final snap = await firestore.collection(col).get();
+        for (final doc in snap.docs) {
+          final d = doc.data();
+          final sz = _toByteCount(d['fileSize'] ?? d['size']);
+          final url = (d['fileUrl'] ?? d['url'] ?? '').toString();
+          categorize(url, sz);
+        }
+      } catch (_) {}
+    }
+
+    // 3. posts
+    try {
+      final snap = await firestore.collection('posts').get();
+      for (final doc in snap.docs) {
+        final d = doc.data();
+        final atts = d['attachments'];
+        if (atts is Iterable) {
+          for (final att in atts) {
+            if (att is Map) {
+              final sz = _toByteCount(att['size'] ?? att['fileSize']);
+              final url = (att['url'] ?? att['uri'] ?? '').toString();
+              categorize(url, sz);
+            }
+          }
+        }
+        final singleUrl = (d['url'] ?? '').toString();
+        if (singleUrl.isNotEmpty) {
+          categorize(singleUrl, _toByteCount(d['size'] ?? d['fileSize']));
+        }
+      }
+    } catch (_) {}
+
+    // 4. webinars
+    try {
+      final snap = await firestore.collection('webinars').get();
+      for (final doc in snap.docs) {
+        final d = doc.data();
+        final sz = _toByteCount(d['fileSize'] ?? d['size']);
+        final url = (d['videoUrl'] ?? d['url'] ?? '').toString();
+        categorize(url, sz);
+      }
+    } catch (_) {}
+
+    // 5. assignments (teacher attachments)
+    try {
+      final snap = await firestore.collection('assignments').get();
+      for (final doc in snap.docs) {
+        final d = doc.data();
+        final atts = d['attachments'];
+        if (atts is Iterable) {
+          for (final att in atts) {
+            if (att is Map) {
+              final sz = _toByteCount(att['size'] ?? att['fileSize']);
+              final url = (att['url'] ?? att['uri'] ?? '').toString();
+              categorize(url, sz);
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 6. submissions (student homework attachments)
+    try {
+      final snap = await firestore.collection('submissions').get();
+      for (final doc in snap.docs) {
+        final d = doc.data();
+        final atts = d['attachments'];
+        if (atts is Iterable) {
+          for (final att in atts) {
+            if (att is Map) {
+              final sz = _toByteCount(att['size'] ?? att['fileSize']);
+              final url = (att['url'] ?? att['uri'] ?? '').toString();
+              categorize(url, sz);
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 7. Users avatars
+    try {
+      final snap = await firestore.collection('users').get();
+      for (final doc in snap.docs) {
+        final d = doc.data();
+        final avatarUrl = (d['avatarUrl'] ?? d['photoURL'] ?? d['avatar'] ?? '').toString();
+        if (avatarUrl.isNotEmpty) {
+          categorize(avatarUrl, 100 * 1024); // Estimate ~100KB per avatar if size unspecified
+        }
+      }
+    } catch (_) {}
+
+    // 8. Messages attachments
+    try {
+      final snap = await firestore.collectionGroup('messages').get();
+      for (final doc in snap.docs) {
+        final d = doc.data();
+        final meta = d['metadata'];
+        final metaSize = meta is Map ? meta['fileSize'] : null;
+        final sz = _toByteCount(d['size'] ?? d['fileSize'] ?? metaSize);
+        final url = (d['uri'] ?? d['source'] ?? d['url'] ?? '').toString();
+        categorize(url, sz);
+      }
+    } catch (_) {
+      try {
+        final roomsSnap = await firestore.collection('rooms').limit(20).get();
+        for (final roomDoc in roomsSnap.docs) {
+          final msgSnap =
+              await firestore
+                  .collection('rooms')
+                  .doc(roomDoc.id)
+                  .collection('messages')
+                  .limit(100)
+                  .get();
+          for (final doc in msgSnap.docs) {
+            final d = doc.data();
+            final meta = d['metadata'];
+            final metaSize = meta is Map ? meta['fileSize'] : null;
+            final sz = _toByteCount(d['size'] ?? d['fileSize'] ?? metaSize);
+            final url = (d['uri'] ?? d['source'] ?? d['url'] ?? '').toString();
+            categorize(url, sz);
+          }
+        }
+      } catch (_) {}
+    }
+
+    return {
+      'googleDrive': {'limit': _defaultGoogleLimit, 'used': driveBytes},
+      'cloudinary': {'limit': _defaultCloudinaryLimit, 'used': cloudinaryBytes},
+      'firebase': {'limit': _defaultFirebaseLimit, 'used': firebaseBytes},
+    };
   }
 
   Future<void> _cleanStorage() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.confirmCleanup),
-        content: Text(AppLocalizations.of(context)!.confirmCleanupDesc),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(AppLocalizations.of(context)!.cancel),
+      builder:
+          (context) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.confirmCleanup),
+            content: Text(AppLocalizations.of(context)!.confirmCleanupDesc),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(AppLocalizations.of(context)!.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(AppLocalizations.of(context)!.startCleanup),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(AppLocalizations.of(context)!.startCleanup),
-          ),
-        ],
-      ),
     );
 
     if (confirm != true) return;
 
     setState(() => _cleaningStorage = true);
     try {
-      const apiSecret = String.fromEnvironment('APP_API_SECRET');
-      const proxyUrl = String.fromEnvironment('GOOGLE_DRIVE_PROXY_URL');
-      if (proxyUrl.isNotEmpty && apiSecret.isNotEmpty) {
+      final proxyUrl = _resolveProxyUrl();
+      final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+      if (idToken != null && idToken.isNotEmpty) {
         final dio = Dio();
         final res = await dio.post(
           '$proxyUrl/api/admin/storage_cleanup',
           data: {'dryRun': false},
-          options: Options(headers: {'Authorization': 'Bearer $apiSecret'}),
+          options: Options(headers: {'Authorization': 'Bearer $idToken'}),
         );
 
-        final summary = (res.data as Map<String, dynamic>)['summary'];
+        Map<String, dynamic> parsedData;
+        if (res.data is Map) {
+          parsedData = Map<String, dynamic>.from(res.data as Map);
+        } else if (res.data is String) {
+          parsedData = jsonDecode(res.data as String) as Map<String, dynamic>;
+        } else {
+          parsedData = {};
+        }
+
+        final summary = parsedData['summary'] ?? {};
         final totalFiles = summary['totalFilesDeleted'] ?? 0;
         final totalBytesSaved = summary['totalBytesSaved'] ?? 0;
         final formattedSize = _formatBytes(totalBytesSaved);
@@ -129,18 +404,35 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
   }
 
   String _formatBytes(dynamic bytes, [int decimals = 2]) {
-    if (bytes == null) return '0 B';
-    final intBytes = bytes is int
-        ? bytes
-        : (int.tryParse(bytes.toString()) ?? 0);
+    final intBytes = _toByteCount(bytes);
     if (intBytes <= 0) return '0 B';
     const constSuffixes = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-    final i = (math.log(intBytes) / math.log(1024)).floor();
+    final i = (math.log(intBytes) / math.log(1024)).floor().clamp(
+      0,
+      constSuffixes.length - 1,
+    );
     return '${(intBytes / math.pow(1024, i)).toStringAsFixed(decimals)} ${constSuffixes[i]}';
+  }
+
+  double _toByteCount(dynamic value) {
+    if (value is num && value.isFinite && value > 0) return value.toDouble();
+    if (value is String) {
+      final parsed = num.tryParse(value.replaceAll(',', '').trim());
+      if (parsed != null && parsed.isFinite && parsed > 0) {
+        return parsed.toDouble();
+      }
+    }
+    return 0;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) {
+      // The admin tab may be mounted while the locale delegate is being
+      // attached. Do not let the transient null localization crash the shell.
+      return const Center(child: CircularProgressIndicator());
+    }
     final repo = AppScope.of(context).repository;
     final now = DateTime.now();
     final startOfToday = DateTime(now.year, now.month, now.day);
@@ -153,10 +445,8 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             PageHeader(
-              title: AppLocalizations.of(context)!.adminPanel,
-              subtitle: AppLocalizations.of(
-                context,
-              )!.systemManagementAndActivityAnalytics,
+              title: l10n.adminPanel,
+              subtitle: l10n.systemManagementAndActivityAnalytics,
               padding: EdgeInsets.all(isMobile ? 16 : 32),
             ),
             Padding(
@@ -277,6 +567,10 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                   const SizedBox(height: 32),
                   SectionHeader(
                     title: AppLocalizations.of(context)!.cloudStorageManagement,
+                    action: _loadingStorage
+                        ? null
+                        : AppLocalizations.of(context)!.retry,
+                    onActionTap: _loadingStorage ? null : _fetchStorageStats,
                   ),
                   const SizedBox(height: 16),
                   _buildStorageManagementCard(),
@@ -389,62 +683,6 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                       );
                     },
                   ),
-
-                  const SizedBox(height: 32),
-                  SectionHeader(
-                    title: AppLocalizations.of(context)!.dangerZone,
-                  ),
-                  const SizedBox(height: 16),
-                  SchoolCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppLocalizations.of(context)!.resetSystem,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: SchoolColors.red,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          AppLocalizations.of(context)!.resetSystemDesc,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: SchoolColors.muted,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: _cleaningStorage ? null : _resetSystem,
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              foregroundColor: SchoolColors.red,
-                              side: const BorderSide(color: SchoolColors.red),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            icon: const Icon(
-                              Icons.delete_forever_rounded,
-                              size: 18,
-                            ),
-                            label: Text(
-                              AppLocalizations.of(context)!.resetSystem,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 48),
                 ],
               ),
             ),
@@ -452,55 +690,6 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
         ),
       ),
     );
-  }
-
-  Future<void> _resetSystem() async {
-    final l10n = AppLocalizations.of(context)!;
-    final repo = AppScope.of(context).repository;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.confirmReset),
-        content: Text(l10n.resetSystemDesc),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: SchoolColors.red),
-            child: Text(l10n.resetSystem),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    setState(() => _cleaningStorage = true);
-    try {
-      await repo.resetSystem();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.resetSuccess),
-            backgroundColor: SchoolColors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.resetFailed(e.toString())),
-            backgroundColor: SchoolColors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _cleaningStorage = false);
-    }
   }
 
   String _formatTime(dynamic ts) {
@@ -538,18 +727,34 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
       );
     }
 
-    final googleUsed = _storageStats?['googleDrive']?['used'] ?? 0;
+    final googleUsed = _toByteCount(_storageStats?['googleDrive']?['used']);
+    final rawGoogleLimit = _toByteCount(
+      _storageStats?['googleDrive']?['limit'],
+    );
     final googleLimit =
-        _storageStats?['googleDrive']?['limit'] ?? 1; // avoid divide by zero
-    final googlePct = (googleUsed / googleLimit).clamp(0.0, 1.0);
+        rawGoogleLimit > 0 ? rawGoogleLimit : _defaultGoogleLimit;
+    final googlePct =
+        googleLimit > 0 ? (googleUsed / googleLimit).clamp(0.0, 1.0) : 0.0;
 
-    final cloudinaryUsed = _storageStats?['cloudinary']?['used'] ?? 0;
-    final cloudinaryLimit = _storageStats?['cloudinary']?['limit'] ?? 1;
-    final cloudinaryPct = (cloudinaryUsed / cloudinaryLimit).clamp(0.0, 1.0);
+    final cloudinaryUsed = _toByteCount(_storageStats?['cloudinary']?['used']);
+    final rawCloudinaryLimit = _toByteCount(
+      _storageStats?['cloudinary']?['limit'],
+    );
+    final cloudinaryLimit =
+        rawCloudinaryLimit > 0 ? rawCloudinaryLimit : _defaultCloudinaryLimit;
+    final cloudinaryPct =
+        cloudinaryLimit > 0
+            ? (cloudinaryUsed / cloudinaryLimit).clamp(0.0, 1.0)
+            : 0.0;
 
-    final firebaseUsed = _storageStats?['firebase']?['used'] ?? 0;
-    final firebaseLimit = _storageStats?['firebase']?['limit'] ?? 1;
-    final firebasePct = (firebaseUsed / firebaseLimit).clamp(0.0, 1.0);
+    final firebaseUsed = _toByteCount(_storageStats?['firebase']?['used']);
+    final rawFirebaseLimit = _toByteCount(_storageStats?['firebase']?['limit']);
+    final firebaseLimit =
+        rawFirebaseLimit > 0 ? rawFirebaseLimit : _defaultFirebaseLimit;
+    final firebasePct =
+        firebaseLimit > 0
+            ? (firebaseUsed / firebaseLimit).clamp(0.0, 1.0)
+            : 0.0;
 
     return SchoolCard(
       child: Column(
@@ -603,16 +808,17 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              icon: _cleaningStorage
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(Icons.cleaning_services_rounded, size: 18),
+              icon:
+                  _cleaningStorage
+                      ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Icon(Icons.cleaning_services_rounded, size: 18),
               label: Text(
                 _cleaningStorage
                     ? AppLocalizations.of(context)!.cleaningUpStorage
@@ -638,6 +844,8 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
     required Color color,
     required IconData icon,
   }) {
+    final limitBytes = _toByteCount(limit);
+    final limitStr = limitBytes > 0 ? _formatBytes(limitBytes) : '—';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -675,7 +883,7 @@ class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
               ),
             ),
             Text(
-              '${_formatBytes(used)} / ${_formatBytes(limit)}',
+              '${_formatBytes(used)} / $limitStr',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 13,

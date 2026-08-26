@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 
@@ -5,7 +6,11 @@ import '../../main.dart';
 import '../theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({this.initialInviteCode, super.key});
+
+  /// Supplied for authenticated users opening a class invite link. The user
+  /// still sees the class preview and explicitly confirms joining.
+  final String? initialInviteCode;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -25,6 +30,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   void initState() {
     super.initState();
+    final initialInviteCode = widget.initialInviteCode?.trim();
+    if (initialInviteCode?.isNotEmpty == true) {
+      _codeController.text = initialInviteCode!;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _previewClass());
+    }
     _previewAnimCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 420),
@@ -357,13 +367,20 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         _showMessage(AppLocalizations.of(context)!.pleaseLoginFirst);
         return;
       }
-      await repo.createProfile(
-        role: 'teacher',
-        name:
-            user.displayName ??
-            user.email?.split('@').first ??
-            AppLocalizations.of(context)!.teacher,
-      );
+      final name =
+          user.displayName ??
+          user.email?.split('@').first ??
+          AppLocalizations.of(context)!.teacher;
+      await repo.createProfile(role: 'student', name: name, email: user.email);
+      await repo.firestore.collection('teacher_requests').doc(user.uid).set({
+        'userId': user.uid,
+        'name': name,
+        'email': user.email ?? '',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      if (mounted) {
+        _showMessage(AppLocalizations.of(context)!.requestSent);
+      }
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }

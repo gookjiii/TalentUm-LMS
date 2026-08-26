@@ -62,6 +62,21 @@ mixin SchoolRepositoryFeed {
     await firestore.collection('posts').doc(postId).update({'pinned': pinned});
   }
 
+  Future<void> updatePost({
+    required String postId,
+    required String content,
+    bool? pinned,
+    List<Map<String, dynamic>>? attachments,
+  }) async {
+    final updates = <String, dynamic>{
+      'content': content,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+    if (pinned != null) updates['pinned'] = pinned;
+    if (attachments != null) updates['attachments'] = attachments;
+    await firestore.collection('posts').doc(postId).update(updates);
+  }
+
   Future<void> deletePost(String postId) async {
     final docRef = firestore.collection('posts').doc(postId);
     final doc = await docRef.get();
@@ -73,7 +88,8 @@ mixin SchoolRepositoryFeed {
             final url = att['url'] as String?;
             if (url != null && url.isNotEmpty) {
               try {
-                await CloudinaryStorageProvider.chatProvider().deleteFile(url);
+                await CloudinaryStorageProvider.chatAttachmentProvider()
+                    .deleteFile(url);
               } catch (e) {
                 // Ignore file deletion errors to allow doc deletion
               }

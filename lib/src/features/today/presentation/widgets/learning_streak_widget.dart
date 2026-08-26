@@ -15,8 +15,7 @@ class LearningStreakWidget extends StatelessWidget {
     final uid = repo.uid;
 
     return CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      streamFactory: () =>
-          repo.firestore.collection('users').doc(uid).snapshots(),
+      streamFactory: () => repo.firestore.collection('users').doc(uid).snapshots(),
       keys: [uid],
       builder: (context, snapshot) {
         final data = snapshot.data?.data();
@@ -39,9 +38,7 @@ class LearningStreakWidget extends StatelessWidget {
           decoration: BoxDecoration(
             color: SchoolColors.orange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: SchoolColors.orange.withValues(alpha: 0.2),
-            ),
+            border: Border.all(color: SchoolColors.orange.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -139,9 +136,7 @@ class _FireIconState extends State<_FireIcon> {
       curve: Curves.easeInOut,
       child: Icon(
         Icons.local_fire_department_rounded,
-        color: widget.active
-            ? SchoolColors.orange
-            : Colors.grey.withValues(alpha: 0.5),
+        color: widget.active ? SchoolColors.orange : Colors.grey.withValues(alpha: 0.5),
         size: 40,
       ),
     );

@@ -26,7 +26,7 @@ class TeacherAccessCard extends StatelessWidget {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         final l10n = AppLocalizations.of(context)!;
 
-        return GlassCard(
+        return SchoolCard(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

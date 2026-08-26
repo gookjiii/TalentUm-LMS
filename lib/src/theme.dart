@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class SchoolColors {
-  // ── Core Brand / Platform Blues ───────────────────────────────
-  static const primary = Color(0xFF7C3AED); // Vibrant Amethyst
-  static const primaryLight = Color(0xFFA78BFA);
-  static const primaryDark = Color(0xFF5B21B6);
-  static const primaryContainer = Color(0xFFF3E8FF);
-  static const onPrimaryContainer = Color(0xFF3B0764);
+  // ── Primary (Restrained Amethyst) ─────────────────────────────────
+  static const primary = Color(0xFF6B4CA6); // Restrained Amethyst
+  static const primaryLight = Color(0xFF8A6BBF);
+  static const primaryDark = Color(0xFF4A2B84);
+  static const primaryContainer = Color(0xFFF3EFFF);
+  static const onPrimaryContainer = Color(0xFF2A0A64);
 
-  // ── Secondary / Teal ──────────────────────────────────────────
-  static const secondary = Color(0xFF0F766E);
-  static const secondaryLight = Color(0xFF5EEAD4);
-  static const secondaryContainer = Color(0xFFCCFBF1);
-  static const onSecondaryContainer = Color(0xFF115E59);
+  // ── Secondary (Slate Neutrals) ────────────────────────────────────────
+  static const secondary = Color(0xFF475569); // Slate 600
+  static const secondaryLight = Color(0xFF64748B); // Slate 500
+  static const secondaryContainer = Color(0xFFF1F5F9); // Slate 100
+  static const onSecondaryContainer = Color(0xFF0F172A); // Slate 900
 
-  // ── Accent / Amber ────────────────────────────────────────────
-  static const accent = Color(0xFFD97706);
-  static const accentContainer = Color(0xFFFFEDD5);
+  // ── Accent / Emerald ───────────────────────────────────────
+  static const accent = Color(0xFF059669);
+  static const accentContainer = Color(0xFFD1FAE5);
 
   // ── Semantic Colors (WCAG AA Compliant on White) ──────────────
   static const green = Color(0xFF059669); // Emerald 600
@@ -27,46 +27,36 @@ class SchoolColors {
   static const orange = Color(0xFFB45309); // Amber 700
   static const orangeContainer = Color(0xFFFFEDD5);
   static const yellow = Color(0xFFFBBC04);
-  static const purple = Color(0xFF475569);
-  static const purpleContainer = Color(0xFFF1F5F9);
+  static const purple = Color(0xFF6B4CA6); // Primary Restrained Amethyst
+  static const purpleContainer = Color(0xFFF3EFFF);
+
 
   // ── Light-mode Neutrals ───────────────────────────────────────
-  static const bg = Color(0xFFF9FAFC);
+  static const bg = Color(0xFFF8FAFC); // Slate 50
   static const surface = Color(0xFFFFFFFF);
-  static const surfaceElevated = Color(0xFFF8FAFC);
-  static const text = Color(0xFF0F172A);
-  static const textSecondary = Color(0xFF475569);
-  static const muted = Color(0xFF64748B);
-  static const border = Color(0xFFECEBF3);
-  static const borderFocus = Color(0xFF93C5FD);
+  static const surfaceElevated = Color(0xFFF1F5F9); // Slate 100
+  static const text = Color(0xFF0F172A); // Ink Navy text
+  static const textSecondary = Color(0xFF334155); // Slate 700
+  static const muted = Color(0xFF64748B); // Slate 500
+  static const border = Color(0xFFE2E8F0); // Slate 200
+  static const borderFocus = Color(0xFFCBD5E1); // Slate 300
 
   // ── Dark-mode Palette ─────────────────────────────────────────
-  static const darkBg = Color(0xFF080C1E);
-  static const darkSurface = Color(0xFF11152D);
-  static const darkSurfaceElevated = Color(0xFF1B1E3B);
-  static const darkBorder = Color(0xFF222648);
-  static const darkText = Color(0xFFF8FAFC);
-  static const darkTextSecondary = Color(0xFF94A3B8);
-  static const darkMuted = Color(0xFF64748B);
-
-  // ── Workspace / Shell ─────────────────────────────────────────
-  static const shellBackground = Color(0xFFF3F7FC);
-  static const shellBackgroundAlt = Color(0xFFEAF1FA);
-  static const shellStroke = Color(0xFFD7E3F2);
-  static const shellPanel = Color(0xFFFDFEFF);
-  static const shellPanelTint = Color(0xFFF6FAFE);
-  static const shellGlow = Color(0x662563EB);
+  static const darkBg = Color(0xFF0F172A); // Slate 900
+  static const darkSurface = Color(0xFF1E293B); // Slate 800
+  static const darkSurfaceElevated = Color(0xFF334155); // Slate 700
+  static const darkBorder = Color(0xFF334155); // Slate 700
+  static const darkText = Color(0xFFF8FAFC); // Slate 50
+  static const darkTextSecondary = Color(0xFFCBD5E1); // Slate 300
+  static const darkMuted = Color(0xFF94A3B8); // Slate 400
 
   // ── Sidebar ───────────────────────────────────────────────────
-  static const sidebarBg = Color(0xFF0F172A);
-  static const sidebarBorder = Color(0xFF1E293B);
-  static const sidebarSurface = Color(0xFF162033);
-  static const sidebarSurfaceHover = Color(0xFF1C2940);
-  static const sidebarActive = Color(0xFF1E3A5F);
+  static const sidebarBg = Color(0xFF0F172A); // Ink Navy
+  static const sidebarBorder = Color(0xFF1E293B); // Slate 800
 
   // ── Chat Bubbles ──────────────────────────────────────────────
-  static const chatBubbleStart = Color(0xFF2563EB);
-  static const chatBubbleEnd = Color(0xFF0EA5E9);
+  static const chatBubbleStart = Color(0xFF6B4CA6);
+  static const chatBubbleEnd = Color(0xFF8A6BBF);
   static const chatBubbleOther = Color(0xFFFFFFFF);
   static const chatBubbleOtherBorder = Color(0xFFE2E8F0);
 
@@ -83,18 +73,18 @@ class SchoolColors {
   static const replyDeletedBorder = Color(0xFFCBD5E1);
   static const replyDeletedText = Color(0xFF64748B);
 
-  // ── Glow / Shadow helpers (Enhanced) ─────────────────────────
+  // ── Soft Shadows (Neutral) ─────────────────────────
   static BoxShadow cardShadow = BoxShadow(
-    color: const Color(0xFF2563EB).withValues(alpha: 0.06),
-    blurRadius: 26,
-    offset: const Offset(0, 10),
+    color: Colors.black.withValues(alpha: 0.05), // Softer, more modern shadow
+    blurRadius: 24,
+    offset: const Offset(0, 8),
     spreadRadius: 0,
   );
 
   static BoxShadow cardShadowHover = BoxShadow(
-    color: const Color(0xFF2563EB).withValues(alpha: 0.12),
-    blurRadius: 34,
-    offset: const Offset(0, 14),
+    color: Colors.black.withValues(alpha: 0.08), // Neutral stronger on hover
+    blurRadius: 24,
+    offset: const Offset(0, 6),
     spreadRadius: 0,
   );
 
@@ -110,7 +100,7 @@ class SchoolColors {
     blurRadius: 10,
     offset: const Offset(0, 4),
   );
-
+  
   static BoxShadow elevation2 = BoxShadow(
     color: Colors.black.withValues(alpha: 0.08),
     blurRadius: 20,
@@ -156,60 +146,46 @@ class AppRadius {
 
 class AppTextStyle {
   const AppTextStyle._();
+  static const labelSm = TextStyle(fontSize: 11, fontWeight: FontWeight.w600);
+  static const labelMd = TextStyle(fontSize: 13, fontWeight: FontWeight.w600);
+  static const bodyMd = TextStyle(fontSize: 15, fontWeight: FontWeight.w500);
+  static const titleSm = TextStyle(fontSize: 18, fontWeight: FontWeight.w700);
+  static const titleLg = TextStyle(fontSize: 24, fontWeight: FontWeight.w800);
+  
+  static TextStyle display(BuildContext context) => GoogleFonts.nunito(
+        fontSize: 28,
+        fontWeight: FontWeight.w900,
+        letterSpacing: -0.3,
+        color: Theme.of(context).colorScheme.onSurface,
+      );
 
-  static final labelSm = GoogleFonts.inter(
-    fontSize: 11,
-    fontWeight: FontWeight.w600,
-    letterSpacing: 0.1,
-  );
-
-  static final labelMd = GoogleFonts.inter(
-    fontSize: 13,
-    fontWeight: FontWeight.w600,
-    letterSpacing: 0.1,
-  );
-
-  static final bodyMd = GoogleFonts.inter(
-    fontSize: 15,
-    fontWeight: FontWeight.w500,
-    height: 1.5,
-  );
-
-  static final titleSm = GoogleFonts.inter(
-    fontSize: 18,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.2,
-  );
-
-  static final titleLg = GoogleFonts.inter(
-    fontSize: 24,
-    fontWeight: FontWeight.w800,
-    letterSpacing: -0.4,
-  );
-
-  static TextStyle display(BuildContext context) => GoogleFonts.inter(
-    fontSize: 32,
-    fontWeight: FontWeight.w900,
-    letterSpacing: -0.8,
-    height: 1.1,
-    color: Theme.of(context).colorScheme.onSurface,
-  );
-
-  static TextStyle mono({
-    double fontSize = 13,
-    FontWeight fontWeight = FontWeight.w500,
-    Color? color,
-  }) => GoogleFonts.jetBrainsMono(
-    fontSize: fontSize,
-    fontWeight: fontWeight,
-    color: color,
-  );
+  static TextStyle mono({double fontSize = 13, FontWeight fontWeight = FontWeight.w500, Color? color}) => 
+      GoogleFonts.jetBrainsMono(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────
 // LIGHT THEME
 // ─────────────────────────────────────────────────────────────────
-ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
+class NoAnimationPageTransitionsBuilder extends PageTransitionsBuilder {
+  const NoAnimationPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return child;
+  }
+}
+
+ThemeData schoolTheme({Color primaryColor = SchoolColors.primary, bool isPerformance = false}) {
   final scheme = ColorScheme.fromSeed(
     seedColor: primaryColor,
     brightness: Brightness.light,
@@ -241,12 +217,25 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
+    splashFactory: isPerformance ? NoSplash.splashFactory : null,
+    pageTransitionsTheme: isPerformance
+        ? const PageTransitionsTheme(
+            builders: <TargetPlatform, PageTransitionsBuilder>{
+              TargetPlatform.android: NoAnimationPageTransitionsBuilder(),
+              TargetPlatform.iOS: NoAnimationPageTransitionsBuilder(),
+              TargetPlatform.linux: NoAnimationPageTransitionsBuilder(),
+              TargetPlatform.macOS: NoAnimationPageTransitionsBuilder(),
+              TargetPlatform.windows: NoAnimationPageTransitionsBuilder(),
+            },
+          )
+        : null,
     scaffoldBackgroundColor: SchoolColors.bg,
-    textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme).apply(
-      fontFamilyFallback: fallbackFonts,
-      bodyColor: SchoolColors.text,
-      displayColor: SchoolColors.text,
-    ),
+    textTheme: GoogleFonts.nunitoTextTheme(ThemeData.light().textTheme)
+        .apply(
+          fontFamilyFallback: fallbackFonts,
+          bodyColor: SchoolColors.text,
+          displayColor: SchoolColors.text,
+        ),
 
     appBarTheme: AppBarTheme(
       backgroundColor: SchoolColors.bg,
@@ -256,7 +245,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       shadowColor: SchoolColors.border,
       surfaceTintColor: Colors.transparent,
       centerTitle: false,
-      titleTextStyle: GoogleFonts.inter(
+      titleTextStyle: GoogleFonts.nunito(
         color: SchoolColors.text,
         fontSize: 22,
         fontWeight: FontWeight.w900,
@@ -286,15 +275,18 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
         ),
         minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 52)),
         textStyle: WidgetStatePropertyAll(
-          GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+          GoogleFonts.nunito(
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+          ),
         ),
         elevation: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.pressed)) return 0;
           if (states.contains(WidgetState.hovered)) return 4;
           return 0;
         }),
-        shadowColor: WidgetStatePropertyAll(
-          SchoolColors.primary.withValues(alpha: 0.35),
+        shadowColor: const WidgetStatePropertyAll(
+          Colors.transparent,
         ),
       ),
     ),
@@ -304,14 +296,20 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         side: const BorderSide(color: SchoolColors.border, width: 1.5),
-        textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+        textStyle: GoogleFonts.nunito(
+          fontWeight: FontWeight.w700,
+          fontSize: 16,
+        ),
         minimumSize: const Size(double.infinity, 52),
       ),
     ),
 
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
+        textStyle: GoogleFonts.nunito(
+          fontWeight: FontWeight.w700,
+          fontSize: 15,
+        ),
       ),
     ),
 
@@ -339,15 +337,15 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: SchoolColors.red, width: 1.5),
       ),
-      labelStyle: GoogleFonts.inter(
+      labelStyle: GoogleFonts.nunito(
         color: SchoolColors.muted,
         fontWeight: FontWeight.w600,
       ),
-      hintStyle: GoogleFonts.inter(
+      hintStyle: GoogleFonts.nunito(
         color: SchoolColors.muted,
         fontWeight: FontWeight.w400,
       ),
-      floatingLabelStyle: GoogleFonts.inter(
+      floatingLabelStyle: GoogleFonts.nunito(
         color: primaryColor,
         fontWeight: FontWeight.w700,
         fontSize: 13,
@@ -367,13 +365,13 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return GoogleFonts.inter(
+          return GoogleFonts.nunito(
             color: primaryColor,
             fontWeight: FontWeight.w700,
             fontSize: 11,
           );
         }
-        return GoogleFonts.inter(
+        return GoogleFonts.nunito(
           color: SchoolColors.muted,
           fontWeight: FontWeight.w600,
           fontSize: 11,
@@ -389,7 +387,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
 
     snackBarTheme: SnackBarThemeData(
       backgroundColor: SchoolColors.text,
-      contentTextStyle: GoogleFonts.inter(
+      contentTextStyle: GoogleFonts.nunito(
         color: Colors.white,
         fontSize: 14,
         fontWeight: FontWeight.w500,
@@ -402,7 +400,10 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
     chipTheme: ChipThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 12),
+      labelStyle: GoogleFonts.nunito(
+        fontWeight: FontWeight.w600,
+        fontSize: 12,
+      ),
     ),
 
     dividerTheme: const DividerThemeData(
@@ -417,12 +418,12 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       elevation: 24,
       shadowColor: Colors.black12,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      titleTextStyle: GoogleFonts.inter(
+      titleTextStyle: GoogleFonts.nunito(
         color: SchoolColors.text,
         fontSize: 20,
         fontWeight: FontWeight.w800,
       ),
-      contentTextStyle: GoogleFonts.inter(
+      contentTextStyle: GoogleFonts.nunito(
         color: SchoolColors.textSecondary,
         fontSize: 14,
         height: 1.55,
@@ -432,7 +433,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
     listTileTheme: ListTileThemeData(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       iconColor: SchoolColors.muted,
-      titleTextStyle: GoogleFonts.inter(
+      titleTextStyle: GoogleFonts.nunito(
         fontSize: 15,
         fontWeight: FontWeight.w600,
         color: SchoolColors.text,
@@ -445,7 +446,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       elevation: 8,
       shadowColor: Colors.black.withValues(alpha: 0.12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      textStyle: GoogleFonts.inter(
+      textStyle: GoogleFonts.nunito(
         fontSize: 14,
         fontWeight: FontWeight.w500,
         color: SchoolColors.text,
@@ -470,8 +471,11 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
       dividerColor: Colors.transparent,
       labelColor: primaryColor,
       unselectedLabelColor: SchoolColors.muted,
-      labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
-      unselectedLabelStyle: GoogleFonts.inter(
+      labelStyle: GoogleFonts.nunito(
+        fontWeight: FontWeight.w700,
+        fontSize: 13,
+      ),
+      unselectedLabelStyle: GoogleFonts.nunito(
         fontWeight: FontWeight.w600,
         fontSize: 13,
       ),
@@ -486,7 +490,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
         color: SchoolColors.text,
         borderRadius: BorderRadius.circular(10),
       ),
-      textStyle: GoogleFonts.inter(
+      textStyle: GoogleFonts.nunito(
         color: Colors.white,
         fontSize: 12,
         fontWeight: FontWeight.w500,
@@ -510,14 +514,14 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
         EdgeInsets.symmetric(horizontal: 12),
       ),
       textStyle: WidgetStatePropertyAll(
-        GoogleFonts.inter(
+        GoogleFonts.nunito(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: SchoolColors.text,
         ),
       ),
       hintStyle: WidgetStatePropertyAll(
-        GoogleFonts.inter(
+        GoogleFonts.nunito(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: SchoolColors.muted,
@@ -530,7 +534,7 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary}) {
 // ─────────────────────────────────────────────────────────────────
 // DARK THEME
 // ─────────────────────────────────────────────────────────────────
-ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
+ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight, bool isPerformance = false}) {
   final scheme = ColorScheme.fromSeed(
     seedColor: primaryColor,
     brightness: Brightness.dark,
@@ -561,8 +565,8 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
     'EmojiOne',
   ];
 
-  final textTheme = GoogleFonts.interTextTheme(ThemeData.dark().textTheme)
-      .apply(
+  final textTheme =
+      GoogleFonts.nunitoTextTheme(ThemeData.dark().textTheme).apply(
         fontFamilyFallback: fallbackFonts,
         bodyColor: SchoolColors.darkText,
         displayColor: SchoolColors.darkText,
@@ -571,6 +575,18 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
+    splashFactory: isPerformance ? NoSplash.splashFactory : null,
+    pageTransitionsTheme: isPerformance
+        ? const PageTransitionsTheme(
+            builders: <TargetPlatform, PageTransitionsBuilder>{
+              TargetPlatform.android: NoAnimationPageTransitionsBuilder(),
+              TargetPlatform.iOS: NoAnimationPageTransitionsBuilder(),
+              TargetPlatform.linux: NoAnimationPageTransitionsBuilder(),
+              TargetPlatform.macOS: NoAnimationPageTransitionsBuilder(),
+              TargetPlatform.windows: NoAnimationPageTransitionsBuilder(),
+            },
+          )
+        : null,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: SchoolColors.darkBg,
     textTheme: textTheme,
@@ -583,7 +599,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       shadowColor: SchoolColors.darkBorder,
       surfaceTintColor: Colors.transparent,
       centerTitle: false,
-      titleTextStyle: GoogleFonts.inter(
+      titleTextStyle: GoogleFonts.nunito(
         color: SchoolColors.darkText,
         fontSize: 22,
         fontWeight: FontWeight.w900,
@@ -613,15 +629,18 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
         ),
         minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 52)),
         textStyle: WidgetStatePropertyAll(
-          GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+          GoogleFonts.nunito(
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+          ),
         ),
         elevation: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.pressed)) return 0;
           if (states.contains(WidgetState.hovered)) return 4;
           return 0;
         }),
-        shadowColor: WidgetStatePropertyAll(
-          SchoolColors.primaryLight.withValues(alpha: 0.3),
+        shadowColor: const WidgetStatePropertyAll(
+          Colors.transparent,
         ),
       ),
     ),
@@ -631,14 +650,20 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         side: const BorderSide(color: SchoolColors.darkBorder, width: 1.5),
-        textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+        textStyle: GoogleFonts.nunito(
+          fontWeight: FontWeight.w700,
+          fontSize: 16,
+        ),
         minimumSize: const Size(double.infinity, 52),
       ),
     ),
 
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 15),
+        textStyle: GoogleFonts.nunito(
+          fontWeight: FontWeight.w700,
+          fontSize: 15,
+        ),
       ),
     ),
 
@@ -666,15 +691,15 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: Color(0xFFFF6B6B), width: 1.5),
       ),
-      labelStyle: GoogleFonts.inter(
+      labelStyle: GoogleFonts.nunito(
         color: SchoolColors.darkMuted,
         fontWeight: FontWeight.w600,
       ),
-      hintStyle: GoogleFonts.inter(
+      hintStyle: GoogleFonts.nunito(
         color: const Color(0xFF475569),
         fontWeight: FontWeight.w400,
       ),
-      floatingLabelStyle: GoogleFonts.inter(
+      floatingLabelStyle: GoogleFonts.nunito(
         color: primaryColor,
         fontWeight: FontWeight.w700,
         fontSize: 13,
@@ -694,13 +719,13 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return GoogleFonts.inter(
+          return GoogleFonts.nunito(
             color: primaryColor,
             fontWeight: FontWeight.w700,
             fontSize: 11,
           );
         }
-        return GoogleFonts.inter(
+        return GoogleFonts.nunito(
           color: SchoolColors.darkMuted,
           fontWeight: FontWeight.w600,
           fontSize: 11,
@@ -708,7 +733,10 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return IconThemeData(color: primaryColor, size: 22);
+          return IconThemeData(
+            color: primaryColor,
+            size: 22,
+          );
         }
         return const IconThemeData(color: SchoolColors.darkMuted, size: 22);
       }),
@@ -716,7 +744,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
 
     snackBarTheme: SnackBarThemeData(
       backgroundColor: const Color(0xFFF1F5F9),
-      contentTextStyle: GoogleFonts.inter(
+      contentTextStyle: GoogleFonts.nunito(
         color: SchoolColors.text,
         fontSize: 14,
         fontWeight: FontWeight.w500,
@@ -738,12 +766,12 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       elevation: 24,
       shadowColor: Colors.black38,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      titleTextStyle: GoogleFonts.inter(
+      titleTextStyle: GoogleFonts.nunito(
         color: SchoolColors.darkText,
         fontSize: 20,
         fontWeight: FontWeight.w800,
       ),
-      contentTextStyle: GoogleFonts.inter(
+      contentTextStyle: GoogleFonts.nunito(
         color: SchoolColors.darkTextSecondary,
         fontSize: 14,
         height: 1.55,
@@ -754,7 +782,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       iconColor: SchoolColors.darkMuted,
       titleTextStyle: GoogleFonts.inter(
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: FontWeight.w600,
         color: SchoolColors.darkText,
       ),
@@ -791,7 +819,10 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight}) {
       dividerColor: Colors.transparent,
       labelColor: primaryColor,
       unselectedLabelColor: SchoolColors.darkMuted,
-      labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
+      labelStyle: GoogleFonts.inter(
+        fontWeight: FontWeight.w700,
+        fontSize: 13,
+      ),
       unselectedLabelStyle: GoogleFonts.inter(
         fontWeight: FontWeight.w600,
         fontSize: 13,

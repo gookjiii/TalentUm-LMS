@@ -47,6 +47,9 @@ class _CachedStreamBuilderState<T> extends State<CachedStreamBuilder<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<T>(stream: _stream, builder: widget.builder);
+    return StreamBuilder<T>(
+      stream: _stream,
+      builder: widget.builder,
+    );
   }
 }

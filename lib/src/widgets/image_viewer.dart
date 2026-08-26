@@ -2,7 +2,6 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:school_world/main.dart';
 import 'package:school_world/src/features/chat/presentation/screens/photo_editor_screen.dart';
 import '../utils/string_extensions.dart';
 
@@ -24,7 +23,7 @@ class _ImageViewerState extends State<ImageViewer> {
 
     try {
       final response = await Dio().get<List<int>>(
-        widget.imageUrl,
+        widget.imageUrl.toFullResolutionImageUrl(),
         options: Options(responseType: ResponseType.bytes),
       );
       final bytes = Uint8List.fromList(response.data!);
@@ -62,7 +61,7 @@ class _ImageViewerState extends State<ImageViewer> {
 
   @override
   Widget build(BuildContext context) {
-    final performanceMode = AppScope.of(context).appState.performanceMode;
+    final imageUrl = widget.imageUrl.toFullResolutionImageUrl();
     return Dialog(
       backgroundColor: Colors.black,
       insetPadding: EdgeInsets.zero,
@@ -73,9 +72,10 @@ class _ImageViewerState extends State<ImageViewer> {
               minScale: 0.5,
               maxScale: 4.0,
               child: CachedNetworkImage(
-                imageUrl: widget.imageUrl.toDirectImageUrl
-                    .toOptimizedCloudinary(performance: performanceMode),
+                imageUrl: imageUrl,
                 fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+                fadeInDuration: Duration.zero,
                 placeholder: (context, url) => const Center(
                   child: CircularProgressIndicator(
                     color: Colors.white,

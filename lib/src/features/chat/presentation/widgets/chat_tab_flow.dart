@@ -46,6 +46,17 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
   @override
   void didUpdateWidget(covariant ChatTabFlow oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.desktopMode != widget.desktopMode) {
+      if (!widget.desktopMode) {
+        widget.appState.setChatRoomMobileOpen(_view == ChatView.chatRoom);
+      } else {
+        widget.appState.setChatRoomMobileOpen(false);
+      }
+    }
+    if (oldWidget.initialClassId != widget.initialClassId && widget.initialClassId != null) {
+      _syncInitialView();
+      return;
+    }
     final selectedClassStillExists =
         _selectedClassId != null &&
         (_selectedClassId == 'teachers_lounge' ||
@@ -57,29 +68,35 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
   }
 
   void _syncInitialView() {
-    final restoredClassId = widget.appState.lastChatClassId;
-    final restoredClassExists =
-        restoredClassId != null &&
-        (restoredClassId == 'teachers_lounge' ||
-            widget.classes.any((c) => c['id'] == restoredClassId));
-
-    if (restoredClassExists) {
-      _selectedClassId = restoredClassId;
-      _view = ChatView.chatRoom;
-    } else if (widget.appState.isTeacher) {
-      _selectedClassId = null;
-      _view = ChatView.classList;
-    } else if (widget.classes.isEmpty) {
-      _selectedClassId = null;
-      _view = ChatView.classList;
-    } else if (widget.classes.length == 1) {
-      _selectedClassId = widget.classes.first['id'] as String?;
+    if (widget.initialClassId != null &&
+        (widget.initialClassId == 'teachers_lounge' ||
+            widget.classes.any((c) => c['id'] == widget.initialClassId))) {
+      _selectedClassId = widget.initialClassId;
       _view = ChatView.chatRoom;
     } else {
-      _selectedClassId = null;
-      _view = ChatView.classList;
-    }
+      final restoredClassId = widget.appState.lastChatClassId;
+      final restoredClassExists =
+          restoredClassId != null &&
+          (restoredClassId == 'teachers_lounge' ||
+              widget.classes.any((c) => c['id'] == restoredClassId));
 
+      if (restoredClassExists) {
+        _selectedClassId = restoredClassId;
+        _view = ChatView.chatRoom;
+      } else if (widget.appState.isTeacher) {
+        _selectedClassId = null;
+        _view = ChatView.classList;
+      } else if (widget.classes.isEmpty) {
+        _selectedClassId = null;
+        _view = ChatView.classList;
+      } else if (widget.classes.length == 1) {
+        _selectedClassId = widget.classes.first['id'] as String?;
+        _view = ChatView.chatRoom;
+      } else {
+        _selectedClassId = null;
+        _view = ChatView.classList;
+      }
+    }
     if (!widget.desktopMode) {
       widget.appState.setChatRoomMobileOpen(_view == ChatView.chatRoom);
     }
@@ -149,9 +166,13 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
   }
 
   Widget _buildDesktopChat() {
-    if (widget.classes.isEmpty) return const SizedBox.shrink();
-    final classId =
-        widget.initialClassId ?? widget.classes.first['id'] as String;
+    if (widget.classes.isEmpty && !widget.appState.isTeacher) {
+      return const SizedBox.shrink();
+    }
+    final classId = widget.initialClassId ??
+        (widget.classes.isNotEmpty
+            ? widget.classes.first['id'] as String
+            : 'teachers_lounge');
     final classData = widget.classes.firstWhere(
       (c) => c['id'] == classId,
       orElse: () => {
@@ -474,23 +495,60 @@ class _ClassCardState extends ConsumerState<_ClassCard> {
             ),
             child: Row(
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: ClassBadge(
-                    name: c['name'] ?? '?',
-                    color: color,
-                    size: 52,
-                    radius: 14,
-                  ),
+                      child: ClassBadge(
+                        name: c['name'] ?? '?',
+                        color: color,
+                        size: 52,
+                        radius: 14,
+                      ),
+                    ),
+                    Builder(
+                      builder: (context) {
+                        final cardRoomId = (c['chatRoomId'] as String?) ?? (c['id'] as String? ?? '');
+                        final hasUnread = cardRoomId.isNotEmpty
+                            ? (ref.watch(roomUnreadProvider(cardRoomId)).value ?? false)
+                            : false;
+                        if (!hasUnread) return const SizedBox.shrink();
+                        return Positioned(
+                          top: -2,
+                          right: -2,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: SchoolColors.red,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                                width: 2.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: SchoolColors.red.withValues(alpha: 0.9),
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -509,7 +567,40 @@ class _ClassCardState extends ConsumerState<_ClassCard> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          Builder(
+                            builder: (context) {
+                              final cardRoomId = (c['chatRoomId'] as String?) ?? (c['id'] as String? ?? '');
+                              final hasUnread = ref.watch(roomUnreadProvider(cardRoomId)).value ?? false;
+                              if (!hasUnread) return const SizedBox.shrink();
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: SchoolColors.red,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: SchoolColors.red.withValues(alpha: 0.6),
+                                        blurRadius: 6,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Text(
+                                    'NEW',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 4),
                           _buildParticipantCount(c, color),
                         ],
                       ),

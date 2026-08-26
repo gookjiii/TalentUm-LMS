@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/main.dart';
+import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 
@@ -47,132 +49,140 @@ class TeacherSidebar extends StatelessWidget {
     final repo = AppScope.of(context).repository;
     final l10n = AppLocalizations.of(context)!;
 
-    return RepaintBoundary(
-      child: Container(
-        width: extended ? 292 : 88,
-        margin: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-        decoration: BoxDecoration(
-          color: SchoolColors.sidebarBg,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: SchoolColors.sidebarBorder),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.24),
-              blurRadius: 36,
-              offset: const Offset(0, 16),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // Header
-            _TeacherSidebarHeader(extended: extended, l10n: l10n),
-            _SidebarDivider(),
-            const SizedBox(height: 6),
-            // Nav items + classes in scrollable area
-            Expanded(
-              child: ListView(
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                children: [
-                  for (int i = 0; i < navigationItems.length; i++)
-                    _TeacherNavItem(
-                      icon: selectedIndex == i
-                          ? navigationItems[i].selectedIcon
-                          : navigationItems[i].icon,
-                      label: navigationItems[i].label,
-                      selected: selectedIndex == i,
-                      extended: extended,
-                      onTap: () => onSelect(i),
-                    ),
-                  if (extended) ...[
-                    if (AppScope.of(context).appState.isLeadTeacher)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-                        child: _AdminModeToggle(),
-                      ),
+    return Container(
+      width: extended ? 280 : 80,
+      margin: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: SchoolColors.sidebarBg,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 30,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header
+          _TeacherSidebarHeader(extended: extended, l10n: l10n),
+          _SidebarDivider(),
+          const SizedBox(height: 6),
+          // Nav items + classes in scrollable area
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              children: [
+                for (int i = 0; i < navigationItems.length; i++)
+                  _TeacherNavItem(
+                    icon: selectedIndex == i
+                        ? navigationItems[i].selectedIcon
+                        : navigationItems[i].icon,
+                    label: navigationItems[i].label,
+                    selected: selectedIndex == i,
+                    extended: extended,
+                    onTap: () => onSelect(i),
+                  ),
+                if (extended) ...[
+                  if (AppScope.of(context).appState.isLeadTeacher)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 24, 14, 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              l10n.myClasses.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white.withValues(alpha: 0.42),
-                              ),
+                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+                      child: _AdminModeToggle(),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 24, 14, 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.myClasses.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white.withValues(alpha: 0.3),
+                              letterSpacing: 1.2,
                             ),
                           ),
-                          if (AppScope.of(context).appState.isLeadTeacher)
-                            SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: IconButton(
-                                onPressed: onCreateClass,
-                                icon: const Icon(Icons.add_rounded, size: 14),
-                                color: Colors.white.withValues(alpha: 0.4),
-                                padding: EdgeInsets.zero,
-                                tooltip: l10n.createClass,
-                                style: IconButton.styleFrom(
-                                  backgroundColor: SchoolColors.sidebarSurface,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
+                        ),
+                        if (AppScope.of(context).appState.isLeadTeacher)
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: IconButton(
+                              onPressed: onCreateClass,
+                              icon: const Icon(Icons.add_rounded, size: 14),
+                              color: Colors.white.withValues(alpha: 0.4),
+                              padding: EdgeInsets.zero,
+                              tooltip: l10n.createClass,
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.white.withValues(
+                                  alpha: 0.08,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
                               ),
                             ),
-                        ],
+                          ),
+                      ],
+                    ),
+                  ),
+                  for (final c in classes)
+                    _TeacherClassItem(
+                      classId: c['id'] as String? ?? '',
+                      chatRoomId: c['chatRoomId'] as String?,
+                      name: c['name'] ?? '',
+                      subject: c['subject'] ?? '',
+                      avatarUrl: c['avatarUrl'] as String?,
+                      color: parseHexColor(c['coverColor']),
+                      selected: c['id'] == activeClassId && selectedIndex != 0,
+                      isLead: AppScope.of(context).appState.isLeadTeacher,
+                      onTap: () {
+                        onSelectClass(c['id'] as String);
+                        if (selectedIndex == 0) onSelect(1);
+                      },
+                      onDeleteChat: () =>
+                          onDeleteChat(c['id'] as String, c['name'] ?? ''),
+                      onDeleteClass: () =>
+                          onDeleteClass(c['id'] as String, c['name'] ?? ''),
+                      onCopyLink: () => onCopyGuestLink(
+                        c['id'] as String,
+                        c['inviteCode'] ?? '',
+                      ),
+                      onChangeAvatar: () => pickAndUpdateClassAvatar(
+                        context,
+                        classId: c['id'] as String,
+                        className: c['name'] ?? '',
+                      ),
+                      onEditName: () => showEditClassNameDialog(
+                        context,
+                        classId: c['id'] as String,
+                        currentName: c['name'] ?? '',
                       ),
                     ),
-                    for (final c in classes)
-                      _TeacherClassItem(
-                        name: c['name'] ?? '',
-                        subject: c['subject'] ?? '',
-                        avatarUrl: c['avatarUrl'] as String?,
-                        color: parseHexColor(c['coverColor']),
-                        selected:
-                            c['id'] == activeClassId && selectedIndex != 0,
-                        isLead: AppScope.of(context).appState.isLeadTeacher,
-                        onTap: () {
-                          onSelectClass(c['id'] as String);
-                          if (selectedIndex == 0) onSelect(1);
-                        },
-                        onDeleteChat: () =>
-                            onDeleteChat(c['id'] as String, c['name'] ?? ''),
-                        onDeleteClass: () =>
-                            onDeleteClass(c['id'] as String, c['name'] ?? ''),
-                        onCopyLink: () => onCopyGuestLink(
-                          c['id'] as String,
-                          c['inviteCode'] ?? '',
-                        ),
-                      ),
-                  ],
                 ],
-              ),
+              ],
             ),
-            if (!extended && AppScope.of(context).appState.isLeadTeacher) ...[
-              IconButton(
-                onPressed: onCreateClass,
-                icon: Icon(
-                  Icons.add_circle_outline_rounded,
-                  color: Colors.white.withValues(alpha: 0.45),
-                ),
-                tooltip: l10n.createClass,
+          ),
+          if (!extended && AppScope.of(context).appState.isLeadTeacher) ...[
+            IconButton(
+              onPressed: onCreateClass,
+              icon: Icon(
+                Icons.add_circle_outline_rounded,
+                color: Colors.white.withValues(alpha: 0.45),
               ),
-              const SizedBox(height: 4),
-            ],
-            _SidebarDivider(),
-            _TeacherUserCard(
-              extended: extended,
-              onSignOut: repo.signOut,
-              onTap: onProfileTap,
+              tooltip: l10n.createClass,
             ),
+            const SizedBox(height: 4),
           ],
-        ),
+          _SidebarDivider(),
+          _TeacherUserCard(
+            extended: extended,
+            onSignOut: repo.signOut,
+            onTap: onProfileTap,
+          ),
+        ],
       ),
     );
   }
@@ -185,7 +195,11 @@ class TeacherSidebar extends StatelessWidget {
 class _SidebarDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Divider(height: 1, thickness: 1, color: SchoolColors.sidebarBorder);
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: Colors.white.withValues(alpha: 0.06),
+    );
   }
 }
 
@@ -197,23 +211,13 @@ class _TeacherSidebarHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      padding: const EdgeInsets.all(18),
       child: Row(
         mainAxisAlignment: extended
             ? MainAxisAlignment.start
             : MainAxisAlignment.center,
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              color: SchoolColors.sidebarSurface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            ),
-            child: const SchoolLogo(size: 36),
-          ),
+          const SchoolLogo(size: 36),
           if (extended) ...[
             const SizedBox(width: 12),
             Expanded(
@@ -234,29 +238,20 @@ class _TeacherSidebarHeader extends StatelessWidget {
                         appName,
                         style: const TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.2,
                           color: Colors.white,
                         ),
                       );
                     },
                   ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: SchoolColors.sidebarSurface,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      l10n.teacherConsole,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.68),
-                        fontWeight: FontWeight.w700,
-                      ),
+                  Text(
+                    l10n.teacherConsole,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white.withValues(alpha: 0.45),
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ],
@@ -290,24 +285,16 @@ class _TeacherNavItem extends StatefulWidget {
 
 class _TeacherNavItemState extends State<_TeacherNavItem> {
   bool _hovered = false;
-  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     const activeColor = Colors.white;
     final inactiveColor = Colors.white.withValues(alpha: 0.55);
     final bgColor = widget.selected
-        ? SchoolColors.sidebarActive
+        ? Colors.white.withValues(alpha: 0.10)
         : _hovered
-        ? SchoolColors.sidebarSurfaceHover
+        ? Colors.white.withValues(alpha: 0.05)
         : Colors.transparent;
-
-    Matrix4 transform = Matrix4.identity();
-    if (!AppScope.of(context).appState.performanceMode) {
-      if (_pressed) {
-        transform.scale(0.96);
-      }
-    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -318,25 +305,17 @@ class _TeacherNavItemState extends State<_TeacherNavItem> {
           onEnter: (_) => setState(() => _hovered = true),
           onExit: (_) => setState(() => _hovered = false),
           child: GestureDetector(
-            onTapDown: (_) => setState(() => _pressed = true),
-            onTapUp: (_) => setState(() => _pressed = false),
-            onTapCancel: () => setState(() => _pressed = false),
             onTap: widget.onTap,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
-              transform: transform,
-              transformAlignment: Alignment.center,
-              height: 48,
+              height: 46,
               padding: EdgeInsets.symmetric(
                 horizontal: widget.extended ? 14 : 0,
               ),
               decoration: BoxDecoration(
                 color: bgColor,
-                borderRadius: BorderRadius.circular(14),
-                border: widget.selected
-                    ? Border.all(color: Colors.white.withValues(alpha: 0.08))
-                    : null,
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 mainAxisAlignment: widget.extended
@@ -382,6 +361,7 @@ class _TeacherNavItemState extends State<_TeacherNavItem> {
                             ? FontWeight.w700
                             : FontWeight.w500,
                         color: widget.selected ? activeColor : inactiveColor,
+                        fontFamily: 'Plus Jakarta Sans',
                       ),
                       child: Text(widget.label),
                     ),
@@ -396,8 +376,10 @@ class _TeacherNavItemState extends State<_TeacherNavItem> {
   }
 }
 
-class _TeacherClassItem extends StatefulWidget {
+class _TeacherClassItem extends ConsumerStatefulWidget {
   const _TeacherClassItem({
+    this.classId = '',
+    this.chatRoomId,
     required this.name,
     required this.subject,
     required this.color,
@@ -406,32 +388,47 @@ class _TeacherClassItem extends StatefulWidget {
     required this.onDeleteChat,
     required this.onDeleteClass,
     required this.onCopyLink,
+    this.onChangeAvatar,
+    this.onEditName,
     this.avatarUrl,
     required this.isLead,
+    this.isVirtual = false,
   });
 
+  final String classId;
+  final String? chatRoomId;
   final String name, subject;
   final Color color;
   final bool selected;
   final VoidCallback onTap, onDeleteChat, onDeleteClass, onCopyLink;
+  final VoidCallback? onChangeAvatar, onEditName;
   final String? avatarUrl;
   final bool isLead;
+  final bool isVirtual;
 
   @override
-  State<_TeacherClassItem> createState() => _TeacherClassItemState();
+  ConsumerState<_TeacherClassItem> createState() => _TeacherClassItemState();
 }
 
-class _TeacherClassItemState extends State<_TeacherClassItem> {
+class _TeacherClassItemState extends ConsumerState<_TeacherClassItem> {
   bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
     final inactiveColor = Colors.white.withValues(alpha: 0.6);
     final bgColor = widget.selected
-        ? SchoolColors.sidebarActive
+        ? Colors.white.withValues(alpha: 0.09)
         : _hovered
-        ? SchoolColors.sidebarSurfaceHover
+        ? Colors.white.withValues(alpha: 0.04)
         : Colors.transparent;
+
+    final targetRoomId =
+        (widget.chatRoomId != null && widget.chatRoomId!.isNotEmpty)
+        ? widget.chatRoomId!
+        : widget.classId;
+    final hasUnread = targetRoomId.isNotEmpty
+        ? (ref.watch(roomUnreadProvider(targetRoomId)).value ?? false)
+        : false;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -442,25 +439,69 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
           onTap: widget.onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
-            height: 56,
+            height: 54,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
               border: widget.selected
                   ? Border.all(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: widget.color.withValues(alpha: 0.22),
                       width: 1,
                     )
                   : null,
             ),
             child: Row(
               children: [
-                ClassBadge(
-                  name: widget.name,
-                  color: widget.color,
-                  size: 32,
-                  avatarUrl: widget.avatarUrl,
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    if (widget.isVirtual)
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: widget.color.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person_outline_rounded,
+                          size: 18,
+                          color: widget.color,
+                        ),
+                      )
+                    else
+                      ClassBadge(
+                        name: widget.name,
+                        color: widget.color,
+                        size: 32,
+                        avatarUrl: widget.avatarUrl,
+                      ),
+                    if (hasUnread)
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          width: 11,
+                          height: 11,
+                          decoration: BoxDecoration(
+                            color: SchoolColors.red,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFF0F172A),
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: SchoolColors.red.withValues(alpha: 0.9),
+                                blurRadius: 6,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -494,12 +535,14 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
                     ],
                   ),
                 ),
-                if (widget.selected || _hovered)
+                if (!widget.isVirtual)
                   PopupMenuButton<String>(
                     icon: Icon(
                       Icons.more_vert_rounded,
                       size: 16,
-                      color: inactiveColor,
+                      color: (widget.selected || _hovered)
+                          ? inactiveColor
+                          : inactiveColor.withValues(alpha: 0.35),
                     ),
                     color: const Color(0xFF1E293B),
                     shape: RoundedRectangleBorder(
@@ -528,27 +571,67 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
                             ],
                           ),
                         ),
-                        if (widget.isLead) ...[
-                          PopupMenuItem(
-                            value: 'clear',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.chat_bubble_outline_rounded,
-                                  size: 16,
+                        PopupMenuItem(
+                          value: 'edit_name',
+                          child: Row(
+                            children: const [
+                              Icon(
+                                Icons.edit_outlined,
+                                size: 16,
+                                color: Colors.white70,
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'Переименовать класс',
+                                style: TextStyle(
                                   color: Colors.white70,
+                                  fontSize: 13,
                                 ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  l10n.clearChat,
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
+                        ),
+                        PopupMenuItem(
+                          value: 'avatar',
+                          child: Row(
+                            children: const [
+                              Icon(
+                                Icons.photo_camera_outlined,
+                                size: 16,
+                                color: Colors.white70,
+                              ),
+                              SizedBox(width: 10),
+                              Text(
+                                'Аватар класса',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'clear',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.chat_bubble_outline_rounded,
+                                size: 16,
+                                color: Colors.white70,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                l10n.clearChat,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (widget.isLead)
                           PopupMenuItem(
                             value: 'delete',
                             child: Row(
@@ -569,11 +652,12 @@ class _TeacherClassItemState extends State<_TeacherClassItem> {
                               ],
                             ),
                           ),
-                        ],
                       ];
                     },
                     onSelected: (val) {
                       if (val == 'copy') widget.onCopyLink();
+                      if (val == 'edit_name') widget.onEditName?.call();
+                      if (val == 'avatar') widget.onChangeAvatar?.call();
                       if (val == 'clear') widget.onDeleteChat();
                       if (val == 'delete') widget.onDeleteClass();
                     },
@@ -591,48 +675,36 @@ class _AdminModeToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: SchoolColors.accent, // Solid background for high contrast
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: SchoolColors.accent.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        gradient: LinearGradient(
+          colors: [
+            Colors.orange.shade700.withOpacity(0.15),
+            Colors.orange.shade900.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.shade800.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.shield_rounded,
-            color: Colors.white,
-            size: 20,
-          ),
+          Icon(Icons.shield_rounded, color: Colors.orange.shade400, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               AppLocalizations.of(context)!.adminMode,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                letterSpacing: 0.5,
+              style: TextStyle(
+                color: Colors.orange.shade400,
+                fontSize: 10,
                 fontWeight: FontWeight.w900,
+                letterSpacing: 0.5,
               ),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(2),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.check_rounded,
-              color: SchoolColors.accent,
-              size: 14,
-            ),
+          const Icon(
+            Icons.check_circle_rounded,
+            color: SchoolColors.green,
+            size: 14,
           ),
         ],
       ),
@@ -662,10 +734,11 @@ class _TeacherUserCard extends StatelessWidget {
       builder: (context, snapshot) {
         final data = snapshot.data?.data() ?? {};
         final fallbackName = repo.auth.currentUser?.displayName ?? l10n.teacher;
-        final name = (data['name'] as String?)?.isNotEmpty == true
-            ? data['name'] as String
+        final storedName = data['name']?.toString().trim();
+        final name = storedName?.isNotEmpty == true
+            ? storedName ?? fallbackName
             : fallbackName;
-        final avatarUrl = data['avatarUrl'] as String?;
+        final avatarUrl = data['avatarUrl']?.toString();
 
         return Padding(
           padding: EdgeInsets.symmetric(
@@ -678,10 +751,10 @@ class _TeacherUserCard extends StatelessWidget {
             child: Container(
               padding: EdgeInsets.all(extended ? 12 : 4),
               decoration: BoxDecoration(
-                color: SchoolColors.sidebarSurface,
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: Colors.white.withValues(alpha: 0.07),
                   width: 1,
                 ),
               ),

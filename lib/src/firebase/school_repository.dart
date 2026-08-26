@@ -20,8 +20,8 @@ import 'package:school_world/src/firebase/school_repository_presence.dart';
 import 'package:school_world/src/firebase/school_repository_library.dart';
 import 'package:school_world/src/firebase/school_repository_webinars.dart';
 import 'package:school_world/src/firebase/school_repository_journal.dart';
-import 'package:school_world/src/firebase/school_repository_admin.dart';
 import 'safe_firestore.dart';
+
 
 export 'school_repository_schedules.dart';
 export 'school_repository_feed.dart';
@@ -33,7 +33,6 @@ export 'school_repository_presence.dart';
 export 'school_repository_library.dart';
 export 'school_repository_webinars.dart';
 export 'school_repository_journal.dart';
-export 'school_repository_admin.dart';
 
 class SchoolRepository
     with
@@ -46,8 +45,7 @@ class SchoolRepository
         SchoolRepositoryPresence,
         SchoolRepositoryLibrary,
         SchoolRepositoryWebinars,
-        SchoolRepositoryJournal,
-        SchoolRepositoryAdmin {
+        SchoolRepositoryJournal {
   SchoolRepository({
     FirebaseAuth? auth,
     FirebaseFirestore? firestore,
@@ -57,9 +55,7 @@ class SchoolRepository
     GoogleSignIn? googleSignIn,
   }) : auth = auth ?? FirebaseAuth.instance,
        firestore = firestore ?? FirebaseFirestore.instance,
-       functions =
-           functions ??
-           FirebaseFunctions.instanceFor(region: 'asia-northeast1'),
+       functions = functions ?? FirebaseFunctions.instanceFor(region: 'asia-northeast1'),
        storage = storage ?? FirebaseStorage.instance,
        database =
            database ??
@@ -87,33 +83,6 @@ class SchoolRepository
 
   @override
   String? get uid => auth.currentUser?.uid;
-
-  final Map<String, Future<DocumentSnapshot<Map<String, dynamic>>>> _userCache = {};
-
-  Future<DocumentSnapshot<Map<String, dynamic>>> getCachedUser(String id) {
-    if (_userCache.containsKey(id)) {
-      return _userCache[id]!;
-    }
-    final future = firestore.collection('users').doc(id).get();
-    _userCache[id] = future;
-    return future;
-  }
-
-  final Map<String, Future<DocumentSnapshot<Map<String, dynamic>>>> _classCache = {};
-
-  Future<DocumentSnapshot<Map<String, dynamic>>> getCachedClass(String id) {
-    if (_classCache.containsKey(id)) {
-      return _classCache[id]!;
-    }
-    final future = firestore.collection('classes').doc(id).get();
-    _classCache[id] = future;
-    return future;
-  }
-
-  void clearCaches() {
-    _userCache.clear();
-    _classCache.clear();
-  }
 
   @override
   Stream<DocumentSnapshot<Map<String, dynamic>>> userDocStream() {

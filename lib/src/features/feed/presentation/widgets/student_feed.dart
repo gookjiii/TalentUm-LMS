@@ -4,13 +4,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
-import 'package:school_world/src/utils/responsive_utils.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
-import '../../../../screens/settings_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:school_world/src/providers/app_providers.dart';
 
 import './feed_widgets.dart';
 
-class StudentFeed extends StatefulWidget {
+class StudentFeed extends ConsumerStatefulWidget {
   const StudentFeed({
     super.key,
     required this.classId,
@@ -24,50 +24,44 @@ class StudentFeed extends StatefulWidget {
   final VoidCallback? onProfileTap;
 
   @override
-  State<StudentFeed> createState() => _StudentFeedState();
+  ConsumerState<StudentFeed> createState() => _StudentFeedState();
 }
 
-class _StudentFeedState extends State<StudentFeed> {
+class _StudentFeedState extends ConsumerState<StudentFeed> {
   String _searchQuery = '';
   Stream<QuerySnapshot<Map<String, dynamic>>>? _postsStream;
-  bool _initialized = false;
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _cachedPosts = [];
+  String? _activeClassId;
   int _limit = 20;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_initialized) {
-      _initialized = true;
-      _initStream();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant StudentFeed oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.classId != widget.classId) {
+  void _updateStreamIfNeeded(String classId) {
+    if (_activeClassId != classId) {
+      _activeClassId = classId;
       _limit = 20;
-      _initStream();
-    }
-  }
-
-  void _initStream() {
-    final repo = AppScope.of(context).repository;
-    setState(() {
-      _postsStream = widget.classId == 'all'
+      _cachedPosts.clear();
+      final repo = AppScope.of(context).repository;
+      _postsStream = classId == 'all'
           ? repo.firestore
                 .collection('posts')
                 .orderBy('createdAt', descending: true)
                 .limit(_limit)
                 .snapshots()
-          : repo.postsForClass(widget.classId, limit: _limit);
-    });
+          : repo.postsForClass(classId, limit: _limit);
+    }
   }
 
-  void _loadMore() {
+  void _loadMore(int currentCount) {
+    if (currentCount < _limit || _activeClassId == null) return;
     setState(() {
       _limit += 20;
-      _initStream();
+      final repo = AppScope.of(context).repository;
+      _postsStream = _activeClassId == 'all'
+          ? repo.firestore
+                .collection('posts')
+                .orderBy('createdAt', descending: true)
+                .limit(_limit)
+                .snapshots()
+          : repo.postsForClass(_activeClassId!, limit: _limit);
     });
   }
 
@@ -75,24 +69,23 @@ class _StudentFeedState extends State<StudentFeed> {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final name = user?.displayName ?? AppLocalizations.of(context)!.student;
-    final selectedClassName = widget.classId == 'all'
-        ? AppLocalizations.of(context)!.allClasses
-        : widget.classes
-              .firstWhere(
-                (c) => c['id'] == widget.classId,
-                orElse: () => const <String, dynamic>{},
-              )['name']
-              ?.toString();
+    final selectedId = ref.watch(
+      schoolAppStateProvider.select((s) => s.selectedClassId),
+    );
+    final activeClassId = (selectedId != null && selectedId.isNotEmpty)
+        ? selectedId
+        : widget.classId;
+    _updateStreamIfNeeded(activeClassId);
 
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 980),
+        constraints: const BoxConstraints(maxWidth: 800),
         child: SizedBox.expand(
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
               if (scrollInfo.metrics.pixels >=
                   scrollInfo.metrics.maxScrollExtent - 200) {
-                _loadMore();
+                _loadMore(_cachedPosts.length);
               }
               return false;
             },
@@ -100,92 +93,97 @@ class _StudentFeedState extends State<StudentFeed> {
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      context.horizontalPadding,
-                      context.isMobile ? 18 : 12,
-                      context.horizontalPadding,
-                      16,
-                    ),
+                    padding: const EdgeInsets.fromLTRB(24, 56, 24, 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        PageHeader(
-                          padding: EdgeInsets.zero,
-                          title: AppLocalizations.of(context)!.ribbon,
-                          subtitle: AppLocalizations.of(
-                            context,
-                          )!.announcementsFromYourTeachers,
-                          classContext: selectedClassName,
-                          trailing: SchoolAvatar(
-                            name: name,
-                            userId: user?.uid,
-                            radius: 22,
-                            onTap: widget.onProfileTap ??
-                                () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (ctx) => SettingsScreen(
-                                      repository: AppScope.of(ctx).repository,
-                                      appState: AppScope.of(ctx).appState,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    AppLocalizations.of(context)!.ribbon,
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.5,
                                     ),
                                   ),
-                                ),
+                                  Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.announcementsFromYourTeachers,
+                                    style: TextStyle(
+                                      color: SchoolColors.muted.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SchoolAvatar(
+                              name: name,
+                              userId: user?.uid,
+                              radius: 22,
+                              onTap: widget.onProfileTap,
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 24),
+                        TextField(
+                          onChanged: (v) => setState(
+                            () => _searchQuery = v.trim().toLowerCase(),
+                          ),
+                          decoration: InputDecoration(
+                            hintText: AppLocalizations.of(
+                              context,
+                            )!.searchByAdvertisements,
+                            prefixIcon: const Icon(Icons.search_rounded),
+                            filled: true,
+                            fillColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? SchoolColors.darkSurface
+                                : Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        SchoolCard(
-                          padding: EdgeInsets.all(context.isMobile ? 16 : 20),
-                          borderRadius: 22,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        SizedBox(height: 24),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
                             children: [
-
-                              TextField(
-                                onChanged: (v) => setState(
-                                  () => _searchQuery = v.trim().toLowerCase(),
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: AppLocalizations.of(
-                                    context,
-                                  )!.searchByAdvertisements,
-                                  prefixIcon: const Icon(Icons.search_rounded),
-                                  filled: true,
-                                  fillColor:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? SchoolColors.darkSurface
-                                      : SchoolColors.surfaceElevated,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                  ),
-                                ),
+                              _FeedFilterChip(
+                                label: AppLocalizations.of(context)!.allClasses,
+                                active: activeClassId == 'all',
+                                onTap: () {
+                                  ref
+                                      .read(schoolAppStateProvider)
+                                      .selectClass('all');
+                                  widget.onClassSelect('all');
+                                },
                               ),
-                              const SizedBox(height: 16),
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: [
-                                    _FeedFilterChip(
-                                      label: AppLocalizations.of(
-                                        context,
-                                      )!.allClasses,
-                                      active: widget.classId == 'all',
-                                      onTap: () => widget.onClassSelect('all'),
-                                    ),
-                                    ...widget.classes.map(
-                                      (c) => _FeedFilterChip(
-                                        label: c['name']?.toString() ?? '',
-                                        active: c['id'] == widget.classId,
-                                        onTap: () => widget.onClassSelect(
-                                          c['id'] as String,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                              ...widget.classes.map(
+                                (c) => _FeedFilterChip(
+                                  label: c['name']?.toString() ?? '',
+                                  active: c['id'] == activeClassId,
+                                  onTap: () {
+                                    final id = c['id'] as String;
+                                    ref
+                                        .read(schoolAppStateProvider)
+                                        .selectClass(id);
+                                    widget.onClassSelect(id);
+                                  },
                                 ),
                               ),
                             ],
@@ -198,7 +196,15 @@ class _StudentFeedState extends State<StudentFeed> {
                 StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                   stream: _postsStream,
                   builder: (context, snapshot) {
-                    var posts = snapshot.data?.docs ?? [];
+                    if (snapshot.hasData) {
+                      _cachedPosts = snapshot.data!.docs;
+                    }
+                    var posts = snapshot.hasData
+                        ? snapshot.data!.docs
+                        : _cachedPosts;
+                    final isInitialLoading =
+                        snapshot.connectionState == ConnectionState.waiting &&
+                        _cachedPosts.isEmpty;
 
                     if (_searchQuery.isNotEmpty) {
                       posts = posts.where((doc) {
@@ -209,30 +215,35 @@ class _StudentFeedState extends State<StudentFeed> {
                       }).toList();
                     }
 
-                    if (posts.isEmpty &&
-                        snapshot.connectionState != ConnectionState.waiting) {
+                    if (isInitialLoading) {
                       return SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 40),
-                          child: EmptyState(
-                            icon: Icons.notifications_none_rounded,
-                            title: AppLocalizations.of(
-                              context,
-                            )!.thereAreNoAnnouncementsYet,
-                            subtitle: AppLocalizations.of(
-                              context,
-                            )!.announcementsFromYourTeachers,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 24,
                           ),
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ), // Or Shimmer
+                        ),
+                      );
+                    }
+
+                    if (posts.isEmpty) {
+                      return SliverToBoxAdapter(
+                        child: EmptyStateWidget(
+                          icon: Icons.notifications_none_rounded,
+                          title: AppLocalizations.of(
+                            context,
+                          )!.thereAreNoAnnouncementsYet,
+                          subtitle: AppLocalizations.of(
+                            context,
+                          )!.youHaveSeenAllAnnouncements,
                         ),
                       );
                     }
                     return SliverPadding(
-                      padding: EdgeInsets.fromLTRB(
-                        context.horizontalPadding,
-                        8,
-                        context.horizontalPadding,
-                        40 + MediaQuery.paddingOf(context).bottom,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final doc = posts[index];
@@ -248,10 +259,12 @@ class _StudentFeedState extends State<StudentFeed> {
                           if (classData.isEmpty) return const SizedBox.shrink();
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 16),
-                            child: PostCard(
-                              doc: doc,
-                              classData: classData,
-                              canManage: false,
+                            child: RepaintBoundary(
+                              child: PostCard(
+                                doc: doc,
+                                classData: classData,
+                                canManage: false,
+                              ),
                             ),
                           );
                         }, childCount: posts.length),
@@ -280,41 +293,31 @@ class _FeedFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = active
-        ? SchoolColors.primary
-        : SchoolColors.surfaceElevated;
-
     return Semantics(
       button: true,
       selected: active,
       label: 'Фильтр: $label',
       child: Padding(
         padding: const EdgeInsets.only(right: 8),
-        child: Material(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(999),
-          child: InkWell(
-            onTap: onTap,
+        child: ChoiceChip(
+          label: Text(label),
+          selected: active,
+          onSelected: (_) => onTap(),
+          backgroundColor: Colors.white,
+          selectedColor: SchoolColors.primary,
+          labelStyle: TextStyle(
+            color: active ? Colors.white : SchoolColors.muted,
+            fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+            fontSize: 13,
+          ),
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: active ? SchoolColors.primary : SchoolColors.border,
-                ),
-              ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: active ? Colors.white : SchoolColors.textSecondary,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
+            side: BorderSide(
+              color: active ? SchoolColors.primary : SchoolColors.border,
             ),
           ),
+          showCheckmark: false,
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         ),
       ),
     );

@@ -14,7 +14,6 @@ import 'package:flutter/foundation.dart';
 import 'package:school_world/src/widgets/image_viewer.dart';
 import 'package:pdf_manipulator/pdf_manipulator.dart';
 import 'package:school_world/src/services/ilovepdf_service.dart';
-import 'package:school_world/src/utils/responsive_utils.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key, required this.classId});
@@ -26,6 +25,7 @@ class LibraryScreen extends ConsumerStatefulWidget {
 
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   int _limit = 20;
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _cachedMaterials = [];
 
   @override
   void didUpdateWidget(covariant LibraryScreen oldWidget) {
@@ -33,11 +33,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     if (oldWidget.classId != widget.classId) {
       setState(() {
         _limit = 20;
+        _cachedMaterials.clear();
       });
     }
   }
 
-  void _loadMore() {
+  void _loadMore(int currentCount) {
+    if (currentCount < _limit) return;
     setState(() {
       _limit += 20;
     });
@@ -45,19 +47,23 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveClassId =
-        (ref
-                    .watch(
-                      schoolAppStateProvider.select((s) => s.selectedClassId),
-                    )
-                    ?.isNotEmpty ==
-                true
-            ? ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))
-            : null) ??
-        (widget.classId.isNotEmpty ? widget.classId : null);
     final appState = ref.watch(schoolAppStateProvider);
     final repo = ref.watch(repositoryProvider);
     final isTeacher = appState.isTeacher;
+    final visibleClassesAsync = ref.watch(
+      isTeacher ? teacherClassesStreamProvider : studentClassesStreamProvider,
+    );
+    final visibleClasses = visibleClassesAsync.value ?? const [];
+    final visibleIds = visibleClasses.map((c) => c['id']?.toString()).toSet();
+    final storedClassId = appState.selectedClassId;
+    final effectiveClassId =
+        storedClassId != null && visibleIds.contains(storedClassId)
+        ? storedClassId
+        : (widget.classId.isNotEmpty && visibleIds.contains(widget.classId)
+              ? widget.classId
+              : (visibleClasses.isEmpty
+                    ? null
+                    : visibleClasses.first['id']?.toString()));
 
     // Guard: no valid class selected yet
     if (effectiveClassId == null) {
@@ -87,7 +93,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             onNotification: (ScrollNotification scrollInfo) {
               if (scrollInfo.metrics.pixels >=
                   scrollInfo.metrics.maxScrollExtent - 200) {
-                _loadMore();
+                _loadMore(_cachedMaterials.length);
               }
               return false;
             },
@@ -102,19 +108,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             : studentClassesStreamProvider,
                       );
                       final allVisibleClasses = allClassAsync.value ?? [];
-                      final resolvedClassName = className ?? 
-                          allVisibleClasses
-                              .where((c) => c['id'] == effectiveClassId)
-                              .firstOrNull?['name']
-                              ?.toString();
 
                       return PageHeader(
                         title: AppLocalizations.of(context)!.library,
                         subtitle: AppLocalizations.of(
                           context,
                         )!.studyMaterialsAndLecturesWill,
-                        classContext: resolvedClassName,
-                        onClassContextTap: allVisibleClasses.isNotEmpty
+                        classContext: className,
+                        onClassContextTap: allVisibleClasses.length > 1
                             ? () {
                                 showClassSwitcher(
                                   context: context,
@@ -129,15 +130,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               }
                             : null,
                         trailing: isTeacher
-                            ? IconButton.filled(
+                            ? IconButton.filledTonal(
                                 onPressed: () => _showUploadDialog(
                                   context,
                                   ref,
                                   effectiveClassId,
-                                ),
-                                style: IconButton.styleFrom(
-                                  backgroundColor: SchoolColors.primary,
-                                  foregroundColor: Colors.white,
                                 ),
                                 icon: const Icon(Icons.add_rounded),
                                 tooltip: AppLocalizations.of(context)!.add,
@@ -147,11 +144,33 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     },
                   ),
                 ),
-                materialsAsync.when(
-                  data: (docs) {
+                Builder(
+                  builder: (context) {
+                    if (materialsAsync.hasValue) {
+                      _cachedMaterials = materialsAsync.value!;
+                    }
+                    final docs = materialsAsync.hasValue
+                        ? materialsAsync.value!
+                        : _cachedMaterials;
+                    final isInitialLoading =
+                        materialsAsync.isLoading && _cachedMaterials.isEmpty;
+
+                    if (isInitialLoading) {
+                      return const SliverFillRemaining(
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    if (materialsAsync.hasError && docs.isEmpty) {
+                      return SliverFillRemaining(
+                        child: Center(
+                          child: Text('Ошибка: ${materialsAsync.error}'),
+                        ),
+                      );
+                    }
+
                     if (docs.isEmpty) {
                       return SliverFillRemaining(
-                        hasScrollBody: false,
                         child: EmptyState(
                           icon: Icons.library_books_outlined,
                           title: AppLocalizations.of(
@@ -165,7 +184,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     }
 
                     return SliverPadding(
-                      padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final data = docs[index].data();
@@ -185,15 +204,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       ),
                     );
                   },
-                  loading: () => const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                  error: (err, stack) => SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(child: Text('Ошибка: $err')),
-                  ),
                 ),
+                const SliverToBoxAdapter(child: SizedBox(height: 120)),
               ],
             ),
           ),
@@ -632,28 +644,38 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
           'classes/${widget.classId}/library/${DateTime.now().millisecondsSinceEpoch}_${_selectedFile!.name}';
 
       Map<String, dynamic> result;
+      var uploadedSize = _selectedFile!.size;
       if (kIsWeb) {
-        Uint8List finalBytes = _selectedFile!.bytes!;
+        Uint8List? finalBytes = _selectedFile!.bytes;
+        if (finalBytes == null && _selectedFile!.readStream != null) {
+          finalBytes = Uint8List.fromList(
+            await _selectedFile!.readStream!.fold<List<int>>(
+              [],
+              (a, b) => a..addAll(b),
+            ),
+          );
+        }
+        if (finalBytes == null) {
+          throw Exception('Не удалось прочитать данные файла');
+        }
         if (_compressPdf &&
             _selectedFile!.name.toLowerCase().endsWith('.pdf') &&
             _selectedFile!.size > 50 * 1024 * 1024) {
           try {
-            finalBytes = await ILovePdfService().compressPdf(
+            final compressed = await ILovePdfService().compressPdf(
               finalBytes,
               _selectedFile!.name,
             );
+            finalBytes = compressed;
           } catch (e) {
-            debugPrint('Lỗi nén PDF Web: $e');
-            if (mounted) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(e.toString())));
-            }
+            debugPrint('Ошибка сжатия PDF Web (загружаем без сжатия): $e');
           }
         }
+        final uploadBytes = finalBytes!;
+        uploadedSize = uploadBytes.length;
         result = await storage.uploadFileWeb(
           path,
-          finalBytes,
+          uploadBytes,
           onProgress: (p) => setState(() => _uploadProgress = p),
         );
       } else {
@@ -676,6 +698,7 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
             debugPrint('Lỗi nén PDF: $e');
           }
         }
+        uploadedSize = await fileToUpload.length();
 
         result = await storage.uploadFile(
           path,
@@ -692,6 +715,13 @@ class _UploadMaterialDialogState extends ConsumerState<_UploadMaterialDialog> {
         description: _descController.text,
         fileUrl: url,
         fileName: _selectedFile!.name,
+        storageProvider: result['provider'] as String?,
+        storagePath: result['path'] as String?,
+        driveFileId: result['driveFileId'] as String?,
+        fileSize:
+            (result['bytes'] as num?)?.toInt() ??
+            (result['size'] as num?)?.toInt() ??
+            uploadedSize,
       );
 
       if (mounted) Navigator.pop(context);

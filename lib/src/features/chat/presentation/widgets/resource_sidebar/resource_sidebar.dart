@@ -183,94 +183,62 @@ class _ChatResourceSidebarState extends State<ChatResourceSidebar>
     } catch (_) {}
 
     if (isPerformance) {
-      return Container(
-        margin: const EdgeInsets.fromLTRB(8, 16, 16, 16),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: SchoolColors.sidebarBorder),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.24),
-              blurRadius: 36,
-              offset: const Offset(0, 16),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(
-                  color: _classColor.withOpacity(0.4),
-                  width: 2.0,
-                ),
+      return Material(
+        color: isDark
+            ? const Color(0xFF0F172A)
+            : const Color(0xFFF8FAFC),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: _classColor.withOpacity(0.4),
+                width: 2.0,
               ),
             ),
-            child: content,
           ),
+          child: content,
         ),
       );
     }
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(8, 16, 16, 16),
-      decoration: BoxDecoration(
-        color: SchoolColors.sidebarBg,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: SchoolColors.sidebarBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.24),
-            blurRadius: 36,
-            offset: const Offset(0, 16),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ui.ImageFilter.blur(
-            sigmaX: isPerformance ? 0 : 18,
-            sigmaY: isPerformance ? 0 : 18,
-          ),
-          child: Material(
-            color: isDark
-                ? Colors.black.withOpacity(0.4)
-                : Colors.white.withOpacity(0.68),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: _classColor.withOpacity(0.25),
-                    width: 2.0,
-                  ),
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Material(
+          color: isDark
+              ? Colors.black.withOpacity(0.4)
+              : Colors.white.withOpacity(0.68),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(
+                  color: _classColor.withOpacity(0.25),
+                  width: 2.0,
                 ),
               ),
-              child: Stack(
-                children: [
-                  // Soft Aurora radial light in background
-                  Positioned(
-                    top: -100,
-                    right: -100,
-                    child: Container(
-                      width: 250,
-                      height: 250,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            _classColor.withOpacity(0.12),
-                            _classColor.withOpacity(0.0),
-                          ],
-                        ),
+            ),
+            child: Stack(
+              children: [
+                // Soft Aurora radial light in background
+                Positioned(
+                  top: -100,
+                  right: -100,
+                  child: Container(
+                    width: 250,
+                    height: 250,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          _classColor.withOpacity(0.12),
+                          _classColor.withOpacity(0.0),
+                        ],
                       ),
                     ),
                   ),
-                  content,
-                ],
-              ),
+                ),
+                content,
+              ],
             ),
           ),
         ),
@@ -543,8 +511,7 @@ class _MediaGridItemState extends State<_MediaGridItem> {
             ? openExternalUrl(widget.url)
             : showDialog(
                 context: context,
-                builder: (_) =>
-                    ImageViewer(imageUrl: widget.url.toDirectImageUrl),
+                builder: (_) => ImageViewer(imageUrl: widget.url.toDirectImageUrl),
               ),
         child: AnimatedScale(
           scale: _isHovered ? 1.05 : 1.0,
@@ -876,8 +843,7 @@ class _FileCardItemState extends State<_FileCardItem> {
                 if (_isImage && widget.url.isNotEmpty) {
                   showDialog(
                     context: context,
-                    builder: (_) =>
-                        ImageViewer(imageUrl: widget.url.toDirectImageUrl),
+                    builder: (_) => ImageViewer(imageUrl: widget.url.toDirectImageUrl),
                   );
                 } else if (widget.url.isNotEmpty) {
                   openExternalUrl(widget.url);
@@ -930,9 +896,7 @@ class _FileCardItemState extends State<_FileCardItem> {
                                 ),
                                 SizedBox(width: 6),
                                 Text(
-                                  _isImage
-                                      ? AppLocalizations.of(context)!.view
-                                      : AppLocalizations.of(context)!.open,
+                                  _isImage ? AppLocalizations.of(context)!.view : AppLocalizations.of(context)!.open,
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: fileColor,
@@ -1239,8 +1203,10 @@ class _MembersTabViewState extends State<_MembersTabView> {
     }
 
     final data = roomSnap.data()!;
-    _classId = data['classId'] as String? ?? '';
-    List<String> userIds = [];
+    final metadata = data['metadata'];
+    final metaClassId = metadata is Map ? metadata['classId'] as String? : null;
+    _classId = data['classId'] as String? ?? metaClassId ?? '';
+    List<String> userIds = List<String>.from(data['userIds'] ?? []);
     List<String> adminIds = [];
 
     if (_classId.isNotEmpty) {
@@ -1249,43 +1215,54 @@ class _MembersTabViewState extends State<_MembersTabView> {
           .doc(_classId)
           .get();
       if (classSnap.exists) {
-        userIds = List<String>.from(classSnap.data()?['studentIds'] ?? []);
-        adminIds = List<String>.from(classSnap.data()?['adminIds'] ?? []);
+        final cData = classSnap.data()!;
+        final tId = cData['teacherId']?.toString();
+        final tIds = List<String>.from(cData['teacherIds'] ?? []);
+        final sIds = List<String>.from(cData['studentIds'] ?? []);
+
+        final combined = <String>{
+          if (tId != null && tId.isNotEmpty) tId,
+          ...tIds,
+          ...sIds,
+          ...userIds,
+        };
+        userIds = combined.toList();
+        adminIds = List<String>.from(cData['adminIds'] ?? []);
       }
-    } else {
-      userIds = List<String>.from(data['userIds'] ?? []);
     }
 
     if (userIds.isEmpty) return [];
 
-    final futures = userIds.map(
-      (id) => widget.repository.firestore
-          .collection('users')
-          .doc(id)
-          .get(const GetOptions(source: Source.serverAndCache)),
-    );
+    final futures = userIds.map((id) => widget.repository.firestore
+        .collection('users')
+        .doc(id)
+        .get(const GetOptions(source: Source.serverAndCache)));
 
     final userSnaps = await Future.wait(futures);
 
-    return userSnaps.map((snap) {
-      final userData = snap.data() ?? {};
-      final firstName = userData['firstName'] as String? ?? '';
-      final lastName = userData['lastName'] as String? ?? '';
-      final fullName =
-          userData['name'] as String? ??
-          (firstName.isEmpty && lastName.isEmpty
-              ? (_classId.isEmpty ? teacherLabel : studentLabel)
-              : '$firstName $lastName'.trim());
+    return userSnaps
+        .where((snap) => snap.exists && snap.data() != null)
+        .map((snap) {
+          final userData = snap.data()!;
+          final firstName = userData['firstName'] as String? ?? '';
+          final lastName = userData['lastName'] as String? ?? '';
+          final rawName = userData['name'] as String?;
+          final fullName = (rawName != null && rawName.trim().isNotEmpty)
+              ? rawName
+              : (firstName.isEmpty && lastName.isEmpty
+                  ? (userData['email'] as String? ?? (_classId.isEmpty ? teacherLabel : studentLabel))
+                  : '$firstName $lastName'.trim());
 
-      final role = userData['role'] as String? ?? '';
+          final role = userData['role'] as String? ?? '';
 
-      return {
-        'id': snap.id,
-        'name': fullName,
-        'isAdmin': adminIds.contains(snap.id),
-        'role': role,
-      };
-    }).toList();
+          return {
+            'id': snap.id,
+            'name': fullName,
+            'isAdmin': adminIds.contains(snap.id),
+            'role': role,
+          };
+        })
+        .toList();
   }
 
   @override
@@ -1349,14 +1326,16 @@ class _MembersTabViewState extends State<_MembersTabView> {
                   roleText = AppLocalizations.of(context)!.administrator;
                   break;
                 default:
-                  roleText = _classId.isEmpty
-                      ? AppLocalizations.of(context)!.teacher
-                      : AppLocalizations.of(context)!.student;
+                  roleText = _classId.isEmpty ? AppLocalizations.of(context)!.teacher : AppLocalizations.of(context)!.student;
               }
             }
 
             return ListTile(
-              leading: SchoolAvatar(name: name, radius: 18, userId: studentId),
+              leading: SchoolAvatar(
+                name: name,
+                radius: 18,
+                userId: studentId,
+              ),
               title: Row(
                 children: [
                   Flexible(
@@ -1382,12 +1361,18 @@ class _MembersTabViewState extends State<_MembersTabView> {
               ),
               subtitle: Text(
                 roleText,
-                style: const TextStyle(fontSize: 11, color: SchoolColors.muted),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: SchoolColors.muted,
+                ),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 4),
               trailing: isTeacher && _classId.isNotEmpty
                   ? PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert_rounded, size: 18),
+                      icon: const Icon(
+                        Icons.more_vert_rounded,
+                        size: 18,
+                      ),
                       onSelected: (val) {
                         if (val == 'admin') {
                           widget.repository.toggleClassAdmin(
@@ -1397,16 +1382,10 @@ class _MembersTabViewState extends State<_MembersTabView> {
                           );
                           setState(() {
                             _membersFuture = _loadMembers(
-                              teacherLabel: AppLocalizations.of(
-                                context,
-                              )!.teacher,
-                              studentLabel: AppLocalizations.of(
-                                context,
-                              )!.student,
-                              roomNotFoundMsg: AppLocalizations.of(
-                                context,
-                              )!.roomNotFound,
-                            );
+                                    teacherLabel: AppLocalizations.of(context)!.teacher,
+                                    studentLabel: AppLocalizations.of(context)!.student,
+                                    roomNotFoundMsg: AppLocalizations.of(context)!.roomNotFound,
+                                  );
                           });
                         } else if (val == 'remove') {
                           _confirmRemove(
@@ -1418,16 +1397,10 @@ class _MembersTabViewState extends State<_MembersTabView> {
                             if (ok == true && mounted) {
                               setState(() {
                                 _membersFuture = _loadMembers(
-                                  teacherLabel: AppLocalizations.of(
-                                    context,
-                                  )!.teacher,
-                                  studentLabel: AppLocalizations.of(
-                                    context,
-                                  )!.student,
-                                  roomNotFoundMsg: AppLocalizations.of(
-                                    context,
-                                  )!.roomNotFound,
-                                );
+                                    teacherLabel: AppLocalizations.of(context)!.teacher,
+                                    studentLabel: AppLocalizations.of(context)!.student,
+                                    roomNotFoundMsg: AppLocalizations.of(context)!.roomNotFound,
+                                  );
                               });
                             }
                           });
@@ -1465,7 +1438,9 @@ class _MembersTabViewState extends State<_MembersTabView> {
                               SizedBox(width: 8),
                               Text(
                                 AppLocalizations.of(context)!.delete,
-                                style: TextStyle(color: SchoolColors.red),
+                                style: TextStyle(
+                                  color: SchoolColors.red,
+                                ),
                               ),
                             ],
                           ),
@@ -1490,7 +1465,9 @@ class _MembersTabViewState extends State<_MembersTabView> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.removeFromClass),
-        content: Text(AppLocalizations.of(context)!.areYouSureYouWant2),
+        content: Text(
+          AppLocalizations.of(context)!.areYouSureYouWant2,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -1511,6 +1488,7 @@ class _MembersTabViewState extends State<_MembersTabView> {
     return false;
   }
 }
+
 
 class _PollsListView extends StatefulWidget {
   const _PollsListView({
@@ -1789,7 +1767,11 @@ class _AIAssistantTab extends StatefulWidget {
 class _AIAssistantTabState extends State<_AIAssistantTab> {
   final _inputController = TextEditingController();
   final List<Map<String, String>> _messages = [
-    {'role': 'ai', 'content': 'Привет, я ваш учебный ассистент'},
+    {
+      'role': 'ai',
+      'content':
+          'Привет, я ваш учебный ассистент',
+    },
   ];
   bool _loading = false;
 
@@ -1810,9 +1792,8 @@ class _AIAssistantTabState extends State<_AIAssistantTab> {
       setState(() {
         _messages.add({
           'role': 'ai',
-          'content': AppLocalizations.of(
-            context,
-          )!.interestingQuestionBasedOnThe,
+          'content':
+              AppLocalizations.of(context)!.interestingQuestionBasedOnThe,
         });
         _loading = false;
       });
@@ -1969,44 +1950,16 @@ class _EmptySidebarState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 24),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        decoration: BoxDecoration(
-          color: SchoolColors.muted.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: SchoolColors.muted.withValues(alpha: 0.1),
-            style: BorderStyle.solid,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 32, color: SchoolColors.border),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: SchoolColors.muted),
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: SchoolColors.muted.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                size: 32,
-                color: SchoolColors.muted.withValues(alpha: 0.8),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: SchoolColors.muted,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

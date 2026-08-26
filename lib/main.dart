@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +16,7 @@ import 'src/providers/app_providers.dart';
 import 'src/screens/auth_screen.dart';
 import 'src/screens/guest_join_screen.dart';
 import 'src/screens/onboarding_screen.dart';
+import 'src/screens/profile_completion_screen.dart';
 import 'src/screens/student_shell.dart';
 import 'src/screens/teacher_workspace_screen.dart';
 import 'src/features/parent_dashboard/presentation/screens/parent_home_screen.dart';
@@ -21,7 +24,6 @@ import 'src/theme.dart';
 import 'src/utils/splash_loader.dart';
 import 'package:provider/provider.dart' as provider_pkg;
 import 'src/firebase/push_notification_manager.dart';
-import 'src/widgets/cached_stream_builder.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
@@ -32,11 +34,22 @@ Future<void> main() async {
     provider_pkg.Provider.debugCheckInvalidValueType = null;
     WidgetsFlutterBinding.ensureInitialized();
 
+    // Enable edge-to-edge system UI for Android (fixes navigation bar overlap)
+    if (!kIsWeb) {
+      SystemChrome.setSystemUIOverlayStyle(
+        const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarDividerColor: Colors.transparent,
+        ),
+      );
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
+
     // Hide splash as soon as possible
-    // (Removed to keep HTML splash visible until Flutter app is fully ready)
-    // try {
-    //   hideSplash();
-    // } catch (_) {}
+    try {
+      hideSplash();
+    } catch (_) {}
 
     // Improve image caching for better render performance
     PaintingBinding.instance.imageCache.maximumSize = 2000;
@@ -72,11 +85,9 @@ Future<void> main() async {
     };
 
     await Hive.initFlutter();
-    await Future.wait([
-      Hive.openBox('app_settings'),
-      Hive.openBox('data_cache'),
-      Hive.openBox('chat_cache'),
-    ]);
+    await Hive.openBox('app_settings');
+    await Hive.openBox('data_cache');
+    await Hive.openBox('chat_cache');
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
@@ -86,13 +97,11 @@ Future<void> main() async {
         rethrow;
       }
     }
-    try {
+    if (!kIsWeb) {
       FirebaseFirestore.instance.settings = const Settings(
         persistenceEnabled: true,
         cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
       );
-    } catch (e) {
-      debugPrint('Firestore settings failed: $e');
     }
     await initializeDateFormatting('ru', null);
 
@@ -165,7 +174,30 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
         future: _settingsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox.shrink();
+            return Directionality(
+              textDirection: TextDirection.ltr,
+              child: ColoredBox(
+                color: Colors.white,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(
+                        AppLocalizations.of(context)?.loadingSystemSettings ??
+                            'Загрузка настроек...',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 14,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
           }
 
           if (snapshot.hasError) {
@@ -180,8 +212,14 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
             navigatorKey: navigatorKey,
             scaffoldMessengerKey: scaffoldMessengerKey,
             debugShowCheckedModeBanner: false,
-            theme: schoolTheme(primaryColor: appState.accentColor),
-            darkTheme: schoolDarkTheme(primaryColor: appState.accentColor),
+            theme: schoolTheme(
+              primaryColor: appState.accentColor,
+              isPerformance: appState.performanceMode,
+            ),
+            darkTheme: schoolDarkTheme(
+              primaryColor: appState.accentColor,
+              isPerformance: appState.performanceMode,
+            ),
             themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
             locale: activeLocale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -205,7 +243,7 @@ class _SchoolWorldAppState extends ConsumerState<SchoolWorldApp> {
                 child: MediaQuery(
                   data: mediaQueryData.copyWith(
                     textScaler: isMobile
-                        ? const TextScaler.linear(1.45)
+                        ? const TextScaler.linear(1.15)
                         : mediaQueryData.textScaler,
                   ),
                   child: child ?? const SizedBox.shrink(),
@@ -257,7 +295,6 @@ class GuestInviteParams {
   final String inviteCode;
 }
 
-
 class AppScope extends InheritedWidget {
   const AppScope({
     super.key,
@@ -296,6 +333,8 @@ class _AuthGateState extends State<AuthGate> {
   String? _initializedUid;
 
   late Stream<User?> _authStream;
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _profileStream;
+  String? _currentProfileUid;
 
   @override
   void initState() {
@@ -345,15 +384,17 @@ class _AuthGateState extends State<AuthGate> {
 
         if (!authSnapshot.hasData &&
             authSnapshot.connectionState == ConnectionState.waiting) {
-          // Timeout to prevent infinite spinner
-          Future.delayed(const Duration(seconds: 5), () {
-            if (mounted && !authSnapshot.hasData) {
-              debugPrint('Auth stream timeout');
-            }
-          });
-          return const Scaffold(
-            backgroundColor: Colors.transparent,
-            body: SizedBox.shrink(),
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(AppLocalizations.of(context)!.authCheck),
+                ],
+              ),
+            ),
           );
         }
 
@@ -361,7 +402,8 @@ class _AuthGateState extends State<AuthGate> {
 
         if (user == null) {
           _initializedUid = null;
-          WidgetsBinding.instance.addPostFrameCallback((_) => hideSplash());
+          _profileStream = null;
+          _currentProfileUid = null;
           if (hasPendingInvite) {
             return GuestJoinScreen(
               classId: guestParams.classId,
@@ -371,25 +413,14 @@ class _AuthGateState extends State<AuthGate> {
           return const AuthScreen();
         }
 
-        // Only start presence and update activity ONCE per user login
-        if (_initializedUid != user.uid) {
-          _initializedUid = user.uid;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            widget.repository.startPresenceMonitoring();
-            widget.repository.updateActivity();
-
-            // Initialize push notifications reactively on login
-            PushNotificationManager.syncTokenSubscription(
-              userId: user.uid,
-              enabled: widget.appState.pushNotifications,
-            );
-            PushNotificationManager.initNotificationListeners();
-          });
+        // Cache profile stream based on UID to avoid infinite rebuild loops
+        if (_currentProfileUid != user.uid) {
+          _currentProfileUid = user.uid;
+          _profileStream = widget.repository.userDocStream();
         }
 
-        return CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          streamFactory: () => widget.repository.userDocStream(),
-          keys: [user.uid],
+        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: _profileStream,
           builder: (context, profileSnap) {
             if (profileSnap.hasError) {
               debugPrint('AuthGate Profile Error: ${profileSnap.error}');
@@ -409,27 +440,59 @@ class _AuthGateState extends State<AuthGate> {
 
             if (!profileSnap.hasData &&
                 profileSnap.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                backgroundColor: Colors.transparent,
-                body: SizedBox.shrink(),
+              return Scaffold(
+                body: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(AppLocalizations.of(context)!.loadingProfile),
+                    ],
+                  ),
+                ),
               );
             }
-
-            WidgetsBinding.instance.addPostFrameCallback((_) => hideSplash());
 
             final doc = profileSnap.data;
             final data = doc?.data();
             final role = data?['role'] as String?;
 
-            // If user has no profile or no role, they act like a new guest
+            // Firebase Phone Auth changes auth state immediately after OTP.
+            // Complete identity details here, outside AuthScreen, so the
+            // account cannot be routed to onboarding before its name is saved.
             if (doc == null || !doc.exists || role == null) {
-              if (hasPendingInvite) {
-                return GuestJoinScreen(
-                  classId: guestParams.classId,
-                  inviteCode: guestParams.inviteCode,
+              return ProfileCompletionScreen(
+                user: user,
+                repository: widget.repository,
+              );
+            }
+
+            // Profile data is complete, but the user has not yet selected a
+            // path. Do not enter a dashboard until they join a class or submit
+            // a teacher request.
+            if (role == 'pending') {
+              return OnboardingScreen(
+                initialInviteCode: hasPendingInvite
+                    ? guestParams.inviteCode
+                    : null,
+              );
+            }
+
+            // Only start presence and push services once a real application
+            // role is available. Pending profiles do not yet have permission
+            // to update activity or access class data.
+            if (_initializedUid != user.uid) {
+              _initializedUid = user.uid;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                widget.repository.startPresenceMonitoring();
+                widget.repository.updateActivity();
+                PushNotificationManager.syncTokenSubscription(
+                  userId: user.uid,
+                  enabled: widget.appState.pushNotifications,
                 );
-              }
-              return const OnboardingScreen();
+                PushNotificationManager.initNotificationListeners();
+              });
             }
 
             // We have a user profile and a pending invite: process it automatically
@@ -477,7 +540,7 @@ class _AuthGateState extends State<AuthGate> {
             if (role == 'student') return const StudentShell();
             if (role == 'parent') return const ParentHomeScreen();
 
-            return const OnboardingScreen();
+            return const TeacherWorkspaceScreen();
           },
         );
       },

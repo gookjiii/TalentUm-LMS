@@ -7,7 +7,6 @@ import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'iframe_player.dart';
 import '../webinars_providers.dart';
 import 'package:file_picker/file_picker.dart';
@@ -23,6 +22,7 @@ class WebinarsScreen extends ConsumerStatefulWidget {
 
 class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
   int _limit = 20;
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _cachedWebinars = [];
 
   @override
   void didUpdateWidget(covariant WebinarsScreen oldWidget) {
@@ -30,11 +30,13 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
     if (oldWidget.classId != widget.classId) {
       setState(() {
         _limit = 20;
+        _cachedWebinars.clear();
       });
     }
   }
 
-  void _loadMore() {
+  void _loadMore(int currentCount) {
+    if (currentCount < _limit) return;
     setState(() {
       _limit += 20;
     });
@@ -42,34 +44,45 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveClassId =
-        (ref
-                    .watch(
-                      schoolAppStateProvider.select((s) => s.selectedClassId),
-                    )
-                    ?.isNotEmpty ==
-                true
-            ? ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))
-            : null) ??
-        (widget.classId.isNotEmpty ? widget.classId : null);
     final appState = ref.watch(schoolAppStateProvider);
     final repo = ref.watch(repositoryProvider);
     final isTeacher = appState.isTeacher;
+    final visibleClassesAsync = ref.watch(
+      isTeacher ? teacherClassesStreamProvider : studentClassesStreamProvider,
+    );
+    final visibleClasses = visibleClassesAsync.value ?? const [];
+    final visibleIds = visibleClasses.map((c) => c['id']?.toString()).toSet();
+    final storedClassId = appState.selectedClassId;
+    final effectiveClassId =
+        storedClassId != null && visibleIds.contains(storedClassId)
+        ? storedClassId
+        : (widget.classId.isNotEmpty && visibleIds.contains(widget.classId)
+              ? widget.classId
+              : (visibleClasses.isEmpty
+                    ? null
+                    : visibleClasses.first['id']?.toString()));
 
-    final webinarsAsync = effectiveClassId != null
-        ? ref.watch(webinarsProvider((effectiveClassId, _limit)))
-        : null;
+    // Guard: no valid class selected yet — show locked empty state
+    if (effectiveClassId == null) {
+      return EmptyState(
+        icon: Icons.ondemand_video_outlined,
+        title: AppLocalizations.of(context)!.webinars,
+        subtitle: AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
+      );
+    }
+
+    final webinarsAsync = ref.watch(
+      webinarsProvider((effectiveClassId, _limit)),
+    );
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      stream: effectiveClassId != null
-          ? repo.firestore.collection('classes').doc(effectiveClassId).snapshots()
-          : const Stream.empty(),
+      stream: repo.firestore
+          .collection('classes')
+          .doc(effectiveClassId)
+          .snapshots(),
       builder: (context, classSnap) {
         final isLeadOfClass = appState.isLeadTeacher;
-        String? className;
-        if (classSnap.hasData && classSnap.data?.data() != null) {
-          className = classSnap.data!.data()!['name']?.toString();
-        }
+        final className = classSnap.data?.data()?['name']?.toString();
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -77,7 +90,7 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
             onNotification: (ScrollNotification scrollInfo) {
               if (scrollInfo.metrics.pixels >=
                   scrollInfo.metrics.maxScrollExtent - 200) {
-                _loadMore();
+                _loadMore(_cachedWebinars.length);
               }
               return false;
             },
@@ -92,24 +105,19 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                             : studentClassesStreamProvider,
                       );
                       final allVisibleClasses = allClassAsync.value ?? [];
-                      final resolvedClassName = className ?? 
-                          allVisibleClasses
-                              .where((c) => c['id'] == effectiveClassId)
-                              .firstOrNull?['name']
-                              ?.toString();
 
                       return PageHeader(
                         title: AppLocalizations.of(context)!.webinars,
                         subtitle: AppLocalizations.of(
                           context,
                         )!.lessonRecordingsAndVideosWill,
-                        classContext: resolvedClassName,
-                        onClassContextTap: allVisibleClasses.isNotEmpty
+                        classContext: className,
+                        onClassContextTap: allVisibleClasses.length > 1
                             ? () {
                                 showClassSwitcher(
                                   context: context,
                                   classes: allVisibleClasses,
-                                  currentClassId: effectiveClassId ?? '',
+                                  currentClassId: effectiveClassId,
                                   onSelect: (id) {
                                     ref
                                         .read(schoolAppStateProvider)
@@ -123,7 +131,7 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                                 onPressed: () => _showAddDialog(
                                   context,
                                   ref,
-                                  effectiveClassId ?? '',
+                                  effectiveClassId,
                                 ),
                                 icon: const Icon(Icons.add_rounded),
                                 tooltip: AppLocalizations.of(context)!.add,
@@ -133,33 +141,45 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                     },
                   ),
                 ),
-                if (effectiveClassId == null)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: EmptyState(
-                      icon: Icons.ondemand_video_outlined,
-                      title: AppLocalizations.of(context)!.webinars,
-                      subtitle: AppLocalizations.of(context)!.lessonRecordingsAndVideosWill,
-                    ),
-                  )
-                else
-                  webinarsAsync!.when(
-                    data: (docs) {
-                      if (docs.isEmpty) {
-                        return SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: EmptyState(
-                            icon: Icons.ondemand_video_outlined,
-                            title: AppLocalizations.of(context)!.noWebinars,
-                            subtitle: AppLocalizations.of(
-                              context,
-                            )!.lessonRecordingsAndVideosWill,
-                          ),
-                        );
-                      }
+                Builder(
+                  builder: (context) {
+                    if (webinarsAsync.hasValue) {
+                      _cachedWebinars = webinarsAsync.value!;
+                    }
+                    final docs = webinarsAsync.hasValue
+                        ? webinarsAsync.value!
+                        : _cachedWebinars;
+                    final isInitialLoading =
+                        webinarsAsync.isLoading && _cachedWebinars.isEmpty;
 
-                      return SliverPadding(
-                      padding: EdgeInsets.symmetric(horizontal: 24),
+                    if (isInitialLoading) {
+                      return const SliverFillRemaining(
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    if (webinarsAsync.hasError && docs.isEmpty) {
+                      return SliverFillRemaining(
+                        child: Center(
+                          child: Text('Ошибка: ${webinarsAsync.error}'),
+                        ),
+                      );
+                    }
+
+                    if (docs.isEmpty) {
+                      return SliverFillRemaining(
+                        child: EmptyState(
+                          icon: Icons.ondemand_video_outlined,
+                          title: AppLocalizations.of(context)!.noWebinars,
+                          subtitle: AppLocalizations.of(
+                            context,
+                          )!.lessonRecordingsAndVideosWill,
+                        ),
+                      );
+                    }
+
+                    return SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate((context, index) {
                           final data = docs[index].data();
@@ -178,14 +198,6 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                       ),
                     );
                   },
-                  loading: () => const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                  error: (err, stack) => SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(child: Text('Ошибка: $err')),
-                  ),
                 ),
               ],
             ),
@@ -249,6 +261,28 @@ class _WebinarTile extends StatelessWidget {
   final bool canDelete;
   final VoidCallback onDelete;
 
+  static const Set<String> _directVideoExtensions = <String>{
+    '.mp4',
+    '.mov',
+    '.webm',
+    '.mkv',
+    '.m3u8',
+  };
+
+  Uri? _parseVideoUri() {
+    final uri = Uri.tryParse(videoUrl.trim());
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+      return null;
+    }
+    return uri;
+  }
+
+  bool _isDirectVideoUrl(String url) {
+    final lower = url.toLowerCase();
+    if (lower.contains('/video/upload/')) return true;
+    return _directVideoExtensions.any((ext) => lower.contains(ext));
+  }
+
   String? _getEmbedUrl(String url) {
     final cleanUrl = url.trim();
     if (cleanUrl.isEmpty) return null;
@@ -263,7 +297,7 @@ class _WebinarTile extends StatelessWidget {
       if (match != null && match.groupCount >= 2) {
         final videoId = match.group(2);
         if (videoId != null && videoId.length == 11) {
-          return 'https://www.youtube.com/embed/$videoId?playsinline=1&rel=0&autoplay=0';
+          return 'https://www.youtube.com/embed/$videoId';
         }
       }
     }
@@ -336,9 +370,9 @@ class _WebinarTile extends StatelessWidget {
           final uri = Uri.parse(cleanUrl);
           final hash = uri.queryParameters['hash'];
           if (hash != null) {
-            return 'https://vk.com/video_ext.php?oid=$oid&id=$id&hash=$hash&hd=2&autoplay=0';
+            return 'https://vk.com/video_ext.php?oid=$oid&id=$id&hash=$hash';
           }
-          return 'https://vk.com/video_ext.php?oid=$oid&id=$id&hd=2&autoplay=0';
+          return 'https://vk.com/video_ext.php?oid=$oid&id=$id';
         }
       }
     }
@@ -361,89 +395,59 @@ class _WebinarTile extends StatelessWidget {
     return null;
   }
 
-  void _playVideo(BuildContext context) {
-    final embedUrl = _getEmbedUrl(videoUrl);
-    final isMobileWidth = MediaQuery.sizeOf(context).width < 700;
-
-    if (embedUrl != null && kIsWeb) {
-      if (isMobileWidth) {
-        // Open directly in an external tab on mobile to avoid Flutter Web iframe touch bugs
-        launchUrl(Uri.parse(videoUrl), mode: LaunchMode.externalApplication);
-      } else {
-        // Show dialog for video preview on desktop
-        showDialog(
-          context: context,
-          builder: (context) {
-            final dialogContent = SizedBox(
-              width: 700,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Top bar with close button
-                  PointerInterceptor(
-                    child: Container(
-                      color: Colors.black,
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.open_in_new_rounded, color: Colors.white),
-                            onPressed: () => launchUrl(Uri.parse(videoUrl), mode: LaunchMode.externalApplication),
-                            tooltip: AppLocalizations.of(context)!.open,
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                            tooltip: MaterialLocalizations.of(
-                              context,
-                            ).closeButtonTooltip,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Video player with a generous minimum height to guarantee controls are not clipped
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      double calculatedHeight = constraints.maxWidth / (16 / 9);
-                      return SizedBox(
-                        height: calculatedHeight,
-                        child: IframePlayer(embedUrl: embedUrl),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            );
-
-            return Dialog(
-              backgroundColor: Colors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              insetPadding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 40,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: dialogContent,
-              ),
-            );
-          },
+  Future<void> _openExternal(BuildContext context) async {
+    final uri = _parseVideoUri();
+    if (uri == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.failedToLoadVideo),
+          ),
         );
       }
-    } else {
-      launchUrl(Uri.parse(videoUrl));
+      return;
     }
+
+    final launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.failedToLoadVideo),
+        ),
+      );
+    }
+  }
+
+  Future<void> _playVideo(BuildContext context) async {
+    final uri = _parseVideoUri();
+    if (uri == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.failedToLoadVideo),
+          ),
+        );
+      }
+      return;
+    }
+
+    final embedUrl = _getEmbedUrl(videoUrl);
+    final directVideo = _isDirectVideoUrl(videoUrl);
+    if (kIsWeb && (embedUrl != null || directVideo)) {
+      await showDialog<void>(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.7),
+        builder: (context) => _WebinarVideoDialog(
+          title: title,
+          sourceUrl: embedUrl ?? uri.toString(),
+          useVideoElement: embedUrl == null && directVideo,
+          onOpenExternal: () => _openExternal(context),
+        ),
+      );
+      return;
+    }
+
+    await _openExternal(context);
   }
 
   @override
@@ -544,7 +548,7 @@ class _WebinarTile extends StatelessWidget {
                           size: 18,
                           color: SchoolColors.muted,
                         ),
-                        onPressed: () => launchUrl(Uri.parse(videoUrl)),
+                        onPressed: () => _openExternal(context),
                       ),
                       if (canDelete)
                         IconButton(
@@ -562,6 +566,190 @@ class _WebinarTile extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _WebinarVideoDialog extends StatefulWidget {
+  const _WebinarVideoDialog({
+    required this.title,
+    required this.sourceUrl,
+    required this.useVideoElement,
+    required this.onOpenExternal,
+  });
+
+  final String title;
+  final String sourceUrl;
+  final bool useVideoElement;
+  final Future<void> Function() onOpenExternal;
+
+  @override
+  State<_WebinarVideoDialog> createState() => _WebinarVideoDialogState();
+}
+
+class _WebinarVideoDialogState extends State<_WebinarVideoDialog> {
+  bool _hasError = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isMobile = screenWidth < 700;
+    final iframeStack = Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(color: Colors.black),
+        IframePlayer(
+          sourceUrl: widget.sourceUrl,
+          useVideoElement: widget.useVideoElement,
+          onReady: () {
+            // No-op
+          },
+          onError: () {
+            if (mounted) {
+              setState(() {
+                _hasError = true;
+              });
+            }
+          },
+        ),
+
+        if (_hasError)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    color: Colors.white,
+                    size: 36,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    AppLocalizations.of(context)!.failedToLoadVideo,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.tonal(
+                    onPressed: widget.onOpenExternal,
+                    child: Text(AppLocalizations.of(context)!.watchVideo),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+
+    final player = isMobile
+        ? iframeStack
+        : AspectRatio(aspectRatio: 16 / 9, child: iframeStack);
+
+    if (isMobile) {
+      return Material(
+        color: Colors.black.withValues(alpha: 0.94),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 8, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: AppLocalizations.of(context)!.watchVideo,
+                      onPressed: widget.onOpenExternal,
+                      icon: const Icon(
+                        Icons.open_in_new_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: player,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Dialog(
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 12 : 24,
+        vertical: isMobile ? 24 : 40,
+      ),
+      clipBehavior: Clip.antiAlias,
+      backgroundColor: theme.brightness == Brightness.dark
+          ? SchoolColors.darkSurface
+          : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            color: theme.brightness == Brightness.dark
+                ? SchoolColors.darkSurface
+                : Colors.white,
+            padding: const EdgeInsets.fromLTRB(16, 14, 10, 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: AppLocalizations.of(context)!.watchVideo,
+                  onPressed: widget.onOpenExternal,
+                  icon: const Icon(Icons.open_in_new_rounded),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+          ),
+          Flexible(child: player),
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }
@@ -826,6 +1014,7 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
     try {
       final repo = ref.read(repositoryProvider);
       String finalVideoUrl = _urlController.text.trim();
+      Map<String, dynamic>? uploadResult;
 
       if (_uploadMode) {
         if (_selectedFile == null) {
@@ -840,21 +1029,20 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
         final path =
             'classes/${widget.classId}/webinars/${DateTime.now().millisecondsSinceEpoch}_${_selectedFile!.name}';
 
-        Map<String, dynamic> result;
         if (kIsWeb) {
-          result = await storage.uploadFileWeb(
+          uploadResult = await storage.uploadFileWeb(
             path,
             _selectedFile!.bytes!,
             onProgress: (p) => setState(() => _uploadProgress = p),
           );
         } else {
-          result = await storage.uploadFile(
+          uploadResult = await storage.uploadFile(
             path,
             File(_selectedFile!.path!),
             onProgress: (p) => setState(() => _uploadProgress = p),
           );
         }
-        finalVideoUrl = result['url'] as String;
+        finalVideoUrl = uploadResult['url'] as String;
       }
 
       await repo.addWebinar(
@@ -862,6 +1050,13 @@ class _AddWebinarDialogState extends ConsumerState<_AddWebinarDialog> {
         title: _titleController.text.trim(),
         description: _descController.text.trim(),
         videoUrl: finalVideoUrl,
+        storageProvider: uploadResult?['provider'] as String?,
+        storagePath: uploadResult?['path'] as String?,
+        driveFileId: uploadResult?['driveFileId'] as String?,
+        fileSize:
+            (uploadResult?['bytes'] as num?)?.toInt() ??
+            (uploadResult?['size'] as num?)?.toInt() ??
+            (_selectedFile?.size),
       );
 
       if (mounted) Navigator.pop(context);

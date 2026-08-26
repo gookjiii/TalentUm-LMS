@@ -10,20 +10,46 @@ import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:school_world/src/widgets/file_preview.dart';
-import 'package:school_world/src/utils/responsive_utils.dart';
-class TeacherAssignments extends StatefulWidget {
+import '../../domain/submission_filter.dart';
+import 'package:school_world/src/firebase/school_repository_assignments.dart';
+
+class TeacherAssignments extends ConsumerStatefulWidget {
   const TeacherAssignments({super.key, required this.classId, this.className});
   final String classId;
   final String? className;
 
   @override
-  State<TeacherAssignments> createState() => _TeacherAssignmentsState();
+  ConsumerState<TeacherAssignments> createState() => _TeacherAssignmentsState();
 }
 
-class _TeacherAssignmentsState extends State<TeacherAssignments> {
+class _TeacherAssignmentsState extends ConsumerState<TeacherAssignments> {
   String? _selectedId;
+  SubmissionFilter _submissionFilter = SubmissionFilter.all;
   Stream<QuerySnapshot<Map<String, dynamic>>>? _assignmentsStream;
-  bool _initialized = false;
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _cachedAssignments = [];
+  String? _activeClassId;
+  int _limit = 20;
+
+  void _updateStreamIfNeeded(String effectiveClassId) {
+    if (_activeClassId != effectiveClassId) {
+      _activeClassId = effectiveClassId;
+      _limit = 20;
+      _cachedAssignments.clear();
+      final repo = AppScope.of(context).repository;
+      if (effectiveClassId == 'all') {
+        _assignmentsStream = repo.firestore
+            .collection('assignments')
+            .orderBy('createdAt', descending: true)
+            .limit(_limit)
+            .snapshots();
+      } else {
+        _assignmentsStream = repo.assignmentsForClass(
+          effectiveClassId,
+          limit: _limit,
+        );
+      }
+    }
+  }
 
   void _editAssignment(
     BuildContext context,
@@ -134,23 +160,8 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
     if (ok == true) {
       if (!context.mounted) return;
       final repo = AppScope.of(context).repository;
-      await repo.firestore.collection('assignments').doc(doc.id).delete();
+      await repo.deleteAssignment(doc.id);
       setState(() => _selectedId = null); // Go back to list
-    }
-  }
-
-  int _limit = 20;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_initialized) {
-      _initialized = true;
-      final repo = AppScope.of(context).repository;
-      _assignmentsStream = repo.assignmentsForClass(
-        widget.classId,
-        limit: _limit,
-      );
     }
   }
 
@@ -158,106 +169,211 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
   void didUpdateWidget(covariant TeacherAssignments oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.classId != widget.classId) {
-      final repo = AppScope.of(context).repository;
       setState(() {
         _limit = 20;
-        _assignmentsStream = repo.assignmentsForClass(
-          widget.classId,
-          limit: _limit,
-        );
+        _cachedAssignments.clear();
+        _activeClassId = null;
         _selectedId = null;
       });
     }
   }
 
-  void _loadMore() {
+  void _loadMore(int currentCount) {
+    if (currentCount < _limit || _activeClassId == null) return;
     setState(() {
       _limit += 20;
       final repo = AppScope.of(context).repository;
-      _assignmentsStream = repo.assignmentsForClass(
-        widget.classId,
-        limit: _limit,
-      );
+      if (_activeClassId == 'all') {
+        _assignmentsStream = repo.firestore
+            .collection('assignments')
+            .orderBy('createdAt', descending: true)
+            .limit(_limit)
+            .snapshots();
+      } else {
+        _assignmentsStream = repo.assignmentsForClass(
+          _activeClassId!,
+          limit: _limit,
+        );
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1000),
-        child: NotificationListener<ScrollNotification>(
-          onNotification: (ScrollNotification scrollInfo) {
-            if (_selectedId == null &&
-                scrollInfo.metrics.pixels >=
-                    scrollInfo.metrics.maxScrollExtent - 200) {
-              _loadMore();
-            }
-            return false;
-          },
-          child: SizedBox.expand(
-            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: _assignmentsStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final docs = snapshot.data?.docs ?? [];
-                if (_selectedId == null) {
-                  return _AssignmentSummaryView(
-                    classId: widget.classId,
-                    docs: docs,
-                    onSelect: (id) => setState(() => _selectedId = id),
-                    onCreate: () => _createAssignment(context),
-                  );
-                }
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
+    final selectedId = ref.watch(
+      schoolAppStateProvider.select((s) => s.selectedClassId),
+    );
+    final effectiveClassId = (selectedId != null && selectedId.isNotEmpty)
+        ? selectedId
+        : widget.classId;
+    _updateStreamIfNeeded(effectiveClassId);
 
-                QueryDocumentSnapshot<Map<String, dynamic>>? selectedDoc;
-                try {
-                  selectedDoc = docs.firstWhere((d) => d.id == _selectedId);
-                } catch (_) {
-                  selectedDoc = docs.first;
-                }
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification scrollInfo) {
+        if (_selectedId == null &&
+            scrollInfo.metrics.pixels >=
+                scrollInfo.metrics.maxScrollExtent - 200) {
+          _loadMore(_cachedAssignments.length);
+        }
+        return false;
+      },
+      child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _assignmentsStream,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            _cachedAssignments = snapshot.data!.docs;
+          }
+          final docs = snapshot.hasData
+              ? snapshot.data!.docs
+              : _cachedAssignments;
+          final isInitialLoading =
+              snapshot.connectionState == ConnectionState.waiting &&
+              _cachedAssignments.isEmpty;
 
-                return Column(
+          if (isInitialLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (docs.isEmpty) {
+            return _NoAssignmentsState(
+              classId: effectiveClassId,
+              onCreate: () => _createAssignment(context, effectiveClassId),
+            );
+          }
+
+          if (_selectedId == null) {
+            return _AssignmentSummaryView(
+              classId: effectiveClassId,
+              docs: docs,
+              onSelect: (id) => setState(() => _selectedId = id),
+              onCreate: () => _createAssignment(context, effectiveClassId),
+            );
+          }
+
+          QueryDocumentSnapshot<Map<String, dynamic>>? selectedDoc;
+          try {
+            selectedDoc = docs.firstWhere((d) => d.id == _selectedId);
+          } catch (_) {
+            selectedDoc = docs.first;
+          }
+
+          return Column(
+            children: [
+              _HomeworkTopBar(
+                classId: widget.classId,
+                className: widget.className,
+                title: selectedDoc.data()['title'] ?? '',
+                doc: selectedDoc,
+                onBack: () => setState(() => _selectedId = null),
+                onEdit: (doc) => _editAssignment(context, doc),
+                onDelete: (doc) => _confirmDelete(context, doc),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(
+                    isMobile ? 16 : 32,
+                    isMobile ? 16 : 24,
+                    isMobile ? 16 : 32,
+                    40,
+                  ),
                   children: [
-                    _HomeworkTopBar(
-                      classId: widget.classId,
-                      className: widget.className,
-                      title: selectedDoc.data()['title'] ?? '',
-                      doc: selectedDoc,
-                      onBack: () => setState(() => _selectedId = null),
-                      onEdit: (doc) => _editAssignment(context, doc),
-                      onDelete: (doc) => _confirmDelete(context, doc),
+                    _HomeworkHeader(doc: selectedDoc),
+                    const SizedBox(height: 24),
+                    SectionHeader(
+                      title: AppLocalizations.of(context)!.completedWorks,
+                      action:
+                          '${AppLocalizations.of(context)!.filter}: ${_submissionFilterLabel(context)}',
+                      onActionTap: () => _showSubmissionFilter(context),
                     ),
-                    Expanded(
-                      child: ListView(
-                        padding: EdgeInsets.fromLTRB(context.horizontalPadding, 24, context.horizontalPadding, 40),
-                        children: [
-                          _HomeworkHeader(doc: selectedDoc),
-                          SizedBox(height: 24),
-                          SectionHeader(
-                            title: AppLocalizations.of(context)!.completedWorks,
-                            action: AppLocalizations.of(context)!.filter,
-                          ),
-                          const SizedBox(height: 12),
-                          _SubmissionsList(doc: selectedDoc),
-                        ],
-                      ),
+                    const SizedBox(height: 12),
+                    _SubmissionsList(
+                      doc: selectedDoc,
+                      filter: _submissionFilter,
                     ),
                   ],
-                );
-              },
-            ),
-          ),
-        ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  void _createAssignment(BuildContext context) async {
+  String _submissionFilterLabel(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (_submissionFilter) {
+      case SubmissionFilter.all:
+        return l10n.all;
+      case SubmissionFilter.needsReview:
+        return l10n.underCheck;
+      case SubmissionFilter.graded:
+        return l10n.rated1;
+    }
+  }
+
+  Future<void> _showSubmissionFilter(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final selected = await showModalBottomSheet<SubmissionFilter>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  l10n.filter,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              for (final filter in SubmissionFilter.values)
+                RadioListTile<SubmissionFilter>(
+                  value: filter,
+                  groupValue: _submissionFilter,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(_submissionFilterOptionLabel(l10n, filter)),
+                  onChanged: (value) {
+                    if (value != null) Navigator.pop(sheetContext, value);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (selected != null && mounted) {
+      setState(() => _submissionFilter = selected);
+    }
+  }
+
+  String _submissionFilterOptionLabel(
+    AppLocalizations l10n,
+    SubmissionFilter filter,
+  ) {
+    switch (filter) {
+      case SubmissionFilter.all:
+        return l10n.all;
+      case SubmissionFilter.needsReview:
+        return l10n.underCheck;
+      case SubmissionFilter.graded:
+        return l10n.rated1;
+    }
+  }
+
+  void _createAssignment(BuildContext context, [String? targetClassId]) async {
     final l10n = AppLocalizations.of(context)!;
     final repo = AppScope.of(context).repository;
+    final activeClassId = targetClassId ?? widget.classId;
     final titleCtrl = TextEditingController();
     final descCtrl = TextEditingController();
     DateTime? dueDate;
@@ -271,8 +387,8 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
         builder: (context, setState) => AlertDialog(
           title: Text(AppLocalizations.of(context)!.createATask),
           content: SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 450),
+            child: SizedBox(
+              width: 450,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -412,7 +528,7 @@ class _TeacherAssignmentsState extends State<TeacherAssignments> {
                         }
 
                         await repo.createAssignment(
-                          classId: widget.classId,
+                          classId: activeClassId,
                           title: titleCtrl.text.trim(),
                           description: descCtrl.text.trim(),
                           dueDate: dueDate!,
@@ -468,6 +584,7 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
 
   @override
   Widget build(BuildContext context) {
+    final isCompact = MediaQuery.sizeOf(context).width < 600;
     final now = DateTime.now();
     final filtered = widget.docs.where((doc) {
       if (_filter == 'all') return true;
@@ -483,7 +600,6 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
           builder: (context, ref, _) {
             final allClassAsync = ref.watch(teacherClassesStreamProvider);
             final allVisibleClasses = allClassAsync.value ?? [];
-
             final effectiveClassId =
                 ref.watch(
                   schoolAppStateProvider.select((s) => s.selectedClassId),
@@ -502,7 +618,7 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
                 context,
               )!.totalAssignmentsCount(widget.docs.length),
               classContext: currentClassName,
-              onClassContextTap: allVisibleClasses.isNotEmpty
+              onClassContextTap: allVisibleClasses.length > 1
                   ? () {
                       showClassSwitcher(
                         context: context,
@@ -514,85 +630,74 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
                       );
                     }
                   : null,
-              trailing: IconButton.filled(
+              trailing: FilledButton.icon(
                 onPressed: widget.onCreate,
-                style: IconButton.styleFrom(
-                  backgroundColor: SchoolColors.primary,
-                  foregroundColor: Colors.white,
+                style: FilledButton.styleFrom(
+                  minimumSize: Size.zero,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                icon: const Icon(Icons.add_rounded, size: 24),
-                tooltip: AppLocalizations.of(context)!.createATask,
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: Text(AppLocalizations.of(context)!.createATask),
               ),
-              padding: EdgeInsets.fromLTRB(context.horizontalPadding, 32, context.horizontalPadding, 0),
+              trailingBelowTitle: isCompact,
+              padding: EdgeInsets.fromLTRB(
+                isCompact ? 20 : 32,
+                isCompact ? 16 : 32,
+                isCompact ? 20 : 32,
+                0,
+              ),
             );
           },
         ),
-        if (widget.docs.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-            child: Wrap(
-              spacing: 8,
-              children: [
-                _FilterChip(
-                  label: AppLocalizations.of(context)!.all,
-                  selected: _filter == 'all',
-                  onSelected: (v) => setState(() => _filter = 'all'),
-                ),
-                _FilterChip(
-                  label: AppLocalizations.of(context)!.active1,
-                  selected: _filter == 'active',
-                  onSelected: (v) => setState(() => _filter = 'active'),
-                ),
-                _FilterChip(
-                  label: AppLocalizations.of(context)!.overdue,
-                  selected: _filter == 'overdue',
-                  onSelected: (v) => setState(() => _filter = 'overdue'),
-                ),
-              ],
-            ),
+        const SizedBox(height: 24),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 32),
+          child: Wrap(
+            spacing: 8,
+            children: [
+              _FilterChip(
+                label: AppLocalizations.of(context)!.all,
+                selected: _filter == 'all',
+                onSelected: (v) => setState(() => _filter = 'all'),
+              ),
+              _FilterChip(
+                label: AppLocalizations.of(context)!.active1,
+                selected: _filter == 'active',
+                onSelected: (v) => setState(() => _filter = 'active'),
+              ),
+              _FilterChip(
+                label: AppLocalizations.of(context)!.overdue,
+                selected: _filter == 'overdue',
+                onSelected: (v) => setState(() => _filter = 'overdue'),
+              ),
+            ],
           ),
-        ],
+        ),
         const SizedBox(height: 24),
         Expanded(
-          child: widget.docs.isEmpty
-              ? _NoAssignmentsState(onCreate: widget.onCreate)
-              : ListView(
-                  padding: EdgeInsets.fromLTRB(context.horizontalPadding, 0, context.horizontalPadding, 32),
-                  children: [
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        if (filtered.isEmpty) {
-                          return Center(
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 64),
-                              child: Text(
-                                AppLocalizations.of(context)!.noTasks,
-                                style: TextStyle(color: SchoolColors.muted),
-                              ),
-                            ),
-                          );
-                        }
-                        final cols = constraints.maxWidth > 600 ? 2 : 1;
-                        return GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: cols,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            mainAxisExtent: 210,
-                          ),
-                          itemCount: filtered.length,
-                          itemBuilder: (context, index) => _AssignmentCard(
-                            doc: filtered[index],
-                            onTap: () => widget.onSelect(filtered[index].id),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final cols = constraints.maxWidth > 600 ? 2 : 1;
+              return GridView.builder(
+                padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: cols,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  mainAxisExtent: 210,
                 ),
+                itemCount: filtered.length,
+                itemBuilder: (context, index) => _AssignmentCard(
+                  doc: filtered[index],
+                  onTap: () => widget.onSelect(filtered[index].id),
+                ),
+              );
+            },
+          ),
         ),
       ],
     );
@@ -767,9 +872,10 @@ class _HomeworkTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
     return Container(
-      height: 60,
-      padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+      height: isMobile ? 56 : 60,
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 32),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: SchoolColors.border)),
@@ -783,11 +889,14 @@ class _HomeworkTopBar extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: SchoolColors.text,
               textStyle: const TextStyle(fontWeight: FontWeight.w700),
+              padding: EdgeInsets.symmetric(horizontal: isMobile ? 4 : 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: isMobile ? 6 : 12),
           const Icon(Icons.chevron_right, size: 14, color: SchoolColors.muted),
-          const SizedBox(width: 12),
+          SizedBox(width: isMobile ? 6 : 12),
           Expanded(
             child: Text(
               title,
@@ -796,7 +905,7 @@ class _HomeworkTopBar extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          SizedBox(width: 16),
+          SizedBox(width: isMobile ? 4 : 16),
           IconButton(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -836,8 +945,6 @@ class _HomeworkTopBar extends StatelessWidget {
       ),
     );
   }
-
-
 }
 
 class _HomeworkHeader extends StatefulWidget {
@@ -927,86 +1034,94 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
             ),
           );
 
-          final titleWidget = Column(
+          final metaWidget = Wrap(
+            spacing: isMobile ? 8 : 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              FutureBuilder<Map<String, dynamic>?>(
+                future: _classFuture,
+                builder: (context, cSnap) {
+                  final className =
+                      cSnap.data?['name']?.toString() ??
+                      AppLocalizations.of(context)!.classText;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: SchoolColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircleAvatar(
+                          radius: 2.5,
+                          backgroundColor: SchoolColors.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            className,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: SchoolColors.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              Text(
+                data['createdAt'] != null
+                    ? 'Опубликовано: ${DateFormat('d MMM, HH:mm', 'ru').format((data['createdAt'] as Timestamp).toDate())}'
+                    : AppLocalizations.of(context)!.published,
+                style: TextStyle(
+                  color: SchoolColors.muted.withValues(alpha: 0.7),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          );
+
+          final detailsWidget = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  FutureBuilder<Map<String, dynamic>?>(
-                    future: _classFuture,
-                    builder: (context, cSnap) {
-                      final className =
-                          cSnap.data?['name']?.toString() ??
-                          AppLocalizations.of(context)!.classText;
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: SchoolColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const CircleAvatar(
-                              radius: 2.5,
-                              backgroundColor: SchoolColors.primary,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              className,
-                              style: const TextStyle(
-                                color: SchoolColors.primary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  Text(
-                    data['createdAt'] != null
-                        ? 'Опубликовано: ${DateFormat('d MMM, HH:mm', 'ru').format((data['createdAt'] as Timestamp).toDate())}'
-                        : AppLocalizations.of(context)!.published,
-                    style: TextStyle(
-                      color: SchoolColors.muted.withValues(alpha: 0.7),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
               Text(
                 data['title'] ?? '',
-                style: const TextStyle(
-                  fontSize: 26,
+                style: TextStyle(
+                  fontSize: isMobile ? 28 : 26,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -0.4,
+                  height: 1.12,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 data['description'] ?? '',
-                style: const TextStyle(
-                  fontSize: 14,
+                style: TextStyle(
+                  fontSize: isMobile ? 15 : 14,
                   color: SchoolColors.muted,
                   height: 1.5,
                 ),
-                maxLines: 3,
+                maxLines: isMobile ? 5 : 3,
                 overflow: TextOverflow.ellipsis,
               ),
               if (attachments.isNotEmpty) ...[
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
                   AppLocalizations.of(context)!.jobFiles,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 ...attachments.map(
@@ -1016,28 +1131,36 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
             ],
           );
 
-          final statsWidget = IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _StatBlock(
-                    label: AppLocalizations.of(context)!.term,
-                    big: dateStr,
-                    sub: timeStr,
-                    color: SchoolColors.red,
-                  ),
+          final titleWidget = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [metaWidget, const SizedBox(height: 12), detailsWidget],
+          );
+
+          final statWidth = isMobile ? (constraints.maxWidth - 12) / 2 : 100.0;
+          final statsWidget = Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              SizedBox(
+                width: statWidth,
+                child: _StatBlock(
+                  width: statWidth,
+                  label: AppLocalizations.of(context)!.term,
+                  big: dateStr,
+                  sub: timeStr,
+                  color: SchoolColors.red,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _StatBlock(
-                    label: AppLocalizations.of(context)!.points,
-                    big: "10",
-                    sub: AppLocalizations.of(context)!.max,
-                    color: SchoolColors.primary,
-                  ),
+              ),
+              SizedBox(
+                width: statWidth,
+                child: _StatBlock(
+                  width: statWidth,
+                  label: AppLocalizations.of(context)!.points,
+                  big: '10',
+                  sub: AppLocalizations.of(context)!.max,
+                  color: SchoolColors.primary,
                 ),
-                const SizedBox(width: 8),
+              ),
               StreamBuilder<QuerySnapshot>(
                 stream: _submissionsStream,
                 builder: (context, snap) {
@@ -1047,10 +1170,12 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
                           .where((d) => d.get('status') == 'graded')
                           .length ??
                       0;
-                  return Expanded(
+                  return SizedBox(
+                    width: statWidth,
                     child: _StatBlock(
+                      width: statWidth,
                       label: AppLocalizations.of(context)!.status,
-                      big: "$graded / $total",
+                      big: '$graded / $total',
                       sub: AppLocalizations.of(context)!.verified1,
                       color: SchoolColors.green,
                     ),
@@ -1058,8 +1183,7 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
                 },
               ),
             ],
-          ),
-        );
+          );
 
           if (isMobile) {
             return Column(
@@ -1069,10 +1193,12 @@ class _HomeworkHeaderState extends State<_HomeworkHeader> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     iconWidget,
-                    const SizedBox(width: 16),
-                    Expanded(child: titleWidget),
+                    const SizedBox(width: 14),
+                    Expanded(child: metaWidget),
                   ],
                 ),
+                const SizedBox(height: 20),
+                detailsWidget,
                 const SizedBox(height: 24),
                 statsWidget,
               ],
@@ -1101,14 +1227,17 @@ class _StatBlock extends StatelessWidget {
     required this.big,
     required this.sub,
     required this.color,
+    this.width = 100,
   });
   final String label, big, sub;
   final Color color;
+  final double? width;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      width: width,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
@@ -1129,7 +1258,7 @@ class _StatBlock extends StatelessWidget {
           Text(
             big,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
               height: 1,
             ),
@@ -1150,8 +1279,9 @@ class _StatBlock extends StatelessWidget {
 }
 
 class _SubmissionsList extends StatefulWidget {
-  const _SubmissionsList({required this.doc});
+  const _SubmissionsList({required this.doc, required this.filter});
   final QueryDocumentSnapshot<Map<String, dynamic>> doc;
+  final SubmissionFilter filter;
 
   @override
   State<_SubmissionsList> createState() => _SubmissionsListState();
@@ -1191,7 +1321,9 @@ class _SubmissionsListState extends State<_SubmissionsList> {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _submissionsStream,
       builder: (context, snapshot) {
-        final submissions = snapshot.data?.docs ?? [];
+        final submissions = (snapshot.data?.docs ?? [])
+            .where((doc) => matchesSubmissionFilter(doc.data(), widget.filter))
+            .toList();
         if (submissions.isEmpty) {
           return SchoolCard(
             child: Padding(
@@ -1279,8 +1411,8 @@ class _SubmissionRowState extends State<_SubmissionRow> {
         builder: (context, setState) => AlertDialog(
           title: Text('Проверка работы: $studentName'),
           content: SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 500),
+            child: SizedBox(
+              width: 500,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1357,7 +1489,8 @@ class _SubmissionRowState extends State<_SubmissionRow> {
                   ? null
                   : () async {
                       final gradeVal = double.tryParse(gradeCtrl.text.trim());
-                      if (gradeVal == null) {
+                      if (gradeVal == null ||
+                          !isValidSubmissionGrade(gradeVal)) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
@@ -1528,42 +1661,132 @@ class _StatusPill extends StatelessWidget {
 }
 
 class _NoAssignmentsState extends StatelessWidget {
-  const _NoAssignmentsState({required this.onCreate});
+  const _NoAssignmentsState({required this.classId, required this.onCreate});
+  final String classId;
   final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.assignment_outlined,
-            size: 64,
-            color: SchoolColors.muted.withValues(alpha: 0.3),
-          ),
-          SizedBox(height: 16),
-          Text(
-            AppLocalizations.of(context)!.noTasks,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: SchoolColors.muted,
+    final isCompact = MediaQuery.sizeOf(context).width < 600;
+    final isTeacher = AppScope.of(context).appState.isTeacher;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Consumer(
+          builder: (context, ref, _) {
+            final appState = ref.watch(schoolAppStateProvider);
+            final isTeacher = appState.isTeacher;
+            final allClassAsync = ref.watch(
+              isTeacher
+                  ? teacherClassesStreamProvider
+                  : studentClassesStreamProvider,
+            );
+            final allVisibleClasses = allClassAsync.value ?? [];
+            final effectiveClassId = appState.selectedClassId ?? classId;
+            final currentClassName = allVisibleClasses
+                .firstWhere(
+                  (c) => c['id'] == effectiveClassId,
+                  orElse: () => {},
+                )['name']
+                ?.toString();
+
+            return PageHeader(
+              title: AppLocalizations.of(context)!.quests,
+              subtitle: AppLocalizations.of(context)!.totalAssignmentsCount(0),
+              classContext: currentClassName,
+              onClassContextTap: allVisibleClasses.length > 1
+                  ? () {
+                      showClassSwitcher(
+                        context: context,
+                        classes: allVisibleClasses,
+                        currentClassId: effectiveClassId,
+                        onSelect: (id) {
+                          ref.read(schoolAppStateProvider).selectClass(id);
+                        },
+                      );
+                    }
+                  : null,
+              trailing: isTeacher && !isCompact
+                  ? FilledButton.icon(
+                      onPressed: onCreate,
+                      style: FilledButton.styleFrom(
+                        minimumSize: Size.zero,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: Text(AppLocalizations.of(context)!.createATask),
+                    )
+                  : null,
+              trailingBelowTitle: isCompact,
+              padding: EdgeInsets.fromLTRB(
+                isCompact ? 20 : 32,
+                isCompact ? 16 : 32,
+                isCompact ? 20 : 32,
+                0,
+              ),
+            );
+          },
+        ),
+        Expanded(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 450),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.assignment_outlined,
+                      size: 64,
+                      color: SchoolColors.muted.withValues(alpha: 0.3),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      AppLocalizations.of(context)!.noTasks,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: SchoolColors.muted,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      AppLocalizations.of(
+                        context,
+                      )!.createYourFirstAssignmentFor,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: SchoolColors.muted),
+                    ),
+                    const SizedBox(height: 24),
+                    if (isTeacher && isCompact)
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: onCreate,
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: const Icon(Icons.add),
+                          label: Text(
+                            AppLocalizations.of(context)!.createATask,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
-          SizedBox(height: 8),
-          Text(
-            AppLocalizations.of(context)!.createYourFirstAssignmentFor,
-            style: TextStyle(color: SchoolColors.muted),
-          ),
-          SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: onCreate,
-            icon: Icon(Icons.add),
-            label: Text(AppLocalizations.of(context)!.createATask),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

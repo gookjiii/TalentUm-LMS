@@ -75,7 +75,18 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
                             AppLocalizations.of(context)!.unknownKey11,
                       ),
                       trailing: const Icon(Icons.refresh_rounded, size: 20),
-                      onTap: () {},
+                      onTap: () async {
+                        await AppScope.of(
+                          context,
+                        ).repository.regenerateInviteCode(widget.classId);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Invitation code regenerated'),
+                            ),
+                          );
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -223,8 +234,8 @@ class _ClassSettingsScreenState extends State<ClassSettingsScreen> {
       ),
     );
     if (ok == true && context.mounted) {
-      // Implement recursive deletion in production
-      Navigator.pop(context);
+      await AppScope.of(context).repository.deleteClass(widget.classId);
+      if (context.mounted) Navigator.pop(context);
     }
   }
 }

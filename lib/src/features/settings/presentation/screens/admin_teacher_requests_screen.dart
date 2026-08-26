@@ -10,12 +10,10 @@ class AdminTeacherRequestsScreen extends ConsumerStatefulWidget {
   const AdminTeacherRequestsScreen({super.key});
 
   @override
-  ConsumerState<AdminTeacherRequestsScreen> createState() =>
-      _AdminTeacherRequestsScreenState();
+  ConsumerState<AdminTeacherRequestsScreen> createState() => _AdminTeacherRequestsScreenState();
 }
 
-class _AdminTeacherRequestsScreenState
-    extends ConsumerState<AdminTeacherRequestsScreen> {
+class _AdminTeacherRequestsScreenState extends ConsumerState<AdminTeacherRequestsScreen> {
   Future<void> _approveRequest(String userId, String requestId) async {
     final repo = ref.read(repositoryProvider);
     try {
@@ -31,25 +29,20 @@ class _AdminTeacherRequestsScreenState
       });
 
       // Delete the request
-      await repo.firestore
-          .collection('teacher_requests')
-          .doc(requestId)
-          .delete();
+      await repo.firestore.collection('teacher_requests').doc(requestId).delete();
 
       if (mounted) {
         Navigator.pop(context); // spinner
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.teachersLicenseIssued),
-          ),
+          SnackBar(content: Text(AppLocalizations.of(context)!.teachersLicenseIssued)),
         );
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // spinner
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
       }
     }
   }
@@ -64,25 +57,20 @@ class _AdminTeacherRequestsScreenState
       );
 
       // Delete the request
-      await repo.firestore
-          .collection('teacher_requests')
-          .doc(requestId)
-          .delete();
+      await repo.firestore.collection('teacher_requests').doc(requestId).delete();
 
       if (mounted) {
         Navigator.pop(context); // spinner
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.applicationRejected),
-          ),
+          SnackBar(content: Text(AppLocalizations.of(context)!.applicationRejected)),
         );
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // spinner
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
       }
     }
   }
@@ -106,7 +94,7 @@ class _AdminTeacherRequestsScreenState
           if (snapshot.hasError) {
             return Center(child: Text('Ошибка: ${snapshot.error}'));
           }
-
+          
           final docs = snapshot.data?.docs ?? [];
           if (docs.isEmpty) {
             return EmptyState(
@@ -123,9 +111,7 @@ class _AdminTeacherRequestsScreenState
               final data = docs[index].data() as Map<String, dynamic>;
               final requestId = docs[index].id;
               final userId = data['userId'] as String;
-              final name =
-                  data['name'] as String? ??
-                  AppLocalizations.of(context)!.student;
+              final name = data['name'] as String? ?? AppLocalizations.of(context)!.student;
               final email = data['email'] as String? ?? '';
 
               return Padding(
@@ -135,13 +121,8 @@ class _AdminTeacherRequestsScreenState
                   child: Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: SchoolColors.accent.withValues(
-                          alpha: 0.1,
-                        ),
-                        child: const Icon(
-                          Icons.person_outline,
-                          color: SchoolColors.accent,
-                        ),
+                        backgroundColor: SchoolColors.accent.withValues(alpha: 0.1),
+                        child: const Icon(Icons.person_outline, color: SchoolColors.accent),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -150,36 +131,24 @@ class _AdminTeacherRequestsScreenState
                           children: [
                             Text(
                               name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                             if (email.isNotEmpty)
                               Text(
                                 email,
-                                style: const TextStyle(
-                                  color: SchoolColors.muted,
-                                  fontSize: 13,
-                                ),
+                                style: const TextStyle(color: SchoolColors.muted, fontSize: 13),
                               ),
                           ],
                         ),
                       ),
                       IconButton(
                         onPressed: () => _approveRequest(userId, requestId),
-                        icon: const Icon(
-                          Icons.check_circle_outline,
-                          color: SchoolColors.green,
-                        ),
+                        icon: const Icon(Icons.check_circle_outline, color: SchoolColors.green),
                         tooltip: AppLocalizations.of(context)!.approve,
                       ),
                       IconButton(
                         onPressed: () => _rejectRequest(requestId),
-                        icon: const Icon(
-                          Icons.cancel_outlined,
-                          color: SchoolColors.red,
-                        ),
+                        icon: const Icon(Icons.cancel_outlined, color: SchoolColors.red),
                         tooltip: AppLocalizations.of(context)!.reject,
                       ),
                     ],

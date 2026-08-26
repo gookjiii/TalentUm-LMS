@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -16,11 +17,13 @@ class TeacherScheduleScreen extends ConsumerStatefulWidget {
     this.readOnly = false,
     this.studentClassIds,
     this.studentClasses,
+    this.initialClassId,
   });
 
   final bool readOnly;
   final List<String>? studentClassIds;
   final List<Map<String, dynamic>>? studentClasses;
+  final String? initialClassId;
 
   @override
   ConsumerState<TeacherScheduleScreen> createState() =>
@@ -32,15 +35,25 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
   late DateTime _weekStart;
   static const _startHour = 6;
   static const _endHour = 22;
-  static const _hourHeight = 56.0;
+  static const _hourHeight = 64.0;
   String? _selectedClassId; // null means My Schedule
 
   @override
   void initState() {
     super.initState();
+    _selectedClassId = widget.initialClassId;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     _weekStart = today.subtract(Duration(days: today.weekday - 1));
+  }
+
+  @override
+  void didUpdateWidget(covariant TeacherScheduleScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialClassId != widget.initialClassId &&
+        _selectedClassId != widget.initialClassId) {
+      setState(() => _selectedClassId = widget.initialClassId);
+    }
   }
 
   @override
@@ -54,6 +67,12 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
 
     final appState = ref.watch(schoolAppStateProvider);
     final classesAsync = ref.watch(teacherClassesStreamProvider);
+    final visibleClassIds =
+        (classesAsync.valueOrNull ?? const <Map<String, dynamic>>[])
+            .map((item) => item['id']?.toString())
+            .whereType<String>()
+            .where((id) => id.isNotEmpty)
+            .toList();
 
     final Stream<List<ScheduleEntry>> schedulesStream;
     final Stream<List<ScheduleOverride>> overridesStream;
@@ -66,9 +85,15 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
         overridesStream = repo.studentScheduleOverridesStream(ids);
         streamKeys = ['student_all', ...ids];
       } else {
-        schedulesStream = repo.teacherSchedulesStream(uid);
-        overridesStream = repo.teacherScheduleOverridesStream(uid);
-        streamKeys = [uid];
+        schedulesStream = repo.teacherSchedulesStream(
+          uid,
+          classIds: visibleClassIds,
+        );
+        overridesStream = repo.teacherScheduleOverridesStream(
+          uid,
+          classIds: visibleClassIds,
+        );
+        streamKeys = [uid, ...visibleClassIds];
       }
     } else {
       schedulesStream = repo.studentSchedulesStream([_selectedClassId!]);
@@ -89,7 +114,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
         centerTitle: false,
         titleSpacing: 16,
         title: Text(
-          DateFormat('MMMM yyyy', l10n.localeName).format(_weekStart),
+          _formatWeekTitle(_weekStart, l10n.localeName),
           style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
         ),
         actions: [
@@ -469,6 +494,21 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
   }
 }
 
+String _formatWeekTitle(DateTime weekStart, String localeName) {
+  final weekEnd = weekStart.add(const Duration(days: 6));
+  final startMonth = DateFormat('MMMM', localeName).format(weekStart);
+  final endMonth = DateFormat('MMMM', localeName).format(weekEnd);
+
+  if (weekStart.year == weekEnd.year && weekStart.month == weekEnd.month) {
+    return DateFormat('MMMM yyyy', localeName).format(weekStart);
+  }
+  if (weekStart.year == weekEnd.year) {
+    return '$startMonth — $endMonth ${weekStart.year}';
+  }
+  return '${DateFormat('MMMM yyyy', localeName).format(weekStart)} — '
+      '${DateFormat('MMMM yyyy', localeName).format(weekEnd)}';
+}
+
 Future<void> showScheduleEditor(
   BuildContext context, {
   DateTime? prefillDate,
@@ -505,8 +545,8 @@ Future<void> showScheduleEditor(
       builder: (_) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         clipBehavior: Clip.antiAlias,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
+        child: SizedBox(
+          width: 400,
           child: _ScheduleEditorSheet(
             prefillDate: prefillDate ?? DateTime.now(),
             prefillStartMinute: prefillStartMinute,
@@ -753,87 +793,201 @@ class _WeekGrid extends StatelessWidget {
     final topMin = it.startMinute - startHour * 60;
     final top = (topMin / 60) * hourHeight;
     final height = ((it.endMinute - it.startMinute) / 60) * hourHeight;
+    final visibleHeight = height.clamp(28.0, 9999.0).toDouble();
     if (top < 0 || top > (endHour - startHour) * hourHeight) {
       return const SizedBox.shrink();
     }
     final color = colorFromHex(it.color, SchoolColors.primary);
     final sched = _schedById[it.scheduleId];
 
-    final clsData = classes.firstWhere(
-      (c) => c['id'] == it.classId,
-      orElse: () => <String, dynamic>{},
-    );
-    final clsName = clsData['name']?.toString() ?? it.classId;
-    final clsSubject = clsData['subject']?.toString() ?? '—';
-
-    final primaryTitle = it.note?.isNotEmpty == true ? it.note! : clsSubject;
-
     return Positioned(
       top: top,
       left: 4,
       right: 4,
-      height: height.clamp(28, 9999),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: sched == null ? null : () => onItemTap(sched, it.date),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: it.cancelled ? .12 : .18),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: color.withValues(alpha: .55)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      height: visibleHeight,
+      child: _EventCardContent(
+        it: it,
+        sched: sched,
+        classes: classes,
+        isDark: isDark,
+        color: color,
+        height: visibleHeight,
+        onItemTap: onItemTap,
+      ),
+    );
+  }
+}
+
+class _EventCardContent extends StatelessWidget {
+  const _EventCardContent({
+    required this.it,
+    required this.sched,
+    required this.classes,
+    required this.isDark,
+    required this.color,
+    required this.height,
+    required this.onItemTap,
+  });
+
+  final ResolvedScheduleItem it;
+  final ScheduleEntry? sched;
+  final List<Map<String, dynamic>> classes;
+  final bool isDark;
+  final Color color;
+  final double height;
+  final void Function(ScheduleEntry sched, DateTime date)? onItemTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final repo = AppScope.of(context).repository;
+
+    final clsData = classes.firstWhere(
+      (c) => c['id'] == it.classId,
+      orElse: () => <String, dynamic>{},
+    );
+
+    final String? existingName = clsData['name']?.toString();
+    if (existingName != null && existingName.isNotEmpty) {
+      return _buildCardUI(
+        context,
+        l10n: l10n,
+        className: existingName,
+        subject: clsData['subject']?.toString() ?? '—',
+      );
+    }
+
+    if (it.classId.isEmpty) {
+      return _buildCardUI(
+        context,
+        l10n: l10n,
+        className: l10n.classText,
+        subject: '—',
+      );
+    }
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: repo.firestore.collection('classes').doc(it.classId).snapshots(),
+      builder: (context, snap) {
+        final data = snap.data?.data();
+        final rawName = data?['name']?.toString();
+        final className = (rawName != null && rawName.isNotEmpty)
+            ? rawName
+            : l10n.classText;
+        final subject = data?['subject']?.toString() ?? '—';
+
+        return _buildCardUI(
+          context,
+          l10n: l10n,
+          className: className,
+          subject: subject,
+        );
+      },
+    );
+  }
+
+  Widget _buildCardUI(
+    BuildContext context, {
+    required AppLocalizations l10n,
+    required String className,
+    required String subject,
+  }) {
+    final classLabel = (subject != '—' && subject.isNotEmpty)
+        ? subject
+        : className;
+    final lessonSubject = it.subject?.isNotEmpty == true
+        ? it.subject!
+        : (it.note?.isNotEmpty == true
+              ? it.note!
+              : (classLabel != className ? className : ''));
+    final roomText = it.room;
+
+    final showClassLabel = height >= 28;
+    final showSubject = height >= 28 && lessonSubject.isNotEmpty;
+    final showRoom = height >= 64 && roomText != null && roomText.isNotEmpty;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: sched == null ? null : () => onItemTap?.call(sched!, it.date),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: it.cancelled ? .12 : .18),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withValues(alpha: .55)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${_fmt(it.startMinute)} – ${_fmt(it.endMinute)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 9,
+                  height: 1.1,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                  decoration: it.cancelled ? TextDecoration.lineThrough : null,
+                ),
+              ),
+              if (showClassLabel) ...[
+                const SizedBox(height: 1),
                 Text(
-                  '${_fmt(it.startMinute)} – ${_fmt(it.endMinute)}',
+                  classLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    color: color,
+                    fontSize: 9.5,
+                    height: 1.1,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? SchoolColors.darkTextSecondary
+                        : SchoolColors.textSecondary,
                     decoration: it.cancelled
                         ? TextDecoration.lineThrough
                         : null,
                   ),
                 ),
-                Flexible(
-                  child: Text(
-                    primaryTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                      decoration: it.cancelled
-                          ? TextDecoration.lineThrough
-                          : null,
-                    ),
+              ],
+              if (showSubject) ...[
+                const SizedBox(height: 1),
+                Text(
+                  lessonSubject,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    height: 1.1,
+                    fontWeight: FontWeight.w900,
+                    color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                    decoration: it.cancelled
+                        ? TextDecoration.lineThrough
+                        : null,
                   ),
                 ),
-                if (height > 45)
-                  Flexible(
-                    child: Text(
-                      '${it.room ?? clsName}${it.room != null ? ' · $clsName' : ''}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? SchoolColors.darkTextSecondary
-                            : SchoolColors.textSecondary,
-                        decoration: it.cancelled
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
-                    ),
-                  ),
               ],
-            ),
+              if (showRoom) ...[
+                const SizedBox(height: 1),
+                Text(
+                  roomText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 9,
+                    height: 1.1,
+                    fontWeight: FontWeight.w500,
+                    color: isDark
+                        ? SchoolColors.darkTextSecondary
+                        : SchoolColors.textSecondary,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
@@ -845,10 +999,16 @@ class _WeekGrid extends StatelessWidget {
     final m = (min % 60).toString().padLeft(2, '0');
     return '$h:$m';
   }
-
-  static bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 }
+
+String _fmt(int min) {
+  final h = (min ~/ 60).toString().padLeft(2, '0');
+  final m = (min % 60).toString().padLeft(2, '0');
+  return '$h:$m';
+}
+
+bool _sameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
 
 class _DayHeader extends StatelessWidget {
   const _DayHeader({required this.date, required this.isToday});
@@ -908,32 +1068,6 @@ class _DayHeader extends StatelessWidget {
 
 // ── Editor bottom sheet ─────────────────────────────────────────────────
 
-/// Public wrapper for the editor form to be used in the sidebar
-class ScheduleEditorForm extends StatelessWidget {
-  const ScheduleEditorForm({
-    super.key,
-    required this.prefillDate,
-    this.prefillStartMinute,
-    this.existing,
-    this.prefillClassId,
-  });
-
-  final DateTime prefillDate;
-  final int? prefillStartMinute;
-  final ScheduleEntry? existing;
-  final String? prefillClassId;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ScheduleEditorSheet(
-      prefillDate: prefillDate,
-      prefillStartMinute: prefillStartMinute,
-      existing: existing,
-      prefillClassId: prefillClassId,
-    );
-  }
-}
-
 class _ScheduleEditorSheet extends StatefulWidget {
   const _ScheduleEditorSheet({
     required this.prefillDate,
@@ -958,6 +1092,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
   DateTime? _oneOffDate;
   TimeOfDay _start = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _end = const TimeOfDay(hour: 9, minute: 0);
+  final _subject = TextEditingController();
   final _room = TextEditingController();
   DateTime? _effectiveFrom;
   DateTime? _effectiveTo;
@@ -975,6 +1110,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
       _oneOffDate = e.oneOffDate;
       _start = TimeOfDay(hour: e.startMinute ~/ 60, minute: e.startMinute % 60);
       _end = TimeOfDay(hour: e.endMinute ~/ 60, minute: e.endMinute % 60);
+      _subject.text = e.subject ?? '';
       _room.text = e.room ?? '';
       _effectiveFrom = e.effectiveFrom;
       _effectiveTo = e.effectiveTo;
@@ -996,6 +1132,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
 
   @override
   void dispose() {
+    _subject.dispose();
     _room.dispose();
     super.dispose();
   }
@@ -1154,6 +1291,15 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _subject,
+                decoration: InputDecoration(
+                  labelText: l10n.subject,
+                  hintText: 'Например: Математика',
+                  border: const OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -1330,6 +1476,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
           dayOfWeek: _recurring ? _dayOfWeek : null,
           startMinute: _toMin(_start),
           endMinute: _toMin(_end),
+          subject: _subject.text.trim().isEmpty ? null : _subject.text.trim(),
           room: _room.text.trim().isEmpty ? null : _room.text.trim(),
           oneOffDate: _recurring ? null : _oneOffDate,
           effectiveFrom: _recurring ? _effectiveFrom : null,
@@ -1343,6 +1490,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
           'dayOfWeek': _recurring ? _dayOfWeek : null,
           'startMinute': _toMin(_start),
           'endMinute': _toMin(_end),
+          'subject': _subject.text.trim(),
           'room': _room.text.trim(),
           'oneOffDate': _recurring
               ? null
@@ -1399,6 +1547,7 @@ class _ScheduleEditorSheetState extends State<_ScheduleEditorSheet> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(l10n.deletedSchedule)));
+      if (mounted) Navigator.of(context).pop();
     } catch (e) {
       _showErr(l10n.errorPrefix(e.toString()));
     } finally {

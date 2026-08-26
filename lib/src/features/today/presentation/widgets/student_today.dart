@@ -10,12 +10,9 @@ import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:school_world/main.dart';
-import 'package:sw_design_system/design_system.dart';
-import 'package:school_world/src/utils/responsive_utils.dart';
 
-import 'package:school_world/src/screens/settings_screen.dart';
 import 'package:school_world/src/screens/student_shell.dart';
-
+import 'package:school_world/src/features/today/presentation/widgets/learning_streak_widget.dart';
 
 class StudentToday extends ConsumerWidget {
   const StudentToday({
@@ -25,14 +22,12 @@ class StudentToday extends ConsumerWidget {
     required this.onTabSelect,
     required this.onHomeworkTap,
     this.onProfileTap,
-    this.showSidebar = false,
   });
   final List<Map<String, dynamic>> classes;
   final String? selectedClassId;
   final ValueChanged<int> onTabSelect;
   final VoidCallback onHomeworkTap;
   final VoidCallback? onProfileTap;
-  final bool showSidebar;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -50,7 +45,6 @@ class StudentToday extends ConsumerWidget {
 
     final now = DateTime.now();
     final date = DateFormat('EEEE, MMMM d', l10n.localeName).format(now);
-    final greeting = l10n.welcomeToTalentum;
 
     final todaySchedules = ref.watch(studentTodaySchedulesProvider);
     final classInfo = {
@@ -81,87 +75,86 @@ class StudentToday extends ConsumerWidget {
       slivers: [
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: context.horizontalPadding,
-              vertical: 16,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: PageHeader(
-              padding: EdgeInsets.zero,
-              title: '$greeting!',
+              title: l10n.welcomeToTalentUm,
               subtitle: date,
               trailing: SchoolAvatar(
                 name: name,
                 avatarUrl: avatarUrl,
                 radius: 23,
-                onTap: onProfileTap ??
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (ctx) => SettingsScreen(
-                          repository: AppScope.of(ctx).repository,
-                          appState: AppScope.of(ctx).appState,
-                        ),
-                      ),
-                    ),
+                onTap: onProfileTap,
                 showBorder: true,
               ),
             ),
           ),
         ),
-
-        // ── Bento Grid Section ─────────────────────────────────────
-        SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
-          sliver: SliverToBoxAdapter(
-            child: Column(
-              children: [
-                IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: _BentoStats(
-                          classCount: classes.length,
-                          todayLessons: todaySchedules.length,
-                          activeLessons: activeLessons,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        flex: 3,
-                        child: StreakCard(
-                          classIds: classes
-                              .map((c) => (c['id'] ?? '').toString())
-                              .toList(),
-                          onTap: onHomeworkTap,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (upcomingClass != null) ...[
-                  _UpcomingClassReminder(
-                    item: upcomingClass,
-                    className:
-                        classInfo[upcomingClass.classId]?.name ?? 'Класс',
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ],
+        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: FadeIn(
+              delay: const Duration(milliseconds: 60),
+              child: _StatsRow(
+                classCount: classes.length,
+                todayLessons: todaySchedules.length,
+                activeLessons: activeLessons,
+              ),
             ),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-        // ── Today's classes ───────────────────────────────────────
-        if (!showSidebar) ...[
+        // ── Upcoming class reminder ────────────────────────────────
+        if (upcomingClass != null) ...[
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: context.horizontalPadding,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: FadeIn(
+                delay: const Duration(milliseconds: 80),
+                child: _UpcomingClassReminder(
+                  item: upcomingClass,
+                  className: classInfo[upcomingClass.classId]?.name ?? 'Класс',
+                ),
               ),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+        ],
+
+        // ── Streak / homework progress ─────────────────────────────
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            child: FadeIn(
+              delay: Duration(milliseconds: 100),
+              child: LearningStreakWidget(),
+            ),
+          ),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 12)),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: FadeIn(
+              delay: const Duration(milliseconds: 120),
+              child: StreakCard(
+                classIds: classes
+                    .map((c) => (c['id'] ?? '').toString())
+                    .toList(),
+                onTap: onHomeworkTap,
+              ),
+            ),
+          ),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+        // ── Today's classes ───────────────────────────────────────
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: FadeIn(
+              delay: const Duration(milliseconds: 160),
               child: SectionHeader(
                 title: l10n.todaysClasses.toUpperCase(),
                 action: l10n.viewAll,
@@ -169,27 +162,31 @@ class StudentToday extends ConsumerWidget {
               ),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          if (todaySchedules.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: context.horizontalPadding,
-                ),
-                child: SwBentoCard(
-                  padding: const EdgeInsets.symmetric(vertical: 48),
+        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 12)),
+        if (todaySchedules.isEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: FadeIn(
+                delay: const Duration(milliseconds: 180),
+                child: SchoolCard(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 32,
+                    horizontal: 16,
+                  ),
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.calendar_today_outlined,
                           size: 32,
-                          color: SchoolColors.muted.withOpacity(0.5),
+                          color: SchoolColors.muted,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                         Text(
                           l10n.noLessonsForToday,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: SchoolColors.muted,
@@ -200,90 +197,105 @@ class StudentToday extends ConsumerWidget {
                   ),
                 ),
               ),
-            )
-          else
-            SliverPadding(
-              padding: EdgeInsets.symmetric(
-                horizontal: context.horizontalPadding,
-              ),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = todaySchedules[index];
-                    if (index >= 3) return null;
-                    final info = classInfo[item.classId];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: StudentScheduleCard(
-                        item: item,
-                        className: info?.name ?? 'Класс',
-                        subject: info?.subject ?? '',
-                      ),
-                    );
-                  },
-                  childCount: todaySchedules.length > 3
-                      ? 3
-                      : todaySchedules.length,
-                ),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = todaySchedules[index];
+                  return FadeIn(
+                    delay: Duration(milliseconds: 180 + (index * 40)),
+                    child: StudentScheduleCard(
+                      item: item,
+                      className: classInfo[item.classId]?.name ?? 'Класс',
+                      subject: item.subject?.isNotEmpty == true
+                          ? item.subject!
+                          : (classInfo[item.classId]?.subject ?? ''),
+                      onTap: () {
+                        AppScope.of(context).appState.selectClass(item.classId);
+                        onTabSelect(2);
+                      },
+                    ),
+                  );
+                },
+                childCount: todaySchedules.length > 3
+                    ? 3
+                    : todaySchedules.length,
               ),
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-        ],
+          ),
+        const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
         // ── Quick links ───────────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: context.horizontalPadding,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: FadeIn(
+              delay: const Duration(milliseconds: 220),
+              child: SectionHeader(title: l10n.quickLinks),
             ),
-            child: SectionHeader(title: l10n.quickLinks),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
+        const SliverToBoxAdapter(child: SizedBox(height: 12)),
         SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: context.horizontalPadding),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           sliver: SliverGrid(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: MediaQuery.sizeOf(context).width >= 700 ? 4 : 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.6,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.5,
             ),
             delegate: SliverChildListDelegate([
-              QuickTile(
-                onTap: () => onTabSelect(5),
-                icon: Icons.library_books_outlined,
-                label: l10n.library,
-                color: SchoolColors.primary,
-              ),
-              QuickTile(
-                onTap: () => onTabSelect(6),
-                icon: Icons.ondemand_video_outlined,
-                label: l10n.webinars,
-                color: SchoolColors.accent,
-              ),
-              QuickTile(
-                onTap: () => showDialog(
-                  context: context,
-                  builder: (_) => JoinClassDialog(
-                    repository: AppScope.of(context).repository,
-                  ),
+              FadeIn(
+                delay: const Duration(milliseconds: 240),
+                child: QuickTile(
+                  onTap: () => onTabSelect(5),
+                  icon: Icons.library_books_outlined,
+                  label: l10n.library,
+                  color: SchoolColors.primary,
                 ),
-                icon: Icons.group_add_outlined,
-                label: l10n.joinAClass,
-                color: SchoolColors.secondary,
+              ),
+              FadeIn(
+                delay: const Duration(milliseconds: 260),
+                child: QuickTile(
+                  onTap: () => onTabSelect(6),
+                  icon: Icons.ondemand_video_outlined,
+                  label: l10n.webinars,
+                  color: SchoolColors.accent,
+                ),
+              ),
+              FadeIn(
+                delay: const Duration(milliseconds: 280),
+                child: QuickTile(
+                  onTap: () => showDialog(
+                    context: context,
+                    builder: (_) => JoinClassDialog(
+                      repository: AppScope.of(context).repository,
+                    ),
+                  ),
+                  icon: Icons.group_add_outlined,
+                  label: l10n.joinAClass,
+                  color: SchoolColors.secondary,
+                ),
               ),
             ]),
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        const SliverToBoxAdapter(child: SizedBox(height: 120)),
       ],
     );
   }
 }
 
-class _BentoStats extends StatelessWidget {
-  const _BentoStats({
+// ─────────────────────────────────────────────────────────────────
+// STATS ROW
+// ─────────────────────────────────────────────────────────────────
+class _StatsRow extends StatelessWidget {
+  const _StatsRow({
     required this.classCount,
     required this.todayLessons,
     required this.activeLessons,
@@ -294,66 +306,110 @@ class _BentoStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: SchoolColors.primary,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: SwTheme.diffusionShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$todayLessons',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 40,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1,
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.lessonsToday,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: SchoolColors.accent,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                l10n.activeBadge(activeLessons),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+
+    return Row(
+      children: [
+        _StatMini(
+          icon: Icons.school_rounded,
+          value: '$classCount',
+          label: l10n.allClasses,
+          color: SchoolColors.primary,
+          isDark: isDark,
+        ),
+        const SizedBox(width: 10),
+        _StatMini(
+          icon: Icons.calendar_today_rounded,
+          value: '$todayLessons',
+          label: l10n.todaysClasses,
+          color: SchoolColors.accent,
+          isDark: isDark,
+        ),
+        if (activeLessons > 0) ...[
+          const SizedBox(width: 10),
+          _StatMini(
+            icon: Icons.play_circle_rounded,
+            value: '$activeLessons',
+            label: AppLocalizations.of(context)!.now,
+            color: SchoolColors.green,
+            isDark: isDark,
+            pulsing: true,
           ),
         ],
-      ),
+      ],
     );
   }
 }
 
+class _StatMini extends StatelessWidget {
+  const _StatMini({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+    required this.isDark,
+    this.pulsing = false,
+  });
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+  final bool isDark;
+  final bool pulsing;
 
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDark
+              ? color.withValues(alpha: 0.12)
+              : color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: color.withValues(alpha: isDark ? 0.2 : 0.15),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: AppTextStyle.mono(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: color,
+                    ).copyWith(height: 1.1),
+                  ),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? SchoolColors.darkTextSecondary
+                          : SchoolColors.muted,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────
 // STREAK / HOMEWORK PROGRESS CARD
@@ -639,11 +695,13 @@ class StudentScheduleCard extends StatefulWidget {
     required this.item,
     required this.className,
     required this.subject,
+    this.onTap,
   });
 
   final ResolvedScheduleItem item;
   final String className;
   final String subject;
+  final VoidCallback? onTap;
 
   @override
   State<StudentScheduleCard> createState() => _StudentScheduleCardState();
@@ -660,7 +718,11 @@ class _StudentScheduleCardState extends State<StudentScheduleCard> {
     final end = widget.item.end;
     final isNow =
         now.isAfter(start) && now.isBefore(end) && !widget.item.cancelled;
-    final isNext = now.isBefore(start) && !widget.item.cancelled;
+    final isNext =
+        now.isBefore(start) &&
+        start.difference(now).inHours < 2 &&
+        !widget.item.cancelled;
+    final isPast = now.isAfter(end) && !widget.item.cancelled;
     final startLabel = DateFormat('HH:mm').format(start);
     final room = widget.item.room?.toString().trim() ?? '—';
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -686,6 +748,7 @@ class _StudentScheduleCardState extends State<StudentScheduleCard> {
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
         child: GestureDetector(
+          onTap: widget.onTap,
           onTapDown: (_) => setState(() => _pressed = true),
           onTapUp: (_) => setState(() => _pressed = false),
           onTapCancel: () => setState(() => _pressed = false),
@@ -801,6 +864,7 @@ class _StudentScheduleCardState extends State<StudentScheduleCard> {
                             _StatusPill(
                               isNow: isNow,
                               isNext: isNext,
+                              isPast: isPast,
                               isCancelled: widget.item.cancelled,
                             ),
                           ],
@@ -822,9 +886,10 @@ class _StatusPill extends StatelessWidget {
   const _StatusPill({
     required this.isNow,
     required this.isNext,
+    required this.isPast,
     required this.isCancelled,
   });
-  final bool isNow, isNext, isCancelled;
+  final bool isNow, isNext, isPast, isCancelled;
 
   @override
   Widget build(BuildContext context) {
@@ -834,6 +899,13 @@ class _StatusPill extends StatelessWidget {
         label: AppLocalizations.of(context)!.canceled,
         color: SchoolColors.red,
         icon: Icons.cancel_outlined,
+      );
+    }
+    if (isPast) {
+      return StatusChip(
+        label: l10n.done,
+        color: SchoolColors.muted,
+        icon: Icons.check_circle_outline,
       );
     }
     if (isNow) {

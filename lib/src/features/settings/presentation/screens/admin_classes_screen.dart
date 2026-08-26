@@ -5,7 +5,6 @@ import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import '../../../classroom/presentation/screens/bulk_class_create_screen.dart';
-import '../../../../features/roster/presentation/screens/roster_screen.dart';
 
 class AdminClassesScreen extends StatefulWidget {
   const AdminClassesScreen({super.key});
@@ -117,10 +116,10 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                             : null,
                         onTap: () async {
                           Navigator.pop(context);
-                          await repo.firestore
-                              .collection('classes')
-                              .doc(classId)
-                              .update({'teacherId': id});
+                          await repo.assignTeacherToClass(
+                            classId: classId,
+                            teacherId: id,
+                          );
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('Учитель $name назначен')),
@@ -136,13 +135,6 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
           ),
         );
       },
-    );
-  }
-
-  void _openRoster(String classId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => RosterScreen(classId: classId)),
     );
   }
 
@@ -266,22 +258,48 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                       final subject = data['subject']?.toString();
                       final teacherId = data['teacherId']?.toString() ?? '';
 
+                      final avatarUrl = data['avatarUrl']?.toString();
+                      final color = colorFromHex(data['coverColor']?.toString());
+
                       return SchoolCard(
                         padding: const EdgeInsets.all(16),
                         child: Row(
                           children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: SchoolColors.primary.withOpacity(0.1),
-                                shape: BoxShape.circle,
+                            GestureDetector(
+                              onTap: () => pickAndUpdateClassAvatar(
+                                context,
+                                classId: id,
+                                className: name,
                               ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.school_rounded,
-                                  color: SchoolColors.primary,
-                                ),
+                              child: Stack(
+                                children: [
+                                  ClassBadge(
+                                    name: name,
+                                    color: color,
+                                    size: 48,
+                                    avatarUrl: avatarUrl,
+                                  ),
+                                  Positioned(
+                                    right: -2,
+                                    bottom: -2,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).primaryColor,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Theme.of(context).cardColor,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.photo_camera_rounded,
+                                        size: 10,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -316,9 +334,13 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                               classId: id,
                               teacherId: teacherId,
                               className: name,
+                              onChangeAvatar: () => pickAndUpdateClassAvatar(
+                                context,
+                                classId: id,
+                                className: name,
+                              ),
                               onAssignTeacher: () =>
                                   _showTeacherSelectionDialog(id, teacherId),
-                              onOpenRoster: () => _openRoster(id),
                             ),
                           ],
                         ),
@@ -342,33 +364,43 @@ class _ClassActions extends StatelessWidget {
     required this.teacherId,
     required this.className,
     required this.onAssignTeacher,
-    required this.onOpenRoster,
+    required this.onChangeAvatar,
   });
 
   final String classId;
   final String teacherId;
   final String className;
   final VoidCallback onAssignTeacher;
-  final VoidCallback onOpenRoster;
+  final VoidCallback onChangeAvatar;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton.filledTonal(
-          onPressed: onOpenRoster,
-          icon: Icon(Icons.people_alt_rounded, size: 20),
-          tooltip: AppLocalizations.of(context)!.classRoster,
+        IconButton(
+          onPressed: () => showEditClassNameDialog(
+            context,
+            classId: classId,
+            currentName: className,
+          ),
+          icon: const Icon(Icons.edit_outlined, size: 20),
+          tooltip: 'Переименовать класс',
         ),
-        SizedBox(width: 8),
+        const SizedBox(width: 4),
+        IconButton(
+          onPressed: onChangeAvatar,
+          icon: const Icon(Icons.photo_camera_outlined, size: 20),
+          tooltip: 'Аватар класса',
+        ),
+        const SizedBox(width: 4),
         FilledButton.tonalIcon(
           onPressed: onAssignTeacher,
           style: FilledButton.styleFrom(
             minimumSize: Size.zero,
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           ),
-          icon: Icon(Icons.person_add_alt_1_rounded, size: 16),
+          icon: const Icon(Icons.person_add_alt_1_rounded, size: 16),
           label: Text(AppLocalizations.of(context)!.teacher),
         ),
       ],

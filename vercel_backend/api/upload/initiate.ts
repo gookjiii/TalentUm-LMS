@@ -1,118 +1,135 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getWorkingAuthClient, SHARED_FOLDER_ID } from '../../utils/drive';
-import { Client } from 'pg';
-import { handleCors, verifyFirebaseToken, checkRateLimit } from '../../utils/api';
+import { getDriveAccessToken, getDriveFolderId } from '../../utils/drive';
+import { dbAdmin, firebaseAdmin } from '../../utils/firebase';
+import { handleCors, requireAuthenticatedUser, checkRateLimit } from '../../utils/api';
+
+const DEFAULT_MAX_UPLOAD_BYTES = 5 * 1024 * 1024 * 1024;
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleCors(req, res)) return;
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  // Handle PUT: Proxy chunk to Google Drive
+  if (req.method === 'PUT') {
+    const user = await requireAuthenticatedUser(req);
+    if (!user) return res.status(401).json({ error: 'Authentication required' });
+
+    const uploadUrl = (req.headers['x-upload-url'] || '') as string;
+    const contentRange = (req.headers['x-upload-content-range'] || req.headers['content-range'] || '') as string;
+    const contentType = (req.headers['content-type'] || 'application/octet-stream') as string;
+
+    if (!uploadUrl) return res.status(400).json({ error: 'Missing x-upload-url header' });
+
+    try {
+      const buffers: Buffer[] = [];
+      for await (const chunk of req) {
+        buffers.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      const bodyBuffer = Buffer.concat(buffers);
+
+      const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': contentType,
+          'Content-Range': contentRange,
+        },
+        body: bodyBuffer,
+      });
+
+      res.status(response.status);
+      const rangeHeader = response.headers.get('range');
+      if (rangeHeader) res.setHeader('Range', rangeHeader);
+      const contentTypeHeader = response.headers.get('content-type');
+      if (contentTypeHeader) res.setHeader('Content-Type', contentTypeHeader);
+
+      const responseText = await response.text();
+      return res.send(responseText);
+    } catch (error: any) {
+      console.error('Error proxying chunk in initiate handler:', error);
+      return res.status(502).json({ error: 'Failed to proxy chunk to Google Drive' });
+    }
   }
 
-  if (!checkRateLimit(req, 20, 60000)) {
-    return res.status(429).json({ error: 'Too Many Requests' });
+  // Handle POST: Initiate upload session
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+  if (!checkRateLimit(req, 20, 60_000)) return res.status(429).json({ error: 'Too Many Requests' });
+
+  const user = await requireAuthenticatedUser(req);
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
+
+  // Parse JSON body manually when bodyParser is false
+  let bodyJson: any = {};
+  try {
+    const buffers: Buffer[] = [];
+    for await (const chunk of req) {
+      buffers.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    const raw = Buffer.concat(buffers).toString('utf8');
+    bodyJson = raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return res.status(400).json({ error: 'Invalid JSON body' });
   }
 
-  const authUser = await verifyFirebaseToken(req);
-  if (!authUser) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid or missing Firebase ID token' });
+  const { name, mimeType, size, path } = bodyJson ?? {};
+  const parsedSize = Number(size);
+  const maxUploadBytes = Number(process.env.MAX_DRIVE_UPLOAD_BYTES || DEFAULT_MAX_UPLOAD_BYTES);
+  const safeName = String(name || '').split(/[\\/]/).pop()?.trim() || '';
+  const safeMimeType = String(mimeType || '').trim();
+
+  if (!safeName || safeName.length > 255 || !safeMimeType || !Number.isSafeInteger(parsedSize) || parsedSize <= 0) {
+    return res.status(400).json({ error: 'Invalid name, mimeType, or size' });
   }
-
-  const { name, mimeType, size } = req.body;
-
-  if (typeof name !== 'string' || name.trim().length === 0 || name.length > 255) {
-    return res.status(400).json({ error: 'Invalid parameter: name must be a non-empty string up to 255 characters' });
+  if (parsedSize > maxUploadBytes) {
+    return res.status(413).json({ error: 'File exceeds the configured Google Drive upload limit' });
   }
-
-  if (typeof mimeType !== 'string' || mimeType.trim().length === 0 || mimeType.length > 150) {
-    return res.status(400).json({ error: 'Invalid parameter: mimeType must be a non-empty string' });
-  }
-
-  const sizeBytes = typeof size === 'number' ? size : Number(size);
-  if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) {
-    return res.status(400).json({ error: 'Missing required parameters: name, mimeType, size' });
-  }
-
-  const maxUploadBytes = parseInt(process.env.MAX_UPLOAD_BYTES || '104857600', 10); // 100MB default
-  if (sizeBytes > maxUploadBytes) {
-    return res.status(413).json({ error: `Payload Too Large: File size exceeds the maximum limit of ${maxUploadBytes} bytes` });
-  }
-
-  const dbClient = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 3000
-  });
 
   try {
-    await dbClient.connect();
-  } catch (dbError: any) {
-    console.error('Database connection failed:', dbError);
-    return res.status(500).json({
-      error: 'Database connection failed. Is the database paused?',
-      details: dbError.message
-    });
-  }
-
-  try {
-    const auth = await getWorkingAuthClient();
-    const tokenResponse = await auth.getAccessToken();
-    const accessToken = tokenResponse.token;
-
-    if (!accessToken) {
-      throw new Error('Failed to obtain Google Drive Access Token');
-    }
-
-    const originHeader = req.headers.origin;
-    const requestHeaders: Record<string, string> = {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      'X-Upload-Content-Type': mimeType,
-      'X-Upload-Content-Length': sizeBytes.toString(),
-    };
-
-    if (originHeader) {
-      requestHeaders['Origin'] = originHeader as string;
-    }
-
-    const initiateUrl = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true';
-
-    const response = await fetch(initiateUrl, {
-      method: 'POST',
-      headers: requestHeaders,
-      body: JSON.stringify({
-        name: name.trim(),
-        parents: [SHARED_FOLDER_ID],
-      }),
-    });
+    const accessToken = await getDriveAccessToken();
+    const folderId = getDriveFolderId();
+    const response = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json; charset=UTF-8',
+          'X-Upload-Content-Type': safeMimeType,
+          'X-Upload-Content-Length': parsedSize.toString(),
+        },
+        body: JSON.stringify({ name: safeName, parents: [folderId] }),
+      },
+    );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Google API error: ${response.status} - ${errorText}`);
+      const details = await response.text();
+      console.error('Google Drive session initiation failed:', response.status, details);
+      return res.status(502).json({ error: 'Google Drive rejected the upload session' });
     }
 
-    const uploadUrl = response.headers.get('Location');
-    if (!uploadUrl) {
-      throw new Error('Failed to retrieve the direct resumable upload URL (Location header empty)');
-    }
+    const uploadUrl = response.headers.get('location');
+    if (!uploadUrl) return res.status(502).json({ error: 'Google Drive did not return an upload URL' });
 
-    const insertQuery = `
-      INSERT INTO library_files (name, mime_type, size, status)
-      VALUES ($1, $2, $3, 'pending')
-      RETURNING id
-    `;
-    const dbRes = await dbClient.query(insertQuery, [name.trim(), mimeType, sizeBytes]);
-    const fileRecordId = dbRes.rows[0].id;
-
-    return res.status(200).json({
-      id: fileRecordId,
-      uploadUrl: uploadUrl,
+    const record = dbAdmin.collection('drive_uploads').doc();
+    await record.set({
+      ownerUid: user.uid,
+      ownerRole: user.resolvedRole,
+      name: safeName,
+      mimeType: safeMimeType,
+      size: parsedSize,
+      path: typeof path === 'string' ? path.slice(0, 1024) : null,
+      folderId,
+      status: 'pending',
+      createdAt: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
     });
+
+    return res.status(200).json({ id: record.id, uploadUrl });
   } catch (error: any) {
-    console.error('Error initiating upload:', error);
-    return res.status(500).json({ error: 'Failed to initiate upload', details: error.message });
-  } finally {
-    await dbClient.end();
+    console.error('Error initiating Google Drive upload:', error);
+    return res.status(503).json({ error: 'Google Drive upload service is unavailable' });
   }
 }

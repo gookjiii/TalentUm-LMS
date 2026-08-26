@@ -39,130 +39,116 @@ class StudentSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = AppScope.of(context).repository;
 
-    return RepaintBoundary(
-      child: Container(
-        width: extended ? 272 : 88,
-        margin: const EdgeInsets.fromLTRB(16, 16, 8, 16),
-        decoration: BoxDecoration(
-          color: SchoolColors.sidebarBg,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: SchoolColors.sidebarBorder),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.16),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.24),
-              blurRadius: 48,
-              offset: const Offset(0, 24),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // Header
-            _SidebarHeader(
+    return Container(
+      width: extended ? 260 : 80,
+      margin: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: SchoolColors.sidebarBg,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 30,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header
+          _SidebarHeader(
+            extended: extended,
+            subtitle: AppLocalizations.of(context)!.studentPortal,
+          ),
+          _SidebarDivider(),
+
+          // Navigation items
+          const SizedBox(height: 6),
+          ...List.generate(navigationItems.length, (i) {
+            final item = navigationItems[i];
+            final selected = selectedIndex == i;
+            return _SidebarNavItem(
+              icon: selected ? item.selectedIcon : item.icon,
+              label: item.label,
+              selected: selected,
               extended: extended,
-              subtitle: AppLocalizations.of(context)!.studentPortal,
-            ),
-            _SidebarDivider(),
+              onTap: () => onSelect(i),
+            );
+          }),
 
-            // Navigation items
-            const SizedBox(height: 6),
-            ...List.generate(navigationItems.length, (i) {
-              final item = navigationItems[i];
-              final selected = selectedIndex == i;
-              return _SidebarNavItem(
-                icon: selected ? item.selectedIcon : item.icon,
-                label: item.label,
-                selected: selected,
-                extended: extended,
-                onTap: () => onSelect(i),
-              );
-            }),
-
-            // Classes section
-            if (extended) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        AppLocalizations.of(context)!.myClasses,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.42),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                        ),
+          // Classes section
+          if (extended) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context)!.myClasses,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
                       ),
                     ),
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: IconButton(
-                        onPressed: () => showDialog(
-                          context: context,
-                          builder: (_) => JoinClassDialog(
-                            repository: AppScope.of(context).repository,
-                          ),
-                        ),
-                        icon: const Icon(Icons.add_rounded, size: 14),
-                        color: Colors.white.withValues(alpha: 0.4),
-                        padding: EdgeInsets.zero,
-                        tooltip: AppLocalizations.of(context)!.joinAClass,
-                        style: IconButton.styleFrom(
-                          backgroundColor: SchoolColors.sidebarSurface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics(),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  itemCount: classes.length,
-                  itemBuilder: (context, index) {
-                    final c = classes[index];
-                    final id = c['id'] as String;
-                    final isActive = id == activeClassId;
-                    return _SidebarClassItem(
-                      name: c['name']?.toString() ?? '',
-                      color: parseHexColor(c['coverColor']),
-                      selected: isActive,
-                      onTap: () {
-                        onSelectClass(id);
-                        if (selectedIndex == 0) onSelect(1);
-                      },
-                    );
-                  },
-                ),
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: IconButton(
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (_) => JoinClassDialog(
+                          repository: AppScope.of(context).repository,
+                        ),
+                      ),
+                      icon: const Icon(Icons.add_rounded, size: 14),
+                      color: Colors.white.withValues(alpha: 0.4),
+                      padding: EdgeInsets.zero,
+                      tooltip: AppLocalizations.of(context)!.joinAClass,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.08),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ] else
-              const Spacer(),
-
-            _SidebarDivider(),
-            _UserCard(
-              extended: extended,
-              onSignOut: repo.signOut,
-              onTap: onProfileTap,
             ),
-          ],
-        ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                itemCount: classes.length,
+                itemBuilder: (context, index) {
+                  final c = classes[index];
+                  final id = c['id'] as String;
+                  final isActive = id == activeClassId;
+                  return _SidebarClassItem(
+                    name: c['name']?.toString() ?? '',
+                    avatarUrl: c['avatarUrl']?.toString(),
+                    color: parseHexColor(c['coverColor']),
+                    selected: isActive,
+                    onTap: () {
+                      onSelectClass(id);
+                      if (selectedIndex == 0) onSelect(2);
+                    },
+                  );
+                },
+              ),
+            ),
+          ] else
+            const Spacer(),
+
+          _SidebarDivider(),
+          _UserCard(
+            extended: extended,
+            onSignOut: repo.signOut,
+            onTap: onProfileTap,
+          ),
+        ],
       ),
     );
   }
@@ -175,15 +161,16 @@ class StudentSidebar extends StatelessWidget {
 class _SidebarDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Divider(height: 1, thickness: 1, color: SchoolColors.sidebarBorder);
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: Colors.white.withValues(alpha: 0.06),
+    );
   }
 }
 
 class _SidebarHeader extends StatelessWidget {
-  const _SidebarHeader({
-    required this.extended,
-    required this.subtitle,
-  });
+  const _SidebarHeader({required this.extended, required this.subtitle});
 
   final bool extended;
   final String subtitle;
@@ -191,23 +178,13 @@ class _SidebarHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+      padding: const EdgeInsets.all(18),
       child: Row(
         mainAxisAlignment: extended
             ? MainAxisAlignment.start
             : MainAxisAlignment.center,
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              color: SchoolColors.sidebarSurface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            ),
-            child: const SchoolLogo(size: 36),
-          ),
+          const SchoolLogo(size: 36),
           if (extended) ...[
             const SizedBox(width: 12),
             Expanded(
@@ -228,29 +205,20 @@ class _SidebarHeader extends StatelessWidget {
                         appName,
                         style: const TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.2,
                           color: Colors.white,
                         ),
                       );
                     },
                   ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: SchoolColors.sidebarSurface,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.68),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.45),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ],
@@ -284,24 +252,16 @@ class _SidebarNavItem extends StatefulWidget {
 
 class _SidebarNavItemState extends State<_SidebarNavItem> {
   bool _hovered = false;
-  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     const activeColor = Colors.white;
     final inactiveColor = Colors.white.withValues(alpha: 0.55);
     final bgColor = widget.selected
-        ? SchoolColors.sidebarActive
+        ? Colors.white.withValues(alpha: 0.10)
         : _hovered
-        ? SchoolColors.sidebarSurfaceHover
+        ? Colors.white.withValues(alpha: 0.05)
         : Colors.transparent;
-
-    Matrix4 transform = Matrix4.identity();
-    if (!AppScope.of(context).appState.performanceMode) {
-      if (_pressed) {
-        transform.scale(0.96);
-      }
-    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -309,29 +269,20 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
         message: widget.extended ? '' : widget.label,
         preferBelow: false,
         child: MouseRegion(
-          cursor: SystemMouseCursors.click,
           onEnter: (_) => setState(() => _hovered = true),
           onExit: (_) => setState(() => _hovered = false),
           child: GestureDetector(
-            onTapDown: (_) => setState(() => _pressed = true),
-            onTapUp: (_) => setState(() => _pressed = false),
-            onTapCancel: () => setState(() => _pressed = false),
             onTap: widget.onTap,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOutCubic,
-              transform: transform,
-              transformAlignment: Alignment.center,
-              height: 48,
+              height: 44,
               padding: EdgeInsets.symmetric(
                 horizontal: widget.extended ? 14 : 0,
               ),
               decoration: BoxDecoration(
                 color: bgColor,
-                borderRadius: BorderRadius.circular(14),
-                border: widget.selected
-                    ? Border.all(color: Colors.white.withValues(alpha: 0.08))
-                    : null,
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 mainAxisAlignment: widget.extended
@@ -378,6 +329,7 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
                             ? FontWeight.w700
                             : FontWeight.w500,
                         color: widget.selected ? activeColor : inactiveColor,
+                        fontFamily: 'Plus Jakarta Sans',
                       ),
                       child: Text(widget.label),
                     ),
@@ -395,12 +347,14 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
 class _SidebarClassItem extends StatefulWidget {
   const _SidebarClassItem({
     required this.name,
+    this.avatarUrl,
     required this.color,
     required this.selected,
     required this.onTap,
   });
 
   final String name;
+  final String? avatarUrl;
   final Color color;
   final bool selected;
   final VoidCallback onTap;
@@ -416,13 +370,12 @@ class _SidebarClassItemState extends State<_SidebarClassItem> {
   Widget build(BuildContext context) {
     final inactiveColor = Colors.white.withValues(alpha: 0.6);
     final bgColor = widget.selected
-        ? SchoolColors.sidebarActive
+        ? Colors.white.withValues(alpha: 0.09)
         : _hovered
-        ? SchoolColors.sidebarSurfaceHover
+        ? Colors.white.withValues(alpha: 0.04)
         : Colors.transparent;
 
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: Padding(
@@ -431,21 +384,26 @@ class _SidebarClassItemState extends State<_SidebarClassItem> {
           onTap: widget.onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
-            height: 50,
+            height: 46,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: bgColor,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
               border: widget.selected
                   ? Border.all(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: widget.color.withValues(alpha: 0.25),
                       width: 1,
                     )
                   : null,
             ),
             child: Row(
               children: [
-                ClassBadge(name: widget.name, color: widget.color, size: 28),
+                ClassBadge(
+                  name: widget.name,
+                  color: widget.color,
+                  size: 28,
+                  avatarUrl: widget.avatarUrl,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -516,19 +474,17 @@ class _UserCard extends StatelessWidget {
             horizontal: extended ? 12 : 4,
             vertical: 12,
           ),
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: onTap,
-              behavior: HitTestBehavior.opaque,
-              child: AnimatedContainer(
+          child: GestureDetector(
+            onTap: onTap,
+            behavior: HitTestBehavior.opaque,
+            child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: EdgeInsets.all(extended ? 12 : 4),
               decoration: BoxDecoration(
-                color: SchoolColors.sidebarSurface,
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: Colors.white.withValues(alpha: 0.07),
                   width: 1,
                 ),
               ),
@@ -588,12 +544,8 @@ class _UserCard extends StatelessWidget {
               ),
             ),
           ),
-          ),
         );
       },
     );
   }
 }
-
-// Keep SidebarItem and SidebarClassItem exported for any external usage
-typedef SidebarItem = _SidebarNavItem;

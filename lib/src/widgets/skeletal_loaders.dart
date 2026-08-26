@@ -19,16 +19,18 @@ class SkeletalLoader extends StatelessWidget {
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
     final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
 
-    return Shimmer.fromColors(
-      baseColor: baseColor,
-      highlightColor: highlightColor,
-      period: const Duration(milliseconds: 1500),
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: baseColor,
-          borderRadius: BorderRadius.circular(borderRadius),
+    return RepaintBoundary(
+      child: Shimmer.fromColors(
+        baseColor: baseColor,
+        highlightColor: highlightColor,
+        period: const Duration(milliseconds: 1500),
+        child: Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: baseColor,
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
         ),
       ),
     );
@@ -44,9 +46,7 @@ class ChatMessageSkeleton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Row(
-        mainAxisAlignment: isMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
@@ -54,9 +54,7 @@ class ChatMessageSkeleton extends StatelessWidget {
             const SizedBox(width: 8),
           ],
           Column(
-            crossAxisAlignment: isMe
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
+            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               if (!isMe)
                 const Padding(
@@ -103,7 +101,11 @@ class ClassCardSkeleton extends StatelessWidget {
                   children: [
                     SkeletalLoader(width: 120, height: 16),
                     Spacer(),
-                    SkeletalLoader(width: 30, height: 16, borderRadius: 8),
+                    SkeletalLoader(
+                      width: 30,
+                      height: 16,
+                      borderRadius: 8,
+                    ),
                   ],
                 ),
                 SizedBox(height: 8),

@@ -1,0 +1,22 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "status": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['state', 'lastSeen']) && (newData.child('state').val() === 'online' || newData.child('state').val() === 'offline') && newData.child('lastSeen').isNumber()"
+      }
+    },
+    "typing": {
+      "$roomId": {
+        ".read": "auth != null",
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.val() === true || !newData.exists()"
+        }
+      }
+    }
+  }
+}

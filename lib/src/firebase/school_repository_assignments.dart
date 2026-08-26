@@ -3,6 +3,12 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'safe_firestore.dart';
 import 'package:school_world/src/firebase/push_notification_manager.dart';
 
+/// Homework grades are stored as percentages, from 0 through 100 inclusive.
+/// Keeping the validation here makes every grading entry point consistent.
+bool isValidSubmissionGrade(double grade) {
+  return grade.isFinite && grade >= 0 && grade <= 100;
+}
+
 mixin SchoolRepositoryAssignments {
   FirebaseFirestore get firestore;
   FirebaseFunctions get functions;
@@ -122,10 +128,44 @@ mixin SchoolRepositoryAssignments {
     required double grade,
     required String feedback,
   }) async {
-    await functions.httpsCallable('gradeSubmission').call({
-      'submissionId': submissionId,
+    if (!isValidSubmissionGrade(grade)) {
+      throw ArgumentError.value(grade, 'grade', 'must be between 0 and 100');
+    }
+    if (uid == null) {
+      throw StateError('An authenticated teacher is required to grade work.');
+    }
+
+    // This used to invoke a non-existent `gradeSubmission` Cloud Function,
+    // which made the grading dialog fail even for authorised teachers. The
+    // Firestore rules already authorise the class teacher to update a
+    // submission, so persist the review atomically in the active backend.
+    await firestore.collection('submissions').doc(submissionId).update({
       'grade': grade,
-      'feedback': feedback,
+      'feedback': feedback.trim(),
+      'status': 'graded',
+      'gradedBy': uid,
+      'gradedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  Future<void> deleteAssignment(String assignmentId) async {
+    final submissions = await firestore
+        .collection('submissions')
+        .where('assignmentId', isEqualTo: assignmentId)
+        .get();
+    var batch = firestore.batch();
+    var count = 0;
+    for (final submission in submissions.docs) {
+      batch.delete(submission.reference);
+      count++;
+      if (count == 400) {
+        await batch.commit();
+        batch = firestore.batch();
+        count = 0;
+      }
+    }
+    batch.delete(firestore.collection('assignments').doc(assignmentId));
+    await batch.commit();
   }
 }

@@ -12,6 +12,10 @@ mixin SchoolRepositoryLibrary {
     required String fileUrl,
     String? fileName,
     String? lessonId,
+    String? storageProvider,
+    String? storagePath,
+    String? driveFileId,
+    int? fileSize,
   }) async {
     await firestore.collection('library_materials').add({
       'classId': classId,
@@ -20,6 +24,10 @@ mixin SchoolRepositoryLibrary {
       'fileUrl': fileUrl,
       'fileName': fileName,
       'lessonId': lessonId,
+      'storageProvider': storageProvider,
+      'storagePath': storagePath,
+      'driveFileId': driveFileId,
+      'fileSize': fileSize,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -29,7 +37,7 @@ mixin SchoolRepositoryLibrary {
     int? limit,
   }) {
     if (classIds.isEmpty) return const Stream.empty();
-
+    
     var query = firestore
         .collection('library_materials')
         .where('classId', whereIn: classIds.take(30).toList())

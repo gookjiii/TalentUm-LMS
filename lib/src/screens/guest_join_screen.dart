@@ -93,20 +93,14 @@ class _GuestJoinScreenState extends State<GuestJoinScreen> {
                                 showDialog(
                                   context: context,
                                   builder: (c) => AlertDialog(
-                                    title: Text(
-                                      AppLocalizations.of(
-                                        context,
-                                      )!.technicalError,
-                                    ),
+                                    title: Text(AppLocalizations.of(context)!.technicalError),
                                     content: SingleChildScrollView(
                                       child: Text(_rawError!),
                                     ),
                                     actions: [
                                       TextButton(
                                         onPressed: () => Navigator.pop(c),
-                                        child: Text(
-                                          AppLocalizations.of(context)!.close,
-                                        ),
+                                        child: Text(AppLocalizations.of(context)!.close),
                                       ),
                                     ],
                                   ),
@@ -145,20 +139,16 @@ class _GuestJoinScreenState extends State<GuestJoinScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.chat_bubble_outline),
-                    label: Text(
-                      _loading
-                          ? AppLocalizations.of(context)!.joiningWait
-                          : AppLocalizations.of(context)!.enterClassroom,
-                    ),
+                    label: Text(_loading
+                        ? AppLocalizations.of(context)!.joiningWait
+                        : AppLocalizations.of(context)!.enterClassroom),
                   ),
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: () {
                       AppScope.of(context).appState.markJoined();
                     },
-                    child: Text(
-                      AppLocalizations.of(context)!.loginWithMainAccount,
-                    ),
+                    child: Text(AppLocalizations.of(context)!.loginWithMainAccount),
                   ),
                   const SizedBox(height: 20),
                   const Divider(),
@@ -222,8 +212,7 @@ class _GuestJoinScreenState extends State<GuestJoinScreen> {
         scope.appState.setRole('student');
       } else {
         setState(
-          () =>
-              _lastError = AppLocalizations.of(context)!.unableToJoinServerErr,
+          () => _lastError = AppLocalizations.of(context)!.unableToJoinServerErr,
         );
       }
     } catch (error) {

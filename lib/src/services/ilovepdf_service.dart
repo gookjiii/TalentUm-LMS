@@ -3,22 +3,16 @@ import 'package:flutter/foundation.dart';
 
 class ILovePdfService {
   ILovePdfService({Dio? dio}) : _dio = dio ?? Dio();
-
+  
   final Dio _dio;
-
+  
   // The public key should be provided via flutter build --dart-define=ILOVEPDF_PUBLIC_KEY=your_key
   // For development, we can fallback to a placeholder or empty string.
-  static const String _publicKey = String.fromEnvironment(
-    'ILOVEPDF_PUBLIC_KEY',
-    defaultValue:
-        'project_public_aeeb94e2c6a651dd01c6b9f5016e71b4_fbpBX006fc9af1ae62478dbae7c4dd8ac1253',
-  );
+  static const String _publicKey = String.fromEnvironment('ILOVEPDF_PUBLIC_KEY', defaultValue: 'project_public_aeeb94e2c6a651dd01c6b9f5016e71b4_fbpBX006fc9af1ae62478dbae7c4dd8ac1253');
 
   Future<Uint8List> compressPdf(Uint8List fileBytes, String fileName) async {
     if (_publicKey.isEmpty) {
-      throw Exception(
-        'ILOVEPDF_PUBLIC_KEY is not configured. Cannot compress PDF on Web.',
-      );
+      throw Exception('ILOVEPDF_PUBLIC_KEY is not configured. Cannot compress PDF on Web.');
     }
 
     try {
@@ -57,8 +51,11 @@ class ILovePdfService {
           'tool': 'compress',
           'compression_level': 'recommended', // extreme, recommended, less
           'files': [
-            {'server_filename': serverFilename, 'filename': fileName},
-          ],
+            {
+              'server_filename': serverFilename,
+              'filename': fileName,
+            }
+          ]
         },
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );

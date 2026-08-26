@@ -44,21 +44,13 @@ Stream<T> safeFirebaseStream<T>(Stream<T> source) {
 }
 
 extension SafeQueryExtension<T> on Query<T> {
-  Stream<QuerySnapshot<T>> safeSnapshots({
-    bool includeMetadataChanges = false,
-  }) {
-    return safeFirebaseStream(
-      snapshots(includeMetadataChanges: includeMetadataChanges),
-    );
+  Stream<QuerySnapshot<T>> safeSnapshots({bool includeMetadataChanges = false}) {
+    return safeFirebaseStream(snapshots(includeMetadataChanges: includeMetadataChanges));
   }
 }
 
 extension SafeDocExtension<T> on DocumentReference<T> {
-  Stream<DocumentSnapshot<T>> safeSnapshots({
-    bool includeMetadataChanges = false,
-  }) {
-    return safeFirebaseStream(
-      snapshots(includeMetadataChanges: includeMetadataChanges),
-    );
+  Stream<DocumentSnapshot<T>> safeSnapshots({bool includeMetadataChanges = false}) {
+    return safeFirebaseStream(snapshots(includeMetadataChanges: includeMetadataChanges));
   }
 }

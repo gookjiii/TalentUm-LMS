@@ -24,6 +24,7 @@ class JournalScreen extends ConsumerStatefulWidget {
 class _JournalScreenState extends ConsumerState<JournalScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final _reconciledClassIds = <String>{};
 
   @override
   void initState() {
@@ -40,19 +41,23 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveClassId =
-        (ref
-                    .watch(
-                      schoolAppStateProvider.select((s) => s.selectedClassId),
-                    )
-                    ?.isNotEmpty ==
-                true
-            ? ref.watch(schoolAppStateProvider.select((s) => s.selectedClassId))
-            : null) ??
-        (widget.classId.isNotEmpty ? widget.classId : null);
     final repo = ref.watch(repositoryProvider);
     final appState = ref.watch(schoolAppStateProvider);
     final isTeacher = appState.isTeacher;
+    final visibleClassesAsync = ref.watch(
+      isTeacher ? teacherClassesStreamProvider : studentClassesStreamProvider,
+    );
+    final visibleClasses = visibleClassesAsync.value ?? const [];
+    final visibleIds = visibleClasses.map((c) => c['id']?.toString()).toSet();
+    final storedClassId = appState.selectedClassId;
+    final effectiveClassId =
+        storedClassId != null && visibleIds.contains(storedClassId)
+        ? storedClassId
+        : (widget.classId.isNotEmpty && visibleIds.contains(widget.classId)
+              ? widget.classId
+              : (visibleClasses.isEmpty
+                    ? null
+                    : visibleClasses.first['id']?.toString()));
 
     // Guard: no valid class selected yet
     if (effectiveClassId == null) {
@@ -61,6 +66,17 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
         title: AppLocalizations.of(context)!.coolMagazine,
         subtitle: AppLocalizations.of(context)!.myGradesAndSubjects,
       );
+    }
+
+    if (isTeacher && _reconciledClassIds.add(effectiveClassId)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          await repo.reconcileClassMembership(effectiveClassId);
+        } catch (e) {
+          debugPrint('Class membership reconciliation failed: $e');
+          _reconciledClassIds.remove(effectiveClassId);
+        }
+      });
     }
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -83,11 +99,6 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
                         : studentClassesStreamProvider,
                   );
                   final allVisibleClasses = allClassAsync.value ?? [];
-                      final resolvedClassName = className ?? 
-                          allVisibleClasses
-                              .where((c) => c['id'] == effectiveClassId)
-                              .firstOrNull?['name']
-                              ?.toString();
 
                   return PageHeader(
                     title: AppLocalizations.of(context)!.coolMagazine,
@@ -96,8 +107,8 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
                         : AppLocalizations.of(
                             context,
                           )!.academicPerformanceAndSubjects,
-                    classContext: resolvedClassName,
-                    onClassContextTap: allVisibleClasses.isNotEmpty
+                    classContext: className,
+                    onClassContextTap: allVisibleClasses.length > 1
                         ? () {
                             showClassSwitcher(
                               context: context,
@@ -114,18 +125,28 @@ class _JournalScreenState extends ConsumerState<JournalScreen>
                     trailing: isTeacher
                         ? SizedBox(
                             height: 44,
-                            child: IconButton.filled(
+                            child: FilledButton.icon(
                               onPressed: () => _showAddLessonDialog(
                                 context,
                                 ref,
                                 effectiveClassId,
                               ),
-                              style: IconButton.styleFrom(
-                                backgroundColor: SchoolColors.primary,
-                                foregroundColor: Colors.white,
+                              icon: const Icon(Icons.add_rounded, size: 20),
+                              label: Text(
+                                AppLocalizations.of(context)!.addALesson,
                               ),
-                              icon: const Icon(Icons.add_rounded, size: 24),
-                              tooltip: AppLocalizations.of(context)!.addALesson,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: SchoolColors.primary,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
                             ),
                           )
                         : null,

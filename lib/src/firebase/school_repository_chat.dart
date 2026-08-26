@@ -17,17 +17,14 @@ mixin SchoolRepositoryChat {
     // Defer execution to next tick to avoid synchronous Firestore JS SDK stream conflicts during render/visibility callbacks
     Future.delayed(Duration.zero, () async {
       try {
-        // Phase 2: Cursor-based read receipts for scalability
-        // Replaces the heavy message-level arrayUnion updates.
         await firestore
             .collection('rooms')
             .doc(roomId)
-            .collection('seenCursors')
-            .doc(uid)
-            .set({
-          'lastSeenMessageId': messageId,
-          'lastSeenAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+            .collection('messages')
+            .doc(messageId)
+            .update({
+              'metadata.seenBy': FieldValue.arrayUnion([uid]),
+            });
       } catch (e) {
         debugPrint('Error marking message as seen: $e');
       }
@@ -37,14 +34,45 @@ mixin SchoolRepositoryChat {
   Future<Map<String, dynamic>?> uploadFile(String path, File file) async {
     File fileToUpload = file;
 
-    // Auto-compress images
-    final ext = file.path.split('.').last.toLowerCase();
+    final ext = path.split('.').last.toLowerCase();
+    final isMedia = [
+      'jpg',
+      'jpeg',
+      'png',
+      'webp',
+      'gif',
+      'mp4',
+      'mov',
+      'webm',
+      'avi',
+      'mkv',
+      'm4a',
+      'mp3',
+      'aac',
+      'wav',
+      'ogg',
+      'opus',
+      'caf',
+      'flac',
+    ].contains(ext);
+
+    // Downscale only genuinely oversized images. Chat images have already been
+    // prepared by the composer, so re-encoding them here would blur text and
+    // handwriting in the full-screen preview.
     if (['jpg', 'jpeg', 'png'].contains(ext)) {
       try {
         final bytes = await file.readAsBytes();
-        final compressedBytes = await compute(_compressImageTask, bytes);
-
-        if (compressedBytes != null) {
+        final image = img.decodeImage(bytes);
+        if (image != null && (image.width > 2560 || image.height > 2560)) {
+          final resized = img.copyResize(
+            image,
+            width: image.width >= image.height ? 2560 : null,
+            height: image.height > image.width ? 2560 : null,
+            interpolation: img.Interpolation.cubic,
+          );
+          final compressedBytes = Uint8List.fromList(
+            img.encodeJpg(resized, quality: 92),
+          );
           final tempDir = file.parent.path;
           final tempFile = File(
             '$tempDir/temp_compressed_${DateTime.now().millisecondsSinceEpoch}.jpg',
@@ -57,9 +85,16 @@ mixin SchoolRepositoryChat {
       }
     }
 
-    final provider = CloudinaryStorageProvider.chatProvider();
+    final provider = isMedia
+        ? CloudinaryStorageProvider.chatAttachmentProvider()
+        : CloudinaryStorageProvider.libraryProvider();
     final result = await provider.uploadFile(path, fileToUpload);
-    return {'url': result['url'], 'path': path};
+    return {
+      'url': result['url'],
+      'path': path,
+      if (result['provider'] != null) 'provider': result['provider'],
+      if (result['driveFileId'] != null) 'driveFileId': result['driveFileId'],
+    };
   }
 
   Future<Map<String, dynamic>?> uploadFileWeb(
@@ -68,19 +103,57 @@ mixin SchoolRepositoryChat {
   ) async {
     Uint8List finalBytes = bytes;
 
-    // Web compression
-    try {
-      final compressedBytes = await compute(_compressImageTask, bytes);
-      if (compressedBytes != null) {
-        finalBytes = compressedBytes;
+    final ext = path.split('.').last.toLowerCase();
+    final isMedia = [
+      'jpg',
+      'jpeg',
+      'png',
+      'webp',
+      'gif',
+      'mp4',
+      'mov',
+      'webm',
+      'avi',
+      'mkv',
+      'm4a',
+      'mp3',
+      'aac',
+      'wav',
+      'ogg',
+      'opus',
+      'caf',
+      'flac',
+    ].contains(ext);
+
+    // Preserve the already-prepared chat image whenever it is within the
+    // maximum dimension. This avoids the former double JPEG compression.
+    if (['jpg', 'jpeg', 'png'].contains(ext)) {
+      try {
+        final image = img.decodeImage(bytes);
+        if (image != null && (image.width > 2560 || image.height > 2560)) {
+          final resized = img.copyResize(
+            image,
+            width: image.width >= image.height ? 2560 : null,
+            height: image.height > image.width ? 2560 : null,
+            interpolation: img.Interpolation.cubic,
+          );
+          finalBytes = Uint8List.fromList(img.encodeJpg(resized, quality: 92));
+        }
+      } catch (e) {
+        debugPrint('Web image compression error: $e');
       }
-    } catch (e) {
-      debugPrint('Web image compression error: $e');
     }
 
-    final provider = CloudinaryStorageProvider.chatProvider();
+    final provider = isMedia
+        ? CloudinaryStorageProvider.chatAttachmentProvider()
+        : CloudinaryStorageProvider.libraryProvider();
     final result = await provider.uploadFileWeb(path, finalBytes);
-    return {'url': result['url'], 'path': path};
+    return {
+      'url': result['url'],
+      'path': path,
+      if (result['provider'] != null) 'provider': result['provider'],
+      if (result['driveFileId'] != null) 'driveFileId': result['driveFileId'],
+    };
   }
 
   String? get uid;
@@ -104,16 +177,4 @@ mixin SchoolRepositoryChat {
         .orderBy('createdAt', descending: true)
         .safeSnapshots();
   }
-}
-
-// Top-level function for isolate computation
-Uint8List? _compressImageTask(Uint8List bytes) {
-  try {
-    final image = img.decodeImage(bytes);
-    if (image != null && image.width > 1200) {
-      final resized = img.copyResize(image, width: 1200);
-      return Uint8List.fromList(img.encodeJpg(resized, quality: 85));
-    }
-  } catch (_) {}
-  return null;
 }

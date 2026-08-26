@@ -10,7 +10,7 @@ import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/utils/reload_app.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
-import 'settings_components.dart';
+import 'package:school_world/src/features/settings/presentation/widgets/settings_layout.dart';
 
 class TeacherSettingsTab extends StatefulWidget {
   const TeacherSettingsTab({super.key});
@@ -118,33 +118,59 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
 
   void _subscribeToUser() {
     final repo = AppScope.of(context).repository;
-    _userSub = repo.userDocStream().listen((snap) {
-      if (mounted) {
-        setState(() {
-          _userData = snap.data() ?? {};
-          _loading = false;
-        });
-      }
-    });
+    _userSub = repo.userDocStream().listen(
+      (snap) {
+        if (mounted) {
+          setState(() {
+            _userData = _normaliseMap(snap.data());
+            _loading = false;
+          });
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        debugPrint('Unable to load teacher settings: $error');
+        if (mounted) {
+          setState(() {
+            _userData = <String, dynamic>{};
+            _loading = false;
+          });
+        }
+      },
+    );
+  }
+
+  Map<String, dynamic> _normaliseMap(Object? value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return <String, dynamic>{};
   }
 
   Future<void> _loadCounts() async {
     final repo = AppScope.of(context).repository;
     final uid = repo.uid;
     if (uid == null) return;
-    final classesSnap = await repo.firestore
-        .collection('classes')
-        .where('teacherId', isEqualTo: uid)
-        .get();
-    final uniqueStudents = <String>{};
-    for (final doc in classesSnap.docs) {
-      uniqueStudents.addAll(List<String>.from(doc.data()['studentIds'] ?? []));
-    }
-    if (mounted) {
-      setState(() {
-        _classesCount = classesSnap.docs.length;
-        _studentsCount = uniqueStudents.length;
-      });
+    try {
+      final classesSnap = await repo.firestore
+          .collection('classes')
+          .where('teacherId', isEqualTo: uid)
+          .get();
+      final uniqueStudents = <String>{};
+      for (final doc in classesSnap.docs) {
+        final rawIds = doc.data()['studentIds'];
+        if (rawIds is Iterable) {
+          uniqueStudents.addAll(rawIds.whereType<String>());
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _classesCount = classesSnap.docs.length;
+          _studentsCount = uniqueStudents.length;
+        });
+      }
+    } catch (error) {
+      // Settings must remain usable when a teacher has no class documents or
+      // Firestore is temporarily unavailable.
+      debugPrint('Unable to load teacher class counts: $error');
     }
   }
 
@@ -158,23 +184,34 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
 
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) {
+      // The settings tab can be mounted while MaterialApp is rebuilding its
+      // locale delegate. Avoid a null-check crash during that short window.
+      return const Center(child: CircularProgressIndicator());
+    }
     final user = FirebaseAuth.instance.currentUser;
-    final name = (_userData['name'] as String?)?.isNotEmpty == true
-        ? _userData['name'] as String
-        : (user?.displayName ?? AppLocalizations.of(context)!.teacher);
-    final avatarUrl = _userData['avatarUrl'] as String?;
+    final storedName = _userData['name']?.toString().trim();
+    final name = storedName?.isNotEmpty == true
+        ? storedName ?? ''
+        : (user?.displayName ?? l10n.teacher);
+    final avatarUrl = _userData['avatarUrl']?.toString();
     final email = user?.email ?? '';
-    final school = _userData['school'] ?? AppLocalizations.of(context)!.n57;
+    final school = _userData['school']?.toString().trim().isNotEmpty == true
+        ? _userData['school'].toString()
+        : l10n.n57;
     final appState = AppScope.of(context).appState;
-    final settings = _userData['settings'] as Map<String, dynamic>? ?? {};
+    final settings = _normaliseMap(_userData['settings']);
 
     return AnimatedBuilder(
       animation: appState,
       builder: (context, _) {
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-          children: [
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+              children: [
                 PageHeader(
                   title: l10n.settings,
                   subtitle: l10n.personalizationAndAccountManagement,
@@ -182,13 +219,16 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                 ),
 
                 // Profile Card
-                ProfileCard(
+                SettingsProfileCard(
                   name: name,
                   avatarUrl: avatarUrl,
                   sub:
-                      '${appState.isLeadTeacher ? 'Lead Teacher' : l10n.teacher} · $school',
-                  isTeacher: true,
-                  classesCount: _classesCount,
+                      '${appState.isLeadTeacher ? l10n.administrator : l10n.teacher} · $school',
+                  countLabel: '$_classesCount ${l10n.classes.toLowerCase()}',
+                  verifiedLabel: l10n.verified,
+                  roleColor: appState.isLeadTeacher
+                      ? SchoolColors.primary
+                      : SchoolColors.red,
                   onEditAvatar: _uploadingAvatar ? null : _pickAndUploadAvatar,
                 ),
 
@@ -198,7 +238,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                 Row(
                   children: [
                     Expanded(
-                      child: StatMiniCard(
+                      child: SettingsStatCard(
                         label: l10n
                             .studentsCount(_studentsCount)
                             .split(':')[0]
@@ -209,15 +249,19 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: StatMiniCard(
-                        label: l10n.createClass.split(' ')[1].toUpperCase(),
+                      child: SettingsStatCard(
+                        // `createClass` is intentionally a one-word action in
+                        // both locales ("Create"/"Создать"). Indexing the
+                        // second split token caused Settings to crash at
+                        // runtime with a null-check error in the web shell.
+                        label: l10n.classes.toUpperCase(),
                         value: _classesCount.toString(),
                         color: SchoolColors.green,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: StatMiniCard(
+                      child: SettingsStatCard(
                         label: AppLocalizations.of(context)!.experience,
                         value: _userData['experience']?.toString() ?? '—',
                         color: SchoolColors.yellow,
@@ -228,24 +272,24 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
 
                 const SizedBox(height: 12),
 
-                _SettingsGroup(
+                SettingsGroup(
                   label: l10n.studentAccount.split(' ')[1],
                   children: [
-                    _SettingsRow(
+                    SettingsRow(
                       icon: Icons.person_outline_rounded,
                       color: SchoolColors.primary,
                       label: AppLocalizations.of(context)!.personalInformation,
                       sub: name,
                       onTap: () => _editName(context, name),
                     ),
-                    _SettingsRow(
+                    SettingsRow(
                       icon: Icons.email_outlined,
                       color: SchoolColors.yellow,
                       label: l10n.email,
                       sub: email,
                       onTap: () => _editEmail(context, email),
                     ),
-                    _SettingsRow(
+                    SettingsRow(
                       icon: Icons.link_rounded,
                       color: SchoolColors.accent,
                       label: AppLocalizations.of(context)!.linkedAccounts,
@@ -256,10 +300,10 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                   ],
                 ),
 
-                _SettingsGroup(
+                SettingsGroup(
                   label: l10n.notifications,
                   children: [
-                    _SettingsRow(
+                    SettingsRow(
                       icon: Icons.notifications_none_rounded,
                       color: SchoolColors.red,
                       label: AppLocalizations.of(context)!.pushNotifications,
@@ -269,7 +313,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                         onChanged: (v) => _updateSetting('pushEnabled', v),
                       ),
                     ),
-                    _SettingsRow(
+                    SettingsRow(
                       icon: Icons.chat_bubble_outline_rounded,
                       color: SchoolColors.primary,
                       label: AppLocalizations.of(context)!.newMessages,
@@ -279,7 +323,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                         onChanged: (v) => _updateSetting('msgNotifs', v),
                       ),
                     ),
-                    _SettingsRow(
+                    SettingsRow(
                       icon: Icons.push_pin_outlined,
                       color: SchoolColors.yellow,
                       label: AppLocalizations.of(context)!.updates,
@@ -293,10 +337,10 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                   ],
                 ),
 
-                _SettingsGroup(
+                SettingsGroup(
                   label: AppLocalizations.of(context)!.registration,
                   children: [
-                    _SettingsRow(
+                    SettingsRow(
                       icon: Icons.dark_mode_outlined,
                       color: SchoolColors.accent,
                       label: l10n.darkMode,
@@ -308,7 +352,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                         onChanged: (v) => appState.toggleDarkMode(),
                       ),
                     ),
-                    _SettingsRow(
+                    SettingsRow(
                       icon: Icons.speed_rounded,
                       color: SchoolColors.yellow,
                       label:
@@ -323,7 +367,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                         onChanged: (v) => appState.setPerformanceMode(v),
                       ),
                     ),
-                    _SettingsRow(
+                    SettingsRow(
                       icon: Icons.palette_outlined,
                       color: SchoolColors.primary,
                       label: AppLocalizations.of(context)!.accentColor,
@@ -388,7 +432,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                         ],
                       ),
                     ),
-                    _SettingsRow(
+                    SettingsRow(
                       icon: Icons.language_rounded,
                       color: SchoolColors.green,
                       label: l10n.language,
@@ -401,7 +445,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                   ],
                 ),
 
-                _SettingsGroup(
+                SettingsGroup(
                   label: AppLocalizations.of(context)!.tariffPlan,
                   children: [
                     Container(
@@ -471,10 +515,10 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                   ],
                 ),
 
-                _SettingsGroup(
+                SettingsGroup(
                   label: AppLocalizations.of(context)!.safety,
                   children: [
-                    _SettingsRow(
+                    SettingsRow(
                       icon: Icons.security_outlined,
                       color: SchoolColors.red,
                       label: AppLocalizations.of(context)!.twofactorProtection,
@@ -484,7 +528,7 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                         color: SchoolColors.green,
                       ),
                     ),
-                    _SettingsRow(
+                    SettingsRow(
                       icon: Icons.download_outlined,
                       color: SchoolColors.accent,
                       label: AppLocalizations.of(context)!.downloadMyData,
@@ -512,6 +556,8 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
                   style: TextStyle(color: SchoolColors.muted, fontSize: 11),
                 ),
               ],
+            ),
+          ),
         );
       },
     );
@@ -897,80 +943,6 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
   }
 }
 
-
-
-class _SettingsGroup extends StatelessWidget {
-  const _SettingsGroup({required this.label, required this.children});
-  final String label;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SectionLabel(label: label),
-        SchoolCard(
-          padding: EdgeInsets.zero,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: children,
-          ),
-        ),
-        const SizedBox(height: 28),
-      ],
-    );
-  }
-}
-
-class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.sub,
-    this.onTap,
-    this.right,
-    this.last = false,
-  });
-
-  final IconData icon;
-  final Color color;
-  final String label, sub;
-  final VoidCallback? onTap;
-  final Widget? right;
-  final bool last;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ModernSettingTile(
-          icon: icon,
-          iconColor: color,
-          iconBgColor: color.withOpacity(0.12),
-          title: label,
-          subtitle: sub,
-          trailing: right ?? Icon(
-            Icons.chevron_right_rounded,
-            color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
-          ),
-          onTap: onTap,
-        ),
-        if (!last)
-          Divider(
-            height: 1,
-            color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
-            indent: 68,
-          ),
-      ],
-    );
-  }
-}
-
 class _CustomToggle extends StatelessWidget {
   const _CustomToggle({required this.on, required this.onChanged});
   final bool on;
@@ -978,10 +950,14 @@ class _CustomToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Switch.adaptive(
+    return Switch(
       value: on,
       onChanged: onChanged,
-      activeColor: AppScope.of(context).appState.accentColor,
+      activeColor: Colors.white,
+      activeTrackColor: SchoolColors.primary,
+      inactiveThumbColor: Colors.white,
+      inactiveTrackColor: SchoolColors.border,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }

@@ -9,10 +9,12 @@ class PendingAttachmentPreview extends StatelessWidget {
     required this.attachment,
     required this.onCancel,
     this.onEdit,
+    this.isUploading = false,
   });
   final PickedChatAttachment attachment;
   final VoidCallback onCancel;
   final VoidCallback? onEdit;
+  final bool isUploading;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,7 @@ class PendingAttachmentPreview extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _PreviewThumb(attachment: attachment),
+          _PreviewThumb(attachment: attachment, isUploading: isUploading),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -42,33 +44,46 @@ class PendingAttachmentPreview extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${attachment.type.name.toUpperCase()} · ${attachment.formattedSize}',
-                  style: const TextStyle(
+                  isUploading
+                      ? 'Отправка файла...'
+                      : '${attachment.type.name.toUpperCase()} · ${attachment.formattedSize}',
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: SchoolColors.muted,
+                    color: isUploading ? SchoolColors.primary : SchoolColors.muted,
                   ),
                 ),
               ],
             ),
           ),
-          if (attachment.type == AttachmentType.image && onEdit != null) ...[
+          if (isUploading)
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(SchoolColors.primary),
+              ),
+            )
+          else ...[
+            if (attachment.type == AttachmentType.image && onEdit != null) ...[
+              IconButton(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_rounded, size: 18),
+                color: SchoolColors.primary,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              const SizedBox(width: 12),
+            ],
             IconButton(
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_rounded, size: 18),
-              color: SchoolColors.primary,
+              onPressed: onCancel,
+              icon: const Icon(Icons.close_rounded, size: 18),
+              color: SchoolColors.muted,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
             ),
-            const SizedBox(width: 12),
           ],
-          IconButton(
-            onPressed: onCancel,
-            icon: const Icon(Icons.close_rounded, size: 18),
-            color: SchoolColors.muted,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
         ],
       ),
     );
@@ -76,8 +91,9 @@ class PendingAttachmentPreview extends StatelessWidget {
 }
 
 class _PreviewThumb extends StatelessWidget {
-  const _PreviewThumb({required this.attachment});
+  const _PreviewThumb({required this.attachment, required this.isUploading});
   final PickedChatAttachment attachment;
+  final bool isUploading;
 
   @override
   Widget build(BuildContext context) {
@@ -87,24 +103,47 @@ class _PreviewThumb extends StatelessWidget {
       _ => Icons.insert_drive_file_rounded,
     };
 
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: SchoolColors.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: (attachment.type == AttachmentType.image)
-          ? (attachment.file.bytes != null
-                ? Image.memory(attachment.file.bytes!, fit: BoxFit.cover)
-                : (attachment.file.path != null
-                      ? Image.file(
-                          File(attachment.file.path!),
-                          fit: BoxFit.cover,
-                        )
-                      : Icon(icon, color: SchoolColors.primary, size: 22)))
-          : Icon(icon, color: SchoolColors.primary, size: 22),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: SchoolColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: (attachment.type == AttachmentType.image)
+              ? (attachment.file.bytes != null
+                    ? Image.memory(attachment.file.bytes!, fit: BoxFit.cover)
+                    : (attachment.file.path != null
+                          ? Image.file(
+                              File(attachment.file.path!),
+                              fit: BoxFit.cover,
+                            )
+                          : Icon(icon, color: SchoolColors.primary, size: 22)))
+              : Icon(icon, color: SchoolColors.primary, size: 22),
+        ),
+        if (isUploading) ...[
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.black26,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

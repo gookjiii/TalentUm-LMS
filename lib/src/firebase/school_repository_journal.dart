@@ -2,14 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'safe_firestore.dart';
 
+
 mixin SchoolRepositoryJournal {
   FirebaseAuth get auth;
   FirebaseFirestore get firestore;
 
   /// Stream of all journal columns (lessons) for a specific class, ordered by date ascending.
-  Stream<QuerySnapshot<Map<String, dynamic>>> journalColumnsStream(
-    String classId,
-  ) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> journalColumnsStream(String classId) {
     return firestore
         .collection('classes')
         .doc(classId)
@@ -19,9 +18,7 @@ mixin SchoolRepositoryJournal {
   }
 
   /// Stream of all journal marks for a specific class (teacher view).
-  Stream<QuerySnapshot<Map<String, dynamic>>> journalMarksStream(
-    String classId,
-  ) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> journalMarksStream(String classId) {
     return firestore
         .collection('classes')
         .doc(classId)
@@ -56,11 +53,11 @@ mixin SchoolRepositoryJournal {
         .doc(classId)
         .collection('journal_columns')
         .add({
-          'date': Timestamp.fromDate(date),
-          'topic': topic,
-          'homework': homework,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+      'date': Timestamp.fromDate(date),
+      'topic': topic,
+      'homework': homework,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   /// Updates an existing lesson column in the journal.
@@ -77,11 +74,11 @@ mixin SchoolRepositoryJournal {
         .collection('journal_columns')
         .doc(columnId)
         .update({
-          'date': Timestamp.fromDate(date),
-          'topic': topic,
-          'homework': homework,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+      'date': Timestamp.fromDate(date),
+      'topic': topic,
+      'homework': homework,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   /// Deletes a lesson column from the journal.
@@ -123,8 +120,7 @@ mixin SchoolRepositoryJournal {
     } else {
       // Update/Set the mark
       await docRef.set({
-        'studentId':
-            studentId, // Make sure studentId is there for indexing/loading
+        'studentId': studentId, // Make sure studentId is there for indexing/loading
         'marks': {columnId: mark},
       }, SetOptions(merge: true));
     }

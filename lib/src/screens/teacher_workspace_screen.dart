@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,7 +10,6 @@ import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/app_state.dart';
-import 'package:school_world/src/firebase/school_repository.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 
@@ -22,7 +20,6 @@ import 'package:school_world/src/features/chat/presentation/widgets/chat_tab_flo
 import '../features/homework/presentation/widgets/teacher_homework.dart';
 import '../features/shared/presentation/widgets/teacher_sidebar.dart';
 import 'teacher_schedule_screen.dart';
-
 
 import '../features/roster/presentation/screens/roster_screen.dart';
 import '../features/settings/presentation/widgets/teacher_settings.dart';
@@ -87,10 +84,7 @@ class _TeacherWorkspaceScreenState
     final isLoading = classesAsync.isLoading;
     final classes = classesAsync.value ?? [];
 
-    final activeId = _selectedClassIdFromMap(
-      selectedClassId ?? selectedIdFromState,
-      classes,
-    );
+    final activeId = _selectedClassIdFromMap(selectedIdFromState, classes);
     final repo = AppScope.of(context).repository;
     final appState = AppScope.of(context).appState;
     final hasClasses = classes.isNotEmpty;
@@ -99,6 +93,7 @@ class _TeacherWorkspaceScreenState
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 900;
         final extraWide = constraints.maxWidth >= 1200;
+
         final navItems = [
           TeacherNavDest(
             l10n.today,
@@ -160,15 +155,7 @@ class _TeacherWorkspaceScreenState
 
         void onProfileTap() {
           final profileIndex = appState.isLeadTeacher ? 11 : 10;
-          _handleTabSelection(
-            profileIndex,
-            wide,
-            activeId,
-            repo,
-            appState,
-            l10n,
-            classes,
-          );
+          _handleTabSelection(profileIndex, wide);
         }
 
         // Only the content area shows loading — sidebar/nav are always visible
@@ -190,7 +177,13 @@ class _TeacherWorkspaceScreenState
               )
             : FadeIndexedStack(
                 index: _tabIndex,
+                // Keep inactive teacher tabs out of the layout. IndexedStack
+                // normally builds every child, so a transient null in an
+                // unrelated tab could replace the whole workspace with the
+                // red Flutter error widget (including while opening Settings).
+                disposeInactive: true,
                 children: [
+                  // 0 — Today
                   if (!hasClasses)
                     _TeacherEmptyState(
                       onCreate: _createClass,
@@ -200,17 +193,8 @@ class _TeacherWorkspaceScreenState
                     TeacherToday(
                       classes: classes,
                       selectedClassId: activeId ?? '',
-                      onTabSelect: (i) => _handleTabSelection(
-                        i,
-                        wide,
-                        activeId,
-                        repo,
-                        appState,
-                        l10n,
-                        classes,
-                      ),
+                      onTabSelect: (i) => _handleTabSelection(i, wide),
                       onSelectClass: (id) {
-                        setState(() => selectedClassId = id);
                         appState.selectClass(id);
                       },
                       onDeleteClass: _deleteClass,
@@ -219,6 +203,7 @@ class _TeacherWorkspaceScreenState
                       onProfileTap: onProfileTap,
                     ),
 
+                  // 1 — Feed
                   hasClasses && activeId != null
                       ? TeacherFeed(classId: activeId, classes: classes)
                       : _FeatureLockedEmptyState(
@@ -226,21 +211,17 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.campaign_outlined,
                         ),
 
-                  hasClasses && activeId != null
-                      ? ChatTabFlow(
-                          repository: repo,
-                          appState: appState,
-                          classes: classes,
-                          initialClassId: activeId,
-                          desktopMode: wide,
-                          canInitializeRoom: true,
-                        )
-                      : _FeatureLockedEmptyState(
-                          title: AppLocalizations.of(context)!.chat,
-                          icon: Icons.chat_bubble_outline_rounded,
-                        ),
+                  // 2 — Chat
+                  ChatTabFlow(
+                    repository: repo,
+                    appState: appState,
+                    classes: classes,
+                    initialClassId: activeId,
+                    desktopMode: wide,
+                    canInitializeRoom: true,
+                  ),
 
-                  // Учительская — lazily mounted only when tab is active
+                  // 3 — Учительская (always available, no class dependency)
                   _tabIndex == 3
                       ? ClassChatScreen(
                           key: const ValueKey('chat-teachers_lounge'),
@@ -255,6 +236,7 @@ class _TeacherWorkspaceScreenState
                         )
                       : const SizedBox.expand(),
 
+                  // 4 — Homework
                   hasClasses && activeId != null
                       ? TeacherAssignments(
                           classId: activeId,
@@ -270,6 +252,7 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.assignment_outlined,
                         ),
 
+                  // 5 — Library
                   hasClasses && activeId != null
                       ? LibraryScreen(classId: activeId)
                       : _FeatureLockedEmptyState(
@@ -277,6 +260,7 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.library_books_outlined,
                         ),
 
+                  // 6 — Webinars
                   hasClasses && activeId != null
                       ? WebinarsScreen(classId: activeId)
                       : _FeatureLockedEmptyState(
@@ -284,6 +268,7 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.ondemand_video_outlined,
                         ),
 
+                  // 7 — Journal
                   hasClasses && activeId != null
                       ? JournalScreen(classId: activeId)
                       : _FeatureLockedEmptyState(
@@ -291,8 +276,10 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.book_outlined,
                         ),
 
-                  const TeacherScheduleScreen(),
+                  // 8 — Schedule
+                  TeacherScheduleScreen(initialClassId: activeId),
 
+                  // 9 — Roster
                   hasClasses && activeId != null
                       ? RosterScreen(classId: activeId)
                       : _FeatureLockedEmptyState(
@@ -300,10 +287,12 @@ class _TeacherWorkspaceScreenState
                           icon: Icons.people_outline,
                         ),
 
+                  // 10 — Admin / Settings
                   appState.isLeadTeacher
                       ? const AdminDashboardTab()
                       : const TeacherSettingsTab(),
 
+                  // 11 — Settings (profile)
                   const TeacherSettingsTab(),
                 ],
               );
@@ -311,59 +300,33 @@ class _TeacherWorkspaceScreenState
         return Scaffold(
           extendBody:
               true, // Allow content to scroll under the frosted glass bottom bar
-          backgroundColor: SchoolColors.shellBackground,
+          backgroundColor: Theme.of(context).colorScheme.surface,
           body: SafeArea(
             bottom: false,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    SchoolColors.shellBackground,
-                    SchoolColors.shellBackgroundAlt,
-                  ],
-                ),
-              ),
-              child: Row(
-                children: [
-                  if (wide)
-                    RepaintBoundary(
-                      child: _StableSidebar(
-                        extended: extraWide,
-                        tabIndex: _tabIndex,
-                        onSelect: (i) {
-                          setState(() => _tabIndex = i);
-                          ref
-                              .read(schoolAppStateProvider)
-                              .setTeacherTabIndex(i);
-                        },
-                        navItems: navItems,
-                        onDeleteChat: _deleteClassChat,
-                        onDeleteClass: _deleteClass,
-                        onCopyGuestLink: _copyGuestInviteLink,
-                        onSelectClass: (id) {
-                          setState(() => selectedClassId = id);
-                          appState.selectClass(id);
-                        },
-                        onCreateClass: _createClass,
-                        onProfileTap: onProfileTap,
-                      ),
-                    ),
-                  Expanded(
-                    child: WorkspacePanel(
-                      borderRadius: wide ? 28 : 0,
-                      margin: EdgeInsets.fromLTRB(
-                        wide ? 8 : 0,
-                        wide ? 16 : 0,
-                        wide ? 8 : 0,
-                        0,
-                      ),
-                      child: content,
+            child: Row(
+              children: [
+                if (wide)
+                  RepaintBoundary(
+                    child: _StableSidebar(
+                      extended: extraWide,
+                      tabIndex: _tabIndex,
+                      onSelect: (i) {
+                        setState(() => _tabIndex = i);
+                        ref.read(schoolAppStateProvider).setTeacherTabIndex(i);
+                      },
+                      navItems: navItems,
+                      onDeleteChat: _deleteClassChat,
+                      onDeleteClass: _deleteClass,
+                      onCopyGuestLink: _copyGuestInviteLink,
+                      onSelectClass: (id) {
+                        appState.selectClass(id);
+                      },
+                      onCreateClass: _createClass,
+                      onProfileTap: onProfileTap,
                     ),
                   ),
-                ],
-              ),
+                Expanded(child: content),
+              ],
             ),
           ),
           bottomNavigationBar: wide
@@ -964,16 +927,16 @@ class _TeacherWorkspaceScreenState
     }
   }
 
-  void _handleTabSelection(
-    int index,
-    bool wide,
-    String? activeId,
-    SchoolRepository repo,
-    SchoolAppState appState,
-    AppLocalizations l10n,
-    List<Map<String, dynamic>> classes,
-  ) {
-    setState(() => _tabIndex = index);
+  void _handleTabSelection(int index, bool wide) {
+    const mobileIndices = [0, 2, 4, 8];
+
+    // Keep every teacher page inside the workspace on mobile. This leaves
+    // the bottom navigation visible for pages opened from the More sheet and
+    // avoids stacking a second route/app bar with an inner page header.
+    setState(() {
+      _tabIndex = index;
+      _moreSelected = !wide && !mobileIndices.contains(index);
+    });
     ref.read(schoolAppStateProvider).setTeacherTabIndex(index);
   }
 
@@ -1002,7 +965,6 @@ class _TeacherWorkspaceScreenState
       ),
     );
   }
-
 }
 
 /// A self-contained sidebar widget that watches the classes stream
@@ -1089,12 +1051,6 @@ class _TeacherEmptyState extends StatelessWidget {
     final isLead = AppScope.of(context).appState.isLeadTeacher;
     final now = DateTime.now();
     final date = DateFormat('EEEE, MMMM d', l10n.localeName).format(now);
-    final hour = now.hour;
-    final greeting = hour < 12
-        ? l10n.goodMorning
-        : hour < 17
-        ? l10n.goodAfternoon
-        : l10n.goodEvening;
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: repo.userDocStream(),
@@ -1112,7 +1068,7 @@ class _TeacherEmptyState extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: PageHeader(
-                title: greeting,
+                title: l10n.welcomeToTalentUm,
                 subtitle: date,
                 trailing: SchoolAvatar(
                   name: name,
@@ -1167,23 +1123,16 @@ class _MobileBottomBar extends StatelessWidget {
         top: false,
         child: Container(
           height: 72,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           decoration: BoxDecoration(
             color: isDark ? SchoolColors.darkSurface : Colors.white,
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
               color: isDark
                   ? Colors.white.withValues(alpha: 0.12)
-                  : SchoolColors.border,
+                  : SchoolColors.border.withValues(alpha: 0.8),
               width: 1.0,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
-                blurRadius: 32,
-                offset: const Offset(0, 12),
-              ),
-            ],
           ),
           child: _buildIcons(isDark, context),
         ),
@@ -1194,7 +1143,7 @@ class _MobileBottomBar extends StatelessWidget {
       top: false,
       child: Container(
         height: 72,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         decoration: BoxDecoration(
           color: isDark
               ? SchoolColors.darkSurface.withValues(alpha: 0.85)
@@ -1203,24 +1152,18 @@ class _MobileBottomBar extends StatelessWidget {
           border: Border.all(
             color: isDark
                 ? Colors.white.withValues(alpha: 0.08)
-                : SchoolColors.border,
+                : SchoolColors.border.withValues(alpha: 0.5),
             width: 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
-              blurRadius: 32,
-              offset: const Offset(0, 12),
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: _buildIcons(isDark, context),
-          ),
-        ),
+        child: _buildIcons(isDark, context),
       ),
     );
   }
@@ -1262,10 +1205,10 @@ class _MobileBottomBar extends StatelessWidget {
                             ? SchoolColors.primary
                             : (isDark
                                   ? SchoolColors.darkTextSecondary.withValues(
-                                      alpha: 0.7,
+                                      alpha: 0.5,
                                     )
                                   : SchoolColors.textSecondary.withValues(
-                                      alpha: 0.7,
+                                      alpha: 0.5,
                                     )),
                         size: 28,
                       ),
@@ -1451,12 +1394,6 @@ class _TeacherMoreSheet extends StatelessWidget {
           color: Colors.redAccent,
           index: 10,
         ),
-      (
-        icon: Icons.settings_rounded,
-        label: l10n.settings,
-        color: Colors.blueGrey,
-        index: isLeadTeacher ? 11 : 10,
-      ),
     ];
 
     return Container(
@@ -1466,7 +1403,7 @@ class _TeacherMoreSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: double.infinity,
+            width: 600,
             constraints: const BoxConstraints(maxWidth: 600),
             decoration: BoxDecoration(
               color: isDark ? SchoolColors.darkSurface : Colors.white,

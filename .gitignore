@@ -32,7 +32,6 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
-**/build/
 
 # Symbolication related
 app.*.symbols
@@ -50,14 +49,9 @@ app.*.map.json
 *.log
 .firebase/
 
-# JavaScript/TypeScript generated dependencies and build outputs
+# Generated caches and vendored dependency output
+**/build/
+**/.dart_tool/
 **/node_modules/
-**/dist/
-
-# Generated test artifacts
+.tessl/
 test/goldens/failures/
-
-# Patch conflict leftovers
-*.rej
-talentum-*.json
-vercel_backend/*.mjs

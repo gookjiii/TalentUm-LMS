@@ -361,9 +361,7 @@ class _PinnedMessagesSheetState extends State<PinnedMessagesSheet> {
   }
 
   Future<Message?> _fetchSingleMessage(String messageId) async {
-    final local = widget.chatController.messages.where(
-      (m) => m.id == messageId,
-    );
+    final local = widget.chatController.messages.where((m) => m.id == messageId);
     if (local.isNotEmpty) return local.first;
 
     final doc = await widget.repository.firestore
@@ -423,11 +421,7 @@ class PinnedChatMessageItem extends StatelessWidget {
           children: [
             Row(
               children: [
-                SchoolAvatar(
-                  name: message.authorId,
-                  userId: message.authorId,
-                  radius: 14,
-                ),
+                SchoolAvatar(name: message.authorId, userId: message.authorId, radius: 14),
                 const SizedBox(width: 8),
                 Expanded(
                   child: FutureBuilder<Map<String, dynamic>?>(

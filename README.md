@@ -50,7 +50,7 @@ TalentUm (formerly *School World*) is a cross-platform educational ecosystem des
 *   **Бэкенд и Инфраструктура:** 
     *   **Экосистема Firebase:** Cloud Firestore (БД реального времени), Авторизация (Phone/Email), Хостинг.
     *   **Cloudinary:** Высокоскоростная CDN для медиафайлов в чатах и аватарок.
-    *   **Google Drive API и Vercel Proxy:** Надежное бесплатное хранилище для тяжелых файлов (видео, документы, ДЗ). Работает через собственный Node.js прокси на Vercel для безопасной докачки файлов (Resumable Uploads) и обхода CORS без утечки ключей.
+    *   **Firebase Storage + Google Drive:** Firebase handles smaller materials; files at or above the 25 MB threshold upload directly to Google Drive through the Vercel proxy. Metadata and ownership remain in Firestore.
 
 ---
 
@@ -61,7 +61,8 @@ TalentUm (formerly *School World*) is a cross-platform educational ecosystem des
 ```bash
 CLOUDINARY_CLOUD_NAME="your_name" \
 CLOUDINARY_UPLOAD_PRESET="your_preset" \
-GOOGLE_DRIVE_PROXY_URL="https://your-backend.vercel.app" \
+GOOGLE_DRIVE_PROXY_URL="https://vercel-talentum-backend.vercel.app" \
+GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB="25" \
 ./deploy_web.sh
 ```
 
@@ -94,7 +95,7 @@ GOOGLE_DRIVE_PROXY_URL="https://your-backend.vercel.app" \
 *   **Backend & Cloud Infrastructure:**
     *   **Firebase Ecosystem:** Cloud Firestore (Real-time NoSQL DB), Authentication, Web Hosting.
     *   **Cloudinary:** High-speed CDN for fast delivery of chat media and profile pictures.
-    *   **Google Drive API & Vercel Proxy:** Secure, scalable, free storage for heavy educational materials (videos, documents, homework). Proxied through a custom Node.js Vercel backend to manage resumable uploads and bypass CORS seamlessly without exposing API keys.
+    *   **Firebase Storage + Google Drive:** Firebase handles smaller files; large files use a resumable Google Drive session through Vercel, with Firestore metadata.
 
 ---
 
@@ -105,7 +106,8 @@ To deploy the Flutter Web frontend, use the provided deployment script with your
 ```bash
 CLOUDINARY_CLOUD_NAME="your_name" \
 CLOUDINARY_UPLOAD_PRESET="your_preset" \
-GOOGLE_DRIVE_PROXY_URL="https://your-backend.vercel.app" \
+GOOGLE_DRIVE_PROXY_URL="https://vercel-talentum-backend.vercel.app" \
+GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB="25" \
 ./deploy_web.sh
 ```
 
@@ -138,7 +140,7 @@ GOOGLE_DRIVE_PROXY_URL="https://your-backend.vercel.app" \
 *   **Hạ Tầng Backend & Đám mây:**
     *   **Hệ sinh thái Firebase:** Cloud Firestore (Real-time DB), Authentication (Phone/Email), Hosting.
     *   **Cloudinary:** CDN tốc độ cao chuyên xử lý ảnh đại diện và tin nhắn đa phương tiện trong Chat.
-    *   **Google Drive API & Vercel Proxy:** Trụ cột lưu trữ miễn phí, dung lượng khổng lồ cho tài liệu học tập nặng (Video bài giảng, File PDF bài làm). Kết nối qua máy chủ trung gian Node.js (Vercel Backend) để tự động hóa Tải lên an toàn (Resumable Uploads) và vượt rào cản CORS mà không lo lộ API Key.
+    *   **Firebase Storage + Google Drive:** Firebase lưu tệp nhỏ; tệp từ 25 MB trở lên được tải trực tiếp lên Google Drive qua Vercel, metadata/ownership lưu trong Firestore.
 
 ---
 
@@ -149,7 +151,8 @@ GOOGLE_DRIVE_PROXY_URL="https://your-backend.vercel.app" \
 ```bash
 CLOUDINARY_CLOUD_NAME="ten_cloudinary_cua_ban" \
 CLOUDINARY_UPLOAD_PRESET="preset_cua_ban" \
-GOOGLE_DRIVE_PROXY_URL="https://backend-cua-ban.vercel.app" \
+GOOGLE_DRIVE_PROXY_URL="https://vercel-talentum-backend.vercel.app" \
+GOOGLE_DRIVE_LARGE_FILE_THRESHOLD_MB="25" \
 ./deploy_web.sh
 ```
 

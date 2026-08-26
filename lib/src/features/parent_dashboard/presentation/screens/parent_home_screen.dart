@@ -100,89 +100,109 @@ class _ChildProgressCard extends StatelessWidget {
     final repo = AppScope.of(context).repository;
 
     return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-      future: repo.getCachedUser(childId),
+      future: repo.firestore.collection('users').doc(childId).get(),
       builder: (context, snap) {
         if (!snap.hasData) return SizedBox(height: 100);
         final data = snap.data!.data();
         final name = data?['name'] ?? AppLocalizations.of(context)!.student;
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 20),
-          child: SchoolCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        return FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          future: repo.firestore
+              .collection('submissions')
+              .where('studentId', isEqualTo: childId)
+              .orderBy('updatedAt', descending: true)
+              .limit(50)
+              .get(),
+          builder: (context, submissionSnap) {
+            final submissions = submissionSnap.data?.docs ?? const [];
+            final graded = submissions
+                .map(
+                  (doc) =>
+                      double.tryParse(doc.data()['grade']?.toString() ?? ''),
+                )
+                .whereType<double>()
+                .toList();
+            final average = graded.isEmpty
+                ? '—'
+                : (graded.reduce((a, b) => a + b) / graded.length)
+                      .toStringAsFixed(1);
+            final completed = submissions.length;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: SchoolCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SchoolAvatar(
-                      name: name,
-                      avatarUrl: data?['avatarUrl'],
-                      radius: 28,
-                      userId: childId,
+                    Row(
+                      children: [
+                        SchoolAvatar(
+                          name: name,
+                          avatarUrl: data?['avatarUrl'],
+                          radius: 28,
+                          userId: childId,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Text(
+                                AppLocalizations.of(context)!.student,
+                                style: TextStyle(
+                                  color: SchoolColors.muted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            name,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          Text(
-                            AppLocalizations.of(context)!.student,
-                            style: TextStyle(
-                              color: SchoolColors.muted,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                    SizedBox(height: 24),
+                    Row(
+                      children: [
+                        _MetricTile(
+                          label: AppLocalizations.of(context)!.wedPoint,
+                          value: average,
+                          color: SchoolColors.green,
+                        ),
+                        SizedBox(width: 12),
+                        _MetricTile(
+                          label: AppLocalizations.of(context)!.attendance,
+                          value: '—',
+                          color: SchoolColors.primary,
+                        ),
+                        SizedBox(width: 12),
+                        _MetricTile(
+                          label: AppLocalizations.of(context)!.quests,
+                          value: '$completed',
+                          color: SchoolColors.purple,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 24),
+                    Text(
+                      AppLocalizations.of(context)!.latestRatings,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
                       ),
                     ),
-                    IconButton.filledTonal(
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.chat_bubble_outline_rounded,
-                        size: 20,
-                      ),
-                    ),
+                    const SizedBox(height: 12),
+                    _RecentGrades(submissions: submissions),
                   ],
                 ),
-                SizedBox(height: 24),
-                Row(
-                  children: [
-                    _MetricTile(
-                      label: AppLocalizations.of(context)!.wedPoint,
-                      value: '4.8',
-                      color: SchoolColors.green,
-                    ),
-                    SizedBox(width: 12),
-                    _MetricTile(
-                      label: AppLocalizations.of(context)!.attendance,
-                      value: '98%',
-                      color: SchoolColors.primary,
-                    ),
-                    SizedBox(width: 12),
-                    _MetricTile(
-                      label: AppLocalizations.of(context)!.quests,
-                      value: '12/12',
-                      color: SchoolColors.purple,
-                    ),
-                  ],
-                ),
-                SizedBox(height: 24),
-                Text(
-                  AppLocalizations.of(context)!.latestRatings,
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                ),
-                const SizedBox(height: 12),
-                _RecentGrades(),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -234,23 +254,29 @@ class _MetricTile extends StatelessWidget {
 }
 
 class _RecentGrades extends StatelessWidget {
-  const _RecentGrades();
+  const _RecentGrades({required this.submissions});
+  final List<QueryDocumentSnapshot<Map<String, dynamic>>> submissions;
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final recent = submissions
+        .where((doc) => doc.data()['grade'] != null)
+        .take(4)
+        .toList();
+    if (recent.isEmpty) {
+      return const Text(
+        'No graded work yet',
+        style: TextStyle(color: SchoolColors.muted),
+      );
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
-        _GradeBubble(subject: AppLocalizations.of(context)!.mat, grade: '5'),
-        _GradeBubble(subject: AppLocalizations.of(context)!.rus, grade: '4'),
-        _GradeBubble(subject: AppLocalizations.of(context)!.phys, grade: '5'),
-        _GradeBubble(subject: AppLocalizations.of(context)!.east, grade: '5'),
-        Spacer(),
-        TextButton(
-          onPressed: () {},
-          child: Text(
-            AppLocalizations.of(context)!.allRatings,
-            style: TextStyle(fontSize: 12),
+        for (final doc in recent)
+          _GradeBubble(
+            subject: doc.data()['title']?.toString() ?? 'Assignment',
+            grade: doc.data()['grade'].toString(),
           ),
-        ),
       ],
     );
   }
@@ -333,6 +359,7 @@ class _NoChildrenState extends StatelessWidget {
         final snap = await repo.firestore
             .collection('users')
             .where('email', isEqualTo: email)
+            .where('role', isEqualTo: 'student')
             .limit(1)
             .get();
 
@@ -342,14 +369,20 @@ class _NoChildrenState extends StatelessWidget {
 
         final childId = snap.docs.first.id;
         final uid = repo.uid;
-
-        await repo.firestore.collection('users').doc(uid).update({
-          'childIds': FieldValue.arrayUnion([childId]),
-        });
+        if (uid == null) throw 'Not logged in';
+        await repo.firestore
+            .collection('parent_link_requests')
+            .doc('${uid}_$childId')
+            .set({
+              'parentId': uid,
+              'studentId': childId,
+              'status': 'pending',
+              'createdAt': FieldValue.serverTimestamp(),
+            });
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.theChildIsSuccessfullyAttached)),
+            const SnackBar(content: Text('Link request sent to the student')),
           );
         }
       } catch (e) {
@@ -428,19 +461,28 @@ class _NoChildrenState extends StatelessWidget {
       final snap = await repo.firestore
           .collection('users')
           .where('email', isEqualTo: email.trim().toLowerCase())
+          .where('role', isEqualTo: 'student')
           .limit(1)
           .get();
 
       if (snap.docs.isEmpty) throw l10n.userWithThisEmailWas;
 
       final childId = snap.docs.first.id;
-      await repo.firestore.collection('users').doc(repo.uid).update({
-        'childIds': FieldValue.arrayUnion([childId]),
-      });
+      final parentId = repo.uid;
+      if (parentId == null) throw 'Not logged in';
+      await repo.firestore
+          .collection('parent_link_requests')
+          .doc('${parentId}_$childId')
+          .set({
+            'parentId': parentId,
+            'studentId': childId,
+            'status': 'pending',
+            'createdAt': FieldValue.serverTimestamp(),
+          });
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.theChildIsSuccessfullyAttached)),
+          const SnackBar(content: Text('Link request sent to the student')),
         );
       }
     } catch (e) {
