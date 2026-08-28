@@ -233,6 +233,10 @@ class _TeacherWorkspaceScreenState
                               appState.lastChatClassId == 'teachers_lounge'
                               ? appState.lastChatTopicId
                               : null,
+                          onBack: () {
+                            appState.clearChatContext();
+                            _handleTabSelection(0, wide);
+                          },
                         )
                       : const SizedBox.expand(),
 
