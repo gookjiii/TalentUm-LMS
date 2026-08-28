@@ -4,6 +4,7 @@ import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
+import 'package:school_world/src/screens/settings_screen.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 import '../widgets/family_activity_feed.dart';
@@ -16,6 +17,16 @@ class ParentHomeScreen extends StatefulWidget {
 }
 
 class _ParentHomeScreenState extends State<ParentHomeScreen> {
+  void _openSettings(BuildContext context) {
+    final repo = AppScope.of(context).repository;
+    final appState = AppScope.of(context).appState;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SettingsScreen(repository: repo, appState: appState),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final repo = AppScope.of(context).repository;
@@ -31,9 +42,19 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
             return const Center(child: CircularProgressIndicator());
           final userData = userSnap.data!.data();
           final childIds = List<String>.from(userData?['childIds'] ?? []);
+          final parentName =
+              userData?['name']?.toString().trim().isNotEmpty == true
+              ? userData!['name'].toString().trim()
+              : (repo.auth.currentUser?.displayName ??
+                    AppLocalizations.of(context)!.parent);
+          final parentAvatarUrl = userData?['avatarUrl']?.toString();
 
           if (childIds.isEmpty) {
-            return _NoChildrenState();
+            return _NoChildrenState(
+              name: parentName,
+              avatarUrl: parentAvatarUrl,
+              onProfileTap: () => _openSettings(context),
+            );
           }
 
           return CustomScrollView(
@@ -44,21 +65,45 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        AppLocalizations.of(context)!.parentsPanel,
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      Text(
-                        AppLocalizations.of(
-                          context,
-                        )!.monitoringYourChildrensProgress,
-                        style: TextStyle(
-                          color: SchoolColors.muted,
-                          fontSize: 14,
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  AppLocalizations.of(context)!.parentsPanel,
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.monitoringYourChildrensProgress,
+                                  style: TextStyle(
+                                    color: SchoolColors.muted,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: AppLocalizations.of(context)!.settings,
+                            onPressed: () => _openSettings(context),
+                            icon: const Icon(Icons.settings_outlined),
+                          ),
+                          SchoolAvatar(
+                            name: parentName,
+                            avatarUrl: parentAvatarUrl,
+                            radius: 23,
+                            onTap: () => _openSettings(context),
+                            showBorder: true,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -315,7 +360,15 @@ class _GradeBubble extends StatelessWidget {
 }
 
 class _NoChildrenState extends StatelessWidget {
-  const _NoChildrenState();
+  const _NoChildrenState({
+    required this.name,
+    required this.avatarUrl,
+    required this.onProfileTap,
+  });
+
+  final String name;
+  final String? avatarUrl;
+  final VoidCallback onProfileTap;
 
   Future<void> _showLinkChildDialog(BuildContext context) async {
     final ctrl = TextEditingController();
@@ -397,43 +450,62 @@ class _NoChildrenState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.family_restroom_rounded,
-            size: 64,
-            color: SchoolColors.border,
-          ),
-          SizedBox(height: 24),
-          Text(
-            AppLocalizations.of(context)!.childrenAreNotAttached,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-          ),
-          Text(
-            AppLocalizations.of(context)!.useYourChildsCodeTo,
-            style: TextStyle(color: SchoolColors.muted),
-          ),
-          SizedBox(height: 32),
-          Row(
+    return Stack(
+      children: [
+        Center(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              OutlinedButton.icon(
-                onPressed: () => _scanQR(context),
-                icon: const Icon(Icons.qr_code_scanner_rounded),
-                label: Text(AppLocalizations.of(context)!.scanQrCode),
+              Icon(
+                Icons.family_restroom_rounded,
+                size: 64,
+                color: SchoolColors.border,
               ),
-              const SizedBox(width: 12),
-              FilledButton.icon(
-                onPressed: () => _showLinkChildDialog(context),
-                icon: const Icon(Icons.add_rounded),
-                label: Text(AppLocalizations.of(context)!.tieTheBaby),
+              SizedBox(height: 24),
+              Text(
+                AppLocalizations.of(context)!.childrenAreNotAttached,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+              ),
+              Text(
+                AppLocalizations.of(context)!.useYourChildsCodeTo,
+                style: TextStyle(color: SchoolColors.muted),
+              ),
+              SizedBox(height: 32),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => _scanQR(context),
+                    icon: const Icon(Icons.qr_code_scanner_rounded),
+                    label: Text(AppLocalizations.of(context)!.scanQrCode),
+                  ),
+                  const SizedBox(width: 12),
+                  FilledButton.icon(
+                    onPressed: () => _showLinkChildDialog(context),
+                    icon: const Icon(Icons.add_rounded),
+                    label: Text(AppLocalizations.of(context)!.tieTheBaby),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        ),
+        SafeArea(
+          child: Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: SchoolAvatar(
+                name: name,
+                avatarUrl: avatarUrl,
+                radius: 23,
+                onTap: onProfileTap,
+                showBorder: true,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

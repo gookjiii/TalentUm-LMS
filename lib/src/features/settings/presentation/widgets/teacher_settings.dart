@@ -61,27 +61,23 @@ class _TeacherSettingsTabState extends State<TeacherSettingsTab> {
       final path =
           'avatars/$uid/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
 
-      Map<String, dynamic>? uploadResult;
+      String? avatarUrl;
       if (file.bytes != null) {
-        uploadResult = await repo.uploadFileWeb(path, file.bytes!);
+        avatarUrl = await repo.updateCurrentUserAvatarFromBytes(
+          path,
+          file.bytes!,
+        );
       } else if (file.path != null) {
-        uploadResult = await repo.uploadFile(path, File(file.path!));
+        avatarUrl = await repo.updateCurrentUserAvatarFromFile(
+          path,
+          File(file.path!),
+        );
       }
 
-      if (uploadResult != null && uploadResult['url'] != null) {
-        final url = uploadResult['url'] as String;
-        await repo.firestore.collection('users').doc(uid).update({
-          'avatarUrl': url,
-        });
-        await repo.auth.currentUser?.updatePhotoURL(url);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.avatarUpdated),
-            ),
-          );
-        }
+      if (avatarUrl != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.avatarUpdated)),
+        );
       }
     } catch (e) {
       if (mounted) {

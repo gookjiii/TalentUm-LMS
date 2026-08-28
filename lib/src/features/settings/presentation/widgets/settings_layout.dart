@@ -105,6 +105,27 @@ class SettingsProfileCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (onEditAvatar != null)
+                    Positioned(
+                      bottom: -2,
+                      left: -2,
+                      child: IgnorePointer(
+                        child: Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            color: roleColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(width: 16),
