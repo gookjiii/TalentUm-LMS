@@ -1,8 +1,12 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'safe_firestore.dart';
+import 'storage_provider.dart';
 
 mixin SchoolRepositoryAuth {
   FirebaseAuth get auth;
@@ -44,6 +48,52 @@ mixin SchoolRepositoryAuth {
     if (updates.isNotEmpty) {
       await firestore.collection('users').doc(userId).update(updates);
     }
+  }
+
+  /// Uploads and persists the current user's avatar through an image-specific
+  /// provider. Profile images must not use the large-file Google Drive route
+  /// used by chat and document attachments.
+  Future<String> updateCurrentUserAvatarFromFile(String path, File file) async {
+    final result = await _uploadAvatar(
+      upload: (provider) => provider.uploadFile(path, file),
+    );
+    return _persistAvatarUrl(result);
+  }
+
+  Future<String> updateCurrentUserAvatarFromBytes(
+    String path,
+    Uint8List bytes,
+  ) async {
+    final result = await _uploadAvatar(
+      upload: (provider) => provider.uploadFileWeb(path, bytes),
+    );
+    return _persistAvatarUrl(result);
+  }
+
+  Future<Map<String, dynamic>> _uploadAvatar({
+    required Future<Map<String, dynamic>> Function(StorageProvider provider)
+    upload,
+  }) async {
+    final provider = CloudinaryStorageProvider.avatarProvider();
+    try {
+      return await upload(provider);
+    } catch (_) {
+      // Keep Firebase Storage as a fallback when Cloudinary is temporarily
+      // unavailable. Do not retry when Firebase is already active.
+      if (provider is FirebaseStorageProvider) rethrow;
+      return upload(FirebaseStorageProvider());
+    }
+  }
+
+  Future<String> _persistAvatarUrl(Map<String, dynamic> result) async {
+    final url = result['url']?.toString().trim() ?? '';
+    if (url.isEmpty) {
+      throw StateError('Avatar upload returned no URL');
+    }
+
+    await updateProfile(avatarUrl: url);
+    await auth.currentUser?.updatePhotoURL(url);
+    return url;
   }
 
   Future<Map<String, dynamic>> resolveUserCached(String userId) async {

@@ -266,6 +266,18 @@ class CloudinaryStorageProvider implements StorageProvider {
     return FirebaseStorageProvider();
   }
 
+  /// Profile avatars stay on the image provider and are not routed through
+  /// the Google Drive threshold used for large attachments.
+  static StorageProvider avatarProvider() {
+    if (isConfigured) {
+      return CloudinaryStorageProvider(
+        cloudName: configuredCloudName,
+        uploadPreset: configuredUploadPreset,
+      );
+    }
+    return FirebaseStorageProvider();
+  }
+
   /// Storage provider for chat attachments.
   ///
   /// Chat media keeps using the configured chat provider for normal-sized
