@@ -152,15 +152,18 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
           preloadedController: (roomId != null && roomId.isNotEmpty)
               ? ref.watch(preloadedChatControllerProvider(roomId).notifier)
               : null,
-          onBack: (widget.appState.isTeacher || widget.classes.length > 1)
-              ? () {
-                  widget.appState.clearChatContext();
-                  if (!widget.desktopMode) {
-                    widget.appState.setChatRoomMobileOpen(false);
-                  }
-                  setState(() => _view = ChatView.classList);
-                }
-              : null,
+          // Chat rooms are embedded in the shell rather than pushed as a
+          // route. Always handle the header back button here so a single-class
+          // student can leave the room as well.
+          onBack: () {
+            widget.appState.clearChatContext();
+            if (!widget.desktopMode) {
+              widget.appState.setChatRoomMobileOpen(false);
+            }
+            if (mounted) {
+              setState(() => _view = ChatView.classList);
+            }
+          },
         );
     }
   }
