@@ -544,6 +544,7 @@ class SchoolIconButton extends StatefulWidget {
     this.isActive = false,
     this.isLoading = false,
     this.backgroundColor,
+    this.backgroundGradient,
     this.foregroundColor,
     this.borderRadius,
     this.enableHaptics = true,
@@ -563,7 +564,8 @@ class SchoolIconButton extends StatefulWidget {
     this.borderRadius,
     this.enableHaptics = true,
   })  : variant = SchoolIconButtonVariant.standard,
-        backgroundColor = null;
+        backgroundColor = null,
+        backgroundGradient = null;
 
   /// Nút icon nền mềm nhẹ (Tonal)
   const SchoolIconButton.tonal({
@@ -576,6 +578,7 @@ class SchoolIconButton extends StatefulWidget {
     this.isActive = false,
     this.isLoading = false,
     this.backgroundColor,
+    this.backgroundGradient,
     this.foregroundColor,
     this.borderRadius,
     this.enableHaptics = true,
@@ -592,6 +595,7 @@ class SchoolIconButton extends StatefulWidget {
     this.isActive = false,
     this.isLoading = false,
     this.backgroundColor,
+    this.backgroundGradient,
     this.foregroundColor,
     this.borderRadius,
     this.enableHaptics = true,
@@ -611,6 +615,7 @@ class SchoolIconButton extends StatefulWidget {
   })  : variant = SchoolIconButtonVariant.destructive,
         isActive = false,
         backgroundColor = null,
+        backgroundGradient = null,
         foregroundColor = null;
 
   final Widget icon;
@@ -622,6 +627,7 @@ class SchoolIconButton extends StatefulWidget {
   final bool isActive;
   final bool isLoading;
   final Color? backgroundColor;
+  final Gradient? backgroundGradient;
   final Color? foregroundColor;
   final double? borderRadius;
   final bool enableHaptics;
@@ -776,8 +782,20 @@ class _SchoolIconButtonState extends State<SchoolIconButton> {
           transform: transform,
           transformAlignment: Alignment.center,
           decoration: BoxDecoration(
-            color: effectiveBg,
+            color: widget.backgroundGradient == null ? effectiveBg : null,
+            gradient: widget.backgroundGradient,
             borderRadius: BorderRadius.circular(radius),
+            boxShadow: widget.backgroundGradient != null
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.28 : 0.14,
+                      ),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
             border: effectiveBorder != null
                 ? Border.all(color: effectiveBorder, width: 1.2)
                 : null,
@@ -825,6 +843,65 @@ class _SchoolIconButtonState extends State<SchoolIconButton> {
       enabled: _isEnabled,
       label: widget.semanticLabel ?? widget.tooltip,
       child: button,
+    );
+  }
+}
+
+/// Nút tạo/thêm chỉ hiển thị dấu cộng, dùng thống nhất trên mobile và desktop.
+///
+/// Kích thước mặc định là 48px trên thiết bị có màn hình hẹp để vùng chạm
+/// dễ thao tác hơn, và 40px trên desktop để phù hợp với toolbar/header.
+class SchoolAddButton extends StatelessWidget {
+  const SchoolAddButton({
+    super.key,
+    required this.onPressed,
+    required this.tooltip,
+    this.size,
+    this.variant = SchoolIconButtonVariant.filled,
+    this.backgroundColor,
+    this.foregroundColor,
+    this.isLoading = false,
+    this.enableHaptics = true,
+  });
+
+  final VoidCallback? onPressed;
+  final String tooltip;
+  final SchoolIconButtonSize? size;
+  final SchoolIconButtonVariant variant;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
+  final bool isLoading;
+  final bool enableHaptics;
+
+  @override
+  Widget build(BuildContext context) {
+    final isNarrowLayout = MediaQuery.sizeOf(context).shortestSide < 600;
+    final resolvedSize = size ??
+        (isNarrowLayout
+            ? SchoolIconButtonSize.lg
+            : SchoolIconButtonSize.md);
+
+    return SchoolIconButton(
+      icon: const Icon(Icons.add_rounded),
+      onPressed: onPressed,
+      variant: variant,
+      size: resolvedSize,
+      tooltip: tooltip,
+      semanticLabel: tooltip,
+      backgroundColor: backgroundColor,
+      backgroundGradient: variant == SchoolIconButtonVariant.filled &&
+              backgroundColor == null &&
+              onPressed != null &&
+              !isLoading
+          ? const LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [SchoolColors.primary, SchoolColors.secondary],
+            )
+          : null,
+      foregroundColor: foregroundColor,
+      isLoading: isLoading,
+      enableHaptics: enableHaptics,
     );
   }
 }

@@ -129,6 +129,67 @@ void main() {
     });
   });
 
+    testWidgets('SchoolAddButton renders only the add icon and handles tap', (tester) async {
+      bool tapped = false;
+      await tester.pumpWidget(
+        wrapWidget(
+          SchoolAddButton(
+            tooltip: 'Add lesson',
+            onPressed: () => tapped = true,
+          ),
+        ),
+      );
+
+      expect(find.byType(SchoolAddButton), findsOneWidget);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+      expect(find.text('Add lesson'), findsNothing);
+
+      await tester.tap(find.byIcon(Icons.add_rounded));
+      await tester.pumpAndSettle();
+
+      expect(tapped, isTrue);
+    });
+
+    testWidgets(
+      'SchoolAddButton uses the mobile touch size on narrow layouts',
+      (tester) async {
+        await tester.pumpWidget(
+          MediaQuery(
+            data: const MediaQueryData(size: Size(390, 844)),
+            child: wrapWidget(
+              SchoolAddButton(tooltip: 'Add lesson', onPressed: () {}),
+            ),
+          ),
+        );
+
+        final iconButton = tester.widget<SchoolIconButton>(
+          find.byType(SchoolIconButton),
+        );
+        expect(iconButton.size, SchoolIconButtonSize.lg);
+        expect(iconButton.backgroundGradient, isA<LinearGradient>());
+      },
+    );
+
+    testWidgets(
+      'SchoolAddButton uses the compact size on desktop layouts',
+      (tester) async {
+        await tester.pumpWidget(
+          MediaQuery(
+            data: const MediaQueryData(size: Size(1440, 900)),
+            child: wrapWidget(
+              SchoolAddButton(tooltip: 'Add lesson', onPressed: () {}),
+            ),
+          ),
+        );
+
+        final iconButton = tester.widget<SchoolIconButton>(
+          find.byType(SchoolIconButton),
+        );
+        expect(iconButton.size, SchoolIconButtonSize.md);
+        expect(iconButton.backgroundGradient, isA<LinearGradient>());
+      },
+    );
+
   group('SchoolButtonGroup Tests', () {
     testWidgets('renders horizontal dialog actions group', (tester) async {
       await tester.pumpWidget(

@@ -58,22 +58,11 @@ class _TeacherFeedState extends ConsumerState<TeacherFeed> {
     );
   }
 
-  Widget _newPostButton({required bool expanded}) {
-    final button = FilledButton.icon(
+  Widget _newPostButton() {
+    return SchoolAddButton(
       onPressed: _scrollToComposer,
-      style: FilledButton.styleFrom(
-        minimumSize: expanded ? const Size.fromHeight(48) : Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        padding: EdgeInsets.symmetric(
-          horizontal: expanded ? 20 : 16,
-          vertical: expanded ? 14 : 10,
-        ),
-      ),
-      icon: const Icon(Icons.add_rounded, size: 18),
-      label: Text(AppLocalizations.of(context)!.newPost),
+      tooltip: AppLocalizations.of(context)!.newPost,
     );
-
-    return expanded ? SizedBox(width: double.infinity, child: button) : button;
   }
 
   @override
@@ -133,9 +122,7 @@ class _TeacherFeedState extends ConsumerState<TeacherFeed> {
                               );
                             }
                           : null,
-                      trailing: isCompact
-                          ? null
-                          : _newPostButton(expanded: false),
+                      trailing: isCompact ? null : _newPostButton(),
                       padding: isCompact
                           ? const EdgeInsets.fromLTRB(20, 14, 20, 0)
                           : null,
@@ -143,7 +130,7 @@ class _TeacherFeedState extends ConsumerState<TeacherFeed> {
                     if (isCompact)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                        child: _newPostButton(expanded: true),
+                        child: _newPostButton(),
                       ),
                   ],
                 );

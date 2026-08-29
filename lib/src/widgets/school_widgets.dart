@@ -13,6 +13,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import '../../main.dart';
 import '../theme.dart';
 import '../firebase/storage_provider.dart';
+import 'school_button.dart';
 export 'cached_stream_builder.dart';
 export 'school_button.dart';
 
@@ -1154,17 +1155,9 @@ class EmptyState extends StatelessWidget {
               ],
               if (action != null && actionLabel != null) ...[
                 const SizedBox(height: 32),
-                FilledButton.icon(
+                SchoolAddButton(
                   onPressed: action,
-                  icon: const Icon(Icons.add_rounded, size: 20),
-                  label: Text(actionLabel!),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(0, 52),
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
+                  tooltip: actionLabel!,
                 ),
               ],
             ],

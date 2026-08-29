@@ -197,10 +197,9 @@ class _BulkClassCreateScreenState extends State<BulkClassCreateScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            TextButton.icon(
+            SchoolAddButton(
               onPressed: _addMore,
-              icon: const Icon(Icons.add_rounded),
-              label: Text(l10n.addMore),
+              tooltip: l10n.addMore,
             ),
             const SizedBox(height: 60),
           ],

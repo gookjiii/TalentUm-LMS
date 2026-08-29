@@ -480,10 +480,9 @@ class _NoChildrenState extends StatelessWidget {
                     label: Text(AppLocalizations.of(context)!.scanQrCode),
                   ),
                   const SizedBox(width: 12),
-                  FilledButton.icon(
+                  SchoolAddButton(
                     onPressed: () => _showLinkChildDialog(context),
-                    icon: const Icon(Icons.add_rounded),
-                    label: Text(AppLocalizations.of(context)!.tieTheBaby),
+                    tooltip: AppLocalizations.of(context)!.tieTheBaby,
                   ),
                 ],
               ),

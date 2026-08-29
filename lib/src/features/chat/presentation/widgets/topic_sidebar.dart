@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/src/features/chat/data/firebase_chat_controller.dart';
+import 'package:school_world/src/widgets/school_widgets.dart';
 
 class TopicSidebar extends StatefulWidget {
   const TopicSidebar({
@@ -80,13 +81,8 @@ class _TopicSidebarState extends State<TopicSidebar> {
                   ),
                 ),
                 if (widget.isTeacher)
-                  IconButton(
-                    icon: const Icon(
-                      Icons.add_circle_outline_rounded,
-                      size: 22,
-                    ),
+                  SchoolAddButton(
                     onPressed: () => _createTopic(context),
-                    color: Theme.of(context).colorScheme.primary,
                     tooltip: l10n.createTopic,
                   ),
               ],

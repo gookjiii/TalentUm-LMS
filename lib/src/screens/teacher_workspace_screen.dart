@@ -1403,26 +1403,9 @@ class _TeacherMoreSheet extends StatelessWidget {
                   ),
                   if (isLeadTeacher) ...[
                     const SizedBox(height: 20),
-                    FilledButton.icon(
+                    SchoolAddButton(
                       onPressed: onCreateClass,
-                      icon: const Icon(Icons.add_rounded, size: 22),
-                      label: Text(
-                        l10n.createClass,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: SchoolColors.primary,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size.fromHeight(54),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
+                      tooltip: l10n.createClass,
                     ),
                   ],
                   const SizedBox(height: 8),

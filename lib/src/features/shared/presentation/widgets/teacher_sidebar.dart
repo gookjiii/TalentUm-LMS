@@ -106,24 +106,9 @@ class TeacherSidebar extends StatelessWidget {
                           ),
                         ),
                         if (AppScope.of(context).appState.isLeadTeacher)
-                          SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: IconButton(
-                              onPressed: onCreateClass,
-                              icon: const Icon(Icons.add_rounded, size: 14),
-                              color: Colors.white.withValues(alpha: 0.4),
-                              padding: EdgeInsets.zero,
-                              tooltip: l10n.createClass,
-                              style: IconButton.styleFrom(
-                                backgroundColor: Colors.white.withValues(
-                                  alpha: 0.08,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                              ),
-                            ),
+                          SchoolAddButton(
+                            onPressed: onCreateClass,
+                            tooltip: l10n.createClass,
                           ),
                       ],
                     ),
@@ -166,12 +151,8 @@ class TeacherSidebar extends StatelessWidget {
             ),
           ),
           if (!extended && AppScope.of(context).appState.isLeadTeacher) ...[
-            IconButton(
+            SchoolAddButton(
               onPressed: onCreateClass,
-              icon: Icon(
-                Icons.add_circle_outline_rounded,
-                color: Colors.white.withValues(alpha: 0.45),
-              ),
               tooltip: l10n.createClass,
             ),
             const SizedBox(height: 4),

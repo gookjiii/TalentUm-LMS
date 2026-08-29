@@ -93,27 +93,14 @@ class StudentSidebar extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: IconButton(
-                      onPressed: () => showDialog(
-                        context: context,
-                        builder: (_) => JoinClassDialog(
-                          repository: AppScope.of(context).repository,
-                        ),
-                      ),
-                      icon: const Icon(Icons.add_rounded, size: 14),
-                      color: Colors.white.withValues(alpha: 0.4),
-                      padding: EdgeInsets.zero,
-                      tooltip: AppLocalizations.of(context)!.joinAClass,
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.08),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
+                  SchoolAddButton(
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (_) => JoinClassDialog(
+                        repository: AppScope.of(context).repository,
                       ),
                     ),
+                    tooltip: AppLocalizations.of(context)!.joinAClass,
                   ),
                 ],
               ),

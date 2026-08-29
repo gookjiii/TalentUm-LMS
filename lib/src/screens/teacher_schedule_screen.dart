@@ -149,28 +149,15 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
           ),
           if (!widget.readOnly) ...[
             const SizedBox(width: 8),
-            Container(
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [SchoolColors.primary, SchoolColors.secondary],
-                ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: IconButton(
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: SchoolAddButton(
                 onPressed: () => showScheduleEditor(
                   context,
                   prefillDate: DateTime.now(),
                   prefillClassId: _selectedClassId,
                 ),
-                icon: const Icon(
-                  Icons.add_rounded,
-                  color: Colors.white,
-                  size: 22,
-                ),
                 tooltip: l10n.addALesson,
-                constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-                padding: EdgeInsets.zero,
               ),
             ),
           ],

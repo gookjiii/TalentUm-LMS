@@ -629,18 +629,9 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
                       );
                     }
                   : null,
-              trailing: FilledButton.icon(
+              trailing: SchoolAddButton(
                 onPressed: widget.onCreate,
-                style: FilledButton.styleFrom(
-                  minimumSize: Size.zero,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: Text(AppLocalizations.of(context)!.createATask),
+                tooltip: AppLocalizations.of(context)!.createATask,
               ),
               trailingBelowTitle: isCompact,
               padding: EdgeInsets.fromLTRB(
@@ -1706,18 +1697,9 @@ class _NoAssignmentsState extends StatelessWidget {
                     }
                   : null,
               trailing: isTeacher && !isCompact
-                  ? FilledButton.icon(
+                  ? SchoolAddButton(
                       onPressed: onCreate,
-                      style: FilledButton.styleFrom(
-                        minimumSize: Size.zero,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      icon: const Icon(Icons.add_rounded, size: 18),
-                      label: Text(AppLocalizations.of(context)!.createATask),
+                      tooltip: AppLocalizations.of(context)!.createATask,
                     )
                   : null,
               trailingBelowTitle: isCompact,
@@ -1763,21 +1745,9 @@ class _NoAssignmentsState extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     if (isTeacher && isCompact)
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: onCreate,
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          icon: const Icon(Icons.add),
-                          label: Text(
-                            AppLocalizations.of(context)!.createATask,
-                          ),
-                        ),
+                      SchoolAddButton(
+                        onPressed: onCreate,
+                        tooltip: AppLocalizations.of(context)!.createATask,
                       ),
                   ],
                 ),

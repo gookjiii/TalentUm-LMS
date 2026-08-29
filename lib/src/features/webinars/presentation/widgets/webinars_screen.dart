@@ -127,13 +127,12 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                               }
                             : null,
                         trailing: isTeacher
-                            ? IconButton.filledTonal(
+                            ? SchoolAddButton(
                                 onPressed: () => _showAddDialog(
                                   context,
                                   ref,
                                   effectiveClassId,
                                 ),
-                                icon: const Icon(Icons.add_rounded),
                                 tooltip: AppLocalizations.of(context)!.add,
                               )
                             : null,

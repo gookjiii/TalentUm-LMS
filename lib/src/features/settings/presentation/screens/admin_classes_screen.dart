@@ -173,14 +173,13 @@ class _AdminClassesScreenState extends State<AdminClassesScreen> {
                           ),
                         ),
                       ),
-                      IconButton(
+                      SchoolAddButton(
                         onPressed: () => Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => BulkClassCreateScreen(),
                           ),
                         ),
-                        icon: Icon(Icons.add_rounded),
                         tooltip: AppLocalizations.of(context)!.createClasses,
                       ),
                     ],

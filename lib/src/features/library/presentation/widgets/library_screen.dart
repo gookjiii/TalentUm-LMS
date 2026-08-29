@@ -130,13 +130,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               }
                             : null,
                         trailing: isTeacher
-                            ? IconButton.filledTonal(
+                            ? SchoolAddButton(
                                 onPressed: () => _showUploadDialog(
                                   context,
                                   ref,
                                   effectiveClassId,
                                 ),
-                                icon: const Icon(Icons.add_rounded),
                                 tooltip: AppLocalizations.of(context)!.add,
                               )
                             : null,
