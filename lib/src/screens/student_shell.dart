@@ -300,9 +300,16 @@ class _StudentShellState extends ConsumerState<StudentShell> {
 
                         // 0=Today, 2=Chat, 3=Homework, 4=Schedule; More opens sheet
                         const mobileIndices = [0, 2, 3, 4];
-                        final mobileNavItems = mobileIndices
-                            .map((i) => navItems[i])
-                            .toList();
+                        final mobileNavItems = mobileIndices.map((i) {
+                          final item = navItems[i];
+                          return i == 3
+                              ? NavDest(
+                                  l10n.homeworkShort,
+                                  item.icon,
+                                  item.selectedIcon,
+                                )
+                              : item;
+                        }).toList();
                         var mobileSelected = mobileIndices.indexOf(_tabIndex);
 
                         return _MobileTabBar(
@@ -933,83 +940,26 @@ class _MobileTabBar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final performanceMode = AppScope.of(context).appState.performanceMode;
     final l10n = AppLocalizations.of(context)!;
+    final bottomSystemInset = MediaQuery.of(context).viewPadding.bottom;
 
     if (performanceMode) {
-      return SafeArea(
-        top: false,
-        child: Container(
-          height: 72,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          decoration: BoxDecoration(
-            color: isDark ? SchoolColors.darkSurface : Colors.white,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.12)
-                  : SchoolColors.border.withValues(alpha: 0.8),
-              width: 1.0,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ...List.generate(items.length, (index) {
-                final item = items[index];
-                final selected = selectedIndex == index;
-                return Expanded(
-                  child: _NavTabItem(
-                    icon: item.icon,
-                    selectedIcon: item.selectedIcon,
-                    label: item.label,
-                    selected: selected,
-                    isDark: isDark,
-                    onTap: () => onSelect(index),
-                  ),
-                );
-              }),
-              Expanded(
-                child: _NavTabItem(
-                  icon: Icons.grid_view_outlined,
-                  selectedIcon: Icons.grid_view_rounded,
-                  label: l10n.more,
-                  selected: moreSelected,
-                  isDark: isDark,
-                  onTap: onMoreTap,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return SafeArea(
-      top: false,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+      return Padding(
+        padding: EdgeInsets.only(bottom: bottomSystemInset),
+        child: SafeArea(
+          top: false,
+          bottom: false,
           child: Container(
             height: 72,
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             decoration: BoxDecoration(
-              color: isDark
-                  ? SchoolColors.darkSurface.withValues(alpha: 0.65)
-                  : Colors.white.withValues(alpha: 0.75),
+              color: isDark ? SchoolColors.darkSurface : Colors.white,
               borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: isDark
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : SchoolColors.border.withValues(alpha: 0.4),
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : SchoolColors.border.withValues(alpha: 0.8),
                 width: 1.0,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1039,6 +989,72 @@ class _MobileTabBar extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomSystemInset),
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              height: 72,
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? SchoolColors.darkSurface.withValues(alpha: 0.65)
+                    : Colors.white.withValues(alpha: 0.75),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : SchoolColors.border.withValues(alpha: 0.4),
+                  width: 1.0,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ...List.generate(items.length, (index) {
+                    final item = items[index];
+                    final selected = selectedIndex == index;
+                    return Expanded(
+                      child: _NavTabItem(
+                        icon: item.icon,
+                        selectedIcon: item.selectedIcon,
+                        label: item.label,
+                        selected: selected,
+                        isDark: isDark,
+                        onTap: () => onSelect(index),
+                      ),
+                    );
+                  }),
+                  Expanded(
+                    child: _NavTabItem(
+                      icon: Icons.grid_view_outlined,
+                      selectedIcon: Icons.grid_view_rounded,
+                      label: l10n.more,
+                      selected: moreSelected,
+                      isDark: isDark,
+                      onTap: onMoreTap,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

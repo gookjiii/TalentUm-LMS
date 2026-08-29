@@ -346,9 +346,16 @@ class _TeacherWorkspaceScreenState
                       4,
                       8,
                     ]; // Today, Chat, Homework, Schedule
-                    final mobileNavItems = mobileIndices
-                        .map((i) => navItems[i])
-                        .toList();
+                    final mobileNavItems = mobileIndices.map((i) {
+                      final item = navItems[i];
+                      return i == 4
+                          ? TeacherNavDest(
+                              l10n.homeworkShort,
+                              item.icon,
+                              item.selectedIcon,
+                            )
+                          : item;
+                    }).toList();
                     var mobileSelected = mobileIndices.indexOf(_tabIndex);
 
                     if (mobileSelected < 0 && !_moreSelected) {
@@ -1057,53 +1064,62 @@ class _MobileBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final performanceMode = AppScope.of(context).appState.performanceMode;
+    final bottomSystemInset = MediaQuery.of(context).viewPadding.bottom;
 
     if (performanceMode) {
-      return SafeArea(
-        top: false,
-        child: Container(
-          height: 72,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          decoration: BoxDecoration(
-            color: isDark ? SchoolColors.darkSurface : Colors.white,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.12)
-                  : SchoolColors.border.withValues(alpha: 0.8),
-              width: 1.0,
+      return Padding(
+        padding: EdgeInsets.only(bottom: bottomSystemInset),
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: Container(
+            height: 72,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            decoration: BoxDecoration(
+              color: isDark ? SchoolColors.darkSurface : Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : SchoolColors.border.withValues(alpha: 0.8),
+                width: 1.0,
+              ),
             ),
+            child: _buildIcons(isDark, context),
           ),
-          child: _buildIcons(isDark, context),
         ),
       );
     }
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        height: 72,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        decoration: BoxDecoration(
-          color: isDark
-              ? SchoolColors.darkSurface.withValues(alpha: 0.85)
-              : Colors.white.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomSystemInset),
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Container(
+          height: 72,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          decoration: BoxDecoration(
             color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : SchoolColors.border.withValues(alpha: 0.5),
-            width: 1.0,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
+                ? SchoolColors.darkSurface.withValues(alpha: 0.85)
+                : Colors.white.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : SchoolColors.border.withValues(alpha: 0.5),
+              width: 1.0,
             ),
-          ],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: _buildIcons(isDark, context),
         ),
-        child: _buildIcons(isDark, context),
       ),
     );
   }

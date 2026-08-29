@@ -86,6 +86,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homework => 'Homework';
 
   @override
+  String get homeworkShort => 'HW';
+
+  @override
   String get profile => 'Profile';
 
   @override

@@ -86,6 +86,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get homework => 'Домашнее задание';
 
   @override
+  String get homeworkShort => 'ДЗ';
+
+  @override
   String get profile => 'Профиль';
 
   @override

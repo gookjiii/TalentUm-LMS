@@ -245,6 +245,12 @@ abstract class AppLocalizations {
   /// **'Homework'**
   String get homework;
 
+  /// No description provided for @homeworkShort.
+  ///
+  /// In en, this message translates to:
+  /// **'HW'**
+  String get homeworkShort;
+
   /// No description provided for @profile.
   ///
   /// In en, this message translates to:
