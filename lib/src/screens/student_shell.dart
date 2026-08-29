@@ -518,66 +518,93 @@ class _NavTabItem extends StatelessWidget {
   const _NavTabItem({
     required this.icon,
     required this.selectedIcon,
+    required this.label,
     required this.selected,
     required this.isDark,
     required this.onTap,
   });
   final IconData icon;
   final IconData selectedIcon;
+  final String label;
   final bool selected;
   final bool isDark;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      highlightColor: Colors.transparent,
-      splashColor: SchoolColors.primary.withValues(alpha: 0.1),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedScale(
-            scale: selected ? 1.15 : 1.0,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOutBack,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: selected
-                    ? (isDark
-                          ? SchoolColors.primary.withValues(alpha: 0.18)
-                          : SchoolColors.primary.withValues(alpha: 0.1))
-                    : Colors.transparent,
-                shape: BoxShape.circle,
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label: label,
+      selected: selected,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        highlightColor: Colors.transparent,
+        splashColor: SchoolColors.primary.withValues(alpha: 0.1),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedScale(
+              scale: selected ? 1.15 : 1.0,
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? (isDark
+                            ? SchoolColors.primary.withValues(alpha: 0.18)
+                            : SchoolColors.primary.withValues(alpha: 0.1))
+                      : Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  selected ? selectedIcon : icon,
+                  color: selected
+                      ? SchoolColors.primary
+                      : (isDark
+                            ? SchoolColors.darkTextSecondary.withValues(
+                                alpha: 0.5,
+                              )
+                            : SchoolColors.textSecondary.withValues(
+                                alpha: 0.5,
+                              )),
+                  size: 28,
+                ),
               ),
-              child: Icon(
-                selected ? selectedIcon : icon,
+            ),
+            if (selected)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Container(
+                  width: 4,
+                  height: 4,
+                  decoration: const BoxDecoration(
+                    color: SchoolColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                 color: selected
                     ? SchoolColors.primary
                     : (isDark
                           ? SchoolColors.darkTextSecondary.withValues(
-                              alpha: 0.5,
+                              alpha: 0.6,
                             )
-                          : SchoolColors.textSecondary.withValues(alpha: 0.5)),
-                size: 28,
+                          : SchoolColors.textSecondary.withValues(alpha: 0.6)),
               ),
             ),
-          ),
-          if (selected)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Container(
-                width: 4,
-                height: 4,
-                decoration: const BoxDecoration(
-                  color: SchoolColors.primary,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -905,6 +932,7 @@ class _MobileTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final performanceMode = AppScope.of(context).appState.performanceMode;
+    final l10n = AppLocalizations.of(context)!;
 
     if (performanceMode) {
       return SafeArea(
@@ -932,6 +960,7 @@ class _MobileTabBar extends StatelessWidget {
                   child: _NavTabItem(
                     icon: item.icon,
                     selectedIcon: item.selectedIcon,
+                    label: item.label,
                     selected: selected,
                     isDark: isDark,
                     onTap: () => onSelect(index),
@@ -942,6 +971,7 @@ class _MobileTabBar extends StatelessWidget {
                 child: _NavTabItem(
                   icon: Icons.grid_view_outlined,
                   selectedIcon: Icons.grid_view_rounded,
+                  label: l10n.more,
                   selected: moreSelected,
                   isDark: isDark,
                   onTap: onMoreTap,
@@ -991,6 +1021,7 @@ class _MobileTabBar extends StatelessWidget {
                     child: _NavTabItem(
                       icon: item.icon,
                       selectedIcon: item.selectedIcon,
+                      label: item.label,
                       selected: selected,
                       isDark: isDark,
                       onTap: () => onSelect(index),
@@ -1001,6 +1032,7 @@ class _MobileTabBar extends StatelessWidget {
                   child: _NavTabItem(
                     icon: Icons.grid_view_outlined,
                     selectedIcon: Icons.grid_view_rounded,
+                    label: l10n.more,
                     selected: moreSelected,
                     isDark: isDark,
                     onTap: onMoreTap,

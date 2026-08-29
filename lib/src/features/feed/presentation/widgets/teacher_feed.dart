@@ -59,9 +59,93 @@ class _TeacherFeedState extends ConsumerState<TeacherFeed> {
   }
 
   Widget _newPostButton() {
+    final isCompact = MediaQuery.sizeOf(context).width < 600;
     return SchoolAddButton(
-      onPressed: _scrollToComposer,
+      onPressed: isCompact ? _openMobileComposer : _scrollToComposer,
       tooltip: AppLocalizations.of(context)!.newPost,
+    );
+  }
+
+  Future<void> _openMobileComposer() async {
+    final activeClassId = _activeClassId ?? widget.classId;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final mediaQuery = MediaQuery.of(sheetContext);
+        return Padding(
+          padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+          child: SafeArea(
+            top: false,
+            child: Material(
+              color: Theme.of(sheetContext).colorScheme.surface,
+              clipBehavior: Clip.antiAlias,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: mediaQuery.size.height * 0.9,
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: SchoolColors.muted.withValues(alpha: 0.35),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _InlineComposer(
+                        classes: widget.classes,
+                        initialClassId: activeClassId,
+                        onPublished: () {
+                          Navigator.of(sheetContext).pop();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _mobileComposerTrigger(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final repo = AppScope.of(context).repository;
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label: l10n.postAnAnnouncementForClasses,
+      child: SchoolCard(
+        onTap: _openMobileComposer,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            SchoolAvatar(name: l10n.you, userId: repo.uid, radius: 18),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                l10n.postAnAnnouncementForClasses,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: SchoolColors.muted),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.edit_outlined, color: SchoolColors.muted),
+          ],
+        ),
+      ),
     );
   }
 
@@ -159,13 +243,16 @@ class _TeacherFeedState extends ConsumerState<TeacherFeed> {
                     ),
                   ),
                   SizedBox(height: isCompact ? 20 : 24),
-                  Container(
-                    key: _composerKey,
-                    child: _InlineComposer(
-                      classes: widget.classes,
-                      initialClassId: activeClassId,
+                  if (isCompact)
+                    _mobileComposerTrigger(context)
+                  else
+                    Container(
+                      key: _composerKey,
+                      child: _InlineComposer(
+                        classes: widget.classes,
+                        initialClassId: activeClassId,
+                      ),
                     ),
-                  ),
                   SizedBox(height: isCompact ? 20 : 24),
                 ],
               ),
@@ -249,9 +336,14 @@ class _TeacherFeedState extends ConsumerState<TeacherFeed> {
 }
 
 class _InlineComposer extends StatefulWidget {
-  const _InlineComposer({required this.classes, required this.initialClassId});
+  const _InlineComposer({
+    required this.classes,
+    required this.initialClassId,
+    this.onPublished,
+  });
   final List<Map<String, dynamic>> classes;
   final String initialClassId;
+  final VoidCallback? onPublished;
 
   @override
   State<_InlineComposer> createState() => _InlineComposerState();
@@ -530,6 +622,7 @@ class _InlineComposerState extends State<_InlineComposer> {
         pickedFile = null;
         isPinned = false;
       });
+      widget.onPublished?.call();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -537,7 +630,9 @@ class _InlineComposerState extends State<_InlineComposer> {
         ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
       }
     } finally {
-      setState(() => isUploading = false);
+      if (mounted) {
+        setState(() => isUploading = false);
+      }
     }
   }
 }

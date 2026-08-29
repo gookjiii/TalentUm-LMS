@@ -1109,6 +1109,8 @@ class _MobileBottomBar extends StatelessWidget {
   }
 
   Widget _buildIcons(bool isDark, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -1117,8 +1119,99 @@ class _MobileBottomBar extends StatelessWidget {
           final selected = selectedIndex == index;
 
           return Expanded(
+            child: Semantics(
+              button: true,
+              excludeSemantics: true,
+              label: item.label,
+              selected: selected,
+              child: InkWell(
+                onTap: () => onSelect(index),
+                borderRadius: BorderRadius.circular(20),
+                highlightColor: Colors.transparent,
+                splashColor: SchoolColors.primary.withValues(alpha: 0.1),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedScale(
+                      scale: selected ? 1.15 : 1.0,
+                      duration: const Duration(milliseconds: 160),
+                      curve: Curves.easeOutCubic,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? (isDark
+                                    ? SchoolColors.primary.withValues(
+                                        alpha: 0.18,
+                                      )
+                                    : SchoolColors.primary.withValues(
+                                        alpha: 0.1,
+                                      ))
+                              : Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          selected ? item.selectedIcon : item.icon,
+                          color: selected
+                              ? SchoolColors.primary
+                              : (isDark
+                                    ? SchoolColors.darkTextSecondary.withValues(
+                                        alpha: 0.5,
+                                      )
+                                    : SchoolColors.textSecondary.withValues(
+                                        alpha: 0.5,
+                                      )),
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                    if (selected)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Container(
+                          width: 4,
+                          height: 4,
+                          decoration: const BoxDecoration(
+                            color: SchoolColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                        color: selected
+                            ? SchoolColors.primary
+                            : (isDark
+                                  ? SchoolColors.darkTextSecondary.withValues(
+                                      alpha: 0.6,
+                                    )
+                                  : SchoolColors.textSecondary.withValues(
+                                      alpha: 0.6,
+                                    )),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+        Expanded(
+          child: Semantics(
+            button: true,
+            excludeSemantics: true,
+            label: l10n.more,
+            selected: moreSelected,
             child: InkWell(
-              onTap: () => onSelect(index),
+              onTap: onMoreTap,
               borderRadius: BorderRadius.circular(20),
               highlightColor: Colors.transparent,
               splashColor: SchoolColors.primary.withValues(alpha: 0.1),
@@ -1126,13 +1219,13 @@ class _MobileBottomBar extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   AnimatedScale(
-                    scale: selected ? 1.15 : 1.0,
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOutBack,
+                    scale: moreSelected ? 1.15 : 1.0,
+                    duration: const Duration(milliseconds: 160),
+                    curve: Curves.easeOutCubic,
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: selected
+                        color: moreSelected
                             ? (isDark
                                   ? SchoolColors.primary.withValues(alpha: 0.18)
                                   : SchoolColors.primary.withValues(alpha: 0.1))
@@ -1140,8 +1233,10 @@ class _MobileBottomBar extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        selected ? item.selectedIcon : item.icon,
-                        color: selected
+                        moreSelected
+                            ? Icons.grid_view_rounded
+                            : Icons.grid_view_outlined,
+                        color: moreSelected
                             ? SchoolColors.primary
                             : (isDark
                                   ? SchoolColors.darkTextSecondary.withValues(
@@ -1150,11 +1245,11 @@ class _MobileBottomBar extends StatelessWidget {
                                   : SchoolColors.textSecondary.withValues(
                                       alpha: 0.5,
                                     )),
-                        size: 28,
+                        size: 24,
                       ),
                     ),
                   ),
-                  if (selected)
+                  if (moreSelected)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Container(
@@ -1166,64 +1261,29 @@ class _MobileBottomBar extends StatelessWidget {
                         ),
                       ),
                     ),
-                ],
-              ),
-            ),
-          );
-        }),
-        Expanded(
-          child: InkWell(
-            onTap: onMoreTap,
-            borderRadius: BorderRadius.circular(20),
-            highlightColor: Colors.transparent,
-            splashColor: SchoolColors.primary.withValues(alpha: 0.1),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedScale(
-                  scale: moreSelected ? 1.15 : 1.0,
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOutBack,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: moreSelected
-                          ? (isDark
-                                ? SchoolColors.primary.withValues(alpha: 0.18)
-                                : SchoolColors.primary.withValues(alpha: 0.1))
-                          : Colors.transparent,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      moreSelected
-                          ? Icons.grid_view_rounded
-                          : Icons.grid_view_outlined,
+                  const SizedBox(height: 2),
+                  Text(
+                    l10n.more,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: moreSelected
+                          ? FontWeight.w700
+                          : FontWeight.w600,
                       color: moreSelected
                           ? SchoolColors.primary
                           : (isDark
                                 ? SchoolColors.darkTextSecondary.withValues(
-                                    alpha: 0.5,
+                                    alpha: 0.6,
                                   )
                                 : SchoolColors.textSecondary.withValues(
-                                    alpha: 0.5,
+                                    alpha: 0.6,
                                   )),
-                      size: 24,
                     ),
                   ),
-                ),
-                if (moreSelected)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Container(
-                      width: 4,
-                      height: 4,
-                      decoration: const BoxDecoration(
-                        color: SchoolColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
