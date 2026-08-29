@@ -144,14 +144,13 @@ class _TeacherAssignmentsState extends ConsumerState<TeacherAssignments> {
         title: Text(AppLocalizations.of(context)!.deleteTask),
         content: Text(AppLocalizations.of(context)!.allSubmittedWorkForThis),
         actions: [
-          TextButton(
+          SchoolButton.ghost(
+            label: AppLocalizations.of(context)!.cancel,
             onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.unknownKey),
           ),
-          FilledButton(
+          SchoolButton.destructive(
+            label: AppLocalizations.of(context)!.delete,
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: SchoolColors.red),
-            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),

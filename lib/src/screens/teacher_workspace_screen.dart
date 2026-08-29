@@ -423,14 +423,13 @@ class _TeacherWorkspaceScreenState
           ),
         ),
         actions: [
-          TextButton(
+          SchoolButton.ghost(
+            label: l10n.cancel,
             onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.cancel),
           ),
-          FilledButton(
+          SchoolButton.primary(
+            label: l10n.create,
             onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(minimumSize: const Size(100, 44)),
-            child: Text(l10n.create),
           ),
         ],
       ),
@@ -499,11 +498,13 @@ class _TeacherWorkspaceScreenState
           ),
         ),
         actions: [
-          TextButton(
+          SchoolButton.ghost(
+            label: AppLocalizations.of(context)!.close,
             onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.close),
           ),
-          FilledButton.icon(
+          SchoolButton.primary(
+            label: AppLocalizations.of(context)!.copyLink,
+            icon: const Icon(Icons.copy_rounded),
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: link));
               if (context.mounted) {
@@ -515,9 +516,6 @@ class _TeacherWorkspaceScreenState
                 Navigator.pop(context);
               }
             },
-            style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-            icon: const Icon(Icons.copy_rounded, size: 18),
-            label: Text(AppLocalizations.of(context)!.copyLink),
           ),
         ],
       ),
@@ -587,45 +585,14 @@ class _TeacherWorkspaceScreenState
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      TextButton(
+                      SchoolButton.ghost(
+                        label: l10n.cancel,
                         onPressed: () => Navigator.pop(context, false),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Text(
-                          l10n.cancel,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white70 : Colors.black54,
-                          ),
-                        ),
                       ),
-                      const SizedBox(width: 12),
-                      FilledButton(
+                      const SizedBox(width: 10),
+                      SchoolButton.destructive(
+                        label: l10n.clearChat,
                         onPressed: () => Navigator.pop(context, true),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(0, 44),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          l10n.clearChat,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
                       ),
                     ],
                   ),
@@ -820,45 +787,14 @@ class _TeacherWorkspaceScreenState
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      TextButton(
+                      SchoolButton.ghost(
+                        label: l10n.cancel,
                         onPressed: () => Navigator.pop(context, false),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: Text(
-                          l10n.cancel,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white70 : Colors.black54,
-                          ),
-                        ),
                       ),
-                      const SizedBox(width: 12),
-                      FilledButton(
+                      const SizedBox(width: 10),
+                      SchoolButton.destructive(
+                        label: AppLocalizations.of(context)!.delete,
                         onPressed: () => Navigator.pop(context, true),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(0, 44),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          AppLocalizations.of(context)!.delete,
-                          style: TextStyle(fontWeight: FontWeight.w800),
-                        ),
                       ),
                     ],
                   ),

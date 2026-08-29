@@ -782,63 +782,24 @@ class _AuthForm extends StatelessWidget {
                 : const SizedBox.shrink(),
           ),
 
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: SchoolColors.primary.withValues(
-                    alpha: loading ? 0.0 : 0.35,
-                  ),
-                  blurRadius: loading ? 0 : 20,
-                  offset: loading ? Offset.zero : const Offset(0, 6),
-                ),
-              ],
+          SchoolButton.primary(
+            label: otpSent
+                ? _getVerifyAndLoginText(context)
+                : _getSendOtpText(context),
+            icon: Icon(
+              otpSent ? Icons.verified_user_rounded : Icons.send_rounded,
             ),
-            child: FilledButton(
-              onPressed: loading ? null : (otpSent ? onVerifyOtp : onSendOtp),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: loading
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            otpSent
-                                ? Icons.verified_user_rounded
-                                : Icons.send_rounded,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            otpSent
-                                ? _getVerifyAndLoginText(context)
-                                : _getSendOtpText(context),
-                          ),
-                        ],
-                      ),
-              ),
-            ),
+            isLoading: loading,
+            isFullWidth: true,
+            size: SchoolButtonSize.lg,
+            onPressed: otpSent ? onVerifyOtp : onSendOtp,
           ),
           const SizedBox(height: 14),
 
-          TextButton(
-            onPressed: onTogglePhoneMode,
-            child: Text(
-              _getLoginWithEmailText(context),
-              style: const TextStyle(
-                color: SchoolColors.primary,
-                fontWeight: FontWeight.w700,
-              ),
+          Center(
+            child: SchoolButton.ghost(
+              label: _getLoginWithEmailText(context),
+              onPressed: onTogglePhoneMode,
             ),
           ),
         ],
@@ -1010,7 +971,7 @@ class _AuthForm extends StatelessWidget {
   }
 }
 
-class _SubmitButton extends StatefulWidget {
+class _SubmitButton extends StatelessWidget {
   const _SubmitButton({
     required this.isSignUp,
     required this.loading,
@@ -1022,60 +983,18 @@ class _SubmitButton extends StatefulWidget {
   final VoidCallback onSubmit;
 
   @override
-  State<_SubmitButton> createState() => _SubmitButtonState();
-}
-
-class _SubmitButtonState extends State<_SubmitButton> {
-  @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: SchoolColors.primary.withValues(
-              alpha: widget.loading ? 0.0 : 0.35,
-            ),
-            blurRadius: widget.loading ? 0 : 20,
-            offset: widget.loading ? Offset.zero : const Offset(0, 6),
-          ),
-        ],
+    return SchoolButton.primary(
+      label: isSignUp
+          ? AppLocalizations.of(context)!.createAnAccount
+          : AppLocalizations.of(context)!.login,
+      icon: Icon(
+        isSignUp ? Icons.person_add_alt_1_rounded : Icons.login_rounded,
       ),
-      child: FilledButton(
-        onPressed: widget.loading ? null : widget.onSubmit,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: widget.loading
-              ? const SizedBox(
-                  key: ValueKey('loading'),
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
-                )
-              : Row(
-                  key: ValueKey('label_${widget.isSignUp}'),
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      widget.isSignUp
-                          ? Icons.person_add_alt_1_rounded
-                          : Icons.login_rounded,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      widget.isSignUp
-                          ? AppLocalizations.of(context)!.createAnAccount
-                          : AppLocalizations.of(context)!.login,
-                    ),
-                  ],
-                ),
-        ),
-      ),
+      isLoading: loading,
+      isFullWidth: true,
+      size: SchoolButtonSize.lg,
+      onPressed: onSubmit,
     );
   }
 }

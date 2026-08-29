@@ -14,6 +14,7 @@ import '../../main.dart';
 import '../theme.dart';
 import '../firebase/storage_provider.dart';
 export 'cached_stream_builder.dart';
+export 'school_button.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // COLOR HELPERS

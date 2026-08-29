@@ -266,23 +266,24 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary, bool isPerform
     filledButtonTheme: FilledButtonThemeData(
       style: ButtonStyle(
         padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          EdgeInsets.symmetric(horizontal: 18, vertical: 11),
         ),
-        shape: const WidgetStatePropertyAll(
+        shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(14)),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
-        minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 52)),
+        minimumSize: const WidgetStatePropertyAll(Size(64, 44)),
         textStyle: WidgetStatePropertyAll(
           GoogleFonts.nunito(
             fontWeight: FontWeight.w700,
-            fontSize: 16,
+            fontSize: 14.5,
+            letterSpacing: -0.1,
           ),
         ),
         elevation: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.pressed)) return 0;
-          if (states.contains(WidgetState.hovered)) return 4;
+          if (states.contains(WidgetState.hovered)) return 3;
           return 0;
         }),
         shadowColor: const WidgetStatePropertyAll(
@@ -291,25 +292,52 @@ ThemeData schoolTheme({Color primaryColor = SchoolColors.primary, bool isPerform
       ),
     ),
 
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        side: const BorderSide(color: SchoolColors.border, width: 1.5),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.1),
         textStyle: GoogleFonts.nunito(
           fontWeight: FontWeight.w700,
-          fontSize: 16,
+          fontSize: 14.5,
+          letterSpacing: -0.1,
         ),
-        minimumSize: const Size(double.infinity, 52),
+        minimumSize: const Size(64, 44),
+      ),
+    ),
+
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        side: const BorderSide(color: SchoolColors.border, width: 1.2),
+        textStyle: GoogleFonts.nunito(
+          fontWeight: FontWeight.w700,
+          fontSize: 14.5,
+          letterSpacing: -0.1,
+        ),
+        minimumSize: const Size(64, 44),
       ),
     ),
 
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         textStyle: GoogleFonts.nunito(
           fontWeight: FontWeight.w700,
-          fontSize: 15,
+          fontSize: 14.5,
+          letterSpacing: -0.1,
         ),
+      ),
+    ),
+
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.all(8),
+        splashFactory: isPerformance ? NoSplash.splashFactory : InkRipple.splashFactory,
       ),
     ),
 
@@ -620,23 +648,24 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight, bool 
     filledButtonTheme: FilledButtonThemeData(
       style: ButtonStyle(
         padding: const WidgetStatePropertyAll(
-          EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          EdgeInsets.symmetric(horizontal: 18, vertical: 11),
         ),
-        shape: const WidgetStatePropertyAll(
+        shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(14)),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
-        minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 52)),
+        minimumSize: const WidgetStatePropertyAll(Size(64, 44)),
         textStyle: WidgetStatePropertyAll(
           GoogleFonts.nunito(
             fontWeight: FontWeight.w700,
-            fontSize: 16,
+            fontSize: 14.5,
+            letterSpacing: -0.1,
           ),
         ),
         elevation: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.pressed)) return 0;
-          if (states.contains(WidgetState.hovered)) return 4;
+          if (states.contains(WidgetState.hovered)) return 3;
           return 0;
         }),
         shadowColor: const WidgetStatePropertyAll(
@@ -645,25 +674,52 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight, bool 
       ),
     ),
 
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        side: const BorderSide(color: SchoolColors.darkBorder, width: 1.5),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.3),
         textStyle: GoogleFonts.nunito(
           fontWeight: FontWeight.w700,
-          fontSize: 16,
+          fontSize: 14.5,
+          letterSpacing: -0.1,
         ),
-        minimumSize: const Size(double.infinity, 52),
+        minimumSize: const Size(64, 44),
+      ),
+    ),
+
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        side: const BorderSide(color: SchoolColors.darkBorder, width: 1.2),
+        textStyle: GoogleFonts.nunito(
+          fontWeight: FontWeight.w700,
+          fontSize: 14.5,
+          letterSpacing: -0.1,
+        ),
+        minimumSize: const Size(64, 44),
       ),
     ),
 
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         textStyle: GoogleFonts.nunito(
           fontWeight: FontWeight.w700,
-          fontSize: 15,
+          fontSize: 14.5,
+          letterSpacing: -0.1,
         ),
+      ),
+    ),
+
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.all(8),
+        splashFactory: isPerformance ? NoSplash.splashFactory : InkRipple.splashFactory,
       ),
     ),
 
@@ -781,7 +837,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight, bool 
     listTileTheme: ListTileThemeData(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       iconColor: SchoolColors.darkMuted,
-      titleTextStyle: GoogleFonts.inter(
+      titleTextStyle: GoogleFonts.nunito(
         fontSize: 15,
         fontWeight: FontWeight.w600,
         color: SchoolColors.darkText,
@@ -794,7 +850,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight, bool 
       elevation: 8,
       shadowColor: Colors.black.withValues(alpha: 0.3),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      textStyle: GoogleFonts.inter(
+      textStyle: GoogleFonts.nunito(
         fontSize: 14,
         fontWeight: FontWeight.w500,
         color: SchoolColors.darkText,
@@ -819,11 +875,11 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight, bool 
       dividerColor: Colors.transparent,
       labelColor: primaryColor,
       unselectedLabelColor: SchoolColors.darkMuted,
-      labelStyle: GoogleFonts.inter(
+      labelStyle: GoogleFonts.nunito(
         fontWeight: FontWeight.w700,
         fontSize: 13,
       ),
-      unselectedLabelStyle: GoogleFonts.inter(
+      unselectedLabelStyle: GoogleFonts.nunito(
         fontWeight: FontWeight.w600,
         fontSize: 13,
       ),
@@ -838,7 +894,7 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight, bool 
         color: SchoolColors.darkText,
         borderRadius: BorderRadius.circular(10),
       ),
-      textStyle: GoogleFonts.inter(
+      textStyle: GoogleFonts.nunito(
         color: SchoolColors.darkBg,
         fontSize: 12,
         fontWeight: FontWeight.w500,
@@ -862,14 +918,14 @@ ThemeData schoolDarkTheme({Color primaryColor = SchoolColors.primaryLight, bool 
         EdgeInsets.symmetric(horizontal: 12),
       ),
       textStyle: WidgetStatePropertyAll(
-        GoogleFonts.inter(
+        GoogleFonts.nunito(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: SchoolColors.darkText,
         ),
       ),
       hintStyle: WidgetStatePropertyAll(
-        GoogleFonts.inter(
+        GoogleFonts.nunito(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: SchoolColors.darkMuted,

@@ -164,23 +164,14 @@ class _ChatHeaderState extends State<ChatHeader> {
           ),
           actionsPadding: const EdgeInsets.only(right: 24, bottom: 24),
           actions: [
-            TextButton(
+            SchoolButton.ghost(
+              label: AppLocalizations.of(context)!.cancel,
               onPressed: () => Navigator.pop(context, false),
-              child: Text(
-                AppLocalizations.of(context)!.unknownKey,
-                style: TextStyle(
-                  color: isDark ? Colors.white70 : Colors.black54,
-                ),
-              ),
             ),
-            const SizedBox(width: 12),
-            FilledButton(
+            const SizedBox(width: 10),
+            SchoolButton.destructive(
+              label: AppLocalizations.of(context)!.clear,
               onPressed: () => Navigator.pop(context, true),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                foregroundColor: Colors.white,
-              ),
-              child: Text(AppLocalizations.of(context)!.clear),
             ),
           ],
         );
@@ -679,26 +670,14 @@ class _ChatHeaderState extends State<ChatHeader> {
 
                     return Row(
                       children: [
-                        Semantics(
-                          label: AppLocalizations.of(context)!.chatTopics,
-                          button: true,
-                          child: IconButton.filledTonal(
-                            tooltip: AppLocalizations.of(context)!.chatTopics,
-                            onPressed: widget.onToggleTopics,
-                            icon: Icon(
-                              widget.showTopicsSidebar
-                                  ? Icons.topic
-                                  : Icons.topic_outlined,
-                              size: 20,
-                            ),
-                            style: IconButton.styleFrom(
-                              backgroundColor: widget.showTopicsSidebar
-                                  ? theme.colorScheme.primaryContainer
-                                  : Colors.transparent,
-                              foregroundColor: widget.showTopicsSidebar
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.onSurfaceVariant,
-                            ),
+                        SchoolIconButton.tonal(
+                          isActive: widget.showTopicsSidebar,
+                          tooltip: AppLocalizations.of(context)!.chatTopics,
+                          onPressed: widget.onToggleTopics,
+                          icon: Icon(
+                            widget.showTopicsSidebar
+                                ? Icons.topic
+                                : Icons.topic_outlined,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -734,7 +713,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                                   statusText,
                                   style: theme.textTheme.labelSmall?.copyWith(
                                     color: theme.colorScheme.primary
-                                        .withOpacity(0.8),
+                                        .withValues(alpha: 0.8),
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -752,7 +731,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                             )!.searchMessages1,
                             elevation: const WidgetStatePropertyAll(0),
                             backgroundColor: WidgetStatePropertyAll(
-                              theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                             ),
                             leading: Icon(
                               Icons.search_rounded,
@@ -776,85 +755,44 @@ class _ChatHeaderState extends State<ChatHeader> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Semantics(
-                          label: AppLocalizations.of(context)!.call,
-                          button: true,
-                          child: IconButton.filledTonal(
-                            tooltip: AppLocalizations.of(
-                              context,
-                            )!.startAVideoCall,
-                            onPressed: () => _openCallRoom(widget.classId),
-                            icon: const Icon(
-                              Icons.video_call_rounded,
-                              size: 20,
-                            ),
-                            color: theme.colorScheme.primary,
-                            style: IconButton.styleFrom(
-                              backgroundColor: theme.colorScheme.primary
-                                  .withOpacity(0.1),
-                            ),
+                        SchoolIconButton.tonal(
+                          tooltip: AppLocalizations.of(
+                            context,
+                          )!.startAVideoCall,
+                          onPressed: () => _openCallRoom(widget.classId),
+                          icon: const Icon(
+                            Icons.video_call_rounded,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Semantics(
-                          label: AppLocalizations.of(context)!.participants,
-                          button: true,
-                          child: IconButton.filledTonal(
-                            tooltip: AppLocalizations.of(context)!.participants,
-                            onPressed: widget.onOpenMembers,
-                            icon: const Icon(Icons.group_rounded, size: 20),
-                            color: theme.colorScheme.onSurfaceVariant,
-                            style: IconButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                            ),
-                          ),
+                        SchoolIconButton.standard(
+                          tooltip: AppLocalizations.of(context)!.participants,
+                          onPressed: widget.onOpenMembers,
+                          icon: const Icon(Icons.group_rounded),
                         ),
                         const SizedBox(width: 8),
-                        Semantics(
-                          label: AppLocalizations.of(context)!.mediaAndFiles,
-                          button: true,
-                          child: IconButton.filledTonal(
-                            tooltip: AppLocalizations.of(
-                              context,
-                            )!.mediaAndFiles,
-                            onPressed: widget.onToggleResources,
-                            icon: Icon(
-                              widget.showResourceSidebar
-                                  ? Icons.info_rounded
-                                  : Icons.info_outline_rounded,
-                              size: 20,
-                            ),
-                            color: widget.showResourceSidebar
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.onSurfaceVariant,
-                            style: IconButton.styleFrom(
-                              backgroundColor: widget.showResourceSidebar
-                                  ? theme.colorScheme.primary.withOpacity(0.1)
-                                  : Colors.transparent,
-                            ),
+                        SchoolIconButton.tonal(
+                          isActive: widget.showResourceSidebar,
+                          tooltip: AppLocalizations.of(
+                            context,
+                          )!.mediaAndFiles,
+                          onPressed: widget.onToggleResources,
+                          icon: Icon(
+                            widget.showResourceSidebar
+                                ? Icons.info_rounded
+                                : Icons.info_outline_rounded,
                           ),
                         ),
                         if (widget.classId == 'teachers_lounge' &&
                             AppScope.of(context).appState.isLeadTeacher) ...[
                           const SizedBox(width: 8),
-                          Semantics(
-                            label: AppLocalizations.of(context)!.clearChat1,
-                            button: true,
-                            child: IconButton.filledTonal(
-                              tooltip: AppLocalizations.of(
-                                context,
-                              )!.clearTeachersChat,
-                              onPressed: _clearTeachersLoungeChat,
-                              icon: const Icon(
-                                Icons.delete_sweep_rounded,
-                                size: 20,
-                              ),
-                              color: Colors.redAccent,
-                              style: IconButton.styleFrom(
-                                backgroundColor: Colors.redAccent.withOpacity(
-                                  0.1,
-                                ),
-                              ),
+                          SchoolIconButton.destructive(
+                            tooltip: AppLocalizations.of(
+                              context,
+                            )!.clearTeachersChat,
+                            onPressed: _clearTeachersLoungeChat,
+                            icon: const Icon(
+                              Icons.delete_sweep_rounded,
                             ),
                           ),
                         ],
