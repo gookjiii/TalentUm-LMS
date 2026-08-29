@@ -122,16 +122,11 @@ class _TeacherFeedState extends ConsumerState<TeacherFeed> {
                               );
                             }
                           : null,
-                      trailing: isCompact ? null : _newPostButton(),
+                      trailing: _newPostButton(),
                       padding: isCompact
                           ? const EdgeInsets.fromLTRB(20, 14, 20, 0)
                           : null,
                     ),
-                    if (isCompact)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                        child: _newPostButton(),
-                      ),
                   ],
                 );
               },

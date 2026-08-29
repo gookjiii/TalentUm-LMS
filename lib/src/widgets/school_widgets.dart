@@ -1155,9 +1155,12 @@ class EmptyState extends StatelessWidget {
               ],
               if (action != null && actionLabel != null) ...[
                 const SizedBox(height: 32),
-                SchoolAddButton(
-                  onPressed: action,
-                  tooltip: actionLabel!,
+                Align(
+                  alignment: Alignment.center,
+                  child: SchoolAddButton(
+                    onPressed: action,
+                    tooltip: actionLabel!,
+                  ),
                 ),
               ],
             ],

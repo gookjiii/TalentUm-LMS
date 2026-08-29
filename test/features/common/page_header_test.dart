@@ -104,6 +104,31 @@ void main() {
     expect(tapped, isTrue);
   });
 
+  testWidgets('PageHeader keeps an icon action at the mobile header edge', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      createTestableWidget(
+        child: PageHeader(
+          title: 'Tasks',
+          trailing: SchoolAddButton(tooltip: 'Add task', onPressed: () {}),
+        ),
+        repository: mockRepo,
+        appState: mockAppState,
+      ),
+    );
+
+    final buttonRect = tester.getRect(find.byType(SchoolIconButton));
+    expect(buttonRect.width, 48);
+    expect(buttonRect.right, closeTo(340, 0.1));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('PageHeader keeps a compact primary action tappable', (
     tester,
   ) async {

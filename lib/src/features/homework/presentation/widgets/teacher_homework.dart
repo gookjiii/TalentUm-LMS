@@ -633,7 +633,6 @@ class _AssignmentSummaryViewState extends State<_AssignmentSummaryView> {
                 onPressed: widget.onCreate,
                 tooltip: AppLocalizations.of(context)!.createATask,
               ),
-              trailingBelowTitle: isCompact,
               padding: EdgeInsets.fromLTRB(
                 isCompact ? 20 : 32,
                 isCompact ? 16 : 32,
@@ -1658,7 +1657,6 @@ class _NoAssignmentsState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCompact = MediaQuery.sizeOf(context).width < 600;
-    final isTeacher = AppScope.of(context).appState.isTeacher;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1696,13 +1694,12 @@ class _NoAssignmentsState extends StatelessWidget {
                       );
                     }
                   : null,
-              trailing: isTeacher && !isCompact
+              trailing: isTeacher
                   ? SchoolAddButton(
                       onPressed: onCreate,
                       tooltip: AppLocalizations.of(context)!.createATask,
                     )
                   : null,
-              trailingBelowTitle: isCompact,
               padding: EdgeInsets.fromLTRB(
                 isCompact ? 20 : 32,
                 isCompact ? 16 : 32,
@@ -1743,12 +1740,6 @@ class _NoAssignmentsState extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: SchoolColors.muted),
                     ),
-                    const SizedBox(height: 24),
-                    if (isTeacher && isCompact)
-                      SchoolAddButton(
-                        onPressed: onCreate,
-                        tooltip: AppLocalizations.of(context)!.createATask,
-                      ),
                   ],
                 ),
               ),
