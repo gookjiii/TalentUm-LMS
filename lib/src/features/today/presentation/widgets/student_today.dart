@@ -70,29 +70,29 @@ class StudentToday extends ConsumerWidget {
       return !s.cancelled && n.isAfter(s.start) && n.isBefore(s.end);
     }).length;
 
+    final isCompact = MediaQuery.sizeOf(context).width < 600;
+    final hPadding = isCompact ? 20.0 : 24.0;
+
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: PageHeader(
-              title: l10n.welcomeToTalentUm,
-              subtitle: date,
-              trailing: SchoolAvatar(
-                name: name,
-                avatarUrl: avatarUrl,
-                radius: 23,
-                onTap: onProfileTap,
-                showBorder: true,
-              ),
+          child: PageHeader(
+            title: l10n.welcomeToTalentUm,
+            subtitle: date,
+            trailing: SchoolAvatar(
+              name: name,
+              avatarUrl: avatarUrl,
+              radius: 23,
+              onTap: onProfileTap,
+              showBorder: true,
             ),
           ),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 8)),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: hPadding),
             child: FadeIn(
               delay: const Duration(milliseconds: 60),
               child: _StatsRow(
@@ -109,7 +109,7 @@ class StudentToday extends ConsumerWidget {
         if (upcomingClass != null) ...[
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: hPadding),
               child: FadeIn(
                 delay: const Duration(milliseconds: 80),
                 child: _UpcomingClassReminder(
@@ -123,10 +123,10 @@ class StudentToday extends ConsumerWidget {
         ],
 
         // ── Streak / homework progress ─────────────────────────────
-        const SliverToBoxAdapter(
+        SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: FadeIn(
+            padding: EdgeInsets.symmetric(horizontal: hPadding),
+            child: const FadeIn(
               delay: Duration(milliseconds: 100),
               child: LearningStreakWidget(),
             ),
@@ -135,7 +135,7 @@ class StudentToday extends ConsumerWidget {
         const SliverToBoxAdapter(child: SizedBox(height: 12)),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: hPadding),
             child: FadeIn(
               delay: const Duration(milliseconds: 120),
               child: StreakCard(
@@ -152,7 +152,7 @@ class StudentToday extends ConsumerWidget {
         // ── Today's classes ───────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: hPadding),
             child: FadeIn(
               delay: const Duration(milliseconds: 160),
               child: SectionHeader(
@@ -167,7 +167,7 @@ class StudentToday extends ConsumerWidget {
         if (todaySchedules.isEmpty)
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: hPadding),
               child: FadeIn(
                 delay: const Duration(milliseconds: 180),
                 child: SchoolCard(
@@ -201,7 +201,7 @@ class StudentToday extends ConsumerWidget {
           )
         else
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: hPadding),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
@@ -232,7 +232,7 @@ class StudentToday extends ConsumerWidget {
         // ── Quick links ───────────────────────────────────────────
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: hPadding),
             child: FadeIn(
               delay: const Duration(milliseconds: 220),
               child: SectionHeader(title: l10n.quickLinks),
@@ -241,13 +241,13 @@ class StudentToday extends ConsumerWidget {
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 12)),
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: EdgeInsets.symmetric(horizontal: hPadding),
           sliver: SliverGrid(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: MediaQuery.sizeOf(context).width >= 700 ? 4 : 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 1.5,
+              childAspectRatio: isCompact ? 1.7 : 1.5,
             ),
             delegate: SliverChildListDelegate([
               FadeIn(
@@ -807,6 +807,8 @@ class _StudentScheduleCardState extends State<StudentScheduleCard> {
                                   const SizedBox(height: 4),
                                   Text(
                                     primaryTitle,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w800,
@@ -816,6 +818,8 @@ class _StudentScheduleCardState extends State<StudentScheduleCard> {
                                   if (subtitle.isNotEmpty)
                                     Text(
                                       subtitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,

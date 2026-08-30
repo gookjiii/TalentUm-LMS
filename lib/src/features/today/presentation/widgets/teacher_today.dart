@@ -68,6 +68,8 @@ class _TeacherTodayState extends State<TeacherToday> {
             : (user?.displayName ?? AppLocalizations.of(context)!.teacher);
         final avatarUrl = profile['avatarUrl']?.toString();
         final now = DateTime.now();
+        final isCompact = MediaQuery.sizeOf(context).width < 600;
+        final hPadding = isCompact ? 20.0 : 24.0;
 
         return CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -89,7 +91,7 @@ class _TeacherTodayState extends State<TeacherToday> {
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: hPadding),
                 child: SectionHeader(
                   title: l10n.todaysClasses.toUpperCase(),
                   action: l10n.viewAll,
@@ -110,7 +112,7 @@ class _TeacherTodayState extends State<TeacherToday> {
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: hPadding),
                 child: SectionHeader(
                   title: AppLocalizations.of(context)!.quickLinks1,
                   action: "",
@@ -119,7 +121,7 @@ class _TeacherTodayState extends State<TeacherToday> {
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: hPadding),
               sliver: SliverGrid(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: MediaQuery.sizeOf(context).width >= 700
@@ -127,7 +129,7 @@ class _TeacherTodayState extends State<TeacherToday> {
                       : 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 1.5,
+                  childAspectRatio: isCompact ? 1.7 : 1.5,
                 ),
                 delegate: SliverChildListDelegate([
                   QuickTile(
@@ -160,7 +162,7 @@ class _TeacherTodayState extends State<TeacherToday> {
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: hPadding),
                 child: SectionHeader(
                   title: l10n.needsReviewToday.toUpperCase(),
                   action: "",
@@ -168,9 +170,9 @@ class _TeacherTodayState extends State<TeacherToday> {
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
-            const SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: 24),
-              sliver: SliverToBoxAdapter(
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: hPadding),
+              sliver: const SliverToBoxAdapter(
                 child: RepaintBoundary(child: _NeedsAttentionCard()),
               ),
             ),
@@ -220,8 +222,9 @@ class _TeacherKpiRowState extends State<_TeacherKpiRow> {
     );
     final l10n = AppLocalizations.of(context)!;
 
+    final isCompact = MediaQuery.sizeOf(context).width < 600;
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 20 : 24),
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 200,
@@ -803,8 +806,9 @@ class _TeacherTodayScheduleState extends State<_TeacherTodaySchedule> {
               );
             }
 
+            final isCompact = MediaQuery.sizeOf(context).width < 600;
             return SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: isCompact ? 20 : 24),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final it = todayItems[index];
@@ -974,6 +978,8 @@ class _TeacherTodayClassRowState extends State<TeacherTodayClassRow> {
                         children: [
                           Text(
                             '${widget.timeLabel}${room != null ? ' · ${l10n.cabinetWithNumber(room)}' : ''}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -994,24 +1000,28 @@ class _TeacherTodayClassRowState extends State<TeacherTodayClassRow> {
                           ),
                           Row(
                             children: [
-                              if (subtitle.isNotEmpty)
-                                Text(
-                                  subtitle,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark
-                                        ? SchoolColors.darkTextSecondary
-                                        : SchoolColors.textSecondary,
+                              if (subtitle.isNotEmpty) ...[
+                                Flexible(
+                                  child: Text(
+                                    subtitle,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? SchoolColors.darkTextSecondary
+                                          : SchoolColors.textSecondary,
+                                    ),
                                   ),
                                 ),
-                              if (subtitle.isNotEmpty)
                                 Text(
                                   ' · ',
                                   style: TextStyle(
                                     color: SchoolColors.muted.withOpacity(0.5),
                                   ),
                                 ),
+                              ],
                               Text(
                                 l10n.studentsCount(widget.students),
                                 style: TextStyle(

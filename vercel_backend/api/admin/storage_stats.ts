@@ -26,9 +26,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : 0;
   };
 
-  // Drive's about.storageQuota is the account quota. For service accounts and
-  // shared folders it can legitimately be 0 even when the configured folder
-  // contains files, so the folder listing is the source of truth for this UI.
+  // Drive's about.storageQuota is the quota of the authenticated principal.
+  // Keep the app's configured plan limit separate because a service account or
+  // a shared-drive principal may expose a different quota than the storage plan
+  // used by TalentUm. GOOGLE_DRIVE_STORAGE_LIMIT_BYTES can override this value.
+  const defaultGoogleDriveLimit = 5 * 1024 * 1024 * 1024 * 1024; // 5 TB
+  const configuredGoogleDriveLimit = parseBytes(
+    process.env.GOOGLE_DRIVE_STORAGE_LIMIT_BYTES,
+  );
+  const hasConfiguredGoogleDriveLimit = configuredGoogleDriveLimit > 0;
+
+  // For service accounts and shared folders, the folder listing is the source
+  // of truth for the files managed by this app even when the account quota is 0.
   const sumDriveFolderBytes = async (driveClient: any, folderId: string): Promise<number> => {
     let total = 0;
     let pageToken: string | undefined;
@@ -48,17 +57,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return total;
   };
 
-  // 1. Google Drive storage quota via Drive API
-  let googleDriveLimit = 15 * 1024 * 1024 * 1024;
+  // 1. Google Drive storage usage via Drive API
+  // The configured TalentUm plan is authoritative when the API is authenticated
+  // as a service account or another principal with a different quota.
+  let googleDriveLimit = hasConfiguredGoogleDriveLimit
+      ? configuredGoogleDriveLimit
+      : defaultGoogleDriveLimit;
   let googleDriveUsed = 0;
   let googleDriveError: any = null;
   try {
     const driveClient = await getDriveClient();
     const about = await driveClient.about.get({ fields: 'storageQuota' });
     if (about.data.storageQuota) {
-      googleDriveLimit = parseBytes(about.data.storageQuota.limit) || googleDriveLimit;
-      googleDriveUsed = parseBytes(about.data.storageQuota.usage);
-      debug.push(`Drive quota API: used=${googleDriveUsed}, limit=${googleDriveLimit}`);
+      const apiLimit = parseBytes(about.data.storageQuota.limit);
+      if (!hasConfiguredGoogleDriveLimit && apiLimit > defaultGoogleDriveLimit) {
+        googleDriveLimit = apiLimit;
+      }
+      googleDriveUsed =
+          parseBytes(about.data.storageQuota.usageInDrive) ||
+          parseBytes(about.data.storageQuota.usage);
+      debug.push(
+          `Drive quota API: used=${googleDriveUsed}, apiLimit=${apiLimit}, ` +
+          `limit=${googleDriveLimit}, source=${hasConfiguredGoogleDriveLimit ? 'configured' : 'app-default-or-api'}`,
+      );
     }
     try {
       const folderUsed = await sumDriveFolderBytes(driveClient, getDriveFolderId());

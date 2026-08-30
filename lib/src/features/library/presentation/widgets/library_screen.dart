@@ -196,6 +196,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             description: data['description'],
                             fileUrl: data['fileUrl'] ?? '',
                             fileName: data['fileName'],
+                            driveFileId: data['driveFileId']?.toString(),
+                            storageProvider: data['storageProvider']
+                                ?.toString(),
                             canDelete: isLeadOfClass,
                             onDelete: () => _deleteMaterial(context, ref, id),
                           );
@@ -257,6 +260,8 @@ class _MaterialTile extends StatelessWidget {
     this.description,
     required this.fileUrl,
     this.fileName,
+    this.driveFileId,
+    this.storageProvider,
     required this.canDelete,
     required this.onDelete,
   });
@@ -266,6 +271,8 @@ class _MaterialTile extends StatelessWidget {
   final String? description;
   final String fileUrl;
   final String? fileName;
+  final String? driveFileId;
+  final String? storageProvider;
   final bool canDelete;
   final VoidCallback onDelete;
 
@@ -293,8 +300,12 @@ class _MaterialTile extends StatelessWidget {
     } else if (isDoc || isVideo) {
       showDialog(
         context: context,
-        builder: (_) =>
-            DocumentPreviewDialog(url: fileUrl, fileName: fileName ?? title),
+        builder: (_) => DocumentPreviewDialog(
+          url: fileUrl,
+          fileName: fileName ?? title,
+          driveFileId: driveFileId,
+          storageProvider: storageProvider,
+        ),
       );
     } else {
       launchUrl(Uri.parse(fileUrl), mode: LaunchMode.externalApplication);

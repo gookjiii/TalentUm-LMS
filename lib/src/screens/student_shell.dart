@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
@@ -302,26 +301,24 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                         const mobileIndices = [0, 2, 3, 4];
                         final mobileNavItems = mobileIndices.map((i) {
                           final item = navItems[i];
-                          return i == 3
-                              ? NavDest(
-                                  l10n.homeworkShort,
-                                  item.icon,
-                                  item.selectedIcon,
-                                )
-                              : item;
+                          return SchoolMobileNavItem(
+                            label: i == 3 ? l10n.homeworkShort : item.label,
+                            icon: item.icon,
+                            selectedIcon: item.selectedIcon,
+                          );
                         }).toList();
-                        var mobileSelected = mobileIndices.indexOf(_tabIndex);
+                        final mobileSelected = mobileIndices.indexOf(_tabIndex);
 
-                        return _MobileTabBar(
+                        return SchoolMobileNavBar(
                           selectedIndex: mobileSelected,
                           onSelect: (i) {
-                            HapticFeedback.lightImpact();
                             setState(() {
                               _showSettings = false;
                               _tabIndex = mobileIndices[i];
                             });
                           },
                           items: mobileNavItems,
+                          moreLabel: l10n.more,
                           onMoreTap: () => _showMoreSheet(
                             context,
                             classes,
@@ -330,7 +327,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
                             appState,
                             l10n,
                           ),
-                          moreSelected: mobileSelected < 0,
+                          moreSelected: mobileSelected < 0 && !_showSettings,
                         );
                       },
                     ),
@@ -521,101 +518,7 @@ class JoinClassEmptyState extends ConsumerWidget {
   }
 }
 
-class _NavTabItem extends StatelessWidget {
-  const _NavTabItem({
-    required this.icon,
-    required this.selectedIcon,
-    required this.label,
-    required this.selected,
-    required this.isDark,
-    required this.onTap,
-  });
-  final IconData icon;
-  final IconData selectedIcon;
-  final String label;
-  final bool selected;
-  final bool isDark;
-  final VoidCallback onTap;
 
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      excludeSemantics: true,
-      label: label,
-      selected: selected,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        highlightColor: Colors.transparent,
-        splashColor: SchoolColors.primary.withValues(alpha: 0.1),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedScale(
-              scale: selected ? 1.15 : 1.0,
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOutCubic,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? (isDark
-                            ? SchoolColors.primary.withValues(alpha: 0.18)
-                            : SchoolColors.primary.withValues(alpha: 0.1))
-                      : Colors.transparent,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  selected ? selectedIcon : icon,
-                  color: selected
-                      ? SchoolColors.primary
-                      : (isDark
-                            ? SchoolColors.darkTextSecondary.withValues(
-                                alpha: 0.5,
-                              )
-                            : SchoolColors.textSecondary.withValues(
-                                alpha: 0.5,
-                              )),
-                  size: 28,
-                ),
-              ),
-            ),
-            if (selected)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Container(
-                  width: 4,
-                  height: 4,
-                  decoration: const BoxDecoration(
-                    color: SchoolColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                color: selected
-                    ? SchoolColors.primary
-                    : (isDark
-                          ? SchoolColors.darkTextSecondary.withValues(
-                              alpha: 0.6,
-                            )
-                          : SchoolColors.textSecondary.withValues(alpha: 0.6)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _MoreSheet extends StatelessWidget {
   const _MoreSheet({
@@ -629,137 +532,179 @@ class _MoreSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     final items = [
       (
         icon: Icons.campaign_rounded,
         label: l10n.feed,
+        subtitle: 'Bản tin lớp học',
         color: SchoolColors.secondary,
         index: 1,
       ),
       (
         icon: Icons.library_books_rounded,
         label: l10n.library,
+        subtitle: 'Tài liệu & sách',
         color: SchoolColors.accent,
         index: 5,
       ),
       (
         icon: Icons.ondemand_video_rounded,
         label: l10n.webinars,
+        subtitle: 'Video & bài giảng',
         color: SchoolColors.primary,
         index: 6,
       ),
       (
         icon: Icons.book_rounded,
         label: l10n.magazine,
+        subtitle: 'Nhật ký học tập',
         color: SchoolColors.orange,
         index: 7,
       ),
     ];
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
       decoration: BoxDecoration(
         color: isDark ? SchoolColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.1)
+              : SchoolColors.border.withValues(alpha: 0.8),
           width: 1.0,
         ),
-        boxShadow: [SchoolColors.elevatedShadow],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+            blurRadius: 28,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 36,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-              alignment: Alignment.center,
-            ),
-            Text(
-              l10n.more,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                letterSpacing: -0.3,
-              ),
-            ),
-            const SizedBox(height: 16),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 2.6,
-              children: items
-                  .map(
-                    (item) => _MoreItem(
-                      icon: item.icon,
-                      label: item.label,
-                      color: item.color,
-                      isDark: isDark,
-                      onTap: () => onSelect(item.index),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 12),
-            Material(
-              color: SchoolColors.green.withValues(alpha: isDark ? 0.12 : 0.08),
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                onTap: onJoinClass,
-                borderRadius: BorderRadius.circular(14),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.group_add_rounded,
-                        color: SchoolColors.green,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          l10n.joinAClass,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? SchoolColors.darkText
-                                : SchoolColors.text,
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 14,
-                        color: isDark
-                            ? SchoolColors.darkMuted
-                            : SchoolColors.muted,
-                      ),
-                    ],
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4.5,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : SchoolColors.border.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-          ],
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    l10n.more,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => Navigator.pop(context),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 20,
+                        color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 2.3,
+                children: items
+                    .map(
+                      (item) => _MoreItem(
+                        icon: item.icon,
+                        label: item.label,
+                        color: item.color,
+                        isDark: isDark,
+                        onTap: () => onSelect(item.index),
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: 12),
+              Material(
+                color: SchoolColors.green.withValues(alpha: isDark ? 0.14 : 0.08),
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  onTap: onJoinClass,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: SchoolColors.green.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.group_add_rounded,
+                            color: SchoolColors.green,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            l10n.joinAClass,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: isDark
+                                  ? SchoolColors.darkText
+                                  : SchoolColors.text,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                          color: isDark
+                              ? SchoolColors.darkMuted
+                              : SchoolColors.muted,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -783,23 +728,30 @@ class _MoreItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color.withValues(alpha: isDark ? 0.12 : 0.08),
-      borderRadius: BorderRadius.circular(14),
+      color: color.withValues(alpha: isDark ? 0.14 : 0.08),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
-              Icon(icon, color: color, size: 20),
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: isDark ? 0.22 : 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   label,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: isDark ? SchoolColors.darkText : SchoolColors.text,
                   ),
                   maxLines: 1,
@@ -828,8 +780,11 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return AlertDialog(
-      title: Text(AppLocalizations.of(context)!.joinTheClass),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text(l10n.joinTheClass),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -838,59 +793,47 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
               controller: _controller,
               textCapitalization: TextCapitalization.characters,
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.invitationCode,
+                labelText: l10n.invitationCode,
                 errorText: _error,
                 prefixIcon: const Icon(Icons.key_rounded),
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              AppLocalizations.of(context)!.or,
-              style: TextStyle(
-                fontSize: 10,
+              l10n.or,
+              style: const TextStyle(
+                fontSize: 11,
                 color: SchoolColors.muted,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 16),
-            OutlinedButton.icon(
+            SchoolButton.outlined(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      AppLocalizations.of(context)!.theCameraWillBeAvailable,
+                      l10n.theCameraWillBeAvailable,
                     ),
                   ),
                 );
               },
               icon: const Icon(Icons.qr_code_scanner_rounded),
-              label: Text(AppLocalizations.of(context)!.scanQrCode),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 48),
-                side: const BorderSide(color: SchoolColors.primary),
-              ),
+              label: l10n.scanQrCode,
+              isFullWidth: true,
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(
+        SchoolButton.ghost(
           onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context)!.unknownKey),
+          label: l10n.cancel,
         ),
-        FilledButton(
-          onPressed: _loading ? null : _join,
-          style: FilledButton.styleFrom(minimumSize: const Size(100, 44)),
-          child: _loading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : Text(AppLocalizations.of(context)!.join),
+        SchoolButton.primary(
+          onPressed: _join,
+          label: l10n.join,
+          isLoading: _loading,
         ),
       ],
     );
@@ -918,147 +861,5 @@ class _JoinClassDialogState extends State<JoinClassDialog> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-}
-
-class _MobileTabBar extends StatelessWidget {
-  const _MobileTabBar({
-    required this.selectedIndex,
-    required this.onSelect,
-    required this.items,
-    required this.onMoreTap,
-    this.moreSelected = false,
-  });
-  final int selectedIndex;
-  final ValueChanged<int> onSelect;
-  final List<NavDest> items;
-  final VoidCallback onMoreTap;
-  final bool moreSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final performanceMode = AppScope.of(context).appState.performanceMode;
-    final l10n = AppLocalizations.of(context)!;
-    final bottomSystemInset = MediaQuery.of(context).viewPadding.bottom;
-
-    if (performanceMode) {
-      return Padding(
-        padding: EdgeInsets.only(bottom: bottomSystemInset),
-        child: SafeArea(
-          top: false,
-          bottom: false,
-          child: Container(
-            height: 72,
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            decoration: BoxDecoration(
-              color: isDark ? SchoolColors.darkSurface : Colors.white,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.12)
-                    : SchoolColors.border.withValues(alpha: 0.8),
-                width: 1.0,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ...List.generate(items.length, (index) {
-                  final item = items[index];
-                  final selected = selectedIndex == index;
-                  return Expanded(
-                    child: _NavTabItem(
-                      icon: item.icon,
-                      selectedIcon: item.selectedIcon,
-                      label: item.label,
-                      selected: selected,
-                      isDark: isDark,
-                      onTap: () => onSelect(index),
-                    ),
-                  );
-                }),
-                Expanded(
-                  child: _NavTabItem(
-                    icon: Icons.grid_view_outlined,
-                    selectedIcon: Icons.grid_view_rounded,
-                    label: l10n.more,
-                    selected: moreSelected,
-                    isDark: isDark,
-                    onTap: onMoreTap,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomSystemInset),
-      child: SafeArea(
-        top: false,
-        bottom: false,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Container(
-              height: 72,
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? SchoolColors.darkSurface.withValues(alpha: 0.65)
-                    : Colors.white.withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : SchoolColors.border.withValues(alpha: 0.4),
-                  width: 1.0,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ...List.generate(items.length, (index) {
-                    final item = items[index];
-                    final selected = selectedIndex == index;
-                    return Expanded(
-                      child: _NavTabItem(
-                        icon: item.icon,
-                        selectedIcon: item.selectedIcon,
-                        label: item.label,
-                        selected: selected,
-                        isDark: isDark,
-                        onTap: () => onSelect(index),
-                      ),
-                    );
-                  }),
-                  Expanded(
-                    child: _NavTabItem(
-                      icon: Icons.grid_view_outlined,
-                      selectedIcon: Icons.grid_view_rounded,
-                      label: l10n.more,
-                      selected: moreSelected,
-                      isDark: isDark,
-                      onTap: onMoreTap,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

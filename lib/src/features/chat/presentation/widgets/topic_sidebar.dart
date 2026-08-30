@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/l10n/app_localizations.dart';
 import 'package:school_world/src/features/chat/data/firebase_chat_controller.dart';
+import 'package:school_world/src/providers/app_providers.dart';
+import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
 
 class TopicSidebar extends StatefulWidget {
@@ -99,6 +102,8 @@ class _TopicSidebarState extends State<TopicSidebar> {
                     _TopicItem(
                       title: l10n.mainChat,
                       icon: Icons.forum_rounded,
+                      roomId: widget.chatController.roomId,
+                      onlyMainChat: true,
                       isActive: activeTopicId == null,
                       onTap: () {
                         widget.chatController.setTopicId(null, topicName: null);
@@ -124,6 +129,8 @@ class _TopicSidebarState extends State<TopicSidebar> {
                         return _TopicItem(
                           title: name,
                           icon: Icons.tag_rounded,
+                          roomId: widget.chatController.roomId,
+                          topicId: doc.id,
                           isActive: activeTopicId == doc.id,
                           onTap: () {
                             widget.chatController.setTopicId(
@@ -223,26 +230,32 @@ class _TopicSidebarState extends State<TopicSidebar> {
   }
 }
 
-class _TopicItem extends StatefulWidget {
+class _TopicItem extends ConsumerStatefulWidget {
   const _TopicItem({
     required this.title,
     required this.icon,
+    required this.roomId,
     required this.isActive,
     required this.onTap,
+    this.topicId,
+    this.onlyMainChat = false,
     this.onDelete,
   });
 
   final String title;
   final IconData icon;
+  final String roomId;
+  final String? topicId;
+  final bool onlyMainChat;
   final bool isActive;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
 
   @override
-  State<_TopicItem> createState() => _TopicItemState();
+  ConsumerState<_TopicItem> createState() => _TopicItemState();
 }
 
-class _TopicItemState extends State<_TopicItem> {
+class _TopicItemState extends ConsumerState<_TopicItem> {
   bool _hovered = false;
   bool _pressed = false;
 
@@ -251,6 +264,19 @@ class _TopicItemState extends State<_TopicItem> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final activeColor = theme.colorScheme.primary;
+    final hasUnread =
+        ref
+            .watch(
+              chatUnreadProvider(
+                ChatUnreadTarget(
+                  roomOrClassId: widget.roomId,
+                  topicId: widget.topicId,
+                  allTopics: !widget.onlyMainChat && widget.topicId == null,
+                ),
+              ),
+            )
+            .value ??
+        false;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
@@ -306,7 +332,7 @@ class _TopicItemState extends State<_TopicItem> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: widget.isActive
+                  fontWeight: widget.isActive || hasUnread
                       ? FontWeight.bold
                       : FontWeight.w500,
                   fontSize: 14,
@@ -318,6 +344,23 @@ class _TopicItemState extends State<_TopicItem> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (hasUnread)
+                    Container(
+                      width: 10,
+                      height: 10,
+                      margin: const EdgeInsets.only(right: 10),
+                      decoration: BoxDecoration(
+                        color: SchoolColors.red,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: SchoolColors.red.withValues(alpha: 0.85),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
                   if (widget.onDelete != null)
                     AnimatedOpacity(
                       duration: const Duration(milliseconds: 200),

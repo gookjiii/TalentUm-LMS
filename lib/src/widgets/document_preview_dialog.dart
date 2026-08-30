@@ -15,11 +15,15 @@ import 'package:open_filex/open_filex.dart';
 class DocumentPreviewDialog extends StatefulWidget {
   final String url;
   final String fileName;
+  final String? driveFileId;
+  final String? storageProvider;
 
   const DocumentPreviewDialog({
     super.key,
     required this.url,
     required this.fileName,
+    this.driveFileId,
+    this.storageProvider,
   });
 
   @override
@@ -30,18 +34,30 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
   WebViewController? _controller;
   bool _isLoading = true;
   bool _isWebViewSupported = false;
-  
+
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
   String? _localFilePath;
+  String? _previewError;
+  int _pdfViewerAttempt = 0;
 
   bool get isPdf => widget.fileName.toLowerCase().endsWith('.pdf');
   bool get isDoc {
     final ext = widget.fileName.toLowerCase().split('.').last;
-    return ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv'].contains(ext);
+    return [
+      'doc',
+      'docx',
+      'ppt',
+      'pptx',
+      'xls',
+      'xlsx',
+      'txt',
+      'csv',
+    ].contains(ext);
   }
+
   bool get _isGoogleDrive => widget.url.contains('drive.google.com');
-  
+
   bool get isVideo {
     final ext = widget.fileName.toLowerCase().split('.').last;
     return ['mp4', 'mov', 'avi', 'webm', 'mkv'].contains(ext);
@@ -61,6 +77,33 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
       } catch (_) {}
     }
     return fileId ?? '';
+  }
+
+  String get _resolvedDriveFileId {
+    final explicitId = widget.driveFileId?.trim();
+    if (explicitId != null && explicitId.isNotEmpty) return explicitId;
+    return _fileId;
+  }
+
+  bool get _isGoogleDriveFile {
+    final provider = widget.storageProvider?.trim().toLowerCase();
+    return provider == 'google_drive' ||
+        _isGoogleDrive ||
+        (widget.driveFileId?.trim().isNotEmpty ?? false);
+  }
+
+  String get _pdfPreviewUrl {
+    if (!isPdf || !_isGoogleDriveFile) return widget.url;
+
+    const proxyBaseUrl = String.fromEnvironment(
+      'GOOGLE_DRIVE_PROXY_URL',
+      defaultValue: 'https://vercel-talentum-backend.vercel.app',
+    );
+    final proxyUrl = GoogleDriveHelper.buildPdfPreviewUrl(
+      _resolvedDriveFileId,
+      proxyBaseUrl: proxyBaseUrl,
+    );
+    return proxyUrl.isEmpty ? widget.url : proxyUrl;
   }
 
   String get _embedUrl {
@@ -83,22 +126,24 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
   }
 
   void _initPreview() {
-    // Automatically use WebView for Docs, Videos, and Google Drive files.
-    // For PDFs not on Google Drive, we use SfPdfViewer.network directly, which doesn't need WebView.
-    final useWebView = _isGoogleDrive || (!isPdf);
+    // PDFs must be loaded as PDF bytes. Google Drive's `/preview` URL is an
+    // HTML viewer and may render as a blank WebView on mobile, so Google Drive
+    // PDFs use the Vercel PDF proxy and SfPdfViewer instead.
+    final useWebView = !isPdf;
 
     if (useWebView) {
-      _isWebViewSupported = kIsWeb || 
-          defaultTargetPlatform == TargetPlatform.android || 
+      _isWebViewSupported =
+          kIsWeb ||
+          defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS;
 
       if (_isWebViewSupported) {
         if (kIsWeb) {
-          // WebViewPlatform.instance = WebWebViewPlatform(); 
+          // WebViewPlatform.instance = WebWebViewPlatform();
         }
-        
+
         _controller = WebViewController();
-        
+
         if (!kIsWeb) {
           _controller!
             ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -119,7 +164,7 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
         } else {
           _isLoading = false;
         }
-        
+
         _controller!.loadRequest(Uri.parse(_embedUrl));
       } else {
         _isLoading = false;
@@ -133,21 +178,26 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
     setState(() {
       _isDownloading = true;
       _downloadProgress = 0.0;
+      _previewError = null;
     });
 
     try {
-      final fileId = _fileId;
+      final fileId = _resolvedDriveFileId;
       String downloadUrl = widget.url;
       String cookieString = '';
-      
-      if (fileId.isNotEmpty) {
+
+      if (isPdf && _pdfPreviewUrl != widget.url) {
+        downloadUrl = _pdfPreviewUrl;
+      } else if (fileId.isNotEmpty) {
         final result = await GoogleDriveHelper.getDirectDownloadLink(fileId);
         downloadUrl = result['url'] ?? widget.url;
         cookieString = result['cookie'] ?? '';
       }
 
       final dir = await getTemporaryDirectory();
-      final tempFilePath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_${widget.fileName}';
+      final safeFileName = widget.fileName.replaceAll(RegExp(r'[/\\]'), '_');
+      final tempFilePath =
+          '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
 
       final dio = Dio();
       await dio.download(
@@ -169,8 +219,9 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
         setState(() {
           _localFilePath = tempFilePath;
           _isDownloading = false;
+          _previewError = null;
         });
-        
+
         if (isDoc) {
           OpenFilex.open(tempFilePath);
         }
@@ -180,12 +231,82 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
       if (mounted) {
         setState(() {
           _isDownloading = false;
+          _previewError = AppLocalizations.of(context)!.couldNotOpenAttachment;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Lỗi tải file. Vui lòng thử lại!')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.couldNotOpenAttachment),
+          ),
         );
       }
     }
+  }
+
+  void _handlePdfLoaded() {
+    if (!mounted) return;
+    if (_previewError != null) setState(() => _previewError = null);
+  }
+
+  void _handlePdfLoadFailed(PdfDocumentLoadFailedDetails details) {
+    debugPrint('PDF preview failed: ${details.error} — ${details.description}');
+    if (!mounted) return;
+    setState(() => _previewError = details.description);
+  }
+
+  void _retryPdfPreview() {
+    setState(() {
+      _previewError = null;
+      _pdfViewerAttempt++;
+    });
+  }
+
+  Widget _buildPdfError(BuildContext context, bool isDark) {
+    final l10n = AppLocalizations.of(context)!;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.picture_as_pdf_rounded,
+              size: 48,
+              color: isDark ? Colors.white54 : SchoolColors.muted,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              l10n.couldNotOpenAttachment,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isDark ? Colors.white70 : SchoolColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _retryPdfPreview,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text(l10n.retry),
+                ),
+                FilledButton.icon(
+                  onPressed: () => launchUrl(
+                    Uri.parse(widget.url),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: Text(l10n.open),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -194,7 +315,8 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
     final isDark = theme.brightness == Brightness.dark;
 
     final usePdfViewerFile = isPdf && _localFilePath != null;
-    final usePdfViewerNetwork = isPdf && !_isGoogleDrive && _localFilePath == null;
+    final usePdfViewerNetwork =
+        isPdf && _localFilePath == null && _pdfPreviewUrl.isNotEmpty;
 
     return Dialog(
       backgroundColor: isDark ? SchoolColors.darkSurface : Colors.white,
@@ -231,14 +353,25 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                 if (!kIsWeb)
                   IconButton(
                     onPressed: _downloadAndPreview,
-                    icon: const Icon(Icons.download_rounded, color: SchoolColors.primary, size: 22),
+                    icon: const Icon(
+                      Icons.download_rounded,
+                      color: SchoolColors.primary,
+                      size: 22,
+                    ),
                     splashRadius: 24,
                     tooltip: 'Tải xuống',
                   ),
                 const SizedBox(width: 4),
                 IconButton(
-                  onPressed: () => launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
-                  icon: const Icon(Icons.open_in_new_rounded, color: SchoolColors.primary, size: 22),
+                  onPressed: () => launchUrl(
+                    Uri.parse(widget.url),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  icon: const Icon(
+                    Icons.open_in_new_rounded,
+                    color: SchoolColors.primary,
+                    size: 22,
+                  ),
                   splashRadius: 24,
                   tooltip: 'Open externally',
                 ),
@@ -253,7 +386,7 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
               ],
             ),
           ),
-          
+
           // Preview Area
           Flexible(
             child: AspectRatio(
@@ -264,7 +397,9 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            isPdf ? Icons.picture_as_pdf_rounded : Icons.description_rounded,
+                            isPdf
+                                ? Icons.picture_as_pdf_rounded
+                                : Icons.description_rounded,
                             size: 64,
                             color: isDark ? Colors.white54 : Colors.black45,
                           ),
@@ -272,9 +407,13 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 48),
                             child: LinearProgressIndicator(
-                              value: _downloadProgress > 0 ? _downloadProgress : null,
+                              value: _downloadProgress > 0
+                                  ? _downloadProgress
+                                  : null,
                               color: SchoolColors.primary,
-                              backgroundColor: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                              backgroundColor: isDark
+                                  ? Colors.grey.shade800
+                                  : Colors.grey.shade200,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -288,20 +427,28 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                         ],
                       ),
                     )
+                  : _previewError != null
+                  ? _buildPdfError(context, isDark)
                   : usePdfViewerFile
-                    ? SfPdfViewer.file(
-                        File(_localFilePath!),
-                        canShowScrollHead: false,
-                        canShowScrollStatus: false,
-                      )
-                    : usePdfViewerNetwork
-                      ? SfPdfViewer.network(
-                          widget.url,
-                          canShowScrollHead: false,
-                          canShowScrollStatus: false,
-                        )
-                      : Stack(
-                          children: [
+                  ? SfPdfViewer.file(
+                      key: ValueKey('pdf-viewer-$_pdfViewerAttempt'),
+                      File(_localFilePath!),
+                      canShowScrollHead: false,
+                      canShowScrollStatus: false,
+                      onDocumentLoaded: (_) => _handlePdfLoaded(),
+                      onDocumentLoadFailed: _handlePdfLoadFailed,
+                    )
+                  : usePdfViewerNetwork
+                  ? SfPdfViewer.network(
+                      key: ValueKey('pdf-viewer-$_pdfViewerAttempt'),
+                      _pdfPreviewUrl,
+                      canShowScrollHead: false,
+                      canShowScrollStatus: false,
+                      onDocumentLoaded: (_) => _handlePdfLoaded(),
+                      onDocumentLoadFailed: _handlePdfLoadFailed,
+                    )
+                  : Stack(
+                      children: [
                         if (_isWebViewSupported && _controller != null)
                           WebViewWidget(controller: _controller!)
                         else
@@ -312,21 +459,30 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                                 Icon(
                                   Icons.insert_drive_file_rounded,
                                   size: 48,
-                                  color: isDark ? Colors.white54 : Colors.black45,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : Colors.black45,
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  AppLocalizations.of(context)!.previewNotAvailableOnThis,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.previewNotAvailableOnThis,
                                   style: TextStyle(
-                                    color: isDark ? Colors.white54 : Colors.black45,
+                                    color: isDark
+                                        ? Colors.white54
+                                        : Colors.black45,
                                   ),
                                 ),
                                 if (isDoc && _localFilePath != null) ...[
                                   const SizedBox(height: 24),
                                   ElevatedButton.icon(
-                                    onPressed: () => OpenFilex.open(_localFilePath!),
+                                    onPressed: () =>
+                                        OpenFilex.open(_localFilePath!),
                                     icon: const Icon(Icons.open_in_new_rounded),
-                                    label: const Text('Mở file bằng ứng dụng khác'),
+                                    label: const Text(
+                                      'Mở file bằng ứng dụng khác',
+                                    ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: SchoolColors.primary,
                                       foregroundColor: Colors.white,
@@ -335,13 +491,15 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                                       ),
                                     ),
                                   ),
-                                ]
+                                ],
                               ],
                             ),
                           ),
                         if (_isLoading)
                           Container(
-                            color: isDark ? SchoolColors.darkSurface : Colors.white,
+                            color: isDark
+                                ? SchoolColors.darkSurface
+                                : Colors.white,
                             child: const Center(
                               child: CircularProgressIndicator(
                                 color: SchoolColors.primary,

@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import * as https from 'https';
+import { getDriveClient } from '../../utils/drive';
 
 export const config = {
   api: {
@@ -7,96 +7,101 @@ export const config = {
   },
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Range',
+  'Access-Control-Expose-Headers':
+    'Content-Length, Content-Range, Accept-Ranges, Content-Type, ETag',
+};
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  for (const [name, value] of Object.entries(corsHeaders)) {
+    res.setHeader(name, value);
+  }
+
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
   const { fileId } = req.query;
-  if (!fileId || typeof fileId !== 'string') return res.status(400).json({ error: 'fileId is required' });
-
-  const baseUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+  if (!fileId || typeof fileId !== 'string') {
+    return res.status(400).json({ error: 'fileId is required' });
+  }
 
   try {
-    const fetchBypassInfo = (url: string, accumulatedCookies: string[] = [], redirects = 0): Promise<{ finalUrl: string, cookies: string[] }> => {
-      return new Promise((resolve, reject) => {
-        if (redirects > 5) return reject(new Error('Too many redirects'));
+    // Read the media through the authenticated Drive client. The previous
+    // implementation used drive.google.com/uc without credentials, which
+    // returned an access/confirmation HTML page for private or legacy files.
+    const drive = await getDriveClient();
+    const mediaResponse: any = await drive.files.get(
+      {
+        fileId,
+        alt: 'media',
+        supportsAllDrives: true,
+      },
+      {
+        responseType: 'stream',
+        headers: req.headers.range ? { Range: req.headers.range } : undefined,
+      },
+    );
 
-        const headers: any = { 'User-Agent': 'Mozilla/5.0' };
-        if (accumulatedCookies.length > 0) headers['Cookie'] = accumulatedCookies.join('; ');
+    const upstreamHeaders = mediaResponse.headers || {};
+    const statusCode = Number(mediaResponse.status) || 200;
+    res.status(statusCode);
 
-        https.get(url, { headers }, (response) => {
-          const newCookies = response.headers['set-cookie']?.map(c => c.split(';')[0]) || [];
-          const allCookies = [...accumulatedCookies, ...newCookies];
+    // Keep the byte-range headers so SfPdfViewer can seek through large PDFs.
+    const forwardedHeaders = [
+      'content-type',
+      'content-length',
+      'content-range',
+      'accept-ranges',
+      'etag',
+      'last-modified',
+    ];
+    for (const header of forwardedHeaders) {
+      const value = upstreamHeaders[header];
+      if (value != null) res.setHeader(header, value);
+    }
 
-          if (response.statusCode === 302 || response.statusCode === 303) {
-            let nextUrl = response.headers.location!;
-            if (!nextUrl.startsWith('http')) nextUrl = 'https://drive.google.com' + nextUrl;
-            resolve(fetchBypassInfo(nextUrl, allCookies, redirects + 1));
-          } else if (response.statusCode === 200 && response.headers['content-type']?.includes('text/html')) {
-            let body = '';
-            response.on('data', chunk => body += chunk);
-            response.on('end', () => {
-              // LOG THE BODY to see what's happening
-              console.log("----- HTML BODY START -----");
-              console.log(body.substring(0, 500));
-              console.log("...");
-              console.log(body.substring(body.length - 1000));
-              console.log("----- HTML BODY END -----");
-              
-              // Google Drive now uses form action with uuid, or downloadBtn.
-              // Let's try to extract download=... or confirm=... or anything that looks like a direct link
-              const confirmMatch = body.match(/confirm=([a-zA-Z0-9_-]+)/);
-              const hrefMatch = body.match(/href="(\/uc\?export=download[^"]+)"/);
-              const actionMatch = body.match(/action="([^"]+)"/);
+    // Some Drive responses omit content-type on media downloads. This route
+    // is exclusively used for PDF preview, so provide a stable MIME type.
+    if (!upstreamHeaders['content-type']) {
+      res.setHeader('Content-Type', 'application/pdf');
+    }
 
-              if (confirmMatch) {
-                resolve({ finalUrl: `${baseUrl}&confirm=${confirmMatch[1]}`, cookies: allCookies });
-              } else if (hrefMatch) {
-                let u = hrefMatch[1].replace(/&amp;/g, '&');
-                resolve({ finalUrl: `https://drive.google.com${u}`, cookies: allCookies });
-              } else if (actionMatch && actionMatch[1].includes('export=download')) {
-                let u = actionMatch[1].replace(/&amp;/g, '&');
-                const parsedUrl = u.startsWith('http') ? u : `https://drive.google.com${u}`;
-                resolve({ finalUrl: parsedUrl, cookies: allCookies });
-              } else {
-                reject(new Error('HTML page found but no direct download link found'));
-              }
-            });
-          } else if (response.statusCode === 200) {
-             resolve({ finalUrl: url, cookies: allCookies });
-          } else {
-             reject(new Error(`Unexpected status ${response.statusCode}`));
-          }
-        }).on('error', reject);
-      });
-    };
-
-    const { finalUrl, cookies } = await fetchBypassInfo(baseUrl);
-
-    const headers: any = { 'User-Agent': 'Mozilla/5.0' };
-    if (cookies.length > 0) headers['Cookie'] = cookies.join('; ');
-    if (req.headers.range) headers['Range'] = req.headers.range;
-
-    const proxyRequest = https.get(finalUrl, { headers }, (proxyRes) => {
-      res.status(proxyRes.statusCode || 200);
-      const headersToForward = ['content-type', 'content-length', 'content-range', 'accept-ranges', 'content-disposition'];
-      for (const header of headersToForward) if (proxyRes.headers[header]) res.setHeader(header, proxyRes.headers[header] as string);
-      proxyRes.pipe(res);
+    const stream = mediaResponse.data as NodeJS.ReadableStream;
+    stream.on('error', (error) => {
+      console.error('Google Drive PDF stream error:', error);
+      if (!res.headersSent) {
+        res.status(502).json({ error: 'PDF stream failed' });
+      } else {
+        res.destroy(error as Error);
+      }
     });
 
-    proxyRequest.on('error', (err) => {
-      console.error('Proxy stream error:', err);
-      if (!res.headersSent) res.status(500).json({ error: 'Stream failed' });
+    req.on('close', () => {
+      if (!res.writableEnded && 'destroy' in stream) {
+        (stream as NodeJS.ReadableStream & { destroy: () => void }).destroy();
+      }
     });
 
-    req.on('close', () => proxyRequest.destroy());
-
+    stream.pipe(res);
   } catch (error: any) {
-    console.error('Proxy error:', error.message);
-    res.status(500).json({ error: error.message });
+    const upstreamStatus = Number(error?.response?.status || error?.code);
+    const status = upstreamStatus === 404
+      ? 404
+      : upstreamStatus === 403
+        ? 403
+        : 502;
+    console.error('Google Drive PDF proxy error:', error?.message || error);
+    return res.status(status).json({
+      error: status === 404
+        ? 'PDF file not found'
+        : status === 403
+          ? 'PDF file is not accessible'
+          : 'Failed to load PDF from Google Drive',
+    });
   }
 }

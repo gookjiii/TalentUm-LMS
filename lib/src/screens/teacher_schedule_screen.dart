@@ -33,6 +33,8 @@ class TeacherScheduleScreen extends ConsumerStatefulWidget {
 class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
   /// Monday of the currently shown week (local date, midnight).
   late DateTime _weekStart;
+  late DateTime _selectedDay;
+  bool _isAgendaView = true;
   static const _startHour = 6;
   static const _endHour = 22;
   static const _hourHeight = 64.0;
@@ -45,6 +47,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     _weekStart = today.subtract(Duration(days: today.weekday - 1));
+    _selectedDay = today;
   }
 
   @override
@@ -65,6 +68,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
       return Scaffold(body: Center(child: Text(l10n.errorGeneric)));
     }
 
+    final isMobile = MediaQuery.sizeOf(context).width < 700;
     final appState = ref.watch(schoolAppStateProvider);
     final classesAsync = ref.watch(teacherClassesStreamProvider);
     final visibleClassIds =
@@ -120,16 +124,22 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
         actions: [
           IconButton(
             tooltip: l10n.previousWeek,
-            onPressed: () => setState(
-              () => _weekStart = _weekStart.subtract(const Duration(days: 7)),
-            ),
+            onPressed: () {
+              setState(() {
+                _weekStart = _weekStart.subtract(const Duration(days: 7));
+                _selectedDay = _selectedDay.subtract(const Duration(days: 7));
+              });
+            },
             icon: const Icon(Icons.chevron_left_rounded, size: 28),
           ),
           IconButton(
             tooltip: l10n.nextWeek,
-            onPressed: () => setState(
-              () => _weekStart = _weekStart.add(const Duration(days: 7)),
-            ),
+            onPressed: () {
+              setState(() {
+                _weekStart = _weekStart.add(const Duration(days: 7));
+                _selectedDay = _selectedDay.add(const Duration(days: 7));
+              });
+            },
             icon: const Icon(Icons.chevron_right_rounded, size: 28),
           ),
           const SizedBox(width: 4),
@@ -137,24 +147,34 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
             tooltip: l10n.today,
             onPressed: () {
               final now = DateTime.now();
+              final today = DateTime(now.year, now.month, now.day);
               setState(() {
-                _weekStart = DateTime(
-                  now.year,
-                  now.month,
-                  now.day,
-                ).subtract(Duration(days: now.weekday - 1));
+                _weekStart = today.subtract(Duration(days: today.weekday - 1));
+                _selectedDay = today;
               });
             },
             icon: const Icon(Icons.today_outlined, size: 22),
           ),
+          if (isMobile)
+            IconButton(
+              tooltip: _isAgendaView ? l10n.openWeeklySchedule : l10n.schedule,
+              onPressed: () => setState(() => _isAgendaView = !_isAgendaView),
+              icon: Icon(
+                _isAgendaView
+                    ? Icons.calendar_view_week_rounded
+                    : Icons.view_agenda_rounded,
+                size: 22,
+                color: _isAgendaView ? null : SchoolColors.primary,
+              ),
+            ),
           if (!widget.readOnly) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: SchoolAddButton(
                 onPressed: () => showScheduleEditor(
                   context,
-                  prefillDate: DateTime.now(),
+                  prefillDate: _selectedDay,
                   prefillClassId: _selectedClassId,
                 ),
                 tooltip: l10n.addALesson,
@@ -442,6 +462,79 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                           scheduleSnap.data ?? const <ScheduleEntry>[];
                       final overrides =
                           overrideSnap.data ?? const <ScheduleOverride>[];
+                      final classes = appState.isTeacher
+                          ? (classesAsync.valueOrNull ?? [])
+                          : (widget.studentClasses ?? []);
+
+                      if (isMobile) {
+                        return Column(
+                          children: [
+                            _MobileWeekStrip(
+                              weekStart: _weekStart,
+                              selectedDay: _selectedDay,
+                              schedules: schedules,
+                              overrides: overrides,
+                              onSelectDay: (day) =>
+                                  setState(() => _selectedDay = day),
+                            ),
+                            Expanded(
+                              child: _isAgendaView
+                                  ? _MobileDayAgendaView(
+                                      selectedDate: _selectedDay,
+                                      items:
+                                          resolveDay(
+                                            date: _selectedDay,
+                                            schedules: schedules,
+                                            overrides: overrides,
+                                          )..sort(
+                                            (a, b) => a.startMinute.compareTo(
+                                              b.startMinute,
+                                            ),
+                                          ),
+                                      schedules: schedules,
+                                      classes: classes,
+                                      readOnly: widget.readOnly,
+                                      onItemTap: widget.readOnly
+                                          ? null
+                                          : (sched, date) => showScheduleEditor(
+                                              context,
+                                              existing: sched,
+                                              prefillDate: date,
+                                              prefillClassId: _selectedClassId,
+                                            ),
+                                    )
+                                  : _WeekGrid(
+                                      weekStart: _weekStart,
+                                      startHour: _startHour,
+                                      endHour: _endHour,
+                                      hourHeight: _hourHeight,
+                                      schedules: schedules,
+                                      overrides: overrides,
+                                      classes: classes,
+                                      onCellTap: widget.readOnly
+                                          ? (date, minute) {}
+                                          : (date, minute) =>
+                                                showScheduleEditor(
+                                                  context,
+                                                  prefillDate: date,
+                                                  prefillStartMinute: minute,
+                                                  prefillClassId:
+                                                      _selectedClassId,
+                                                ),
+                                      onItemTap: widget.readOnly
+                                          ? (sched, date) {}
+                                          : (sched, date) => showScheduleEditor(
+                                              context,
+                                              existing: sched,
+                                              prefillDate: date,
+                                              prefillClassId: _selectedClassId,
+                                            ),
+                                    ),
+                            ),
+                          ],
+                        );
+                      }
+
                       return _WeekGrid(
                         weekStart: _weekStart,
                         startHour: _startHour,
@@ -449,9 +542,7 @@ class _TeacherScheduleScreenState extends ConsumerState<TeacherScheduleScreen> {
                         hourHeight: _hourHeight,
                         schedules: schedules,
                         overrides: overrides,
-                        classes: appState.isTeacher
-                            ? (classesAsync.valueOrNull ?? [])
-                            : (widget.studentClasses ?? []),
+                        classes: classes,
                         onCellTap: widget.readOnly
                             ? (date, minute) {}
                             : (date, minute) => showScheduleEditor(
@@ -1048,6 +1139,684 @@ class _DayHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Mobile Schedule Components ───────────────────────────────────────────
+
+class _MobileWeekStrip extends StatelessWidget {
+  const _MobileWeekStrip({
+    required this.weekStart,
+    required this.selectedDay,
+    required this.schedules,
+    required this.overrides,
+    required this.onSelectDay,
+  });
+
+  final DateTime weekStart;
+  final DateTime selectedDay;
+  final List<ScheduleEntry> schedules;
+  final List<ScheduleOverride> overrides;
+  final ValueChanged<DateTime> onSelectDay;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final days = List.generate(7, (i) => weekStart.add(Duration(days: i)));
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          for (final d in days)
+            Expanded(
+              child: _DayStripTile(
+                date: d,
+                isToday: _sameDay(d, today),
+                isSelected: _sameDay(d, selectedDay),
+                schedules: schedules,
+                overrides: overrides,
+                isDark: isDark,
+                localeName: l10n.localeName,
+                onTap: () => onSelectDay(d),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DayStripTile extends StatelessWidget {
+  const _DayStripTile({
+    required this.date,
+    required this.isToday,
+    required this.isSelected,
+    required this.schedules,
+    required this.overrides,
+    required this.isDark,
+    required this.localeName,
+    required this.onTap,
+  });
+
+  final DateTime date;
+  final bool isToday;
+  final bool isSelected;
+  final List<ScheduleEntry> schedules;
+  final List<ScheduleOverride> overrides;
+  final bool isDark;
+  final String localeName;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final wkd = DateFormat('E', localeName).format(date).toUpperCase();
+    final dayNum = DateFormat('d', localeName).format(date);
+    final dayItems = resolveDay(
+      date: date,
+      schedules: schedules,
+      overrides: overrides,
+    );
+
+    // Active lesson colors for dot indicator
+    final dotColors = dayItems
+        .take(3)
+        .map((it) => colorFromHex(it.color, SchoolColors.primary))
+        .toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2.5),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? SchoolColors.primary
+                  : (isToday
+                        ? SchoolColors.primary.withValues(
+                            alpha: isDark ? 0.2 : 0.1,
+                          )
+                        : (isDark
+                              ? SchoolColors.darkSurfaceElevated
+                              : Colors.grey.withValues(alpha: 0.06))),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isSelected
+                    ? SchoolColors.primary
+                    : (isToday
+                          ? SchoolColors.primary.withValues(alpha: 0.5)
+                          : (isDark
+                                ? SchoolColors.darkBorder
+                                : Colors.grey.withValues(alpha: 0.15))),
+                width: isToday && !isSelected ? 1.5 : 1.0,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: SchoolColors.primary.withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  wkd,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: isSelected
+                        ? Colors.white.withValues(alpha: 0.9)
+                        : (isToday
+                              ? SchoolColors.primary
+                              : (isDark
+                                    ? SchoolColors.darkMuted
+                                    : SchoolColors.muted)),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  dayNum,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark ? SchoolColors.darkText : SchoolColors.text),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // Dots row
+                SizedBox(
+                  height: 4,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (dotColors.isEmpty)
+                        const SizedBox(width: 4)
+                      else
+                        for (final c in dotColors)
+                          Container(
+                            width: 4,
+                            height: 4,
+                            margin: const EdgeInsets.symmetric(horizontal: 1),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.white : c,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileDayAgendaView extends StatelessWidget {
+  const _MobileDayAgendaView({
+    required this.selectedDate,
+    required this.items,
+    required this.schedules,
+    required this.classes,
+    required this.readOnly,
+    required this.onItemTap,
+  });
+
+  final DateTime selectedDate;
+  final List<ResolvedScheduleItem> items;
+  final List<ScheduleEntry> schedules;
+  final List<Map<String, dynamic>> classes;
+  final bool readOnly;
+  final void Function(ScheduleEntry sched, DateTime date)? onItemTap;
+
+  Map<String, ScheduleEntry> get _schedById => {
+    for (final s in schedules) s.id: s,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final now = DateTime.now();
+    final isToday = _sameDay(selectedDate, now);
+
+    final dayTitle = DateFormat(
+      'EEEE, d MMMM',
+      l10n.localeName,
+    ).format(selectedDate);
+    final capitalizedDayTitle = dayTitle.isNotEmpty
+        ? '${dayTitle[0].toUpperCase()}${dayTitle.substring(1)}'
+        : dayTitle;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Day Banner
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            capitalizedDayTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        if (isToday) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: SchoolColors.primary.withValues(
+                                alpha: 0.12,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              l10n.today.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: SchoolColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      items.isEmpty
+                          ? l10n.noClassesScheduled
+                          : '${items.length} ${l10n.classText.toLowerCase()}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: isDark
+                            ? SchoolColors.darkMuted
+                            : SchoolColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Items List or Empty State
+        Expanded(
+          child: items.isEmpty
+              ? _MobileEmptyAgendaView(
+                  selectedDate: selectedDate,
+                  readOnly: readOnly,
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    final sched = _schedById[item.scheduleId];
+                    return _MobileLessonCard(
+                      item: item,
+                      sched: sched,
+                      classes: classes,
+                      readOnly: readOnly,
+                      onTap: sched == null
+                          ? null
+                          : () => onItemTap?.call(sched, item.date),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MobileLessonCard extends StatelessWidget {
+  const _MobileLessonCard({
+    required this.item,
+    required this.sched,
+    required this.classes,
+    required this.readOnly,
+    required this.onTap,
+  });
+
+  final ResolvedScheduleItem item;
+  final ScheduleEntry? sched;
+  final List<Map<String, dynamic>> classes;
+  final bool readOnly;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final now = DateTime.now();
+    final nowMin = now.hour * 60 + now.minute;
+    final isSameDayAsNow = _sameDay(item.date, now);
+
+    final isLive =
+        isSameDayAsNow &&
+        nowMin >= item.startMinute &&
+        nowMin < item.endMinute &&
+        !item.cancelled;
+    final isDone = isSameDayAsNow && nowMin >= item.endMinute;
+    final isUpcoming = isSameDayAsNow && nowMin < item.startMinute;
+
+    final clsData = classes.firstWhere(
+      (c) => c['id'] == item.classId,
+      orElse: () => <String, dynamic>{},
+    );
+
+    final rawClsName = clsData['name']?.toString();
+    final clsName = (rawClsName != null && rawClsName.isNotEmpty)
+        ? rawClsName
+        : (item.classId.length > 15 ? l10n.classText : item.classId);
+    final clsSubject = clsData['subject']?.toString() ?? '—';
+    final lessonSubject = item.subject?.isNotEmpty == true
+        ? item.subject!
+        : clsSubject;
+    final primaryTitle = lessonSubject.isNotEmpty && lessonSubject != '—'
+        ? lessonSubject
+        : clsName;
+    final subtitle = primaryTitle != clsName ? clsName : '';
+    final studentCount = (clsData['studentIds'] as List?)?.length ?? 0;
+    final room = item.room?.trim();
+    final color = colorFromHex(item.color, SchoolColors.primary);
+    final durationMin = item.endMinute - item.startMinute;
+
+    return SchoolCard(
+      padding: EdgeInsets.zero,
+      onTap: onTap,
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            // Left Accent Strip
+            Container(
+              width: 5,
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: item.cancelled ? Colors.grey : color,
+                borderRadius: const BorderRadius.horizontal(
+                  right: Radius.circular(5),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header: Time + Status
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: color.withValues(
+                              alpha: isDark ? 0.18 : 0.08,
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${_fmt(item.startMinute)} – ${_fmt(item.endMinute)} ($durationMin ${l10n.inMin(0).replaceAll(RegExp(r'[^a-zA-Zа-яА-Я]'), '').trim()})',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: isDark
+                                  ? color.withValues(alpha: 0.9)
+                                  : color,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        if (item.cancelled)
+                          StatusChip(
+                            label: l10n.cancelled.toUpperCase(),
+                            color: SchoolColors.red,
+                          )
+                        else if (isLive)
+                          const StatusChip(
+                            label: 'LIVE',
+                            color: SchoolColors.primary,
+                            pulseDot: true,
+                          )
+                        else if (isDone)
+                          StatusChip(
+                            label: l10n.done.toUpperCase(),
+                            color: SchoolColors.muted,
+                            icon: Icons.check_circle_outline_rounded,
+                          )
+                        else if (isUpcoming)
+                          StatusChip(
+                            label: l10n.upcoming.toUpperCase(),
+                            color: SchoolColors.secondary,
+                            icon: Icons.access_time_rounded,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    // Title & Class Info
+                    Row(
+                      children: [
+                        ClassBadge(
+                          name: primaryTitle,
+                          color: color,
+                          size: 40,
+                          radius: 10,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                primaryTitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  decoration: item.cancelled
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  if (subtitle.isNotEmpty) ...[
+                                    Flexible(
+                                      child: Text(
+                                        subtitle,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? SchoolColors.darkTextSecondary
+                                              : SchoolColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      ' · ',
+                                      style: TextStyle(
+                                        color: SchoolColors.muted.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  if (studentCount > 0)
+                                    Text(
+                                      l10n.studentsCount(studentCount),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark
+                                            ? SchoolColors.darkMuted
+                                            : SchoolColors.muted,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!readOnly && onTap != null) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: isDark
+                                ? SchoolColors.darkMuted
+                                : SchoolColors.muted,
+                            size: 20,
+                          ),
+                        ],
+                      ],
+                    ),
+                    // Room & Note (if available)
+                    if ((room != null && room.isNotEmpty) ||
+                        (item.note != null &&
+                            item.note!.trim().isNotEmpty)) ...[
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          if (room != null && room.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? SchoolColors.darkSurfaceElevated
+                                    : Colors.grey.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: isDark
+                                      ? SchoolColors.darkBorder
+                                      : Colors.grey.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.meeting_room_outlined,
+                                    size: 13,
+                                    color: isDark
+                                        ? SchoolColors.darkMuted
+                                        : SchoolColors.muted,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    l10n.cabinetWithNumber(room),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark
+                                          ? SchoolColors.darkTextSecondary
+                                          : SchoolColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (item.note != null && item.note!.trim().isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: color.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: Text(
+                                item.note!.trim(),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: color,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileEmptyAgendaView extends StatelessWidget {
+  const _MobileEmptyAgendaView({
+    required this.selectedDate,
+    required this.readOnly,
+  });
+
+  final DateTime selectedDate;
+  final bool readOnly;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: SchoolColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.calendar_today_rounded,
+                size: 34,
+                color: SchoolColors.primary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              l10n.noClassesScheduled,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              DateFormat('d MMMM yyyy', l10n.localeName).format(selectedDate),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

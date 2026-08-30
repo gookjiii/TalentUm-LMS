@@ -49,14 +49,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    await recordRef.update({
+    if (!file.id) {
+      return res.status(502).json({ error: 'Google Drive returned no file ID' });
+    }
+
+    const updateData: Record<string, unknown> = {
       driveFileId: file.id,
-      webViewLink: file.webViewLink,
-      webContentLink: file.webContentLink,
-      thumbnailLink: file.thumbnailLink,
       status: 'active',
       completedAt: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
-    });
+    };
+    if (file.webViewLink) updateData.webViewLink = file.webViewLink;
+    if (file.webContentLink) updateData.webContentLink = file.webContentLink;
+    if (file.thumbnailLink) updateData.thumbnailLink = file.thumbnailLink;
+
+    await recordRef.update(updateData);
 
     return res.status(200).json({ success: true, file });
   } catch (error: any) {

@@ -348,13 +348,11 @@ class _TeacherWorkspaceScreenState
                     ]; // Today, Chat, Homework, Schedule
                     final mobileNavItems = mobileIndices.map((i) {
                       final item = navItems[i];
-                      return i == 4
-                          ? TeacherNavDest(
-                              l10n.homeworkShort,
-                              item.icon,
-                              item.selectedIcon,
-                            )
-                          : item;
+                      return SchoolMobileNavItem(
+                        label: i == 4 ? l10n.homeworkShort : item.label,
+                        icon: item.icon,
+                        selectedIcon: item.selectedIcon,
+                      );
                     }).toList();
                     var mobileSelected = mobileIndices.indexOf(_tabIndex);
 
@@ -365,10 +363,9 @@ class _TeacherWorkspaceScreenState
                       mobileSelected = 0;
                     }
 
-                    return _MobileBottomBar(
+                    return SchoolMobileNavBar(
                       selectedIndex: _moreSelected ? -1 : mobileSelected,
                       onSelect: (i) {
-                        HapticFeedback.lightImpact();
                         setState(() {
                           _tabIndex = mobileIndices[i];
                           _moreSelected = false;
@@ -378,6 +375,7 @@ class _TeacherWorkspaceScreenState
                             .setTeacherTabIndex(mobileIndices[i]);
                       },
                       items: mobileNavItems,
+                      moreLabel: l10n.more,
                       onMoreTap: () => _showTeacherMoreSheet(context, appState),
                       moreSelected: _moreSelected,
                     );
@@ -1046,316 +1044,6 @@ class _TeacherEmptyState extends StatelessWidget {
   }
 }
 
-class _MobileBottomBar extends StatelessWidget {
-  const _MobileBottomBar({
-    required this.selectedIndex,
-    required this.onSelect,
-    required this.items,
-    required this.onMoreTap,
-    this.moreSelected = false,
-  });
-  final int selectedIndex;
-  final ValueChanged<int> onSelect;
-  final List<TeacherNavDest> items;
-  final VoidCallback onMoreTap;
-  final bool moreSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final performanceMode = AppScope.of(context).appState.performanceMode;
-    final bottomSystemInset = MediaQuery.of(context).viewPadding.bottom;
-
-    if (performanceMode) {
-      return Padding(
-        padding: EdgeInsets.only(bottom: bottomSystemInset),
-        child: SafeArea(
-          top: false,
-          bottom: false,
-          child: Container(
-            height: 72,
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            decoration: BoxDecoration(
-              color: isDark ? SchoolColors.darkSurface : Colors.white,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.12)
-                    : SchoolColors.border.withValues(alpha: 0.8),
-                width: 1.0,
-              ),
-            ),
-            child: _buildIcons(isDark, context),
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomSystemInset),
-      child: SafeArea(
-        top: false,
-        bottom: false,
-        child: Container(
-          height: 72,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          decoration: BoxDecoration(
-            color: isDark
-                ? SchoolColors.darkSurface.withValues(alpha: 0.85)
-                : Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : SchoolColors.border.withValues(alpha: 0.5),
-              width: 1.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: _buildIcons(isDark, context),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIcons(bool isDark, BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        ...List.generate(items.length, (index) {
-          final item = items[index];
-          final selected = selectedIndex == index;
-
-          return Expanded(
-            child: Semantics(
-              button: true,
-              excludeSemantics: true,
-              label: item.label,
-              selected: selected,
-              child: InkWell(
-                onTap: () => onSelect(index),
-                borderRadius: BorderRadius.circular(20),
-                highlightColor: Colors.transparent,
-                splashColor: SchoolColors.primary.withValues(alpha: 0.1),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AnimatedScale(
-                      scale: selected ? 1.15 : 1.0,
-                      duration: const Duration(milliseconds: 160),
-                      curve: Curves.easeOutCubic,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: selected
-                              ? (isDark
-                                    ? SchoolColors.primary.withValues(
-                                        alpha: 0.18,
-                                      )
-                                    : SchoolColors.primary.withValues(
-                                        alpha: 0.1,
-                                      ))
-                              : Colors.transparent,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          selected ? item.selectedIcon : item.icon,
-                          color: selected
-                              ? SchoolColors.primary
-                              : (isDark
-                                    ? SchoolColors.darkTextSecondary.withValues(
-                                        alpha: 0.5,
-                                      )
-                                    : SchoolColors.textSecondary.withValues(
-                                        alpha: 0.5,
-                                      )),
-                          size: 28,
-                        ),
-                      ),
-                    ),
-                    if (selected)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Container(
-                          width: 4,
-                          height: 4,
-                          decoration: const BoxDecoration(
-                            color: SchoolColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w600,
-                        color: selected
-                            ? SchoolColors.primary
-                            : (isDark
-                                  ? SchoolColors.darkTextSecondary.withValues(
-                                      alpha: 0.6,
-                                    )
-                                  : SchoolColors.textSecondary.withValues(
-                                      alpha: 0.6,
-                                    )),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
-        Expanded(
-          child: Semantics(
-            button: true,
-            excludeSemantics: true,
-            label: l10n.more,
-            selected: moreSelected,
-            child: InkWell(
-              onTap: onMoreTap,
-              borderRadius: BorderRadius.circular(20),
-              highlightColor: Colors.transparent,
-              splashColor: SchoolColors.primary.withValues(alpha: 0.1),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AnimatedScale(
-                    scale: moreSelected ? 1.15 : 1.0,
-                    duration: const Duration(milliseconds: 160),
-                    curve: Curves.easeOutCubic,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: moreSelected
-                            ? (isDark
-                                  ? SchoolColors.primary.withValues(alpha: 0.18)
-                                  : SchoolColors.primary.withValues(alpha: 0.1))
-                            : Colors.transparent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        moreSelected
-                            ? Icons.grid_view_rounded
-                            : Icons.grid_view_outlined,
-                        color: moreSelected
-                            ? SchoolColors.primary
-                            : (isDark
-                                  ? SchoolColors.darkTextSecondary.withValues(
-                                      alpha: 0.5,
-                                    )
-                                  : SchoolColors.textSecondary.withValues(
-                                      alpha: 0.5,
-                                    )),
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  if (moreSelected)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Container(
-                        width: 4,
-                        height: 4,
-                        decoration: const BoxDecoration(
-                          color: SchoolColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 2),
-                  Text(
-                    l10n.more,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: moreSelected
-                          ? FontWeight.w700
-                          : FontWeight.w600,
-                      color: moreSelected
-                          ? SchoolColors.primary
-                          : (isDark
-                                ? SchoolColors.darkTextSecondary.withValues(
-                                    alpha: 0.6,
-                                  )
-                                : SchoolColors.textSecondary.withValues(
-                                    alpha: 0.6,
-                                  )),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AnimatedNavIcon extends StatefulWidget {
-  const _AnimatedNavIcon({required this.icon, required this.selected});
-  final IconData icon;
-  final bool selected;
-
-  @override
-  State<_AnimatedNavIcon> createState() => _AnimatedNavIconState();
-}
-
-class _AnimatedNavIconState extends State<_AnimatedNavIcon>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _scale = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut));
-    if (widget.selected) _ctrl.forward();
-  }
-
-  @override
-  void didUpdateWidget(_AnimatedNavIcon old) {
-    super.didUpdateWidget(old);
-    if (widget.selected && !old.selected) {
-      _ctrl.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ScaleTransition(scale: _scale, child: Icon(widget.icon));
-  }
-}
-
 class _TeacherMoreSheet extends StatelessWidget {
   const _TeacherMoreSheet({
     required this.isLeadTeacher,
@@ -1370,7 +1058,8 @@ class _TeacherMoreSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     final items = [
       (
@@ -1414,57 +1103,82 @@ class _TeacherMoreSheet extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 600,
-            constraints: const BoxConstraints(maxWidth: 600),
-            decoration: BoxDecoration(
-              color: isDark ? SchoolColors.darkSurface : Colors.white,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: isDark ? SchoolColors.darkBorder : SchoolColors.border,
-                width: 1.0,
-              ),
-              boxShadow: [SchoolColors.elevatedShadow],
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 560),
+          decoration: BoxDecoration(
+            color: isDark ? SchoolColors.darkSurface : Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : SchoolColors.border.withValues(alpha: 0.8),
+              width: 1.0,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+                blurRadius: 28,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            top: false,
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    width: 36,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? SchoolColors.darkBorder
-                          : SchoolColors.border,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    alignment: Alignment.center,
-                  ),
-                  Text(
-                    l10n.more,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: isDark ? SchoolColors.darkText : SchoolColors.text,
-                      letterSpacing: -0.5,
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4.5,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.2)
+                            : SchoolColors.border.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        l10n.more,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: isDark ? SchoolColors.darkText : SchoolColors.text,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () => Navigator.pop(context),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 20,
+                            color: isDark ? SchoolColors.darkMuted : SchoolColors.muted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   GridView.count(
                     crossAxisCount: 2,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
-                    childAspectRatio: 2.6,
+                    childAspectRatio: 2.3,
                     children: items
                         .map(
                           (item) => _MoreSheetItem(
@@ -1478,18 +1192,19 @@ class _TeacherMoreSheet extends StatelessWidget {
                         .toList(),
                   ),
                   if (isLeadTeacher) ...[
-                    const SizedBox(height: 20),
-                    SchoolAddButton(
+                    const SizedBox(height: 16),
+                    SchoolButton.primary(
                       onPressed: onCreateClass,
-                      tooltip: l10n.createClass,
+                      icon: const Icon(Icons.add_rounded),
+                      label: l10n.createClass,
+                      isFullWidth: true,
                     ),
                   ],
-                  const SizedBox(height: 8),
                 ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1512,23 +1227,30 @@ class _MoreSheetItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color.withValues(alpha: isDark ? 0.12 : 0.08),
-      borderRadius: BorderRadius.circular(14),
+      color: color.withValues(alpha: isDark ? 0.14 : 0.08),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Row(
             children: [
-              Icon(icon, color: color, size: 20),
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: isDark ? 0.22 : 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   label,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     color: isDark ? SchoolColors.darkText : SchoolColors.text,
                   ),
                   maxLines: 1,

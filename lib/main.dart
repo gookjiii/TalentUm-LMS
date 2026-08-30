@@ -312,6 +312,10 @@ class AppScope extends InheritedWidget {
     return scope!;
   }
 
+  static AppScope? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<AppScope>();
+  }
+
   @override
   bool updateShouldNotify(AppScope oldWidget) {
     return repository != oldWidget.repository || appState != oldWidget.appState;

@@ -16,6 +16,7 @@ import '../firebase/storage_provider.dart';
 import 'school_button.dart';
 export 'cached_stream_builder.dart';
 export 'school_button.dart';
+export 'school_mobile_nav_bar.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // COLOR HELPERS
@@ -207,7 +208,8 @@ class SchoolCard extends HookWidget {
       }
     }
 
-    final isPerformance = AppScope.of(context).appState.performanceMode;
+    final isPerformance =
+        AppScope.maybeOf(context)?.appState.performanceMode ?? false;
 
     return MouseRegion(
       onEnter: onTap != null ? (_) => isHovered.value = true : null,
@@ -344,7 +346,8 @@ class ClassBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final performanceMode = AppScope.of(context).appState.performanceMode;
+    final performanceMode =
+        AppScope.maybeOf(context)?.appState.performanceMode ?? false;
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       final formattedUrl = avatarUrl!.toDirectImageUrl.toOptimizedCloudinary(
         performance: performanceMode,
@@ -455,16 +458,17 @@ class SchoolAvatar extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repo = AppScope.of(context).repository;
-    final appState = AppScope.of(context).appState;
-    final isPerformance = appState.performanceMode;
+    final appScope = AppScope.maybeOf(context);
+    final repo = appScope?.repository;
+    final appState = appScope?.appState;
+    final isPerformance = appState?.performanceMode ?? false;
     final isHovered = useState(false);
 
     final userStream = useMemoized(
-      () => userId != null
+      () => (userId != null && repo != null)
           ? repo.firestore.collection('users').doc(userId).snapshots()
           : const Stream<DocumentSnapshot<Map<String, dynamic>>>.empty(),
-      [userId],
+      [userId, repo],
     );
     final userSnap = useStream(userStream);
 
@@ -478,10 +482,10 @@ class SchoolAvatar extends HookWidget {
     final c = _resolveColorForName(color, resolvedName);
 
     final statusStream = useMemoized(
-      () => userId != null
+      () => (userId != null && repo != null)
           ? repo.userStatusStream(userId!)
           : const Stream<Map<String, dynamic>>.empty(),
-      [userId],
+      [userId, repo],
     );
     final statusSnap = useStream(statusStream);
     final isOnline = statusSnap.data?['state'] == 'online';
@@ -1575,6 +1579,7 @@ class PageHeader extends StatelessWidget {
     this.padding,
     this.titleStyle,
     this.subtitleStyle,
+    this.showBackButton,
   });
 
   final String title;
@@ -1589,21 +1594,33 @@ class PageHeader extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final TextStyle? titleStyle;
   final TextStyle? subtitleStyle;
+  final bool? showBackButton;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final canPop = ModalRoute.of(context)?.canPop ?? false;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isCompact = screenWidth < 600;
+    final canPop = showBackButton ?? (ModalRoute.of(context)?.canPop ?? false);
     final classLabel = classContext?.trim();
     final hasClassLabel = classLabel != null && classLabel.isNotEmpty;
     final canSelectClass = onClassContextTap != null;
     final displayedClassLabel = hasClassLabel
         ? classLabel
         : AppLocalizations.of(context)?.selectClass ?? 'Select class';
+
+    final effectivePadding = padding ??
+        EdgeInsets.fromLTRB(
+          isCompact ? 20 : 24,
+          isCompact ? 12 : 16,
+          isCompact ? 20 : 24,
+          isCompact ? 12 : 16,
+        );
+
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: padding ?? const EdgeInsets.fromLTRB(20, 16, 20, 16),
+        padding: effectivePadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -1613,21 +1630,21 @@ class PageHeader extends StatelessWidget {
                 onTap: () => Navigator.of(context).maybePop(),
                 behavior: HitTestBehavior.opaque,
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        size: 18,
+                        size: 16,
                         color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         AppLocalizations.of(context)?.back ?? 'Back',
                         style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
                           color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
@@ -1645,10 +1662,10 @@ class PageHeader extends StatelessWidget {
                 onTap: onClassContextTap,
                 isDark: isDark,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
             ],
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: Column(
@@ -1664,21 +1681,21 @@ class PageHeader extends StatelessWidget {
                                 color: isDark
                                     ? SchoolColors.darkMuted
                                     : SchoolColors.muted,
-                                fontSize: 13,
+                                fontSize: isCompact ? 12 : 13,
                                 fontWeight: FontWeight.w600,
                               ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                       ],
                       Text(
                         title,
                         style:
                             titleStyle ??
                             TextStyle(
-                              fontSize: 28,
+                              fontSize: isCompact ? 22 : 28,
                               fontWeight: FontWeight.w900,
-                              height: 1.1,
-                              letterSpacing: -0.5,
+                              height: 1.15,
+                              letterSpacing: isCompact ? -0.3 : -0.5,
                               color: Theme.of(context).colorScheme.onSurface,
                             ),
                       ),

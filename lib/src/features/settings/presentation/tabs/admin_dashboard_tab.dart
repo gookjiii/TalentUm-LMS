@@ -30,7 +30,8 @@ class AdminDashboardTab extends ConsumerStatefulWidget {
 class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
   static const String _defaultProxyUrl =
       'https://vercel-talentum-backend.vercel.app';
-  static const double _defaultGoogleLimit = 15.0 * 1024 * 1024 * 1024; // 15 GB
+  static const double _defaultGoogleLimit =
+      5.0 * 1024 * 1024 * 1024 * 1024; // 5 TB
   static const double _defaultCloudinaryLimit =
       25.0 * 1024 * 1024 * 1024; // 25 GB
   static const double _defaultFirebaseLimit = 5.0 * 1024 * 1024 * 1024; // 5 GB

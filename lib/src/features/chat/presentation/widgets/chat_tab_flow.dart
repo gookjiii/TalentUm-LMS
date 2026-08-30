@@ -53,7 +53,8 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
         widget.appState.setChatRoomMobileOpen(false);
       }
     }
-    if (oldWidget.initialClassId != widget.initialClassId && widget.initialClassId != null) {
+    if (oldWidget.initialClassId != widget.initialClassId &&
+        widget.initialClassId != null) {
       _syncInitialView();
       return;
     }
@@ -172,7 +173,8 @@ class _ChatTabFlowState extends ConsumerState<ChatTabFlow> {
     if (widget.classes.isEmpty && !widget.appState.isTeacher) {
       return const SizedBox.shrink();
     }
-    final classId = widget.initialClassId ??
+    final classId =
+        widget.initialClassId ??
         (widget.classes.isNotEmpty
             ? widget.classes.first['id'] as String
             : 'teachers_lounge');
@@ -517,13 +519,19 @@ class _ClassCardState extends ConsumerState<_ClassCard> {
                         color: color,
                         size: 52,
                         radius: 14,
+                        avatarUrl: c['avatarUrl']?.toString(),
                       ),
                     ),
                     Builder(
                       builder: (context) {
-                        final cardRoomId = (c['chatRoomId'] as String?) ?? (c['id'] as String? ?? '');
+                        final cardRoomId =
+                            (c['chatRoomId'] as String?) ??
+                            (c['id'] as String? ?? '');
                         final hasUnread = cardRoomId.isNotEmpty
-                            ? (ref.watch(roomUnreadProvider(cardRoomId)).value ?? false)
+                            ? (ref
+                                      .watch(roomUnreadProvider(cardRoomId))
+                                      .value ??
+                                  false)
                             : false;
                         if (!hasUnread) return const SizedBox.shrink();
                         return Positioned(
@@ -536,12 +544,16 @@ class _ClassCardState extends ConsumerState<_ClassCard> {
                               color: SchoolColors.red,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                                color: isDark
+                                    ? const Color(0xFF0F172A)
+                                    : Colors.white,
                                 width: 2.5,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: SchoolColors.red.withValues(alpha: 0.9),
+                                  color: SchoolColors.red.withValues(
+                                    alpha: 0.9,
+                                  ),
                                   blurRadius: 8,
                                   spreadRadius: 2,
                                 ),
@@ -572,19 +584,30 @@ class _ClassCardState extends ConsumerState<_ClassCard> {
                           ),
                           Builder(
                             builder: (context) {
-                              final cardRoomId = (c['chatRoomId'] as String?) ?? (c['id'] as String? ?? '');
-                              final hasUnread = ref.watch(roomUnreadProvider(cardRoomId)).value ?? false;
+                              final cardRoomId =
+                                  (c['chatRoomId'] as String?) ??
+                                  (c['id'] as String? ?? '');
+                              final hasUnread =
+                                  ref
+                                      .watch(roomUnreadProvider(cardRoomId))
+                                      .value ??
+                                  false;
                               if (!hasUnread) return const SizedBox.shrink();
                               return Padding(
                                 padding: const EdgeInsets.only(right: 6),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: SchoolColors.red,
                                     borderRadius: BorderRadius.circular(8),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: SchoolColors.red.withValues(alpha: 0.6),
+                                        color: SchoolColors.red.withValues(
+                                          alpha: 0.6,
+                                        ),
                                         blurRadius: 6,
                                         spreadRadius: 1,
                                       ),

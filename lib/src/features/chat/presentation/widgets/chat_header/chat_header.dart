@@ -284,14 +284,12 @@ class _ChatHeaderState extends State<ChatHeader> {
         final userIds = List<String>.from(data['userIds'] ?? []);
         memberCount = userIds.isNotEmpty ? userIds.length : 1;
 
-        final statusText = '$memberCount участников, онлайн';
+        final statusText = AppLocalizations.of(context)!.totalParticipants(memberCount);
 
         return Container(
           width: double.infinity,
           padding: EdgeInsets.symmetric(
-            // Give the compact header a few extra pixels for the room title
-            // without changing the desktop spacing.
-            horizontal: isMobile ? 4 : 16,
+            horizontal: isMobile ? 8 : 16,
             vertical: isMobile ? 6 : 10,
           ),
           decoration: BoxDecoration(
@@ -433,12 +431,12 @@ class _ChatHeaderState extends State<ChatHeader> {
                                           ClassBadge(
                                             name: name,
                                             color: color,
-                                            size: 18,
-                                            radius: 4,
+                                            size: 34,
+                                            radius: 10,
                                             avatarUrl: data['avatarUrl']
                                                 ?.toString(),
                                           ),
-                                          const SizedBox(width: 6),
+                                          const SizedBox(width: 8),
                                           Flexible(
                                             child: Column(
                                               crossAxisAlignment:
@@ -461,8 +459,8 @@ class _ChatHeaderState extends State<ChatHeader> {
                                                             ?.copyWith(
                                                               fontWeight:
                                                                   FontWeight
-                                                                      .w900,
-                                                              fontSize: 14,
+                                                                      .w800,
+                                                              fontSize: 14.5,
                                                             ),
                                                       ),
                                                     ),
@@ -474,7 +472,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                                                       const Icon(
                                                         Icons
                                                             .arrow_forward_ios_rounded,
-                                                        size: 8,
+                                                        size: 9,
                                                         color: Colors.grey,
                                                       ),
                                                       const SizedBox(width: 4),
@@ -503,19 +501,19 @@ class _ChatHeaderState extends State<ChatHeader> {
                                                     ],
                                                   ],
                                                 ),
+                                                const SizedBox(height: 1),
                                                 Text(
                                                   statusText,
                                                   style: theme
                                                       .textTheme
                                                       .labelSmall
                                                       ?.copyWith(
-                                                        color: theme
-                                                            .colorScheme
-                                                            .primary
-                                                            .withOpacity(0.8),
+                                                        color: isDark
+                                                            ? SchoolColors.darkMuted
+                                                            : SchoolColors.muted,
                                                         fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 9,
+                                                            FontWeight.w600,
+                                                        fontSize: 10.5,
                                                       ),
                                                 ),
                                               ],
@@ -539,19 +537,19 @@ class _ChatHeaderState extends State<ChatHeader> {
                                 ),
                                 color: theme.colorScheme.primary,
                                 constraints: const BoxConstraints(
-                                  minWidth: 36,
-                                  minHeight: 36,
+                                  minWidth: 40,
+                                  minHeight: 40,
                                 ),
                                 padding: EdgeInsets.zero,
                               ),
                             ),
-                            const SizedBox(width: 4),
                             PopupMenuButton<String>(
                               icon: Icon(
                                 Icons.more_vert_rounded,
                                 color: theme.colorScheme.onSurfaceVariant,
+                                size: 22,
                               ),
-                              constraints: const BoxConstraints(minWidth: 150),
+                              constraints: const BoxConstraints(minWidth: 160),
                               padding: EdgeInsets.zero,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),

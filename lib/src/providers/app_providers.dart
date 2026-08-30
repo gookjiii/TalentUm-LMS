@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app_state.dart';
@@ -136,57 +137,124 @@ final userDataProvider = StreamProvider.autoDispose
           .map((doc) => doc.data());
     });
 
-final roomUnreadProvider = StreamProvider.family<bool, String>((ref, classOrRoomId) {
+/// Identifies which part of a group chat owns an unread indicator.
+///
+/// `allTopics` is used by the class/chat list: any unread message in the room
+/// should light up the group. Topic sidebar items set it to false so that the
+/// main chat and every topic have independent badges.
+class ChatUnreadTarget {
+  const ChatUnreadTarget({
+    required this.roomOrClassId,
+    this.topicId,
+    this.allTopics = true,
+  });
+
+  final String roomOrClassId;
+  final String? topicId;
+  final bool allTopics;
+
+  @override
+  bool operator ==(Object other) {
+    return other is ChatUnreadTarget &&
+        other.roomOrClassId == roomOrClassId &&
+        other.topicId == topicId &&
+        other.allTopics == allTopics;
+  }
+
+  @override
+  int get hashCode => Object.hash(roomOrClassId, topicId, allTopics);
+}
+
+final chatUnreadProvider = StreamProvider.family<bool, ChatUnreadTarget>((
+  ref,
+  target,
+) {
   final uid = ref.watch(uidProvider);
-  if (uid == null || classOrRoomId.isEmpty) return Stream.value(false);
+  if (uid == null || target.roomOrClassId.isEmpty) {
+    return Stream.value(false);
+  }
+
   final repo = ref.watch(repositoryProvider);
+  return _watchChatUnread(firestore: repo.firestore, target: target, uid: uid);
+});
 
-  return repo.firestore
-      .collection('rooms')
-      .doc(classOrRoomId)
-      .collection('messages')
-      .orderBy('createdAt', descending: true)
-      .limit(1)
-      .snapshots()
-      .asyncMap((snap) async {
-    if (snap.docs.isNotEmpty) {
-      final msg = snap.docs.first.data();
-      final authorId = msg['authorId']?.toString();
-      if (authorId == uid) return false;
+/// Backwards-compatible room-level provider used by the desktop sidebars and
+/// chat cards. Room-level badges include messages posted in any topic.
+final roomUnreadProvider = StreamProvider.family<bool, String>((ref, roomId) {
+  return ref.watch(
+    chatUnreadProvider(ChatUnreadTarget(roomOrClassId: roomId)).stream,
+  );
+});
 
-      final metadata = msg['metadata'] as Map<String, dynamic>?;
-      final seenBy = List<String>.from(metadata?['seenBy'] ?? []);
-      return !seenBy.contains(uid);
-    }
+Stream<bool> _watchChatUnread({
+  required FirebaseFirestore firestore,
+  required ChatUnreadTarget target,
+  required String uid,
+}) async* {
+  try {
+    var roomId = target.roomOrClassId;
+    final directRoom = await firestore.collection('rooms').doc(roomId).get();
 
-    try {
-      final roomQuery = await repo.firestore
+    // Some older class records store the class ID instead of the generated
+    // room ID. Resolve that legacy shape before starting the live listener.
+    if (!directRoom.exists) {
+      final roomQuery = await firestore
           .collection('rooms')
-          .where('metadata.classId', isEqualTo: classOrRoomId)
+          .where('metadata.classId', isEqualTo: target.roomOrClassId)
           .limit(1)
           .get();
-
-      if (roomQuery.docs.isNotEmpty) {
-        final actualRoomId = roomQuery.docs.first.id;
-        final roomMsgSnap = await repo.firestore
-            .collection('rooms')
-            .doc(actualRoomId)
-            .collection('messages')
-            .orderBy('createdAt', descending: true)
-            .limit(1)
-            .get();
-
-        if (roomMsgSnap.docs.isNotEmpty) {
-          final msg = roomMsgSnap.docs.first.data();
-          final authorId = msg['authorId']?.toString();
-          if (authorId == uid) return false;
-
-          final metadata = msg['metadata'] as Map<String, dynamic>?;
-          final seenBy = List<String>.from(metadata?['seenBy'] ?? []);
-          return !seenBy.contains(uid);
-        }
+      if (roomQuery.docs.isEmpty) {
+        yield false;
+        return;
       }
-    } catch (_) {}
-    return false;
-  });
-});
+      roomId = roomQuery.docs.first.id;
+    }
+
+    Query<Map<String, dynamic>> query = firestore
+        .collection('rooms')
+        .doc(roomId)
+        .collection('messages')
+        .orderBy('createdAt', descending: true);
+
+    if (target.topicId != null) {
+      query = query.where('metadata.topicId', isEqualTo: target.topicId);
+    }
+
+    // Firestore cannot query both null and missing topicId values reliably in
+    // one filtered query. Read a small recent window and select main-chat
+    // messages locally instead.
+    final recentLimit = target.topicId == null && !target.allTopics ? 50 : 1;
+    await for (final snap in query.limit(recentLimit).snapshots()) {
+      final message = target.allTopics
+          ? (snap.docs.isEmpty ? null : snap.docs.first.data())
+          : snap.docs
+                .map((doc) => doc.data())
+                .cast<Map<String, dynamic>?>()
+                .firstWhere(
+                  (data) =>
+                      data?['metadata'] is! Map ||
+                      (data?['metadata'] as Map)['topicId'] == null,
+                  orElse: () => null,
+                );
+
+      if (message == null) {
+        yield false;
+        continue;
+      }
+
+      final authorId = message['authorId']?.toString();
+      if (authorId == uid) {
+        yield false;
+        continue;
+      }
+
+      final metadata = message['metadata'];
+      final seenBy = metadata is Map ? metadata['seenBy'] : null;
+      final hasSeen =
+          seenBy is Iterable && seenBy.map((id) => id.toString()).contains(uid);
+      yield !hasSeen;
+    }
+  } catch (_) {
+    yield false;
+  }
+}
