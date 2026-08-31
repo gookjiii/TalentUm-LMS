@@ -2088,12 +2088,21 @@ Future<void> pickAndUpdateClassAvatar(
     final path =
         'classes/$classId/avatar/${DateTime.now().millisecondsSinceEpoch}.$ext';
 
-    final Map<String, dynamic>? uploadResult;
-    final avatarProvider = CloudinaryStorageProvider.chatProvider();
-    if (kIsWeb || file.bytes != null) {
-      uploadResult = await avatarProvider.uploadFileWeb(path, file.bytes!);
-    } else {
-      uploadResult = await avatarProvider.uploadFile(path, File(file.path!));
+    final provider = CloudinaryStorageProvider.avatarProvider();
+    Map<String, dynamic>? uploadResult;
+    try {
+      if (kIsWeb || file.bytes != null) {
+        uploadResult = await provider.uploadFileWeb(path, file.bytes!);
+      } else {
+        uploadResult = await provider.uploadFile(path, File(file.path!));
+      }
+    } catch (_) {
+      final fbProvider = FirebaseStorageProvider();
+      if (kIsWeb || file.bytes != null) {
+        uploadResult = await fbProvider.uploadFileWeb(path, file.bytes!);
+      } else {
+        uploadResult = await fbProvider.uploadFile(path, File(file.path!));
+      }
     }
 
     final avatarUrl = uploadResult['url']?.toString();

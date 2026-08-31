@@ -67,7 +67,7 @@ service firebase.storage {
     }
 
     match /avatars/{userId}/{filePath=**} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update: if signedIn() && request.auth.uid == userId &&
         validUpload(10 * 1024 * 1024);
       allow delete: if signedIn() && request.auth.uid == userId;

@@ -210,32 +210,41 @@ Stream<bool> _watchChatUnread({
       roomId = roomQuery.docs.first.id;
     }
 
-    Query<Map<String, dynamic>> query = firestore
+    // Query recent messages by createdAt descending (requires no composite indexes).
+    // Filtering by topic or main chat is handled locally for 100% reliability.
+    final query = firestore
         .collection('rooms')
         .doc(roomId)
         .collection('messages')
-        .orderBy('createdAt', descending: true);
+        .orderBy('createdAt', descending: true)
+        .limit(50);
 
-    if (target.topicId != null) {
-      query = query.where('metadata.topicId', isEqualTo: target.topicId);
-    }
-
-    // Firestore cannot query both null and missing topicId values reliably in
-    // one filtered query. Read a small recent window and select main-chat
-    // messages locally instead.
-    final recentLimit = target.topicId == null && !target.allTopics ? 50 : 1;
-    await for (final snap in query.limit(recentLimit).snapshots()) {
-      final message = target.allTopics
-          ? (snap.docs.isEmpty ? null : snap.docs.first.data())
-          : snap.docs
-                .map((doc) => doc.data())
-                .cast<Map<String, dynamic>?>()
-                .firstWhere(
-                  (data) =>
-                      data?['metadata'] is! Map ||
-                      (data?['metadata'] as Map)['topicId'] == null,
-                  orElse: () => null,
-                );
+    await for (final snap in query.snapshots()) {
+      final Map<String, dynamic>? message;
+      if (target.allTopics) {
+        message = snap.docs.isEmpty ? null : snap.docs.first.data();
+      } else if (target.topicId != null) {
+        message = snap.docs
+            .map((doc) => doc.data())
+            .cast<Map<String, dynamic>?>()
+            .firstWhere(
+              (data) =>
+                  data?['metadata'] is Map &&
+                  (data?['metadata'] as Map)['topicId'] == target.topicId,
+              orElse: () => null,
+            );
+      } else {
+        // Main chat: show messages with NO topicId (null or missing)
+        message = snap.docs
+            .map((doc) => doc.data())
+            .cast<Map<String, dynamic>?>()
+            .firstWhere(
+              (data) =>
+                  data?['metadata'] is! Map ||
+                  (data?['metadata'] as Map)['topicId'] == null,
+              orElse: () => null,
+            );
+      }
 
       if (message == null) {
         yield false;

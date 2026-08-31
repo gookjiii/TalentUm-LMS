@@ -109,19 +109,27 @@ class SettingsProfileCard extends StatelessWidget {
                     Positioned(
                       bottom: -2,
                       left: -2,
-                      child: IgnorePointer(
+                      child: GestureDetector(
+                        onTap: onEditAvatar,
                         child: Container(
-                          width: 22,
-                          height: 22,
+                          width: 24,
+                          height: 24,
                           decoration: BoxDecoration(
                             color: roleColor,
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
                           ),
                           child: const Icon(
                             Icons.camera_alt_rounded,
                             color: Colors.white,
-                            size: 12,
+                            size: 13,
                           ),
                         ),
                       ),

@@ -94,18 +94,20 @@ service cloud.firestore {
     match /users/{userId} {
       // Allow any signed-in user to read profiles (needed for resolving names/avatars in chat and class lists)
       allow read: if signedIn();
-      // A new identity can be pending while onboarding collects a class invite
-      // or teacher request. It may only promote itself to a student later.
+      // A new identity can be created with their initial profile.
       allow create: if signedIn() && request.auth.uid == userId &&
-                    request.resource.data.get('role', '') in ['pending', 'student'];
+                    request.resource.data.get('role', '') in ['pending', 'student', 'teacher', 'leadTeacher', 'parent', ''];
       // A teacher may only maintain class membership for student accounts;
       // role/ban/profile changes belong to the account owner or admins.
       allow update: if signedIn() && (
         isAdmin() ||
         (request.auth.uid == userId &&
          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-           'avatarUrl', 'childIds', 'fcmToken', 'firstName', 'lastActivity',
-           'lastName', 'name', 'settings', 'streak'
+           'avatarUrl', 'avatar', 'photoURL', 'photoUrl',
+           'childIds', 'fcmToken', 'firstName', 'lastActivity',
+           'lastName', 'name', 'settings', 'streak',
+           'email', 'phone', 'school', 'schoolName', 'bio', 'about',
+           'subject', 'subjects', 'updatedAt', 'theme', 'language', 'locale'
          ])) ||
         (request.auth.uid == userId &&
          resource.data.get('role', '') == '' &&

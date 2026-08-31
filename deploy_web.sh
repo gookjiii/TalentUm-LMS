@@ -34,7 +34,7 @@ BUILD_ARGS=(flutter build web --release \
 "${BUILD_ARGS[@]}"
 
 # 3. Deploy to Firebase
-echo "🔥 Deploying to Firebase Hosting..."
-firebase deploy --only hosting
+echo "🔥 Deploying to Firebase Hosting, Firestore Rules & Storage Rules..."
+firebase deploy --only hosting,firestore:rules,storage
 
 echo "✅ Deployment Complete!"

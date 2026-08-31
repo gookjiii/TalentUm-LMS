@@ -323,9 +323,11 @@ class _TopicItemState extends ConsumerState<_TopicItem> {
                 size: 20,
                 color: widget.isActive
                     ? activeColor
-                    : theme.colorScheme.onSurfaceVariant.withValues(
-                        alpha: _hovered ? 1.0 : 0.7,
-                      ),
+                    : (hasUnread
+                        ? SchoolColors.primary
+                        : theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: _hovered ? 1.0 : 0.7,
+                          )),
               ),
               title: Text(
                 widget.title,
@@ -333,12 +335,14 @@ class _TopicItemState extends ConsumerState<_TopicItem> {
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: widget.isActive || hasUnread
-                      ? FontWeight.bold
+                      ? FontWeight.w700
                       : FontWeight.w500,
                   fontSize: 14,
                   color: widget.isActive
                       ? activeColor
-                      : theme.colorScheme.onSurface,
+                      : (hasUnread
+                          ? (isDark ? Colors.white : SchoolColors.text)
+                          : theme.colorScheme.onSurface),
                 ),
               ),
               trailing: Row(
@@ -346,16 +350,16 @@ class _TopicItemState extends ConsumerState<_TopicItem> {
                 children: [
                   if (hasUnread)
                     Container(
-                      width: 10,
-                      height: 10,
-                      margin: const EdgeInsets.only(right: 10),
+                      width: 9,
+                      height: 9,
+                      margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
                         color: SchoolColors.red,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: SchoolColors.red.withValues(alpha: 0.85),
-                            blurRadius: 8,
+                            color: SchoolColors.red.withValues(alpha: 0.7),
+                            blurRadius: 6,
                             spreadRadius: 1,
                           ),
                         ],

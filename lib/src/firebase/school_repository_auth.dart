@@ -42,11 +42,19 @@ mixin SchoolRepositoryAuth {
     if (userId == null) return;
     final updates = <String, dynamic>{};
     if (name != null) updates['name'] = name;
-    if (avatarUrl != null) updates['avatarUrl'] = avatarUrl;
+    if (avatarUrl != null) {
+      updates['avatarUrl'] = avatarUrl;
+      updates['photoURL'] = avatarUrl;
+      updates['avatar'] = avatarUrl;
+    }
     if (firstName != null) updates['firstName'] = firstName;
     if (lastName != null) updates['lastName'] = lastName;
+    updates['updatedAt'] = FieldValue.serverTimestamp();
     if (updates.isNotEmpty) {
-      await firestore.collection('users').doc(userId).update(updates);
+      await firestore.collection('users').doc(userId).set(
+        updates,
+        SetOptions(merge: true),
+      );
     }
   }
 
@@ -92,7 +100,9 @@ mixin SchoolRepositoryAuth {
     }
 
     await updateProfile(avatarUrl: url);
-    await auth.currentUser?.updatePhotoURL(url);
+    try {
+      await auth.currentUser?.updatePhotoURL(url);
+    } catch (_) {}
     return url;
   }
 

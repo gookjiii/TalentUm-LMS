@@ -378,8 +378,29 @@ class CloudinaryStorageProvider implements StorageProvider {
       );
     }
 
-    final uniqueUploadId = DateTime.now().millisecondsSinceEpoch.toString();
     const chunkSize = 10 * 1024 * 1024; // 10 MB per chunk
+
+    // For single-chunk files (<= 10 MB, e.g. avatars and photos), use standard
+    // multipart upload without Content-Range headers so Cloudinary unsigned
+    // preset processes it cleanly.
+    if (totalSize <= chunkSize) {
+      final multipartFile = await getChunk(0, totalSize);
+      return _dio.post(
+        uploadUrl,
+        data: FormData.fromMap({
+          'file': multipartFile,
+          'upload_preset': _uploadPreset,
+          'folder': folder,
+        }),
+        onSendProgress: (sent, total) {
+          if (onProgress != null && totalSize > 0) {
+            onProgress(sent / totalSize);
+          }
+        },
+      );
+    }
+
+    final uniqueUploadId = DateTime.now().millisecondsSinceEpoch.toString();
 
     Response<dynamic>? lastResponse;
     int bytesUploaded = 0;
