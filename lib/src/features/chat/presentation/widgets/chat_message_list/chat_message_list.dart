@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:school_world/l10n/app_localizations.dart';
@@ -8,6 +9,7 @@ import 'package:swipe_to/swipe_to.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:school_world/src/features/chat/presentation/widgets/chat_bubble/chat_bubble.dart';
 import 'package:school_world/src/features/chat/data/firebase_chat_controller.dart';
+import 'package:school_world/src/theme.dart';
 import 'package:school_world/main.dart';
 
 class ChatMessageList extends StatelessWidget {
@@ -107,11 +109,117 @@ class ChatMessageList extends StatelessWidget {
                       ),
                 ),
                 builders: Builders(
+                  scrollToBottomBuilder: (context, animation, onPressed) {
+                    return ScaleTransition(
+                      scale: CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
+                      ),
+                      child: FadeTransition(
+                        opacity: animation,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12, right: 16),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(
+                                  alpha: isDark ? 0.4 : 0.12,
+                                ),
+                                blurRadius: 14,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                            shape: const CircleBorder(),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                onPressed();
+                              },
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isDark
+                                        ? Colors.white12
+                                        : const Color(0xFFE2E8F0),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 28,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  emptyChatListBuilder: (context) {
+                    final l10n = AppLocalizations.of(context)!;
+                    return Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : SchoolColors.primary.withValues(alpha: 0.08),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.chat_bubble_outline_rounded,
+                                size: 36,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Text(
+                              l10n.noMessagesYet,
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              l10n.messageYourClass,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDark
+                                    ? Colors.white60
+                                    : const Color(0xFF64748B),
+                                height: 1.4,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                   chatAnimatedListBuilder: (context, itemBuilder) =>
                       ChatAnimatedList(
                         itemBuilder: itemBuilder,
                         reversed: true,
                         bottomPadding: 16,
+                        scrollToBottomAppearanceThreshold: 200,
                         physics: const BouncingScrollPhysics(
                           parent: AlwaysScrollableScrollPhysics(),
                         ),

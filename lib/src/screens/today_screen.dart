@@ -6,6 +6,7 @@ import '../app_state.dart';
 import '../firebase/school_repository.dart';
 import '../theme.dart';
 import '../widgets/school_widgets.dart';
+import '../widgets/skeletal_loaders.dart';
 
 class TodayScreen extends StatelessWidget {
   const TodayScreen({
@@ -40,7 +41,16 @@ class TodayScreen extends StatelessWidget {
             keys: [classIds.join(',')],
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  children: const [
+                    AssignmentCardSkeleton(isFeatured: true),
+                    SizedBox(height: 12),
+                    AssignmentCardSkeleton(),
+                    SizedBox(height: 12),
+                    AssignmentCardSkeleton(),
+                  ],
+                );
               }
               final assignments = snapshot.data!.docs;
               if (assignments.isEmpty) {

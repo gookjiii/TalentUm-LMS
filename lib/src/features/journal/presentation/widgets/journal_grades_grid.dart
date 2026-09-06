@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
+import 'package:school_world/src/widgets/skeletal_loaders.dart';
 
 import '../../journal_providers.dart';
 
@@ -24,7 +25,8 @@ class JournalGradesGrid extends ConsumerStatefulWidget {
 }
 
 class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
-  final ScrollController _horizontalController = ScrollController();
+  final ScrollController _horizontalHeaderController = ScrollController();
+  final ScrollController _horizontalBodyController = ScrollController();
   final ScrollController _verticalHeaderController = ScrollController();
   final ScrollController _verticalBodyController = ScrollController();
   int _visibleStudentsCount = 20;
@@ -38,6 +40,26 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
         if (_verticalHeaderController.offset !=
             _verticalBodyController.offset) {
           _verticalHeaderController.jumpTo(_verticalBodyController.offset);
+        }
+      }
+    });
+
+    _horizontalBodyController.addListener(() {
+      if (_horizontalHeaderController.hasClients &&
+          _horizontalBodyController.hasClients) {
+        if (_horizontalHeaderController.offset !=
+            _horizontalBodyController.offset) {
+          _horizontalHeaderController.jumpTo(_horizontalBodyController.offset);
+        }
+      }
+    });
+
+    _horizontalHeaderController.addListener(() {
+      if (_horizontalHeaderController.hasClients &&
+          _horizontalBodyController.hasClients) {
+        if (_horizontalBodyController.offset !=
+            _horizontalHeaderController.offset) {
+          _horizontalBodyController.jumpTo(_horizontalHeaderController.offset);
         }
       }
     });
@@ -60,7 +82,8 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
 
   @override
   void dispose() {
-    _horizontalController.dispose();
+    _horizontalHeaderController.dispose();
+    _horizontalBodyController.dispose();
     _verticalHeaderController.dispose();
     _verticalBodyController.dispose();
     super.dispose();
@@ -90,11 +113,11 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
           .snapshots(),
       builder: (context, classSnap) {
         if (!classSnap.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const JournalGridSkeleton();
         }
 
         return studentIdsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const JournalGridSkeleton(),
           error: (e, st) => Center(child: Text('Ошибка: $e')),
           data: (allStudentIds) {
             final studentIds = widget.studentIdFilter != null
@@ -108,27 +131,61 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                 : studentIds.take(_visibleStudentsCount).toList();
 
             return columnsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const JournalGridSkeleton(),
               error: (e, st) => Center(child: Text('Ошибка: $e')),
               data: (columns) {
                 return marksAsync.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                  loading: () => const JournalGridSkeleton(),
                   error: (e, st) => Center(child: Text('Ошибка: $e')),
                   data: (marksDocs) {
                     if (columns.isEmpty) {
+                      final isDark =
+                          Theme.of(context).brightness == Brightness.dark;
                       return Center(
-                        child: Text(
-                          widget.studentIdFilter != null
-                              ? AppLocalizations.of(
-                                  context,
-                                )!.youDontHaveRatingsYet
-                              : AppLocalizations.of(
-                                  context,
-                                )!.theMagazineIsEmptyAdd,
-                          style: const TextStyle(
-                            color: SchoolColors.muted,
-                            fontSize: 16,
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 48,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 68,
+                                height: 68,
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.05)
+                                      : SchoolColors.primary.withValues(
+                                          alpha: 0.08,
+                                        ),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Icon(
+                                  Icons.menu_book_rounded,
+                                  size: 32,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                widget.studentIdFilter != null
+                                    ? AppLocalizations.of(
+                                        context,
+                                      )!.youDontHaveRatingsYet
+                                    : AppLocalizations.of(
+                                        context,
+                                      )!.theMagazineIsEmptyAdd,
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF0F172A),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -240,7 +297,7 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                     ),
                     Expanded(
                       child: SingleChildScrollView(
-                        controller: _horizontalController,
+                        controller: _horizontalHeaderController,
                         scrollDirection: Axis.horizontal,
                         physics: const ClampingScrollPhysics(),
                         child: Row(
@@ -334,7 +391,7 @@ class _JournalGradesGridState extends ConsumerState<JournalGradesGrid> {
                       Expanded(
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
-                          controller: _horizontalController,
+                          controller: _horizontalBodyController,
                           physics: const ClampingScrollPhysics(),
                           child: SizedBox(
                             width: columns.length * cellWidth,
