@@ -14,6 +14,7 @@ import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/app_state.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
+import 'package:school_world/src/widgets/skeletal_loaders.dart';
 
 import '../features/today/presentation/widgets/student_today.dart';
 import '../features/homework/presentation/widgets/student_homework.dart';
@@ -82,8 +83,7 @@ class _StudentShellState extends ConsumerState<StudentShell> {
     final repo = AppScope.of(context).repository;
     final appState = AppScope.of(context).appState;
     return classesAsync.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const ShellLoadingSkeleton(),
       error: (err, stack) => Scaffold(
         body: Center(
           child: Text(

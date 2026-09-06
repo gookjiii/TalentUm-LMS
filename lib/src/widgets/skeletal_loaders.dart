@@ -285,3 +285,134 @@ class JournalGridSkeleton extends StatelessWidget {
     );
   }
 }
+
+class FeedCardSkeleton extends StatelessWidget {
+  const FeedCardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+          width: 1.2,
+        ),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SkeletalLoader(width: 40, height: 40, borderRadius: 20),
+              SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletalLoader(width: 120, height: 14, borderRadius: 4),
+                  SizedBox(height: 6),
+                  SkeletalLoader(width: 70, height: 10, borderRadius: 4),
+                ],
+              ),
+              Spacer(),
+              SkeletalLoader(width: 24, height: 24, borderRadius: 12),
+            ],
+          ),
+          SizedBox(height: 14),
+          SkeletalLoader(width: 80, height: 22, borderRadius: 99),
+          SizedBox(height: 14),
+          SkeletalLoader(width: double.infinity, height: 14, borderRadius: 4),
+          SizedBox(height: 8),
+          SkeletalLoader(width: 220, height: 14, borderRadius: 4),
+          SizedBox(height: 16),
+          SkeletalLoader(width: double.infinity, height: 160, borderRadius: 12),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              SkeletalLoader(width: 64, height: 32, borderRadius: 99),
+              SizedBox(width: 10),
+              SkeletalLoader(width: 64, height: 32, borderRadius: 99),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ShellLoadingSkeleton extends StatelessWidget {
+  const ShellLoadingSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final wide = MediaQuery.sizeOf(context).width >= 900;
+
+    return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: Row(
+          children: [
+            if (wide)
+              Container(
+                width: 80,
+                margin: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFF0F172A),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  children: [
+                    const SkeletalLoader(width: 40, height: 40, borderRadius: 12),
+                    const SizedBox(height: 32),
+                    ...List.generate(
+                      5,
+                      (i) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: const SkeletalLoader(width: 36, height: 36, borderRadius: 10),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        SkeletalLoader(width: 140, height: 28, borderRadius: 8),
+                        Spacer(),
+                        SkeletalLoader(width: 40, height: 40, borderRadius: 20),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Expanded(
+                      child: ListView(
+                        children: const [
+                          AssignmentCardSkeleton(isFeatured: true),
+                          SizedBox(height: 14),
+                          AssignmentCardSkeleton(),
+                          SizedBox(height: 14),
+                          AssignmentCardSkeleton(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

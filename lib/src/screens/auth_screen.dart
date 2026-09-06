@@ -426,13 +426,13 @@ class _MobileAuthLayout extends StatelessWidget {
               gradient: LinearGradient(
                 colors: isDark
                     ? [
-                        const Color(0xFF0B1120),
-                        const Color(0xFF0E1928),
-                        const Color(0xFF111827),
+                        const Color(0xFF090D16),
+                        const Color(0xFF15102A),
+                        const Color(0xFF0F172A),
                       ]
                     : [
-                        const Color(0xFFF0F5FF),
-                        const Color(0xFFF8F7FF),
+                        const Color(0xFFF6F5FB),
+                        const Color(0xFFECE7F6),
                         Colors.white,
                       ],
                 begin: Alignment.topCenter,
@@ -447,7 +447,7 @@ class _MobileAuthLayout extends StatelessWidget {
           right: -60,
           child: _DecorativeCircle(
             size: 260,
-            color: SchoolColors.primary.withValues(alpha: isDark ? 0.15 : 0.10),
+            color: SchoolColors.primary.withValues(alpha: isDark ? 0.22 : 0.12),
           ),
         ),
         Positioned(
@@ -456,7 +456,7 @@ class _MobileAuthLayout extends StatelessWidget {
           child: _DecorativeCircle(
             size: 200,
             color: SchoolColors.secondary.withValues(
-              alpha: isDark ? 0.10 : 0.07,
+              alpha: isDark ? 0.15 : 0.08,
             ),
           ),
         ),
@@ -464,10 +464,14 @@ class _MobileAuthLayout extends StatelessWidget {
         SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(28),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),
-                child: child,
+                child: SchoolCard(
+                  padding: const EdgeInsets.all(28),
+                  borderRadius: 24,
+                  child: child,
+                ),
               ),
             ),
           ),
@@ -486,19 +490,21 @@ class _WideAuthLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       children: [
         // Left hero panel
         Expanded(
           child: Container(
             height: double.infinity,
-            padding: const EdgeInsets.all(56),
+            padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 48),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFF1D4ED8),
-                  Color(0xFF2563EB),
-                  Color(0xFF6366F1),
+                  Color(0xFF0A0F1D), // Dark space navy
+                  Color(0xFF1F1238), // Midnight amethyst
+                  Color(0xFF3F1D6B), // Rich brand amethyst
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -508,59 +514,73 @@ class _WideAuthLayout extends StatelessWidget {
               children: [
                 // Subtle circle decorations
                 Positioned(
-                  top: -40,
+                  top: -60,
                   right: -40,
                   child: _DecorativeCircle(
-                    size: 220,
-                    color: Colors.white.withValues(alpha: 0.06),
+                    size: 260,
+                    color: SchoolColors.primary.withValues(alpha: 0.25),
                   ),
                 ),
                 Positioned(
                   bottom: 40,
-                  left: -60,
+                  left: -80,
                   child: _DecorativeCircle(
-                    size: 300,
-                    color: Colors.white.withValues(alpha: 0.04),
+                    size: 320,
+                    color: SchoolColors.secondary.withValues(alpha: 0.15),
                   ),
                 ),
                 Positioned(
-                  bottom: 160,
-                  right: 20,
+                  top: 180,
+                  left: 60,
                   child: _DecorativeCircle(
-                    size: 120,
-                    color: Colors.white.withValues(alpha: 0.07),
+                    size: 140,
+                    color: Colors.white.withValues(alpha: 0.04),
                   ),
                 ),
                 // Hero content
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SchoolLogo(size: 72),
-                    const SizedBox(height: 32),
-                    const Text(
-                      'School\nWorld',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 54,
-                        height: 1.0,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -2,
-                      ),
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SchoolLogo(size: 80),
+                        const SizedBox(height: 28),
+                        CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                          streamFactory: () => AppScope.of(context)
+                              .repository
+                              .systemSettingsStream(),
+                          builder: (context, snapshot) {
+                            final appName = snapshot.data?.get('appName') as String? ??
+                                'TalentUm';
+                            return Text(
+                              appName,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 46,
+                                height: 1.1,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -1.5,
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          AppLocalizations.of(context)!.singleClassForChatnfeedAnd,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 16,
+                            height: 1.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 36),
+                        _FeatureShowcase(),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      AppLocalizations.of(context)!.singleClassForChatnfeedAnd,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 18,
-                        height: 1.45,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    _FeaturePills(),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -568,12 +588,18 @@ class _WideAuthLayout extends StatelessWidget {
         ),
         // Right form panel
         Expanded(
-          child: Center(
+          child: Container(
+            color: isDark ? const Color(0xFF090D16) : const Color(0xFFF8FAFC),
+            alignment: Alignment.center,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(48),
+              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
-                child: form,
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: SchoolCard(
+                  padding: const EdgeInsets.all(36),
+                  borderRadius: 24,
+                  child: form,
+                ),
               ),
             ),
           ),
@@ -583,43 +609,102 @@ class _WideAuthLayout extends StatelessWidget {
   }
 }
 
-class _FeaturePills extends StatelessWidget {
+class _FeatureShowcase extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final features = [
       (
-        Icons.chat_bubble_outline_rounded,
-        AppLocalizations.of(context)!.realtimeClassChat,
+        icon: Icons.forum_rounded,
+        title: l10n.realtimeClassChat,
+        desc: _localizedAuthMessage(
+          context,
+          vi: 'Trao đổi tức thì với giáo viên và các bạn trong lớp',
+          ru: 'Мгновенное общение с учителями и одноклассниками',
+          en: 'Instant discussions with teachers and classmates',
+        ),
       ),
-      (Icons.campaign_outlined, AppLocalizations.of(context)!.adsAndFeed),
       (
-        Icons.assignment_outlined,
-        AppLocalizations.of(context)!.assignmentsAndAssessments,
+        icon: Icons.campaign_rounded,
+        title: l10n.adsAndFeed,
+        desc: _localizedAuthMessage(
+          context,
+          vi: 'Bản tin thông báo, tài liệu & lịch học cập nhật',
+          ru: 'Объявления класса, материалы и расписание',
+          en: 'Class announcements, materials & schedule updates',
+        ),
+      ),
+      (
+        icon: Icons.assignment_rounded,
+        title: l10n.assignmentsAndAssessments,
+        desc: _localizedAuthMessage(
+          context,
+          vi: 'Giao nộp bài tập, chấm điểm trực tiếp & kho tài liệu',
+          ru: 'Сдача заданий, оценивание и библиотека материалов',
+          en: 'Homework submissions, grading & digital library',
+        ),
       ),
     ];
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: features.map((f) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.12),
+              width: 1,
+            ),
+          ),
           child: Row(
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+                  gradient: LinearGradient(
+                    colors: [
+                      SchoolColors.primary.withValues(alpha: 0.7),
+                      SchoolColors.secondary.withValues(alpha: 0.8),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    width: 1,
+                  ),
                 ),
-                child: Icon(f.$1, color: Colors.white, size: 15),
+                child: Icon(f.icon, color: Colors.white, size: 19),
               ),
-              const SizedBox(width: 12),
-              Text(
-                f.$2,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      f.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      f.desc,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.72),
+                        fontSize: 12,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -794,12 +879,51 @@ class _AuthForm extends StatelessWidget {
             size: SchoolButtonSize.lg,
             onPressed: otpSent ? onVerifyOtp : onSendOtp,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: Divider(
+                  color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  _localizedAuthMessage(context, vi: 'HOẶC', ru: 'ИЛИ', en: 'OR'),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.0,
+                    color: isDark ? Colors.white38 : SchoolColors.muted,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Divider(
+                  color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
 
-          Center(
-            child: SchoolButton.ghost(
-              label: _getLoginWithEmailText(context),
-              onPressed: onTogglePhoneMode,
+          OutlinedButton.icon(
+            onPressed: onTogglePhoneMode,
+            icon: const Icon(Icons.mail_outline_rounded, size: 18),
+            label: Text(
+              _getLoginWithEmailText(context),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: isDark ? Colors.white : SchoolColors.text,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              side: BorderSide(
+                color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
           ),
         ],
@@ -954,15 +1078,50 @@ class _AuthForm extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: Divider(
+                color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                _localizedAuthMessage(context, vi: 'HOẶC', ru: 'ИЛИ', en: 'OR'),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                  color: isDark ? Colors.white38 : SchoolColors.muted,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Divider(
+                color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
 
-        TextButton(
+        OutlinedButton.icon(
           onPressed: onTogglePhoneMode,
-          child: Text(
+          icon: const Icon(Icons.phone_iphone_rounded, size: 18),
+          label: Text(
             _getLoginWithPhoneText(context),
-            style: const TextStyle(
-              color: SchoolColors.primary,
-              fontWeight: FontWeight.w700,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: isDark ? Colors.white : SchoolColors.text,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            side: BorderSide(
+              color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
           ),
         ),

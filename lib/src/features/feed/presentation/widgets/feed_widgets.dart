@@ -4,6 +4,7 @@ import 'package:school_world/l10n/app_localizations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/firebase/school_repository.dart';
@@ -78,9 +79,16 @@ class _PostCardState extends State<PostCard> {
 
     final classColor = parseHexColor(widget.classData['coverColor']);
     final className = widget.classData['name']?.toString() ?? '';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SchoolCard(
       padding: const EdgeInsets.all(20),
+      color: pinned
+          ? (isDark ? const Color(0xFF231B38) : const Color(0xFFFAF7FF))
+          : null,
+      borderColor: pinned
+          ? SchoolColors.primary.withValues(alpha: isDark ? 0.45 : 0.35)
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -141,7 +149,7 @@ class _PostCardState extends State<PostCard> {
                   padding: const EdgeInsets.only(right: 8),
                   child: StatusChip(
                     label: AppLocalizations.of(context)!.pinned,
-                    color: SchoolColors.yellow,
+                    color: SchoolColors.primary,
                     icon: Icons.push_pin,
                     iconSize: 10,
                   ),
@@ -178,32 +186,39 @@ class _PostCardState extends State<PostCard> {
                           context,
                         ).appState.performanceMode,
                       ),
-                  height: 240,
-                  width: double.infinity,
                   fit: BoxFit.cover,
-                  memCacheWidth: AppScope.of(context).appState.performanceMode
-                      ? 500
-                      : 900,
-                  placeholder: (c, u) =>
-                      Container(color: Colors.grey.withValues(alpha: 0.1)),
+                  width: double.infinity,
+                  height: 200,
+                  placeholder: (context, url) => Container(
+                    height: 200,
+                    color: Theme.of(context).dividerColor.withValues(
+                      alpha: 0.05,
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    height: 200,
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                  ),
                 ),
               ),
             ),
-          const SizedBox(height: 20),
-          const Divider(height: 1),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           _PostReactionRow(
             doc: widget.doc,
             isLiked: isLiked,
             likesCount: likes.length,
-            commentsCount: (data['comments'] as List? ?? []).length,
+            commentsCount: data['commentsCount'] ?? 0,
           ),
         ],
       ),
     );
   }
 
-  String _formatTimestamp(Object? timestamp) {
+  String _formatTimestamp(dynamic timestamp) {
     if (timestamp is Timestamp) {
       final date = timestamp.toDate();
       final now = DateTime.now();
@@ -270,36 +285,108 @@ class _PostReactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repo = AppScope.of(context).repository;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       children: [
-        TextButton.icon(
-          onPressed: () => repo.toggleLike(doc.id, isLiked),
-          icon: Icon(
-            isLiked ? Icons.favorite : Icons.favorite_border,
-            size: 18,
-            color: isLiked ? SchoolColors.red : SchoolColors.muted,
-          ),
-          label: Text(
-            '$likesCount',
-            style: TextStyle(
-              color: isLiked ? SchoolColors.red : SchoolColors.muted,
-              fontWeight: FontWeight.bold,
+        Material(
+          color: isLiked
+              ? (isDark ? const Color(0xFF451A20) : const Color(0xFFFEE2E2))
+              : (isDark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : const Color(0xFFF1F5F9)),
+          borderRadius: BorderRadius.circular(99),
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              repo.toggleLike(doc.id, isLiked);
+            },
+            borderRadius: BorderRadius.circular(99),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(99),
+                border: Border.all(
+                  color: isLiked
+                      ? SchoolColors.red.withValues(alpha: 0.3)
+                      : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isLiked
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    size: 17,
+                    color: isLiked
+                        ? SchoolColors.red
+                        : (isDark ? Colors.white70 : SchoolColors.muted),
+                  ),
+                  if (likesCount > 0) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      '$likesCount',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isLiked
+                            ? SchoolColors.red
+                            : (isDark
+                                ? Colors.white70
+                                : SchoolColors.textSecondary),
+                        fontWeight:
+                            isLiked ? FontWeight.bold : FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
         ),
         const SizedBox(width: 8),
-        TextButton.icon(
-          onPressed: () => _showComments(context, doc),
-          icon: const Icon(
-            Icons.chat_bubble_outline,
-            size: 18,
-            color: SchoolColors.muted,
-          ),
-          label: Text(
-            '$commentsCount',
-            style: const TextStyle(
-              color: SchoolColors.muted,
-              fontWeight: FontWeight.bold,
+        Material(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(99),
+          child: InkWell(
+            onTap: () => _showComments(context, doc),
+            borderRadius: BorderRadius.circular(99),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(99),
+                border: Border.all(
+                  color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 16,
+                    color: isDark ? Colors.white70 : SchoolColors.muted,
+                  ),
+                  if (commentsCount > 0) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      '$commentsCount',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark
+                            ? Colors.white70
+                            : SchoolColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
         ),
@@ -315,7 +402,7 @@ class _PostReactionRow extends StatelessWidget {
             );
           },
           icon: const Icon(
-            Icons.bookmark_border,
+            Icons.bookmark_border_rounded,
             size: 20,
             color: SchoolColors.muted,
           ),

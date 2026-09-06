@@ -8,6 +8,7 @@ import 'package:school_world/main.dart';
 import 'package:school_world/src/providers/app_providers.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
+import 'package:school_world/src/widgets/skeletal_loaders.dart';
 
 import './feed_widgets.dart';
 
@@ -278,10 +279,16 @@ class _TeacherFeedState extends ConsumerState<TeacherFeed> {
               }
 
               if (isInitialLoading) {
-                return const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 80),
-                    child: Center(child: CircularProgressIndicator()),
+                return SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => const Padding(
+                        padding: EdgeInsets.only(bottom: 16),
+                        child: FeedCardSkeleton(),
+                      ),
+                      childCount: 3,
+                    ),
                   ),
                 );
               }

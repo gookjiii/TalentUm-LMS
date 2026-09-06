@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:school_world/main.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:school_world/src/widgets/school_widgets.dart';
+import 'package:school_world/src/widgets/skeletal_loaders.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:school_world/src/providers/app_providers.dart';
 
@@ -216,15 +217,16 @@ class _StudentFeedState extends ConsumerState<StudentFeed> {
                     }
 
                     if (isInitialLoading) {
-                      return SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 24,
+                      return SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) => const Padding(
+                              padding: EdgeInsets.only(bottom: 16),
+                              child: FeedCardSkeleton(),
+                            ),
+                            childCount: 3,
                           ),
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ), // Or Shimmer
                         ),
                       );
                     }
