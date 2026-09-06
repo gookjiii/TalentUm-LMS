@@ -7,10 +7,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:school_world/src/theme.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-// Removed webview_flutter_web import because it breaks Android build on Dart 3+
 import 'package:url_launcher/url_launcher.dart';
 import 'package:school_world/src/utils/google_drive_helper.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:school_world/src/features/webinars/presentation/widgets/iframe_player.dart';
 
 class DocumentPreviewDialog extends StatefulWidget {
   final String url;
@@ -56,40 +56,66 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
     ].contains(ext);
   }
 
-  bool get _isGoogleDrive => widget.url.contains('drive.google.com');
+  bool get _isGoogleDrive =>
+      widget.url.contains('drive.google.com') ||
+      widget.url.contains('docs.google.com') ||
+      widget.url.contains('drive.usercontent.google.com');
 
   bool get isVideo {
     final ext = widget.fileName.toLowerCase().split('.').last;
     return ['mp4', 'mov', 'avi', 'webm', 'mkv'].contains(ext);
   }
 
-  String get _fileId {
-    String? fileId;
-    if (widget.url.contains('/file/d/')) {
-      final parts = widget.url.split('/file/d/');
-      if (parts.length > 1) {
-        fileId = parts[1].split('/').first.split('?').first;
-      }
-    } else if (widget.url.contains('id=')) {
-      try {
-        final uri = Uri.parse(widget.url);
-        fileId = uri.queryParameters['id'];
-      } catch (_) {}
-    }
-    return fileId ?? '';
-  }
-
-  String get _resolvedDriveFileId {
+  String? _extractDriveFileId(String value) {
     final explicitId = widget.driveFileId?.trim();
     if (explicitId != null && explicitId.isNotEmpty) return explicitId;
-    return _fileId;
+
+    final clean = value.trim();
+    if (clean.isEmpty) return null;
+
+    final uri = Uri.tryParse(clean);
+    final queryId = uri?.queryParameters['id'];
+    if (queryId != null && queryId.isNotEmpty) return queryId;
+
+    final patterns = [
+      RegExp(
+        r'drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'drive\.usercontent\.google\.com\/download\?.*id=([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'docs\.google\.com\/(?:document|spreadsheets|presentation|file)\/d\/([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+    ];
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(clean);
+      if (match != null && match.groupCount >= 1) {
+        final id = match.group(1);
+        if (id != null && id.isNotEmpty) return id;
+      }
+    }
+    return null;
   }
+
+  String get _resolvedDriveFileId => _extractDriveFileId(widget.url) ?? '';
 
   bool get _isGoogleDriveFile {
     final provider = widget.storageProvider?.trim().toLowerCase();
     return provider == 'google_drive' ||
         _isGoogleDrive ||
-        (widget.driveFileId?.trim().isNotEmpty ?? false);
+        _resolvedDriveFileId.isNotEmpty;
   }
 
   String get _pdfPreviewUrl {
@@ -106,18 +132,21 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
     return proxyUrl.isEmpty ? widget.url : proxyUrl;
   }
 
-  String get _embedUrl {
-    if (_isGoogleDrive) {
-      final fileId = _fileId;
-      if (fileId.isNotEmpty) {
-        return 'https://drive.google.com/file/d/$fileId/preview';
+  String get _webPreviewUrl {
+    final driveId = _resolvedDriveFileId;
+    if (driveId.isNotEmpty) {
+      return 'https://drive.google.com/file/d/$driveId/preview';
+    }
+    if (widget.url.startsWith('http')) {
+      if (isVideo) {
+        return widget.url;
       }
+      return 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(widget.url)}';
     }
-    if (isPdf || isVideo) {
-      return widget.url;
-    }
-    return 'https://docs.google.com/gview?embedded=true&url=${Uri.encodeComponent(widget.url)}';
+    return widget.url;
   }
+
+  String get _embedUrl => _webPreviewUrl;
 
   @override
   void initState() {
@@ -313,85 +342,107 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final screenSize = MediaQuery.sizeOf(context);
+    final isDesktop = screenSize.width > 900;
 
     final usePdfViewerFile = isPdf && _localFilePath != null;
     final usePdfViewerNetwork =
         isPdf && _localFilePath == null && _pdfPreviewUrl.isNotEmpty;
 
+    final dialogWidth = isDesktop ? 920.0 : (screenSize.width - 32);
+    final dialogHeight = isDesktop
+        ? (screenSize.height * 0.85)
+        : (screenSize.height * 0.80);
+
     return Dialog(
       backgroundColor: isDark ? SchoolColors.darkSurface : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       clipBehavior: Clip.antiAlias,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.fileName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 32 : 16,
+        vertical: isDesktop ? 32 : 24,
+      ),
+      child: SizedBox(
+        width: dialogWidth,
+        height: dialogHeight,
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                    width: 1,
                   ),
                 ),
-                if (!kIsWeb)
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.fileName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (!kIsWeb)
+                    IconButton(
+                      onPressed: _downloadAndPreview,
+                      icon: const Icon(
+                        Icons.download_rounded,
+                        color: SchoolColors.primary,
+                        size: 22,
+                      ),
+                      splashRadius: 24,
+                      tooltip: 'Tải xuống',
+                    ),
+                  const SizedBox(width: 4),
                   IconButton(
-                    onPressed: _downloadAndPreview,
+                    onPressed: () {
+                      final driveId = _resolvedDriveFileId;
+                      final targetUrl = driveId.isNotEmpty
+                          ? 'https://drive.google.com/file/d/$driveId/view'
+                          : widget.url;
+                      launchUrl(
+                        Uri.parse(targetUrl),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    },
                     icon: const Icon(
-                      Icons.download_rounded,
+                      Icons.open_in_new_rounded,
                       color: SchoolColors.primary,
                       size: 22,
                     ),
                     splashRadius: 24,
-                    tooltip: 'Tải xuống',
+                    tooltip: 'Open externally',
                   ),
-                const SizedBox(width: 4),
-                IconButton(
-                  onPressed: () => launchUrl(
-                    Uri.parse(widget.url),
-                    mode: LaunchMode.externalApplication,
+                  const SizedBox(width: 4),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded),
+                    splashRadius: 24,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
-                  icon: const Icon(
-                    Icons.open_in_new_rounded,
-                    color: SchoolColors.primary,
-                    size: 22,
-                  ),
-                  splashRadius: 24,
-                  tooltip: 'Open externally',
-                ),
-                const SizedBox(width: 4),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded),
-                  splashRadius: 24,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          // Preview Area
-          Flexible(
-            child: AspectRatio(
-              aspectRatio: isVideo ? 16 / 9 : 1 / 1.414,
-              child: _isDownloading
+            // Preview Area
+            Expanded(
+              child: kIsWeb
+                  ? IframePlayer(
+                      sourceUrl: _webPreviewUrl,
+                      useVideoElement:
+                          isVideo && _resolvedDriveFileId.isEmpty,
+                    )
+                  : _isDownloading
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -405,7 +456,9 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                           ),
                           const SizedBox(height: 24),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 48),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 48,
+                            ),
                             child: LinearProgressIndicator(
                               value: _downloadProgress > 0
                                   ? _downloadProgress
@@ -479,15 +532,19 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                                   ElevatedButton.icon(
                                     onPressed: () =>
                                         OpenFilex.open(_localFilePath!),
-                                    icon: const Icon(Icons.open_in_new_rounded),
+                                    icon: const Icon(
+                                      Icons.open_in_new_rounded,
+                                    ),
                                     label: const Text(
                                       'Mở file bằng ứng dụng khác',
                                     ),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: SchoolColors.primary,
+                                      backgroundColor:
+                                          SchoolColors.primary,
                                       foregroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius:
+                                            BorderRadius.circular(12),
                                       ),
                                     ),
                                   ),
@@ -509,8 +566,8 @@ class _DocumentPreviewDialogState extends State<DocumentPreviewDialog> {
                       ],
                     ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

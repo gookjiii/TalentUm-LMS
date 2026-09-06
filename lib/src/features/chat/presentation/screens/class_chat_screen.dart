@@ -87,6 +87,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
   bool _isTeacher = false;
   PickedChatAttachment? _pendingAttachment;
   bool _uploading = false;
+  bool _isSending = false;
   bool _loadingRoom = false;
   Color? _classColor;
   String? _classTeacherId;
@@ -477,19 +478,26 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
   }
 
   Future<void> _handleSend() async {
+    if (_isSending || _uploading) return;
+    _isSending = true;
+
     final text = _textController.text.trim();
     final uid = widget.repository.uid;
-    if (_chatController == null || uid == null || uid.isEmpty) return;
-    if (text.isEmpty && _pendingAttachment == null) return;
-
-    if (_editingMessage != null) {
-      await _chatController!.editText(_editingMessage!.id, text);
-      setState(() => _editingMessage = null);
-      _textController.clear();
+    if (_chatController == null || uid == null || uid.isEmpty || (text.isEmpty && _pendingAttachment == null)) {
+      _isSending = false;
       return;
     }
 
-    if (_uploading) return;
+    if (_editingMessage != null) {
+      try {
+        await _chatController!.editText(_editingMessage!.id, text);
+        setState(() => _editingMessage = null);
+        _textController.clear();
+      } finally {
+        _isSending = false;
+      }
+      return;
+    }
 
     final attachment = _pendingAttachment;
     final confirmedText = text;
@@ -597,6 +605,7 @@ class _ClassChatScreenState extends ConsumerState<ClassChatScreen> {
         ).showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
       }
     } finally {
+      _isSending = false;
       if (mounted) setState(() => _uploading = false);
     }
   }

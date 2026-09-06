@@ -1403,40 +1403,46 @@ class _AudioBubbleState extends State<_AudioBubble>
       } else if (_playerState == PlayerState.paused) {
         await _player.resume();
       } else {
-        String playUrl = widget.url;
-        // Legacy Google Drive audio URLs → direct download proxy
-        if (playUrl.contains('drive.google.com') || playUrl.contains('docs.google.com')) {
+        String playUrl = widget.url.trim();
+
+        // Google Drive audio URLs → stream via proxy_video on Vercel
+        if (playUrl.contains('drive.google.com') ||
+            playUrl.contains('docs.google.com') ||
+            playUrl.contains('drive.usercontent.google.com')) {
           final uri = Uri.tryParse(playUrl);
-          final fileId = uri?.queryParameters['id'] ??
-              RegExp(r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)').firstMatch(playUrl)?.group(1);
-          if (fileId != null) {
-            playUrl = 'https://docs.google.com/uc?export=download&id=$fileId';
+          final queryId = uri?.queryParameters['id'];
+          String? fileId = queryId;
+          if (fileId == null || fileId.isEmpty) {
+            final match = RegExp(
+              r'drive\.google\.com/file/d/([a-zA-Z0-9_-]+)',
+            ).firstMatch(playUrl);
+            fileId = match?.group(1);
+          }
+          if (fileId != null && fileId.isNotEmpty) {
+            const proxyBaseUrl = String.fromEnvironment(
+              'GOOGLE_DRIVE_PROXY_URL',
+              defaultValue: 'https://vercel-talentum-backend.vercel.app',
+            );
+            playUrl = '$proxyBaseUrl/api/library/proxy_video?fileId=$fileId';
           }
         }
 
-        // For Cloudinary audio/video URLs, transcode on-the-fly to MP3 format
-        if (playUrl.contains('cloudinary.com') && playUrl.contains('/upload/')) {
-          playUrl = playUrl.replaceFirst(
-            RegExp(r'/upload/([^/]+/)?'),
-            '/upload/f_mp3,q_auto/',
-          );
-          if (playUrl.contains('.')) {
-            playUrl = playUrl.replaceFirst(RegExp(r'\.[a-zA-Z0-9]+(?=\?|$)'), '.mp3');
-          }
-        }
-
-        // On Web, if url is Firebase Storage or HTTP audio url that might lack CORS headers,
-        // use http.get to load bytes into memory and play via BytesSource for zero CORS restrictions
-        if (kIsWeb && !playUrl.contains('cloudinary.com')) {
+        // On Web, try UrlSource first, fallback to BytesSource if needed
+        if (kIsWeb) {
           try {
+            debugPrint('[_AudioBubble] Playing audio URL: $playUrl');
+            await _player.play(UrlSource(playUrl));
+            return;
+          } catch (urlErr) {
+            debugPrint(
+              '[_AudioBubble] UrlSource failed ($urlErr), attempting BytesSource fetch...',
+            );
             final response = await http.get(Uri.parse(playUrl));
             if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
-              debugPrint('[_AudioBubble] Playing via BytesSource (${response.bodyBytes.length} bytes)');
               await _player.play(BytesSource(response.bodyBytes));
               return;
             }
-          } catch (e) {
-            debugPrint('[_AudioBubble] BytesSource fetch error: $e');
+            rethrow;
           }
         }
 

@@ -43,7 +43,8 @@ class _IframePlayerWebState extends State<IframePlayer> {
             ..style.backgroundColor = '#000000'
             ..style.objectFit = 'contain'
             ..style.pointerEvents = 'auto'
-            ..setAttribute('playsinline', 'true');
+            ..setAttribute('playsinline', 'true')
+            ..setAttribute('webkit-playsinline', 'true');
           video.onLoadedData.listen((_) => widget.onReady?.call());
           video.onError.listen((_) => widget.onError?.call());
           return video;
@@ -56,7 +57,13 @@ class _IframePlayerWebState extends State<IframePlayer> {
           ..style.height = '100%'
           ..style.pointerEvents = 'auto'
           ..allowFullscreen = true
-          ..allow = 'autoplay; encrypted-media; picture-in-picture';
+          ..setAttribute('allowfullscreen', 'true')
+          ..setAttribute('webkitallowfullscreen', 'true')
+          ..setAttribute('mozallowfullscreen', 'true')
+          ..setAttribute('playsinline', 'true')
+          ..setAttribute('webkit-playsinline', 'true')
+          ..allow =
+              'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
         iframe.onLoad.listen((_) => widget.onReady?.call());
         return iframe;
       });

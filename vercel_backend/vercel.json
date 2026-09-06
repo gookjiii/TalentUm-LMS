@@ -8,6 +8,7 @@
     { "src": "/api/admin/storage_cleanup", "dest": "/api/admin/storage_cleanup.ts" },
     { "src": "/api/library/image", "dest": "/api/library/image.ts" },
     { "src": "/api/library/proxy_pdf", "dest": "/api/library/proxy_pdf.ts" },
+    { "src": "/api/library/proxy_video", "dest": "/api/library/proxy_video.ts" },
     { "src": "/api/upload/initiate", "dest": "/api/upload/initiate.ts" },
     { "src": "/api/upload/complete", "dest": "/api/upload/complete.ts" },
     { "src": "/api/upload/delete_drive", "dest": "/api/upload/delete_drive.ts" },

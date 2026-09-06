@@ -190,6 +190,8 @@ class _WebinarsScreenState extends ConsumerState<WebinarsScreen> {
                                 AppLocalizations.of(context)!.unknownKey7,
                             description: data['description'],
                             videoUrl: data['videoUrl'] ?? '',
+                            driveFileId: data['driveFileId'] as String?,
+                            storageProvider: data['storageProvider'] as String?,
                             canDelete: isLeadOfClass,
                             onDelete: () => _deleteWebinar(context, ref, id),
                           );
@@ -249,6 +251,8 @@ class _WebinarTile extends StatelessWidget {
     required this.title,
     this.description,
     required this.videoUrl,
+    this.driveFileId,
+    this.storageProvider,
     required this.canDelete,
     required this.onDelete,
   });
@@ -257,6 +261,8 @@ class _WebinarTile extends StatelessWidget {
   final String title;
   final String? description;
   final String videoUrl;
+  final String? driveFileId;
+  final String? storageProvider;
   final bool canDelete;
   final VoidCallback onDelete;
 
@@ -282,12 +288,67 @@ class _WebinarTile extends StatelessWidget {
     return _directVideoExtensions.any((ext) => lower.contains(ext));
   }
 
+  String? _extractDriveFileId(String value) {
+    if (driveFileId != null && driveFileId!.trim().isNotEmpty) {
+      return driveFileId!.trim();
+    }
+    final clean = value.trim();
+    if (clean.isEmpty) return null;
+
+    final uri = Uri.tryParse(clean);
+    final queryId = uri?.queryParameters['id'];
+    if (queryId != null && queryId.isNotEmpty) return queryId;
+
+    final patterns = [
+      RegExp(
+        r'drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'drive\.usercontent\.google\.com\/download\?.*id=([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'docs\.google\.com\/(?:document|spreadsheets|presentation|file)\/d\/([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+    ];
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(clean);
+      if (match != null && match.groupCount >= 1) {
+        final id = match.group(1);
+        if (id != null && id.isNotEmpty) return id;
+      }
+    }
+    return null;
+  }
+
   String? _getEmbedUrl(String url) {
     final cleanUrl = url.trim();
     if (cleanUrl.isEmpty) return null;
 
-    // 1. YouTube
+    // 1. YouTube & YouTube Shorts
     if (cleanUrl.contains('youtube.com') || cleanUrl.contains('youtu.be')) {
+      final shortsRegExp = RegExp(
+        r'youtube\.com\/shorts\/([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      );
+      final shortsMatch = shortsRegExp.firstMatch(cleanUrl);
+      if (shortsMatch != null && shortsMatch.groupCount >= 1) {
+        final videoId = shortsMatch.group(1);
+        if (videoId != null && videoId.isNotEmpty) {
+          return 'https://www.youtube.com/embed/$videoId?autoplay=0&playsinline=1&rel=0';
+        }
+      }
+
       final regExp = RegExp(
         r'^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*',
         caseSensitive: false,
@@ -296,7 +357,7 @@ class _WebinarTile extends StatelessWidget {
       if (match != null && match.groupCount >= 2) {
         final videoId = match.group(2);
         if (videoId != null && videoId.length == 11) {
-          return 'https://www.youtube.com/embed/$videoId';
+          return 'https://www.youtube.com/embed/$videoId?autoplay=0&playsinline=1&rel=0';
         }
       }
     }
@@ -377,26 +438,22 @@ class _WebinarTile extends StatelessWidget {
     }
 
     // 4. Google Drive
-    if (cleanUrl.contains('drive.google.com')) {
-      final regExp = RegExp(
-        r'drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)',
-        caseSensitive: false,
-      );
-      final match = regExp.firstMatch(cleanUrl);
-      if (match != null && match.groupCount >= 1) {
-        final fileId = match.group(1);
-        if (fileId != null) {
-          return 'https://drive.google.com/file/d/$fileId/preview';
-        }
-      }
+    final gDriveId = _extractDriveFileId(cleanUrl);
+    if (gDriveId != null && gDriveId.isNotEmpty) {
+      return 'https://drive.google.com/file/d/$gDriveId/preview';
     }
 
     return null;
   }
 
   Future<void> _openExternal(BuildContext context) async {
-    final uri = _parseVideoUri();
-    if (uri == null) {
+    final gDriveId = _extractDriveFileId(videoUrl);
+    final targetUrl = (gDriveId != null && gDriveId.isNotEmpty)
+        ? 'https://drive.google.com/file/d/$gDriveId/view'
+        : videoUrl.trim();
+
+    final uri = Uri.tryParse(targetUrl);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -418,8 +475,27 @@ class _WebinarTile extends StatelessWidget {
   }
 
   Future<void> _playVideo(BuildContext context) async {
+    final gDriveId = _extractDriveFileId(videoUrl);
+    final embedUrl = _getEmbedUrl(videoUrl);
+    final directVideo = _isDirectVideoUrl(videoUrl);
     final uri = _parseVideoUri();
-    if (uri == null) {
+
+    const proxyBaseUrl = String.fromEnvironment(
+      'GOOGLE_DRIVE_PROXY_URL',
+      defaultValue: 'https://vercel-talentum-backend.vercel.app',
+    );
+
+    // If it's a Google Drive video, stream via proxy_video as HTML5 <video> for native mobile playback
+    final isGDrive = gDriveId != null && gDriveId.isNotEmpty;
+    final streamVideoUrl = isGDrive
+        ? '$proxyBaseUrl/api/library/proxy_video?fileId=$gDriveId'
+        : null;
+
+    final effectiveSourceUrl = streamVideoUrl ?? embedUrl ?? uri?.toString();
+    final effectiveUseVideoElement =
+        streamVideoUrl != null || (embedUrl == null && directVideo);
+
+    if (effectiveSourceUrl == null) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -430,16 +506,14 @@ class _WebinarTile extends StatelessWidget {
       return;
     }
 
-    final embedUrl = _getEmbedUrl(videoUrl);
-    final directVideo = _isDirectVideoUrl(videoUrl);
-    if (kIsWeb && (embedUrl != null || directVideo)) {
+    if (kIsWeb && (embedUrl != null || directVideo || isGDrive)) {
       await showDialog<void>(
         context: context,
         barrierColor: Colors.black.withValues(alpha: 0.7),
         builder: (context) => _WebinarVideoDialog(
           title: title,
-          sourceUrl: embedUrl ?? uri.toString(),
-          useVideoElement: embedUrl == null && directVideo,
+          sourceUrl: effectiveSourceUrl,
+          useVideoElement: effectiveUseVideoElement,
           onOpenExternal: () => _openExternal(context),
         ),
       );
@@ -644,9 +718,7 @@ class _WebinarVideoDialogState extends State<_WebinarVideoDialog> {
       ],
     );
 
-    final player = isMobile
-        ? iframeStack
-        : AspectRatio(aspectRatio: 16 / 9, child: iframeStack);
+    final player = AspectRatio(aspectRatio: 16 / 9, child: iframeStack);
 
     if (isMobile) {
       return Material(

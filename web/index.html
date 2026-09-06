@@ -25,6 +25,14 @@
   <title>TalentUm</title>
   <link rel="manifest" href="manifest.json">
 
+  <!-- PDF.js for Web PDF Viewer support -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script type="text/javascript">
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+  </script>
+
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 

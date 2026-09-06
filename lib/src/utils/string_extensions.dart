@@ -35,12 +35,51 @@ extension ImageUrlExtension on String {
 }
 
 String _googleDriveImageUrl(String url, {required int width}) {
-  if (!url.contains('drive.google.com')) return url;
+  final clean = url.trim();
+  if (clean.isEmpty) return url;
+  if (!clean.contains('drive.google.com') &&
+      !clean.contains('docs.google.com') &&
+      !clean.contains('drive.usercontent.google.com')) {
+    return url;
+  }
 
-  final match = RegExp(
-    r'drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)',
-  ).firstMatch(url);
-  final fileId = match?.group(1);
+  String? fileId;
+  final uri = Uri.tryParse(clean);
+  final queryId = uri?.queryParameters['id'];
+  if (queryId != null && queryId.isNotEmpty) {
+    fileId = queryId;
+  } else {
+    final patterns = [
+      RegExp(
+        r'drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'drive\.google\.com\/uc\?.*id=([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'drive\.usercontent\.google\.com\/download\?.*id=([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'docs\.google\.com\/(?:document|spreadsheets|presentation|file)\/d\/([a-zA-Z0-9_-]+)',
+        caseSensitive: false,
+      ),
+    ];
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(clean);
+      if (match != null && match.groupCount >= 1) {
+        fileId = match.group(1);
+        if (fileId != null && fileId.isNotEmpty) break;
+      }
+    }
+  }
+
   if (fileId == null || fileId.isEmpty) return url;
 
   final targetWidth = width.clamp(1000, 4096).toInt();

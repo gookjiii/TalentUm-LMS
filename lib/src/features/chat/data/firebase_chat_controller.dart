@@ -649,7 +649,12 @@ class FirebaseChatController extends InMemoryChatController
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      _sendPushNotification(authorId, 'Новое сообщение', text);
+      _sendPushNotification(
+        authorId,
+        'Новое сообщение',
+        text,
+        messageId: messageId,
+      );
     } catch (e) {
       // Update local status to error
       final index = _allMessages.indexWhere((m) => m.id == messageId);
@@ -744,6 +749,7 @@ class FirebaseChatController extends InMemoryChatController
         authorId,
         'Новое сообщение',
         type == 'image' ? '🖼️ Изображение' : '📄 Файл',
+        messageId: messageId,
       );
     } catch (e) {
       // Update local status to error
@@ -961,6 +967,7 @@ class FirebaseChatController extends InMemoryChatController
         authorId,
         'Новое сообщение',
         '🎤 Голосовое сообщение',
+        messageId: messageId,
       );
     } catch (e) {
       _allMessages.removeWhere((m) => m.id == messageId);
@@ -1014,8 +1021,9 @@ class FirebaseChatController extends InMemoryChatController
   Future<void> _sendPushNotification(
     String authorId,
     String title,
-    String body,
-  ) async {
+    String body, {
+    String? messageId,
+  }) async {
     try {
       final roomSnap = await firestore.collection('rooms').doc(roomId).get();
       if (!roomSnap.exists) return;
@@ -1043,6 +1051,7 @@ class FirebaseChatController extends InMemoryChatController
         data: {
           'destination': 'chat',
           'roomId': roomId,
+          if (messageId != null) 'messageId': messageId,
           if (data['metadata']?['classId'] != null)
             'classId': data['metadata']['classId'],
         },

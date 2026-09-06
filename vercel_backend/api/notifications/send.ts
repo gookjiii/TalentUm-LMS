@@ -18,6 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { tokens, userIds, title, body, data } = req.body;
 
     let targetTokens: string[] = [];
+    const tokenDocMap = new Map<string, FirebaseFirestore.DocumentReference>();
 
     if (Array.isArray(tokens)) {
       targetTokens = [...tokens];
@@ -30,6 +31,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const fetchPromises = userIds.map(async (uid: string) => {
         try {
           const snapshot = await db.collection('users').doc(uid).collection('tokens').where('active', '==', true).get();
+          snapshot.docs.forEach(doc => {
+            const tok = doc.data().token;
+            if (tok && typeof tok === 'string') {
+              tokenDocMap.set(tok, doc.ref);
+            }
+          });
           return snapshot.docs.map(doc => doc.data().token as string).filter(t => !!t);
         } catch (err) {
           console.error(`Error fetching tokens for user ${uid}:`, err);
@@ -75,25 +82,97 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      const message = {
+      // Determine deduplication tag / collapse key so the OS collapses duplicate notifications
+      const collapseKey =
+        notificationData.messageId ||
+        notificationData.tag ||
+        (notificationData.roomId ? `room_${notificationData.roomId}` : undefined);
+
+      const message: any = {
         notification: {
           title,
           body,
         },
         data: notificationData,
         tokens: batchTokens,
+        android: {
+          priority: 'high',
+          notification: {
+            icon: 'ic_launcher',
+            color: '#1E293B',
+            sound: 'default',
+            ...(collapseKey ? { tag: collapseKey } : {}),
+          },
+          ...(collapseKey ? { collapseKey } : {}),
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1,
+            },
+          },
+          headers: {
+            'apns-priority': '10',
+            ...(collapseKey ? { 'apns-collapse-id': collapseKey } : {}),
+          },
+        },
+        webpush: {
+          notification: {
+            title,
+            body,
+            icon: '/favicon.png',
+            badge: '/favicon.png',
+            ...(collapseKey ? { tag: collapseKey } : {}),
+          },
+          fcmOptions: {
+            link: '/',
+          },
+        },
       };
 
       const response = await firebaseAdmin.messaging().sendEachForMulticast(message);
       successCount += response.successCount;
       failureCount += response.failureCount;
 
+      const tokensToDeactivate: FirebaseFirestore.DocumentReference[] = [];
+
       response.responses.forEach((resp, idx) => {
         if (!resp.success) {
-          failedTokens.push(batchTokens[idx]);
-          console.error('Failed to send to token:', batchTokens[idx], resp.error);
+          const failedToken = batchTokens[idx];
+          failedTokens.push(failedToken);
+          const errorCode = resp.error?.code;
+          console.error('Failed to send to token:', failedToken, errorCode, resp.error?.message);
+
+          if (
+            errorCode === 'messaging/registration-token-not-registered' ||
+            errorCode === 'messaging/invalid-registration-token' ||
+            errorCode === 'messaging/unregistered'
+          ) {
+            const docRef = tokenDocMap.get(failedToken);
+            if (docRef) {
+              tokensToDeactivate.push(docRef);
+            }
+          }
         }
       });
+
+      if (tokensToDeactivate.length > 0) {
+        try {
+          const db = firebaseAdmin.firestore();
+          const batch = db.batch();
+          tokensToDeactivate.slice(0, 500).forEach(ref => {
+            batch.update(ref, {
+              active: false,
+              deactivatedAt: firebaseAdmin.firestore.FieldValue.serverTimestamp(),
+            });
+          });
+          await batch.commit();
+          console.log(`Deactivated ${tokensToDeactivate.length} invalid tokens in Firestore`);
+        } catch (cleanupErr) {
+          console.error('Error deactivating invalid tokens in Firestore:', cleanupErr);
+        }
+      }
     }
 
     return res.status(200).json({
