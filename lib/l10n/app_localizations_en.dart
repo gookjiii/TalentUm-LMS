@@ -2168,7 +2168,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get somethingWentWrongTryAgain => 'Something went wrong. Try again.';
 
   @override
-  String get singleClassForChatnfeedAnd => 'Single class for chat,\\nfeed and homework.';
+  String get singleClassForChatnfeedAnd => 'Single class for chat, feed and homework.';
 
   @override
   String get realtimeClassChat => 'Real-time class chat';

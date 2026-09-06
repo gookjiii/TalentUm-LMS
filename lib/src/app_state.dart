@@ -245,7 +245,7 @@ class SchoolAppState extends ChangeNotifier {
   int? _accentColorValue;
   Color get accentColor => _accentColorValue != null
       ? Color(_accentColorValue!)
-      : const Color(0xFF2563EB);
+      : const Color(0xFF6B4CA6);
 
   void setAccentColor(Color color) {
     if (color.value == _accentColorValue) return;

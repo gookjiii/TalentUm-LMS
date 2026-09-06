@@ -4328,7 +4328,7 @@ abstract class AppLocalizations {
   /// No description provided for @singleClassForChatnfeedAnd.
   ///
   /// In en, this message translates to:
-  /// **'Single class for chat,\\nfeed and homework.'**
+  /// **'Single class for chat, feed and homework.'**
   String get singleClassForChatnfeedAnd;
 
   /// No description provided for @realtimeClassChat.

@@ -68,47 +68,56 @@ class _AuthScreenState extends State<AuthScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 900;
+      body: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 900;
 
-          final form = FadeTransition(
-            opacity: _modeFade,
-            child: _AuthForm(
-              isSignUp: _isSignUp,
-              loading: _loading,
-              obscurePassword: _obscurePassword,
-              nameController: _nameController,
-              emailController: _emailController,
-              passwordController: _passwordController,
-              isPhoneMode: _isPhoneMode,
-              phoneController: _phoneController,
-              otpController: _otpController,
-              otpSent: _otpSent,
-              onSendOtp: _sendOtp,
-              onVerifyOtp: _verifyOtp,
-              onTogglePhoneMode: () => setState(() {
-                _isPhoneMode = !_isPhoneMode;
-                _otpSent = false;
-                _phoneController.text = '+84';
-                _otpController.clear();
-                _verificationId = '';
-                _webConfirmationResult = null;
-              }),
-              onTogglePassword: () =>
-                  setState(() => _obscurePassword = !_obscurePassword),
-              onSubmit: _isSignUp ? _signUp : _signIn,
-              onToggleMode: _toggleMode,
-              onForgotPassword: _forgotPassword,
-            ),
-          );
+              final form = FadeTransition(
+                opacity: _modeFade,
+                child: _AuthForm(
+                  isSignUp: _isSignUp,
+                  loading: _loading,
+                  obscurePassword: _obscurePassword,
+                  nameController: _nameController,
+                  emailController: _emailController,
+                  passwordController: _passwordController,
+                  isPhoneMode: _isPhoneMode,
+                  phoneController: _phoneController,
+                  otpController: _otpController,
+                  otpSent: _otpSent,
+                  onSendOtp: _sendOtp,
+                  onVerifyOtp: _verifyOtp,
+                  onTogglePhoneMode: () => setState(() {
+                    _isPhoneMode = !_isPhoneMode;
+                    _otpSent = false;
+                    _phoneController.text = '+84';
+                    _otpController.clear();
+                    _verificationId = '';
+                    _webConfirmationResult = null;
+                  }),
+                  onTogglePassword: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                  onSubmit: _isSignUp ? _signUp : _signIn,
+                  onToggleMode: _toggleMode,
+                  onForgotPassword: _forgotPassword,
+                ),
+              );
 
-          if (!wide) {
-            return _MobileAuthLayout(child: form);
-          }
+              if (!wide) {
+                return _MobileAuthLayout(child: form);
+              }
 
-          return _WideAuthLayout(form: form);
-        },
+              return _WideAuthLayout(form: form);
+            },
+          ),
+          const Positioned(
+            top: 20,
+            right: 20,
+            child: SafeArea(child: _AuthTopControls()),
+          ),
+        ],
       ),
     );
   }
@@ -545,8 +554,48 @@ class _WideAuthLayout extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(99),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.22),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.auto_awesome_rounded,
+                                color: Colors.amberAccent,
+                                size: 15,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _localizedAuthMessage(
+                                  context,
+                                  vi: 'NỀN TẢNG HỌC TẬP THÔNG MINH',
+                                  ru: 'ОБРАЗОВАТЕЛЬНАЯ ПЛАТФОРМА',
+                                  en: 'SMART LEARNING PLATFORM',
+                                ),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                         const SchoolLogo(size: 80),
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 24),
                         CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                           streamFactory: () => AppScope.of(context)
                               .repository
@@ -568,7 +617,9 @@ class _WideAuthLayout extends StatelessWidget {
                         ),
                         const SizedBox(height: 14),
                         Text(
-                          AppLocalizations.of(context)!.singleClassForChatnfeedAnd,
+                          AppLocalizations.of(context)!
+                              .singleClassForChatnfeedAnd
+                              .replaceAll(r'\n', ' '),
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.85),
                             fontSize: 16,
@@ -775,57 +826,58 @@ class _AuthForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isWide = MediaQuery.sizeOf(context).width >= 900;
 
     if (isPhoneMode) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Center(child: SchoolLogo(size: 72)),
-          const SizedBox(height: 20),
-          CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            streamFactory: () =>
-                AppScope.of(context).repository.systemSettingsStream(),
-            builder: (context, snapshot) {
-              final appName =
-                  snapshot.data?.get('appName') as String? ?? 'TalentUm';
-              return Text(
-                appName,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.5,
-                ),
-              );
-            },
+          if (!isWide) ...[
+            const Center(child: SchoolLogo(size: 64)),
+            const SizedBox(height: 16),
+            CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+              streamFactory: () =>
+                  AppScope.of(context).repository.systemSettingsStream(),
+              builder: (context, snapshot) {
+                final appName =
+                    snapshot.data?.get('appName') as String? ?? 'TalentUm';
+                return Text(
+                  appName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+          Text(
+            _getLoginWithPhoneText(context),
+            textAlign: isWide ? TextAlign.left : TextAlign.center,
+            style: TextStyle(
+              fontSize: isWide ? 26 : 18,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+              color: isDark ? Colors.white : SchoolColors.text,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
-            _getLoginWithPhoneText(context),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
-              color: isDark
-                  ? SchoolColors.darkTextSecondary
-                  : SchoolColors.textSecondary,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.0,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
             _getPhoneAuthHintText(context),
-            textAlign: TextAlign.center,
+            textAlign: isWide ? TextAlign.left : TextAlign.center,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               color: isDark
                   ? SchoolColors.darkTextSecondary
                   : SchoolColors.textSecondary,
               height: 1.35,
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
 
           TextField(
             controller: phoneController,
@@ -871,6 +923,7 @@ class _AuthForm extends StatelessWidget {
             label: otpSent
                 ? _getVerifyAndLoginText(context)
                 : _getSendOtpText(context),
+            backgroundColor: SchoolColors.primary,
             icon: Icon(
               otpSent ? Icons.verified_user_rounded : Icons.send_rounded,
             ),
@@ -934,41 +987,64 @@ class _AuthForm extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Center(child: SchoolLogo(size: 72)),
-        const SizedBox(height: 20),
-        CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          streamFactory: () =>
-              AppScope.of(context).repository.systemSettingsStream(),
-          builder: (context, snapshot) {
-            final appName =
-                snapshot.data?.get('appName') as String? ?? 'TalentUm';
-            return Text(
-              appName,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 6),
+        if (!isWide) ...[
+          const Center(child: SchoolLogo(size: 64)),
+          const SizedBox(height: 16),
+          CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            streamFactory: () =>
+                AppScope.of(context).repository.systemSettingsStream(),
+            builder: (context, snapshot) {
+              final appName =
+                  snapshot.data?.get('appName') as String? ?? 'TalentUm';
+              return Text(
+                appName,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
         Text(
           isSignUp
               ? AppLocalizations.of(context)!.createAnAccount
               : AppLocalizations.of(context)!.welcomeBack,
-          textAlign: TextAlign.center,
+          textAlign: isWide ? TextAlign.left : TextAlign.center,
           style: TextStyle(
-            fontSize: 15,
+            fontSize: isWide ? 26 : 20,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+            color: isDark ? Colors.white : SchoolColors.text,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          isSignUp
+              ? _localizedAuthMessage(
+                  context,
+                  vi: 'Nhập thông tin bên dưới để tạo tài khoản mới của bạn',
+                  ru: 'Введите свои данные для создания аккаунта',
+                  en: 'Enter your details below to create your account',
+                )
+              : _localizedAuthMessage(
+                  context,
+                  vi: 'Vui lòng đăng nhập để tiếp tục vào lớp học',
+                  ru: 'Войдите, чтобы продолжить обучение',
+                  en: 'Please sign in to continue to your classroom',
+                ),
+          textAlign: isWide ? TextAlign.left : TextAlign.center,
+          style: TextStyle(
+            fontSize: 14,
             color: isDark
                 ? SchoolColors.darkTextSecondary
                 : SchoolColors.textSecondary,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.0,
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 28),
 
         AnimatedSize(
           duration: const Duration(milliseconds: 280),
@@ -1038,7 +1114,11 @@ class _AuthForm extends StatelessWidget {
               ),
               child: Text(
                 AppLocalizations.of(context)!.forgotYourPassword,
-                style: TextStyle(fontSize: 13),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: SchoolColors.primary,
+                ),
               ),
             ),
           ),
@@ -1147,6 +1227,7 @@ class _SubmitButton extends StatelessWidget {
       label: isSignUp
           ? AppLocalizations.of(context)!.createAnAccount
           : AppLocalizations.of(context)!.login,
+      backgroundColor: SchoolColors.primary,
       icon: Icon(
         isSignUp ? Icons.person_add_alt_1_rounded : Icons.login_rounded,
       ),
@@ -1238,3 +1319,125 @@ String _getInvalidEmailText(BuildContext context) {
   if (locale == 'vi') return 'Vui lòng nhập email hợp lệ.';
   return 'Enter a valid email address.';
 }
+
+class _AuthTopControls extends StatelessWidget {
+  const _AuthTopControls();
+
+  @override
+  Widget build(BuildContext context) {
+    final appState = AppScope.of(context).appState;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentLocaleCode = appState.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      decoration: BoxDecoration(
+        color: isDark
+            ? SchoolColors.darkSurfaceElevated.withValues(alpha: 0.9)
+            : Colors.white.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PopupMenuButton<String>(
+            tooltip: 'Language / Язык',
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            color: isDark ? SchoolColors.darkSurfaceElevated : Colors.white,
+            elevation: 8,
+            onSelected: (code) {
+              appState.setLocale(Locale(code));
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'en',
+                child: Row(
+                  children: [
+                    const Text('🇬🇧', style: TextStyle(fontSize: 18)),
+                    const SizedBox(width: 10),
+                    const Text('English', style: TextStyle(fontWeight: FontWeight.w600)),
+                    const Spacer(),
+                    if (currentLocaleCode == 'en')
+                      const Icon(Icons.check_rounded, size: 18, color: SchoolColors.primary),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'ru',
+                child: Row(
+                  children: [
+                    const Text('🇷🇺', style: TextStyle(fontSize: 18)),
+                    const SizedBox(width: 10),
+                    const Text('Русский', style: TextStyle(fontWeight: FontWeight.w600)),
+                    const Spacer(),
+                    if (currentLocaleCode == 'ru')
+                      const Icon(Icons.check_rounded, size: 18, color: SchoolColors.primary),
+                  ],
+                ),
+              ),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    currentLocaleCode == 'ru' ? '🇷🇺' : '🇬🇧',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    currentLocaleCode == 'ru' ? 'RU' : 'EN',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : SchoolColors.text,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                    color: isDark ? Colors.white70 : SchoolColors.muted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Container(
+            height: 18,
+            width: 1,
+            color: isDark ? Colors.white12 : const Color(0xFFCBD5E1),
+            margin: const EdgeInsets.symmetric(horizontal: 2),
+          ),
+          IconButton(
+            icon: Icon(
+              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              size: 18,
+              color: isDark ? const Color(0xFFFBBF24) : SchoolColors.primary,
+            ),
+            tooltip: isDark ? 'Light mode' : 'Dark mode',
+            splashRadius: 18,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            padding: EdgeInsets.zero,
+            onPressed: () => appState.toggleDarkMode(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

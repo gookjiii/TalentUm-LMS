@@ -2168,7 +2168,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get somethingWentWrongTryAgain => 'Что-то пошло не так. Попробуйте ещё раз.';
 
   @override
-  String get singleClassForChatnfeedAnd => 'Единый класс для чата,\\nленты и домашних заданий.';
+  String get singleClassForChatnfeedAnd => 'Единый класс для чата, ленты и домашних заданий.';
 
   @override
   String get realtimeClassChat => 'Чат класса в реальном времени';

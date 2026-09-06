@@ -827,7 +827,7 @@
   "passwordIsTooWeakMinimum": "Пароль слишком слабый (минимум 6 символов)",
   "unknownKey15": "Нет подключения к сети",
   "somethingWentWrongTryAgain": "Что-то пошло не так. Попробуйте ещё раз.",
-  "singleClassForChatnfeedAnd": "Единый класс для чата,\\nленты и домашних заданий.",
+  "singleClassForChatnfeedAnd": "Единый класс для чата, ленты и домашних заданий.",
   "realtimeClassChat": "Чат класса в реальном времени",
   "adsAndFeed": "Объявления и лента",
   "assignmentsAndAssessments": "Задания и оценки",

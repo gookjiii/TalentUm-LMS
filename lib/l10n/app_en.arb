@@ -836,7 +836,7 @@
   "passwordIsTooWeakMinimum": "Password is too weak (minimum 6 characters)",
   "unknownKey15": "Нет подключения к сети",
   "somethingWentWrongTryAgain": "Something went wrong. Try again.",
-  "singleClassForChatnfeedAnd": "Single class for chat,\\nfeed and homework.",
+  "singleClassForChatnfeedAnd": "Single class for chat, feed and homework.",
   "realtimeClassChat": "Real-time class chat",
   "adsAndFeed": "Ads and feed",
   "assignmentsAndAssessments": "Assignments and assessments",
