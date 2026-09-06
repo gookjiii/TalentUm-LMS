@@ -507,13 +507,12 @@ class _WideAuthLayout extends StatelessWidget {
         Expanded(
           child: Container(
             height: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 48),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFF0A0F1D), // Dark space navy
-                  Color(0xFF1F1238), // Midnight amethyst
-                  Color(0xFF3F1D6B), // Rich brand amethyst
+                  Color(0xFF070A14), // Ultra-deep space navy
+                  Color(0xFF130D24), // Midnight amethyst
+                  Color(0xFF261048), // Rich brand amethyst
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -521,115 +520,226 @@ class _WideAuthLayout extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                // Subtle circle decorations
+                // Ambient Radial Glow Orbs (Luminous aurora lighting)
                 Positioned(
-                  top: -60,
-                  right: -40,
+                  top: -120,
+                  right: -80,
                   child: _DecorativeCircle(
-                    size: 260,
-                    color: SchoolColors.primary.withValues(alpha: 0.25),
+                    size: 520,
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.35),
+                    centerColor: const Color(0xFFA855F7).withValues(alpha: 0.45),
                   ),
                 ),
                 Positioned(
-                  bottom: 40,
+                  bottom: -100,
                   left: -80,
                   child: _DecorativeCircle(
-                    size: 320,
-                    color: SchoolColors.secondary.withValues(alpha: 0.15),
+                    size: 460,
+                    color: const Color(0xFF4F46E5).withValues(alpha: 0.28),
+                    centerColor: const Color(0xFF6366F1).withValues(alpha: 0.38),
                   ),
                 ),
                 Positioned(
-                  top: 180,
-                  left: 60,
+                  top: 240,
+                  right: -60,
                   child: _DecorativeCircle(
-                    size: 140,
-                    color: Colors.white.withValues(alpha: 0.04),
+                    size: 340,
+                    color: const Color(0xFFEC4899).withValues(alpha: 0.18),
+                    centerColor: const Color(0xFFF43F5E).withValues(alpha: 0.24),
                   ),
                 ),
+
+                // Subtle Dot Grid overlay for high-end SaaS depth
+                const Positioned.fill(child: _DotGridPattern()),
+
                 // Hero content
                 Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 500),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(99),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.22),
-                              width: 1,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 40),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Platform pill badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.14),
+                                  Colors.white.withValues(alpha: 0.05),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(99),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.22),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFFBBF24),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.auto_awesome,
+                                    color: Color(0xFF78350F),
+                                    size: 11,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _localizedAuthMessage(
+                                    context,
+                                    vi: 'NỀN TẢNG HỌC TẬP THÔNG MINH',
+                                    ru: 'ОБРАЗОВАТЕЛЬНАЯ ПЛАТФОРМА',
+                                    en: 'SMART LEARNING PLATFORM',
+                                  ),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          const SizedBox(height: 22),
+
+                          // Brand identity lockup: Squircle Logo + App Name + Live Status
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              const Icon(
-                                Icons.auto_awesome_rounded,
-                                color: Colors.amberAccent,
-                                size: 15,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _localizedAuthMessage(
-                                  context,
-                                  vi: 'NỀN TẢNG HỌC TẬP THÔNG MINH',
-                                  ru: 'ОБРАЗОВАТЕЛЬНАЯ ПЛАТФОРМА',
-                                  en: 'SMART LEARNING PLATFORM',
-                                ),
-                                style: const TextStyle(
+                              Container(
+                                width: 62,
+                                height: 62,
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
                                   color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.8,
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF9333EA).withValues(alpha: 0.4),
+                                      blurRadius: 26,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                    BoxShadow(
+                                      color: Colors.white.withValues(alpha: 0.25),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, -1),
+                                    ),
+                                  ],
+                                ),
+                                child: const SchoolLogo(size: 46),
+                              ),
+                              const SizedBox(width: 18),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                                      streamFactory: () => AppScope.of(context)
+                                          .repository
+                                          .systemSettingsStream(),
+                                      builder: (context, snapshot) {
+                                        final appName =
+                                            snapshot.data?.get('appName') as String? ?? 'TalentUm';
+                                        return Text(
+                                          appName,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 36,
+                                            height: 1.1,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: -1.2,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFF10B981),
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Color(0xFF10B981),
+                                                blurRadius: 6,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          _localizedAuthMessage(
+                                            context,
+                                            vi: 'Hệ thống trực tuyến v2.0',
+                                            ru: 'Онлайн-портал v2.0',
+                                            en: 'Cloud Portal v2.0',
+                                          ),
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(alpha: 0.75),
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                        const SchoolLogo(size: 80),
-                        const SizedBox(height: 24),
-                        CachedStreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                          streamFactory: () => AppScope.of(context)
-                              .repository
-                              .systemSettingsStream(),
-                          builder: (context, snapshot) {
-                            final appName = snapshot.data?.get('appName') as String? ??
-                                'TalentUm';
-                            return Text(
-                              appName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 46,
-                                height: 1.1,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -1.5,
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          AppLocalizations.of(context)!
-                              .singleClassForChatnfeedAnd
-                              .replaceAll(r'\n', ' '),
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontSize: 16,
-                            height: 1.5,
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(height: 16),
+
+                          // Slogan / Tagline
+                          Text(
+                            AppLocalizations.of(context)!
+                                .singleClassForChatnfeedAnd
+                                .replaceAll(r'\n', ' '),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.88),
+                              fontSize: 15.5,
+                              height: 1.5,
+                              fontWeight: FontWeight.w400,
+                              letterSpacing: 0.1,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 36),
-                        _FeatureShowcase(),
-                      ],
+                          const SizedBox(height: 30),
+
+                          // Feature Showcase Cards
+                          _FeatureShowcase(),
+                          const SizedBox(height: 20),
+
+                          // Social Proof & Trust Bar
+                          const _SocialProofBar(),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -664,121 +774,370 @@ class _FeatureShowcase extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final features = [
-      (
-        icon: Icons.forum_rounded,
-        title: l10n.realtimeClassChat,
-        desc: _localizedAuthMessage(
-          context,
-          vi: 'Trao đổi tức thì với giáo viên và các bạn trong lớp',
-          ru: 'Мгновенное общение с учителями и одноклассниками',
-          en: 'Instant discussions with teachers and classmates',
-        ),
-      ),
-      (
-        icon: Icons.campaign_rounded,
-        title: l10n.adsAndFeed,
-        desc: _localizedAuthMessage(
-          context,
-          vi: 'Bản tin thông báo, tài liệu & lịch học cập nhật',
-          ru: 'Объявления класса, материалы и расписание',
-          en: 'Class announcements, materials & schedule updates',
-        ),
-      ),
-      (
-        icon: Icons.assignment_rounded,
-        title: l10n.assignmentsAndAssessments,
-        desc: _localizedAuthMessage(
-          context,
-          vi: 'Giao nộp bài tập, chấm điểm trực tiếp & kho tài liệu',
-          ru: 'Сдача заданий, оценивание и библиотека материалов',
-          en: 'Homework submissions, grading & digital library',
-        ),
-      ),
-    ];
-
     return Column(
-      children: features.map((f) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.12),
-              width: 1,
+      children: [
+        _FeatureCard(
+          icon: Icons.forum_rounded,
+          title: l10n.realtimeClassChat,
+          desc: _localizedAuthMessage(
+            context,
+            vi: 'Trao đổi tức thì với giáo viên và các bạn trong lớp',
+            ru: 'Мгновенное общение с учителями и одноклассниками',
+            en: 'Instant discussions with teachers and classmates',
+          ),
+          gradientColors: const [Color(0xFF8B5CF6), Color(0xFF6366F1)],
+          glowColor: const Color(0xFF8B5CF6),
+        ),
+        _FeatureCard(
+          icon: Icons.campaign_rounded,
+          title: l10n.adsAndFeed,
+          desc: _localizedAuthMessage(
+            context,
+            vi: 'Bản tin thông báo, tài liệu & lịch học cập nhật',
+            ru: 'Объявления класса, материалы и расписание',
+            en: 'Class announcements, materials & schedule updates',
+          ),
+          gradientColors: const [Color(0xFFF59E0B), Color(0xFFEF4444)],
+          glowColor: const Color(0xFFF59E0B),
+        ),
+        _FeatureCard(
+          icon: Icons.task_alt_rounded,
+          title: l10n.assignmentsAndAssessments,
+          desc: _localizedAuthMessage(
+            context,
+            vi: 'Giao nộp bài tập, chấm điểm trực tiếp & kho tài liệu',
+            ru: 'Сдача заданий, оценивание и библиотека материалов',
+            en: 'Homework submissions, grading & digital library',
+          ),
+          gradientColors: const [Color(0xFF10B981), Color(0xFF06B6D4)],
+          glowColor: const Color(0xFF10B981),
+        ),
+      ],
+    );
+  }
+}
+
+class _FeatureCard extends StatefulWidget {
+  const _FeatureCard({
+    required this.icon,
+    required this.title,
+    required this.desc,
+    required this.gradientColors,
+    required this.glowColor,
+  });
+
+  final IconData icon;
+  final String title;
+  final String desc;
+  final List<Color> gradientColors;
+  final Color glowColor;
+
+  @override
+  State<_FeatureCard> createState() => _FeatureCardState();
+}
+
+class _FeatureCardState extends State<_FeatureCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        transform: Matrix4.translationValues(0, _isHovered ? -2 : 0, 0),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: _isHovered ? 0.12 : 0.07),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: _isHovered ? 0.32 : 0.13),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: widget.glowColor.withValues(alpha: _isHovered ? 0.25 : 0.06),
+              blurRadius: _isHovered ? 20 : 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: widget.gradientColors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.glowColor.withValues(alpha: 0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(widget.icon, color: Colors.white, size: 22),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    widget.desc,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 12.5,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: _isHovered ? 0.9 : 0.25,
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SocialProofBar extends StatelessWidget {
+  const _SocialProofBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Avatar stack
+          SizedBox(
+            width: 72,
+            height: 28,
+            child: Stack(
+              children: [
+                const Positioned(
+                  left: 0,
+                  child: _MiniAvatar(
+                    gradient: [Color(0xFF8B5CF6), Color(0xFF6366F1)],
+                    icon: Icons.school_rounded,
+                  ),
+                ),
+                const Positioned(
+                  left: 18,
+                  child: _MiniAvatar(
+                    gradient: [Color(0xFFEC4899), Color(0xFFF43F5E)],
+                    icon: Icons.person_rounded,
+                  ),
+                ),
+                const Positioned(
+                  left: 36,
+                  child: _MiniAvatar(
+                    gradient: [Color(0xFF10B981), Color(0xFF06B6D4)],
+                    icon: Icons.face_rounded,
+                  ),
+                ),
+                Positioned(
+                  left: 54,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3B82F6),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        '+1k',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      SchoolColors.primary.withValues(alpha: 0.7),
-                      SchoolColors.secondary.withValues(alpha: 0.8),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    width: 1,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: List.generate(
+                    5,
+                    (index) => const Icon(
+                      Icons.star_rounded,
+                      color: Color(0xFFFBBF24),
+                      size: 15,
+                    ),
                   ),
                 ),
-                child: Icon(f.icon, color: Colors.white, size: 19),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      f.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      f.desc,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.72),
-                        fontSize: 12,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 2),
+                Text(
+                  _localizedAuthMessage(
+                    context,
+                    vi: 'Được tin dùng bởi hơn 10.000+ học sinh & giáo viên',
+                    ru: 'Более 10 000+ учеников и учителей по всей стране',
+                    en: 'Trusted by 10,000+ teachers and students',
+                  ),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      }).toList(),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniAvatar extends StatelessWidget {
+  const _MiniAvatar({required this.gradient, required this.icon});
+  final List<Color> gradient;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradient,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: Colors.white, size: 14),
     );
   }
 }
 
 class _DecorativeCircle extends StatelessWidget {
-  const _DecorativeCircle({required this.size, required this.color});
+  const _DecorativeCircle({
+    required this.size,
+    required this.color,
+    this.centerColor,
+  });
+
   final double size;
   final Color color;
+  final Color? centerColor;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              centerColor ?? color,
+              color.withValues(alpha: 0.4),
+              color.withValues(alpha: 0.0),
+            ],
+            stops: const [0.0, 0.45, 1.0],
+          ),
+        ),
+      ),
     );
   }
+}
+
+class _DotGridPattern extends StatelessWidget {
+  const _DotGridPattern();
+
+  @override
+  Widget build(BuildContext context) {
+    return const IgnorePointer(
+      child: CustomPaint(
+        size: Size.infinite,
+        painter: _DotGridPainter(),
+      ),
+    );
+  }
+}
+
+class _DotGridPainter extends CustomPainter {
+  const _DotGridPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.035)
+      ..style = PaintingStyle.fill;
+    const spacing = 32.0;
+    for (double x = 16; x < size.width; x += spacing) {
+      for (double y = 16; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 1.2, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // ─────────────────────────────────────────────────────────────────
